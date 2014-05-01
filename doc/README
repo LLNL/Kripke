@@ -1,0 +1,39 @@
+
+                     SWEEP KERNEL VERSION 1.0
+
+The 3D sweep kernel code performs either a data driven sweep algorithm
+or a data driver KBA sweep algorithm. It uses MPI for message passing,
+and currently contains no threading. This simulates how a
+deterministic neutral particle transport code would perform sweeps on
+a 3D Cartesian product mesh.
+
+The problem input parameters are described in the input_template
+sample input file. Basically, npx, npy, and npz describe the processor
+topology used, while nx, ny, and nz are the global spatial grid
+sizes. The number of directions (quadrature points) is controlled by
+num_directions_per_octant. Opposing reflecting boundaries are not allowed.
+
+The spatial domain is a box from (xmin, ymin, zmin) to (xmax, ymax,
+zmax), and on each face can be either a reflecting boundary or a
+dirichlet boundary. A constant isotropic source can be specified with
+source_value, which is assumed to be uniform everywhere in space, and
+a constant total cross section sigma_total_value can also be specified.
+
+The input_template problem is set up so that each face of the 3
+dimensional box has a dirichlet condition with contant 1,
+source_value=0, and sigma_total_value=0. For this problem, the angular
+solution, psi, will have the value 1 in every spatial zone and for
+every angle. When run, the code prints out the global sum of psi, and
+compares it to the product of the global number of zones and global
+number of directions.
+
+The parameter ncalls is the number of calls to the sweep kernel
+driver, and mimics how the sweep kernel would be used in an actual
+transport code.
+
+To use KBA sweeping, set nlevels_kba > 0. Note that npz must be 1 in
+this case.
+
+PNBrown, 1/28/2013
+
+

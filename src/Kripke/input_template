@@ -1,0 +1,102 @@
+#--------------------------------------------------------------------------
+# Define user input and constants for sample problem.
+#
+# This problem is set up so that the solution Psi after all the sweeps
+# are complete has the value 1 in all zones and for all directions.
+# When the code runs the Global Sum Ratio should give a value of 1.
+#--------------------------------------------------------------------------
+Run_Name
+run_name        template
+
+Processors
+# ----------------------- Warning -----------------------------------------
+# When running in parallel and steady-state, you most likely
+# need to set the preconditioner input parameter
+# npx = The number of processors in the x-direction.
+# npy = The number of processors in the y-direction.
+# npz = The number of processors in the z-direction.
+# nlevels_kba = If > 0, then forces the DD sweep to use KBA for sweeps
+#               with nlevels_kba levels.
+# ncalls = The number of times the sweep driver routine is called. Each
+#          calls sweeps all directions through the processor and spatial
+#          domains.
+#--------------------------------------------------------------------------
+npx             4
+npy             4
+npz             1
+nlevels_kba     4
+ncalls          10
+
+Domain
+#--------------------------------------------------------------------------
+# xmin = left  x boundary
+# xmax = right x boundary
+# ymin = front y boundary
+# ymax = back  y boundary
+# zmin = lower z boundary
+# zmax = upper z boundary
+#--------------------------------------------------------------------------
+xmin            0.0e0
+xmax            1.0e0
+ymin            0.0e0
+ymax            1.0e0
+zmin            0.0e0
+zmax            1.0e0
+
+Space_Grid
+#--------------------------------------------------------------------------
+# nx = global number of zones in x
+# ny = global number of zones in y
+# nz = global number of zones in z
+#--------------------------------------------------------------------------
+nx             80
+ny             160 #80
+nz             160 #80
+
+DiscreteOrdinates_Grid
+#--------------------------------------------------------------------------
+# Fake quadrature rule. The total number of directions = 8*num_directions
+# Each direction has cosines +/- 1 in each octant
+# num_directions_per_octang = The number of directions per octant
+#--------------------------------------------------------------------------
+num_directions_per_octant 24
+
+Boundary_Condition_Types
+#--------------------------------------------------------------------------
+# Boundary_condition_type = 0  => Dirichlet condition on entire face 
+# Boundary_condition_type = 1  => reflecting condition on entire face 
+# NOTE: Cannot have opposing reflecting faces
+#--------------------------------------------------------------------------
+flux_left_type   0
+flux_right_type  0
+flux_front_type  0
+flux_back_type   0
+flux_lower_type  0
+flux_upper_type  0
+
+Boundary_Condition_Values
+#--------------------------------------------------------------------------
+# For Dirichlet condition use a value. For reflecting condition, use 1.0
+# for a complelety reflecting face, and some value between 0 and 1 for
+# a partially reflecting face.
+#--------------------------------------------------------------------------
+flux_left_value     1.0e0
+flux_right_value    1.0e0
+flux_front_value    1.0e0
+flux_back_value     1.0e0
+flux_lower_value    1.0e0
+flux_upper_value    1.0e0
+
+Source
+#--------------------------------------------------------------------------
+# Box volume source section
+# source_value = the strength of the source (particles/second)
+#--------------------------------------------------------------------------
+source_value     0.0
+
+Sigma_Total
+#--------------------------------------------------------------------------
+# sigma_total_value = total cross section value
+#--------------------------------------------------------------------------
+sigma_total_value      0.0
+
