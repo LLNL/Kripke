@@ -14,7 +14,6 @@ int main(int argc, char *argv[])
 {
   FILE             *in_file;
   FILE             *out_file;
-  User_Data        *user_data;
   Input_Variables  *input_variables;
   int myid;
   int ierr=0;
@@ -81,13 +80,9 @@ int main(int argc, char *argv[])
     PrintInputVariables(input_variables, out_file);
     fclose(out_file);
   }
-  user_data = AllocUserData(MPI_COMM_WORLD, input_variables);
-  ierr = InitUserData(MPI_COMM_WORLD, user_data, input_variables);
+  User_Data *user_data = new User_Data(MPI_COMM_WORLD, input_variables);
   FreeInputVariables(input_variables);
-  /* Abort if any processor detected an error in InitUserData */
-  if(ierr != 0){
-    error_exit(1);
-  }
+
 
   EndTiming(timing_index[1]);
 
@@ -118,7 +113,7 @@ int main(int argc, char *argv[])
     FinalizeTiming(user_data->timing_index[i]);
   }
   FREE(user_data->timing_index);
-  FreeUserData(user_data);
+  delete user_data;
 
   MPI_Finalize();
 

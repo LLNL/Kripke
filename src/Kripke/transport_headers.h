@@ -18,11 +18,9 @@
  * Include data structures for sweep kernel code
  *--------------------------------------------------------------------------*/
 
-#include "bc_data.h"
 #include "data_vector.h"
 #include "grid.h"
 #include "input_variables.h"
-#include "sigma_tot.h"
 #include "sweep_solver.h"
 #include "sweep_kernel.h"
 #include "user_data.h"
@@ -36,6 +34,7 @@
 #include "comm.h"
 #include<stdio.h>
 #include<stdlib.h>
+
 
 #define NEW(ptr, nitems, \
             cast) if(((ptr) = \
@@ -61,16 +60,5 @@
 
 #define FREE(ptr)  {void *ptr_temp; ptr_temp = ptr; free( (ptr_temp) ); }
 
-#ifndef MIN
-#define MIN(A, B) ((A) < (B) ? (A) : (B))
-#endif
-
-#ifndef MAX
-#define MAX(A, B) ((A) > (B) ? (A) : (B))
-#endif
-
-#ifndef ABS
-#define ABS(A)    ((A < 0) ? -(A) : (A))
-#endif
 
 #endif

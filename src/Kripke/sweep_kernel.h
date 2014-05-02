@@ -13,9 +13,9 @@
  * Structures
  *--------------------------------------------------------------------------*/
 
-typedef struct {
+struct Boltzmann_Solver {
   MPI_Comm comm;
   Sweep_Solver_Data    *sweep_solver_data;
-} Boltzmann_Solver;
+};
 
 #endif

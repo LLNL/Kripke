@@ -1,5 +1,7 @@
 #include "transport_headers.h"
 
+#include<cstdlib>
+
 /* Sweep routine for Diamond-Difference */
 /* Macros for offsets with fluxes on cell faces */
 #define Zonal_INDEX(i, j, k) (i) + (local_imax)*(j) \
@@ -98,13 +100,13 @@ void SweepDD(int d, Grid_Data *grid_data, double *volume,
 
   /*  Perform transport sweep of the grid 1 cell at a time.   */
 
-  for(k=kstartz; ABS(k-kstartz)<local_kmax; k+=kn){
+  for(k=kstartz; std::labs(k-kstartz)<local_kmax; k+=kn){
     dzk = dz[k+1];
     zcos_dzk = TWO*zcos/dzk;
-    for(j=jstartz; ABS(j-jstartz)<local_jmax; j+=jn){
+    for(j=jstartz; std::labs(j-jstartz)<local_jmax; j+=jn){
       dyj = dy[j+1];
       ycos_dyj = TWO*ycos/dyj;
-      for(i=istartz; ABS(i-istartz)<local_imax; i+=in){
+      for(i=istartz; std::labs(i-istartz)<local_imax; i+=in){
         dxi = dx[i+1];
         xcos_dxi = TWO*xcos/dxi;
 

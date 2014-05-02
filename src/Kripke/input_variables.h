@@ -37,7 +37,6 @@ typedef struct {
   int npx, npy, npz;
   int nx, ny, nz;
   int num_directions_per_octant;
-  int nlevels_kba;
   int ncalls;
   int *bndry_types;
 

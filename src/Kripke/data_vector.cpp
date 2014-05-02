@@ -4,8 +4,6 @@
 
 #include "transport_headers.h"
 
-#define Zonal_INDEX(i, j, \
-                    k) (i) + (nzones[0])*(j) + (nzones[0])*(nzones[1])*(k)
 
 /*--------------------------------------------------------------------------
  * NewDataVector : Creates a new Data_Vector and allocates

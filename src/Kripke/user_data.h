@@ -2,12 +2,16 @@
  * Header file for the User_Data structure
  *--------------------------------------------------------------------------*/
 
-#ifndef included_user_data
-#define included_user_data
+#ifndef KRIPKE_USER_DATA_H__
+#define KRIPKE_USER_DATA_H__
 
-#include "sigma_tot.h"
-#include "grid.h"
-#include "bc_data.h"
+#include <Kripke/sweep_kernel.h>
+#include <Kripke/data_vector.h>
+#include <Kripke/grid.h>
+
+#include <vector>
+#include <mpi.h>
+
 
 /*--------------------------------------------------------------------------
  * Define the User_Data structure.
@@ -24,31 +28,38 @@
  * ncalls                : The number of calls to the sweep driver routine.
  *--------------------------------------------------------------------------*/
 
-typedef struct {
+typedef std::vector< std::vector<double> > Plane_Data;
+
+struct User_Data {
+  User_Data(MPI_Comm comm, Input_Variables *input_vars);
+  ~User_Data();
+
+  int num_zones;
+
   int                  *timing_index;
   int num_timings;
 
-  int nlevels_kba;
   int ncalls;
 
   double source_value;
 
-  BC_Data              *bc_data;
+  int bc_types[6];
+  double bc_values[6];
 
-  Sigma_Tot            *sigma_tot;
+  double sigma_tot;
 
   Grid_Data            *grid_data;
 
   Boltzmann_Solver    *boltzmann_solver;
 
-  Data_Vector          *tmp_sigma_tot;
+  std::vector<double>  tmp_sigma_tot;
   Data_Vector          *tmp_source;
 
-  double               *zonal_tmp;
-  double              **psi_i_plane;
-  double              **psi_j_plane;
-  double              **psi_k_plane;
+  std::vector<double>  zonal_tmp;
 
-} User_Data;
+  Plane_Data psi_i_plane;
+  Plane_Data psi_j_plane;
+  Plane_Data psi_k_plane;
+};
 
 #endif

@@ -58,14 +58,8 @@ int SweepSolverSolve (User_Data *user_data, double **rhs, double **ans,
   /* Begin timing */
   BeginTiming(user_data->timing_index[SWEEP]);
 
-  if(user_data->nlevels_kba > 0){
-    /* Diamond Difference using KBA*/
-    SweepSolverSolveDDKBA(user_data, rhs, ans, tempv);
-  }
-  else {
-    /* Diamond Difference */
-    SweepSolverSolveDD(user_data, rhs, ans, tempv);
-  }
+  /* Diamond Difference */
+  SweepSolverSolveDD(user_data, rhs, ans, tempv);
 
   /* End timing */
   EndTiming(user_data->timing_index[SWEEP]);
@@ -104,13 +98,12 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
   Boltzmann_Solver  *boltzmann_solver = user_data->boltzmann_solver;
   Sweep_Solver_Data *sweep_solver_data =
     boltzmann_solver->sweep_solver_data;
-  Sigma_Tot          *sigma_tot         = user_data->sigma_tot;
-  Data_Vector        *tmp_sigma_tot     = user_data->tmp_sigma_tot;
+  std::vector<double>      &tmp_sigma_tot     = user_data->tmp_sigma_tot;
 
   double    *volume            = grid_data->volume;
-  double   **psi_i_plane       = user_data->psi_i_plane;
-  double   **psi_j_plane       = user_data->psi_j_plane;
-  double   **psi_k_plane       = user_data->psi_k_plane;
+  Plane_Data &psi_i_plane       = user_data->psi_i_plane;
+  Plane_Data &psi_j_plane       = user_data->psi_j_plane;
+  Plane_Data &psi_k_plane       = user_data->psi_k_plane;
 
   int *nzones          = grid_data->nzones;
   int num_zones = nzones[0]*nzones[1]*nzones[2];
@@ -146,12 +139,12 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
   int bc_ref_i, bc_ref_j, bc_ref_k;
   int emminating_directions_left;
 
-  bc_ref_in = user_data->bc_data->bc_types[0];
-  bc_ref_ip = user_data->bc_data->bc_types[1];
-  bc_ref_jn = user_data->bc_data->bc_types[2];
-  bc_ref_jp = user_data->bc_data->bc_types[3];
-  bc_ref_kn = user_data->bc_data->bc_types[4];
-  bc_ref_kp = user_data->bc_data->bc_types[5];
+  bc_ref_in = user_data->bc_types[0];
+  bc_ref_ip = user_data->bc_types[1];
+  bc_ref_jn = user_data->bc_types[2];
+  bc_ref_jp = user_data->bc_types[3];
+  bc_ref_kn = user_data->bc_types[4];
+  bc_ref_kp = user_data->bc_types[5];
 
   in = grid_data->mynbr[0][0];
   ip = grid_data->mynbr[0][1];
@@ -161,37 +154,37 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
   kp = grid_data->mynbr[2][1];
 
   if(in == -1){
-    eta_ref_in = user_data->bc_data->bc_values[0];
+    eta_ref_in = user_data->bc_values[0];
   }
   else {
     eta_ref_in = 0.0;
   }
   if(ip == -1){
-    eta_ref_ip = user_data->bc_data->bc_values[1];
+    eta_ref_ip = user_data->bc_values[1];
   }
   else {
     eta_ref_ip = 0.0;
   }
   if(jn == -1){
-    eta_ref_jn = user_data->bc_data->bc_values[2];
+    eta_ref_jn = user_data->bc_values[2];
   }
   else {
     eta_ref_jn = 0.0;
   }
   if(jp == -1){
-    eta_ref_jp = user_data->bc_data->bc_values[3];
+    eta_ref_jp = user_data->bc_values[3];
   }
   else {
     eta_ref_jp = 0.0;
   }
   if(kn == -1){
-    eta_ref_kn = user_data->bc_data->bc_values[4];
+    eta_ref_kn = user_data->bc_values[4];
   }
   else {
     eta_ref_kn = 0.0;
   }
   if(kp == -1){
-    eta_ref_kp = user_data->bc_data->bc_values[5];
+    eta_ref_kp = user_data->bc_values[5];
   }
   else {
     eta_ref_kp = 0.0;
@@ -221,7 +214,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
   NEW( psi_bo_data, local_imax*local_jmax*(local_kmax+1), double * );
 
   /* Evaluate the total cross section for this group */
-  EvalSigmaTot(sigma_tot, tmp_sigma_tot);
+  EvalSigmaTot(user_data, tmp_sigma_tot);
 
   /* Hang out receive requests for each of the 6 neighbors */
   if(in != -1){
@@ -342,7 +335,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
       }
 
       /* Use standard Diamond-Difference sweep */
-      SweepDD(d, grid_data, volume, tmp_sigma_tot->data,
+      SweepDD(d, grid_data, volume, &tmp_sigma_tot[0],
               rhs[d], ans[d], i_plane_data[d], j_plane_data[d],
               k_plane_data[d], psi_lf_data, psi_fr_data,
               psi_bo_data);

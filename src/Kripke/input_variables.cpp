@@ -82,16 +82,6 @@ Input_Variables *ReadInput(FILE *in_file)
           fgets(file_line, 256, in_file);
         }
         sscanf(file_line, "%s %d", key_name, &int_tmp);
-        if(strcmp(key_name, "nlevels_kba") == 0){
-          input_variables->nlevels_kba = int_tmp;
-        }
-        else {printf("Error reading nlevels_kba.\n"); }
-
-        fgets(file_line, 256, in_file);
-        while(file_line[0] == '#'){
-          fgets(file_line, 256, in_file);
-        }
-        sscanf(file_line, "%s %d", key_name, &int_tmp);
         if(strcmp(key_name, "ncalls") == 0){
           input_variables->ncalls = int_tmp;
         }
@@ -383,9 +373,8 @@ void PrintInputVariables(Input_Variables *input_variables, FILE *out_file)
   fprintf(out_file, "   run_name = %s\n", input_variables->run_name);
   fprintf(out_file, "\n");
   fprintf(out_file, "Processors\n");
-  fprintf(out_file, "   npx = %i   npy = %i   npz = %i   nlevels_kba = %i\n",
-          input_variables->npx, input_variables->npy, input_variables->npz,
-	  input_variables->nlevels_kba);
+  fprintf(out_file, "   npx = %i   npy = %i   npz = %i\n",
+          input_variables->npx, input_variables->npy, input_variables->npz);
   fprintf(out_file, "   ncalls = %i\n", input_variables->ncalls);
   fprintf(out_file, "\n");
   fprintf(out_file, "Domain\n");

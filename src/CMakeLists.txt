@@ -1,7 +1,7 @@
 
 include_directories(.)
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 add_subdirectory(Kripke)
 #add_subdirectory(test)

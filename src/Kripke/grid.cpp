@@ -3,6 +3,8 @@
  *--------------------------------------------------------------------------*/
 
 #include "transport_headers.h"
+#include<cmath>
+#include <float.h>
 
 /*--------------------------------------------------------------------------
  * GenGrid : Creates a new Grid_Data structure and allocates
@@ -57,7 +59,7 @@ Grid_Data *GenGrid(int npx, int npy, int npz, int num_directions_per_octant,
   NEW(nprocs, 3, int *);
 
   /* Calculate unit roundoff and load into grid_data */
-  grid_data->eps = UnitRoundoff();
+  grid_data->eps = DBL_EPSILON;
   thsnd_eps = 1000.e0*(grid_data->eps);
 
   /* Compute the local coordinates in the processor decomposition */
@@ -180,10 +182,10 @@ Grid_Data *GenGrid(int npx, int npy, int npz, int num_directions_per_octant,
   for(i = 0; i < nx_l+2; i++){
     deltas_x[i] = dx;
   }
-  if(ABS(grid_data->coord_lo[0] - xmin) <= thsnd_eps*ABS(xmin)){
+  if(std::abs(grid_data->coord_lo[0] - xmin) <= thsnd_eps*std::abs(xmin)){
     deltas_x[0] = 0.0;
   }
-  if(ABS(grid_data->coord_hi[0] - xmax) <= thsnd_eps*ABS(xmax)){
+  if(std::abs(grid_data->coord_hi[0] - xmax) <= thsnd_eps*std::abs(xmax)){
     deltas_x[nx_l+1] = 0.0;
   }
   grid_data->xmin = xmin;
@@ -196,10 +198,10 @@ Grid_Data *GenGrid(int npx, int npy, int npz, int num_directions_per_octant,
   for(i = 0; i < ny_l+2; i++){
     deltas_y[i] = dy;
   }
-  if(ABS(grid_data->coord_lo[1] - ymin) <= thsnd_eps*ABS(ymin)){
+  if(std::abs(grid_data->coord_lo[1] - ymin) <= thsnd_eps*std::abs(ymin)){
     deltas_y[0] = 0.0;
   }
-  if(ABS(grid_data->coord_hi[1] - ymax) <= thsnd_eps*ABS(ymax)){
+  if(std::abs(grid_data->coord_hi[1] - ymax) <= thsnd_eps*std::abs(ymax)){
     deltas_y[ny_l+1] = 0.0;
   }
   grid_data->ymin = ymin;
@@ -212,10 +214,10 @@ Grid_Data *GenGrid(int npx, int npy, int npz, int num_directions_per_octant,
   for(i = 0; i < nz_l+2; i++){
     deltas_z[i] = dz;
   }
-  if(ABS(grid_data->coord_lo[2] - zmin) <= thsnd_eps*ABS(zmin)){
+  if(std::abs(grid_data->coord_lo[2] - zmin) <= thsnd_eps*std::abs(zmin)){
     deltas_z[0] = 0.0;
   }
-  if(ABS(grid_data->coord_hi[2] - zmax) <= thsnd_eps*ABS(zmax)){
+  if(std::abs(grid_data->coord_hi[2] - zmax) <= thsnd_eps*std::abs(zmax)){
     deltas_z[nz_l+1] = 0.0;
   }
   grid_data->zmin = zmin;

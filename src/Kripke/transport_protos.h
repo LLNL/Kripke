@@ -2,14 +2,10 @@
 
 #include<stdlib.h>
 #include<mpi.h>
+#include<vector>
 
-/* bc_data.c */
-BC_Data *NewBCData(Grid_Data *grid_data);
-void InitBCData(int *types, double *vals, Grid_Data *grid_data,
-                BC_Data *bc_data);
-void FreeBCData(BC_Data *bc_data);
-void LoadBCDataCB(double **psi, double **psi_ghosted,
-                  Grid_Data *grid_data);
+struct User_Data;
+struct Boltzmann_Solver;
 
 /* data_vector.c */
 Data_Vector *NewDataVector(Grid_Data *grid_data);
@@ -39,9 +35,6 @@ Input_Variables *ReadInput(FILE *in_file);
 void PrintInputVariables(Input_Variables *input_variables, FILE *out_file);
 void FreeInputVariables(Input_Variables *input_variables);
 
-/* main.c */
-int main(int argc, char *argv[]);
-
 /* sweep_kernel.c */
 Boltzmann_Solver
 *NewBoltzmannSolver(Grid_Data *grid_data, MPI_Comm comm);
@@ -50,10 +43,8 @@ int BoltzmannSolverSolve(double **rhs, double **ans, double **tempv,
 int FreeBoltzmannSolver(Grid_Data *grid_data,
                         Boltzmann_Solver *boltzmann_solver);
 
-/* sigma_tot.c */
-Sigma_Tot *NewSigmaTot(double param0);
-void FreeSigmaTot(Sigma_Tot *sigma_tot);
-void EvalSigmaTot(Sigma_Tot *sigma_tot, Data_Vector *vector);
+
+void EvalSigmaTot(User_Data *user_data, std::vector<double> &vector);
 
 /* sweep.c */
 void SweepDD(int d, Grid_Data *grid_data, double *volume,
@@ -69,17 +60,3 @@ int SweepSolverSolve(User_Data *user_data, double **rhs, double **ans,
                      double **tempv);
 void CreateBufferInfoDD(User_Data *user_data);
 
-/* sweep_solver_kba.c */
-int SweepSolverSolveDDKBA(User_Data *user_data, double **rhs, double **ans,
-			  double **tempv);
-void CreateBufferInfoDDKBA(User_Data *user_data);
-
-/* unit_roundoff.c */
-double UnitRoundoff(void);
-
-/* user_data.c */
-User_Data *AllocUserData(MPI_Comm comm,
-                         Input_Variables *input_vars);
-int InitUserData(MPI_Comm comm, User_Data *user_data,
-                 Input_Variables *input_vars);
-void FreeUserData(User_Data *user_data);
