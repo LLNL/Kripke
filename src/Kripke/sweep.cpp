@@ -17,7 +17,7 @@
 #define K_PLANE_INDEX(i, j) (j)*(local_imax) + (i)
 
 void SweepDD(int d, Grid_Data *grid_data, double *volume,
-             double *sigt, double *sors, double *psi,
+    std::vector<double> &sigt, double *sors, double *psi,
              double *i_plane_psi, double *j_plane_psi, double *k_plane_psi,
              double *psi_lf, double *psi_fr, double *psi_bo)
 {

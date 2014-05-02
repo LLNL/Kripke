@@ -18,11 +18,8 @@
  * Include data structures for sweep kernel code
  *--------------------------------------------------------------------------*/
 
-#include "data_vector.h"
 #include "grid.h"
 #include "input_variables.h"
-#include "sweep_solver.h"
-#include "sweep_kernel.h"
 #include "user_data.h"
 #include "timing.h"
 

@@ -5,9 +5,8 @@
 #ifndef KRIPKE_USER_DATA_H__
 #define KRIPKE_USER_DATA_H__
 
-#include <Kripke/sweep_kernel.h>
-#include <Kripke/data_vector.h>
 #include <Kripke/grid.h>
+#include <Kripke/input_variables.h>
 
 #include <vector>
 #include <mpi.h>
@@ -50,10 +49,7 @@ struct User_Data {
 
   Grid_Data            *grid_data;
 
-  Boltzmann_Solver    *boltzmann_solver;
-
   std::vector<double>  tmp_sigma_tot;
-  Data_Vector          *tmp_source;
 
   std::vector<double>  zonal_tmp;
 

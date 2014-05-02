@@ -7,7 +7,7 @@
 #include <Kripke/transport_headers.h>
 
 
-void InitBCData2(int *types, double *vals, Grid_Data *grid_data,
+static void InitBCData(int *types, double *vals, Grid_Data *grid_data,
                 User_Data *user_data)
 /*--------------------------------------------------------------------------
  * types     : Array of integers indicating the boundary condition type
@@ -116,21 +116,12 @@ User_Data::User_Data(MPI_Comm comm, Input_Variables *input_vars)
   ncalls = input_vars->ncalls;
 
   sigma_tot = input_vars->sigma_total_value;
-  source_value = input_vars->source_value;
-
-  tmp_source = NewDataVector(grid_data);
-
 
   nzones = grid_data->nzones;
   nx_l = nzones[0];
   ny_l = nzones[1];
   nz_l = nzones[2];
   num_zones = nzones[0]*nzones[1]*nzones[2];
-  /* Zero out tmp_source->data as zero is always used if no volume
-     sources are present. tmp_source should not be used for workspace */
-  for(i = 0; i < num_zones; i++){
-    tmp_source->data[i] = 0.0;
-  }
 
   int i_plane_zones = ny_l * nz_l;
   int j_plane_zones = nx_l * nz_l;
@@ -144,13 +135,9 @@ User_Data::User_Data(MPI_Comm comm, Input_Variables *input_vars)
     psi_k_plane[d].resize(k_plane_zones);
   }
 
-  tmp_sigma_tot.resize(num_zones);
-  zonal_tmp.resize(num_zones);
+  tmp_sigma_tot.resize(num_zones, 0.0);
+  zonal_tmp.resize(num_zones, 0.0);
 
-  /*Only accelerate the 0th moment with DSA. Can eventually make
-    num_dsa_moments an input parameter. */
-  boltzmann_solver =
-    NewBoltzmannSolver(grid_data, R_group);
 
   /* Create buffer info for sweeping if using Diamond-Difference */
   CreateBufferInfoDD(this);
@@ -158,7 +145,7 @@ User_Data::User_Data(MPI_Comm comm, Input_Variables *input_vars)
 
   double *values = input_vars->bndry_values;
   int *types = input_vars->bndry_types;
-  InitBCData2(types, values, grid_data, this);
+  InitBCData(types, values, grid_data, this);
 
 }
 
@@ -173,14 +160,6 @@ User_Data::~User_Data()
  * user_data : The User_Data structure to be deallocated.
  *--------------------------------------------------------------------------*/
 {
-  int *nzones = grid_data->nzones;
-  int num_zones = nzones[0]*nzones[1]*nzones[2];
-  int num_directions = grid_data->num_directions;
-  int d;
-
-  FreeDataVector(tmp_source);
-  FreeBoltzmannSolver(grid_data, boltzmann_solver);
-
   /* Free buffers used in sweeping */
   RBufFree();
   FreeGrid(grid_data);

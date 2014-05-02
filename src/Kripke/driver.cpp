@@ -47,7 +47,7 @@ void SweepDriver(User_Data *user_data)
    * Call BoltzmannSolverSolve to solve the H Psi = R linear system
    * for all directions.
    *---------------------------------------------------------------------*/
-  BoltzmannSolverSolve(rhs, psi, tempv, user_data);
+  SweepSolverSolve(user_data, rhs, psi, tempv);
 
   /* Sum all entries in psi and output average */
   for(d=0; d<num_directions; d++){

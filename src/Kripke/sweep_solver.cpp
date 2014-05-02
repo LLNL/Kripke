@@ -4,8 +4,7 @@
 
 #include "transport_headers.h"
 
-#include<stdio.h>
-#include<stdlib.h>
+#include<vector>
 
 
 
@@ -14,39 +13,6 @@ void CreateBufferInfoDD3D(User_Data *user_data);
 int SweepSolverSolveDD (User_Data *user_data, double **rhs,
                         double **ans, double **tempv);
 
-/*--------------------------------------------------------------------------
- * NewSweepSolverData: Creates a new Sweep_Solver_Data
- *                     structure and allocates memory for its data.
- *--------------------------------------------------------------------------*/
-
-Sweep_Solver_Data *NewSweepSolverData(Grid_Data *grid_data, MPI_Comm comm)
-/*--------------------------------------------------------------------------
- * grid_data           : Grid information structure
- * comm                : MPI communicator
- *--------------------------------------------------------------------------*/
-{
-  Sweep_Solver_Data  *sweep_solver_data;
-
-  int                 *nzones         = grid_data->nzones;
-  int                 *swept, *swept_min, *swept_max;
-
-  int num_directions = grid_data->num_directions;
-
-  NEW(sweep_solver_data, 1, Sweep_Solver_Data *);
-  NEW(swept, num_directions, int *);
-  NEW(swept_min, num_directions, int *);
-  NEW(swept_max, num_directions, int *);
-
-  /*---------------------------------------------------------------------
-   * Load pointers into sweep_solver structure
-   *---------------------------------------------------------------------*/
-  (sweep_solver_data->comm)           = comm;
-  (sweep_solver_data->swept)          = swept;
-  (sweep_solver_data->swept_min)      = swept_min;
-  (sweep_solver_data->swept_max)      = swept_max;
-
-  return(sweep_solver_data);
-}
 
 /*----------------------------------------------------------------------
  * SweepSolverSolve
@@ -67,24 +33,6 @@ int SweepSolverSolve (User_Data *user_data, double **rhs, double **ans,
   return(0);
 }
 
-/*----------------------------------------------------------------------
- * FreeSweepSolverData
- *----------------------------------------------------------------------*/
-
-void FreeSweepSolverData (Sweep_Solver_Data *sweep_solver_data)
-{
-  if(sweep_solver_data->swept != NULL){
-    FREE(sweep_solver_data->swept);
-  }
-  if(sweep_solver_data->swept_min != NULL){
-    FREE(sweep_solver_data->swept_min);
-  }
-  if(sweep_solver_data->swept_max != NULL){
-    FREE(sweep_solver_data->swept_max);
-  }
-
-  FREE(sweep_solver_data);
-}
 
 /*----------------------------------------------------------------------
  * SweepSolverSolveDD
@@ -95,9 +43,6 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
 {
   Grid_Data  *grid_data         = user_data->grid_data;
   Directions *directions        = grid_data->directions;
-  Boltzmann_Solver  *boltzmann_solver = user_data->boltzmann_solver;
-  Sweep_Solver_Data *sweep_solver_data =
-    boltzmann_solver->sweep_solver_data;
   std::vector<double>      &tmp_sigma_tot     = user_data->tmp_sigma_tot;
 
   double    *volume            = grid_data->volume;
@@ -117,7 +62,6 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
   *i_which, *j_which, *k_which;
   int local_imax, local_jmax, local_kmax;
 
-  int *swept    = sweep_solver_data->swept;
   int bc_ref_in, bc_ref_ip, bc_ref_jn, bc_ref_jp, bc_ref_kn, bc_ref_kp;
   double eta_ref_in, eta_ref_ip, eta_ref_jn, eta_ref_jp;
   double eta_ref_kn, eta_ref_kp;
@@ -296,9 +240,8 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
   }
 
   directions_left = num_directions;
-  for(d=0; d<num_directions; d++){
-    swept[d] = 0;
-  }
+  std::vector<int> swept(num_directions, 0.0);
+
   while(directions_left){
 
     /* Check for a message from the 6 neighboring subdomains. */
@@ -335,7 +278,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
       }
 
       /* Use standard Diamond-Difference sweep */
-      SweepDD(d, grid_data, volume, &tmp_sigma_tot[0],
+      SweepDD(d, grid_data, volume, tmp_sigma_tot,
               rhs[d], ans[d], i_plane_data[d], j_plane_data[d],
               k_plane_data[d], psi_lf_data, psi_fr_data,
               psi_bo_data);
