@@ -16,21 +16,21 @@
 #define J_PLANE_INDEX(i, k) (k)*(local_imax) + (i)
 #define K_PLANE_INDEX(i, j) (j)*(local_imax) + (i)
 
-void SweepDD(int d, Grid_Data *grid_data, double *volume,
+void SweepDD(int d, Grid_Data *grid_data, std::vector<double> const &volume,
     std::vector<double> &sigt, double *sors, double *psi,
              double *i_plane_psi, double *j_plane_psi, double *k_plane_psi,
              double *psi_lf, double *psi_fr, double *psi_bo)
 {
   int i, j, k, local_imax, local_jmax, local_kmax;
   int local_imax_1, local_jmax_1;
-  Directions *directions = grid_data->directions;
+  std::vector<Directions> &directions = grid_data->directions;
   int id, jd, kd, istartz, jstartz, kstartz;
   int istopz, jstopz, kstopz;
   int in, jn, kn, im, jm, km;
   int il, ir, jf, jb, kb, kt;
 
   double dxnow, dynow, dznow;
-  double xcos, ycos, zcos, *dx, *dy, *dz;
+  double xcos, ycos, zcos;
   double xcos_dxi, ycos_dyj, zcos_dzk;
   double dxi, dyj, dzk;
   double TWO=2.0;
@@ -49,9 +49,9 @@ void SweepDD(int d, Grid_Data *grid_data, double *volume,
   local_imax_1 = local_imax + 1;
   local_jmax_1 = local_jmax + 1;
 
-  dx = grid_data->deltas[0];
-  dy = grid_data->deltas[1];
-  dz = grid_data->deltas[2];
+  std::vector<double> &dx = grid_data->deltas[0];
+  std::vector<double> &dy = grid_data->deltas[1];
+  std::vector<double> &dz = grid_data->deltas[2];
 
   if(id > 0){
     istartz = 0; istopz = local_imax-1; in = 1; il = 0; ir = 1;

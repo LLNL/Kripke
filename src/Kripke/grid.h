@@ -2,10 +2,12 @@
  * Header file for the Grid_Data data structures
  *--------------------------------------------------------------------------*/
 
-#ifndef included_grid_data
-#define included_grid_data
+#ifndef KRIPKE_GRID_DATA_H__
+#define KRIPKE_GRID_DATA_H__
 
-#include "directions.h"
+#include <Kripke/directions.h>
+#include <mpi.h>
+#include <vector>
 
 /*--------------------------------------------------------------------------
  * Define the Grid_Data structure.
@@ -29,26 +31,38 @@
  * ilower         : Lower grid indices
  *--------------------------------------------------------------------------*/
 
-typedef struct {
-  int    *nzones;
-  int    *nprocs;
+typedef std::vector< std::vector<double> > Plane_Data;
+
+struct Grid_Data {
+  Grid_Data(int npx, int npy, int npz, int num_directions_per_octant,
+                   double xmin, double xmax, int nx_g,
+                   double ymin, double ymax, int ny_g,
+                   double zmin, double zmax, int nz_g,
+                   MPI_Comm comm);
+
+  int    nzones[3];
+  int    nprocs[3];
 
   int mynbr[3][2];
 
-  double coord_lo[3];
-  double coord_hi[3];
   double xmin, xmax, ymin, ymax, zmin, zmax;
 
-  double *deltas[3];
-  double *volume;
+  std::vector<double> deltas[3];
+  std::vector<double> volume;
   double eps;   /* unit roundoff */
 
   double global_num_zones;
-  int num_directions;
   int ilower[3];
   int iupper[3];
 
-  Directions *directions;
-}   Grid_Data;
+  std::vector<Directions> directions;
+  std::vector<int> octant_map;
+
+  // Variables:
+  std::vector<double>  tmp_sigma_tot;
+  Plane_Data psi_i_plane;
+  Plane_Data psi_j_plane;
+  Plane_Data psi_k_plane;
+};
 
 #endif

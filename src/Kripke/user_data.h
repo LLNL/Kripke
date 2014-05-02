@@ -27,13 +27,9 @@
  * ncalls                : The number of calls to the sweep driver routine.
  *--------------------------------------------------------------------------*/
 
-typedef std::vector< std::vector<double> > Plane_Data;
-
 struct User_Data {
   User_Data(MPI_Comm comm, Input_Variables *input_vars);
   ~User_Data();
-
-  int num_zones;
 
   int                  *timing_index;
   int num_timings;
@@ -48,14 +44,6 @@ struct User_Data {
   double sigma_tot;
 
   Grid_Data            *grid_data;
-
-  std::vector<double>  tmp_sigma_tot;
-
-  std::vector<double>  zonal_tmp;
-
-  Plane_Data psi_i_plane;
-  Plane_Data psi_j_plane;
-  Plane_Data psi_k_plane;
 };
 
 #endif

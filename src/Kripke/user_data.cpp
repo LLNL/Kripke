@@ -103,14 +103,13 @@ User_Data::User_Data(MPI_Comm comm, Input_Variables *input_vars)
   create_R_grid(R);
   R_group = GetRGroup();
 
-  grid_data =
-    GenGrid(input_vars->npx, input_vars->npy, input_vars->npz,
+  grid_data = new Grid_Data(input_vars->npx, input_vars->npy, input_vars->npz,
             input_vars->num_directions_per_octant,
             input_vars->xmin, input_vars->xmax,
             input_vars->nx, input_vars->ymin, input_vars->ymax,
             input_vars->ny, input_vars->zmin, input_vars->zmax,
             input_vars->nz, R_group);
-  num_directions = grid_data->num_directions;
+  num_directions = grid_data->directions.size();
 
   /* Set ncalls */
   ncalls = input_vars->ncalls;
@@ -123,20 +122,6 @@ User_Data::User_Data(MPI_Comm comm, Input_Variables *input_vars)
   nz_l = nzones[2];
   num_zones = nzones[0]*nzones[1]*nzones[2];
 
-  int i_plane_zones = ny_l * nz_l;
-  int j_plane_zones = nx_l * nz_l;
-  int k_plane_zones = nx_l * ny_l;
-  psi_i_plane.resize(num_directions);
-  psi_j_plane.resize(num_directions);
-  psi_k_plane.resize(num_directions);
-  for(int d=0; d<num_directions; d++){
-    psi_i_plane[d].resize(i_plane_zones);
-    psi_j_plane[d].resize(j_plane_zones);
-    psi_k_plane[d].resize(k_plane_zones);
-  }
-
-  tmp_sigma_tot.resize(num_zones, 0.0);
-  zonal_tmp.resize(num_zones, 0.0);
 
 
   /* Create buffer info for sweeping if using Diamond-Difference */
@@ -162,5 +147,5 @@ User_Data::~User_Data()
 {
   /* Free buffers used in sweeping */
   RBufFree();
-  FreeGrid(grid_data);
+  delete grid_data;
 }

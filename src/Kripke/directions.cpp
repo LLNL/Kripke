@@ -4,6 +4,9 @@
 #include "transport_headers.h"
 #include "comm.h"
 
+static void InitOmegas(std::vector<Directions> &directions, int *omega_map,
+                int *omega_map_inv);
+
 /* Prototypes for routines internal to this file */
 struct Aux_Table {
   int index;
@@ -11,16 +14,6 @@ struct Aux_Table {
   double value;
 };
 
-/*
-static int
-Compare(struct Aux_Table * i, struct Aux_Table * j) {
-    if (i->value > j->value)
-       return (1);
-    if (i->value < j->value)
-       return (-1);
-    return (0);
-          }
-*/
 static int Compare(const void *i_v, const void *j_v)
 {
   struct Aux_Table *i = (struct Aux_Table *) i_v;
@@ -37,14 +30,13 @@ static int Compare(const void *i_v, const void *j_v)
 
 void InitDirections(Grid_Data *grid_data, int num_directions_per_octant)
 {
-  Directions *directions;
+  std::vector<Directions> &directions = grid_data->directions;
   int d, id, jd, kd, num_directions,
       direction_concurrency, *omega_map, *omega_map_inv,
-      full_moments, *octant_map;
+      full_moments;
   int in, ip, jn, jp, kn, kp;
 
   num_directions = 8*num_directions_per_octant;
-  grid_data->num_directions = num_directions;
 
   in = grid_data->mynbr[0][0];
   ip = grid_data->mynbr[0][1];
@@ -53,18 +45,17 @@ void InitDirections(Grid_Data *grid_data, int num_directions_per_octant)
   kn = grid_data->mynbr[2][0];
   kp = grid_data->mynbr[2][1];
 
-  NEW(directions, num_directions, Directions *);
-  grid_data->directions = directions;
+  directions.resize(num_directions);
 
   NEW( omega_map, num_directions, int * );
   NEW( omega_map_inv, num_directions, int * );
 
-  InitOmegas(directions, omega_map, omega_map_inv, num_directions);
+  InitOmegas(directions, omega_map, omega_map_inv);
 
   FREE( omega_map_inv );
   FREE( omega_map );
 
-  NEW( octant_map, num_directions, int * );
+  std::vector<int> octant_map(num_directions);
 
   for(d=0; d<num_directions; d++){
     id = directions[d].id;
@@ -103,13 +94,15 @@ void InitDirections(Grid_Data *grid_data, int num_directions_per_octant)
     directions[d].j_dst_subd = (jd>0) ? jp : jn;
     directions[d].k_dst_subd = (kd>0) ? kp : kn;
   }
-  directions->octant_map = octant_map;
+
+  grid_data->octant_map = octant_map;
 
 }
 
-void InitOmegas(Directions *directions, int *omega_map,
-                int *omega_map_inv, int num_directions)
+void InitOmegas(std::vector<Directions> &directions, int *omega_map,
+                int *omega_map_inv)
 {
+  int num_directions = directions.size();
   double ** omegas;
   int i, j, m, n, d, omegas_per_octant=num_directions>>3, num_omegas[8],
   *octant_omega[8];
@@ -299,13 +292,4 @@ void InitOmegas(Directions *directions, int *omega_map,
   FREE(aux);
 }
 
-void FreeDirections(Directions *directions)
-{
-  int *octant_map = directions->octant_map;
-  int octant;
 
-  if(octant_map != NULL){
-    FREE(octant_map);
-  }
-  FREE(directions);
-}

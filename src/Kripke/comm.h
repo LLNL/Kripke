@@ -1,40 +1,7 @@
 /* Common declarations for the functions in comm.c */
-#ifndef comm_h_included
-#define comm_h_included
+#ifndef KRIPKE_COMM_H__
+#define KRIPKE_COMM_H__
 
-/* #include <varargs.h> */
-
-/*================== Combine Operations =====================*/
-
-extern void space_combine(double *vector, int length, int type);
-/*
-   space_combine() combines (i.e., reduces) across the r-dimension of the
-   P X Q X R nodal grid an array of ``length'' doubles pointed to by
-   ``vector''.  That is, the arrays pointed to by ``vector'' in each node
-   (p,q,r) are vector-summed (type=0), max'd (type=1), or min'd (type=2) with
-   the arrays pointed to by ``vector'' in all other nodes having the same p
-   and q coordinates.  All nodes return with a copy of their respective sums,
-   maxes, or mins at the location pointed to by ``vector''.
-
-   Notes:
-
-   (1) The value of ``length'' must be the same in all nodes participating in
-       a particular combine operation; otherwise, the result is unpredictable.
-       No checking is performed to ensure consistency of the ``length''
-       argument values.
-   (2) If this function is called by any node (p,q,r), then it must be called
-       by all other nodes with the same p and q coordinates or a deadlock will
-       likely occur.
-*/
-
-/*=================== Synchronizations =====================*/
-
-extern void SynchronizeR();
-/*
-   SynchronizeR() is a barrier function for subgrids of nodes (p,q,r)
-   with identical p and q coordinates.  That is, this function synchronizes
-   R lines.
-*/
 
 /*================= POINT TO POINT MESSAGE PASSING ==================*/
 

@@ -2,10 +2,12 @@
  * Header file for the Directions data structures
  *--------------------------------------------------------------------------*/
 
-#ifndef included_directions
-#define included_directions
+#ifndef KRIPKE_DIRECTIONS_H__
+#define KRIPKE_DIRECTIONS_H__
 
-typedef struct {
+#include <vector>
+
+struct Directions{
   double xcos;              /* Absolute value of the x-direction cosine. */
   double ycos;              /* Absolute value of the y-direction cosine. */
   double zcos;              /* Absolute value of the z-direction cosine. */
@@ -40,7 +42,6 @@ typedef struct {
                             subdomain in the positive
                             z-direction if kd = 1 or negative
                             z-direction if kd = -1. */
-  int *octant_map;
-} Directions;
+};
 
 #endif

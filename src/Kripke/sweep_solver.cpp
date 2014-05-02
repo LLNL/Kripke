@@ -42,18 +42,17 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
                         double **ans, double **tempv)
 {
   Grid_Data  *grid_data         = user_data->grid_data;
-  Directions *directions        = grid_data->directions;
-  std::vector<double>      &tmp_sigma_tot     = user_data->tmp_sigma_tot;
+  std::vector<Directions> &directions        = grid_data->directions;
+  std::vector<double>      &tmp_sigma_tot     = grid_data->tmp_sigma_tot;
 
-  double    *volume            = grid_data->volume;
-  Plane_Data &psi_i_plane       = user_data->psi_i_plane;
-  Plane_Data &psi_j_plane       = user_data->psi_j_plane;
-  Plane_Data &psi_k_plane       = user_data->psi_k_plane;
+  Plane_Data &psi_i_plane       = grid_data->psi_i_plane;
+  Plane_Data &psi_j_plane       = grid_data->psi_j_plane;
+  Plane_Data &psi_k_plane       = grid_data->psi_k_plane;
 
   int *nzones          = grid_data->nzones;
   int num_zones = nzones[0]*nzones[1]*nzones[2];
   int nx=nzones[0], ny=nzones[1], nz=nzones[2];
-  int num_directions = grid_data->num_directions;
+  int num_directions = grid_data->directions.size();
 
   double *msg, **i_plane_data, **j_plane_data, **k_plane_data;
   int i, k, sweep_group, i_plane_zones, j_plane_zones, k_plane_zones,
@@ -278,7 +277,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
       }
 
       /* Use standard Diamond-Difference sweep */
-      SweepDD(d, grid_data, volume, tmp_sigma_tot,
+      SweepDD(d, grid_data, grid_data->volume, tmp_sigma_tot,
               rhs[d], ans[d], i_plane_data[d], j_plane_data[d],
               k_plane_data[d], psi_lf_data, psi_fr_data,
               psi_bo_data);
@@ -303,7 +302,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
       eta_ref_k = (directions[d].kd>0) ? eta_ref_kp : eta_ref_kn;
 
       if(k_dst_subd == -1 && bc_ref_k == 1){
-        octant = directions->octant_map[d];
+        octant = grid_data->octant_map[d];
         ref_octant = r_rules[octant][2];
         fundamental_d = (d - octant)/8;
         ref_d = 8 * fundamental_d + ref_octant;
@@ -320,7 +319,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
         k_plane_data[ref_d][k_plane_zones] = (double) ref_d;
       }
       if(j_dst_subd == -1 && bc_ref_j == 1){
-        octant = directions->octant_map[d];
+        octant = grid_data->octant_map[d];
         ref_octant = r_rules[octant][1];
         fundamental_d = (d - octant)/8;
         ref_d = 8 * fundamental_d + ref_octant;
@@ -338,7 +337,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
 
       }
       if(i_dst_subd == -1 && bc_ref_i == 1){
-        octant = directions->octant_map[d];
+        octant = grid_data->octant_map[d];
         ref_octant = r_rules[octant][0];
         fundamental_d = (d - octant)/8;
         ref_d = 8 * fundamental_d + ref_octant;
@@ -408,11 +407,11 @@ void CreateBufferInfoDD(User_Data *user_data)
 void CreateBufferInfoDD3D(User_Data *user_data)
 {
   Grid_Data  *grid_data  = user_data->grid_data;
-  Directions *directions = grid_data->directions;
+  std::vector<Directions> &directions = grid_data->directions;
 
   int *nzones          = grid_data->nzones;
   int local_imax, local_jmax, local_kmax;
-  int num_directions = grid_data->num_directions;
+  int num_directions = grid_data->directions.size();
   int len[6], nm[6], length, i, d;
 
   local_imax = nzones[0];

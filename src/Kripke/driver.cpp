@@ -16,7 +16,7 @@ void SweepDriver(User_Data *user_data)
   double global_num_zones = user_data->grid_data->global_num_zones;
 
   int *nzones = user_data->grid_data->nzones;
-  int num_directions = user_data->grid_data->num_directions;
+  int num_directions = user_data->grid_data->directions.size();
   int num_zones = nzones[0]*nzones[1]*nzones[2];
   int d, zone;
   int myid;
@@ -56,7 +56,7 @@ void SweepDriver(User_Data *user_data)
     }
   }
   gsum = sum;
-  space_combine(&gsum, 1, 0);
+  MPI_Allreduce( &sum, &gsum, 1, MPI_DOUBLE, MPI_SUM, GetRGroup());
   sum = gsum/(global_num_zones*((double)num_directions));
   if(myid == 0){
     printf("\n");

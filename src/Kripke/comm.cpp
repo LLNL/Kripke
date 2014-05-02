@@ -55,48 +55,6 @@ MPI_Status *buf_status; /* not used except for debug and MPI returns it */
 void buf_reset();  /* grump - decl just to avoid an error message */
 
 
-/*============================== COMBINES ===========================*/
-
-void
-space_combine(double *vector, int length, int type)
-{
-  double *vec_in;
-  int i;
-
-  if(R0 == 1){
-    /* Nothing to do if not parallelizing in space */
-    return;
-  }
-
-  NEW( vec_in, length, double * );
-  for(i = 0; i < length; i++){
-    vec_in[i]=vector[i];
-  }
-
-  if(type == 0){
-    /* Sum combine */
-    MPI_Allreduce( vec_in, vector, length, MPI_DOUBLE, MPI_SUM, R_group);
-  }
-  else if(type == 1){
-    /* Max combine */
-    MPI_Allreduce( vec_in, vector, length, MPI_DOUBLE, MPI_MAX, R_group);
-  }
-  else {   /* type = 2 */
-    /* Min combine */
-    MPI_Allreduce( vec_in, vector, length, MPI_DOUBLE, MPI_MIN, R_group);
-  }
-
-  FREE(vec_in);
-}
-
-/*========================= SYNCHRONIZATIONS ========================*/
-
-void
-SynchronizeR()   {
-  MPI_Barrier(R_group);
-}
-
-
 
 /*================= POINT TO POINT MESSAGE PASSING ==================*/
 
@@ -166,11 +124,10 @@ R_recv_test(int which,
     }
     return( flag);      /*  note - msg is returned only with flag = 1 */
   }
-  else {  /* this direction is boundary - get  next empty buffer  == new*/
-    *msg = buf_pool[i-j];        /* remember j is <=0 , so this is an add */
-    buf_rec[which] -= 1;         /* bump to bigger negative for next call */
-    return( 1);
-  };
+  /* this direction is boundary - get  next empty buffer  == new*/
+  *msg = buf_pool[i-j];        /* remember j is <=0 , so this is an add */
+  buf_rec[which] -= 1;         /* bump to bigger negative for next call */
+  return( 1);
 }
 
 void
