@@ -11,10 +11,12 @@
 
 */
 
+#include <Kripke/comm.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include "transport_headers.h"
-#include "comm.h"
+#include <mpi.h>
+#include <vector>
+#include <stdio.h>
 
 
 /* declarations for MPI version of the code */
@@ -34,8 +36,8 @@ int buf_total;     /* count of total number of messages */
 int which_num[6];  /* max number of message in each direction */
 int which_len[6];  /* size of messages in each direction */
 int buf_which[6];  /* array to say where in pool each direction starts */
-double ** buf_pool; /* array of  pointers to each buffer in pool */
-double * bptr_sv;  /* pointer to memory for all buffers */
+std::vector<double *> buf_pool; /* array of  pointers to each buffer in pool */
+std::vector<double> bptr_sv;  /* pointer to memory for all buffers */
 
 /* these items are reinitialized every iteration through the main code */
 int send_cnt;     /* index into buf_s_req for next send-handle */
@@ -44,13 +46,13 @@ int buf_rec[6];   /* array to track whether which-direction is boundary */
                   /* if values is > 1 error: rcv's posted more than once*/
                   /* if value is <= 0 direction may be used for boundry bufs*/
                   /* amount less than  0 tracks which to allocate next  */
-MPI_Request *buf_r_req; /* array to hold async recv message handles */
+std::vector<MPI_Request> buf_r_req; /* array to hold async recv message handles */
                         /* entries 1-1 with buf_pool, initialed to null-handle
                           */
-MPI_Request *buf_s_req; /* array to hold async send message handles */
+std::vector<MPI_Request> buf_s_req; /* array to hold async send message handles */
                         /* entries made in order send's posted (see send_cnt)
                           */
-MPI_Status *buf_status; /* not used except for debug and MPI returns it */
+std::vector<MPI_Status> buf_status; /* not used except for debug and MPI returns it */
 
 void buf_reset();  /* grump - decl just to avoid an error message */
 
@@ -151,7 +153,7 @@ R_wait_send ()
   /* come here to check that all sends have completed so that the */
   /* buffers are free for reuse on next iteration */
 
-  MPI_Waitall(send_cnt, buf_s_req, buf_status);
+  MPI_Waitall(send_cnt, &buf_s_req[0], &buf_status[0]);
 
   buf_reset();    /* all done - reset all the buffer info */
 }
@@ -215,7 +217,6 @@ R_buf_init(int * len,
   /* initialize storage for nm messages in 6 directions, and associated */
   /* status information - each message is dlen long */
 
-  double * bptr;
   int i, j, k;
   int size;
 
@@ -234,10 +235,10 @@ R_buf_init(int * len,
     buf_which[i] = buf_which[i-1] + which_num[i-1];
   }
 
-  NEW( bptr, size, double * );    /* space for all messages */
-  bptr_sv = bptr;   /* Save bptr for later freeing */
+  bptr_sv.resize(size);
+  double *bptr = &bptr_sv[0];
 
-  NEW( buf_pool, buf_total, double ** );
+  buf_pool.resize(buf_total);
 
   for(i = 0; i < 6; i++){    /* for each "which" set */
     k = which_len[i];       /* msg size in this set */
@@ -249,9 +250,9 @@ R_buf_init(int * len,
   }
   ;
 
-  NEW( buf_s_req, buf_total, MPI_Request * );
-  NEW( buf_r_req, buf_total, MPI_Request * );
-  NEW( buf_status, buf_total, MPI_Status * );
+  buf_s_req.resize(buf_total);
+  buf_r_req.resize(buf_total);
+  buf_status.resize(buf_total);
 
   buf_reset();
 }
@@ -276,11 +277,5 @@ buf_reset()
 void
 RBufFree()
 {
-  /* free the memory allocated for the buffers */
-
-  FREE( bptr_sv );
-  FREE( buf_pool );
-  FREE( buf_s_req );
-  FREE( buf_r_req );
-  FREE( buf_status );
+;
 }

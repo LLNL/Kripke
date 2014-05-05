@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_C_COMPILER mpiicc-12.1.339)
-set(CMAKE_CXX_COMPILER mpiicpc-12.1.339)
-set(CMAKE_LINKER mpiicpc-12.1.339)
+set(ICC_VER 14.0.144)
+
+set(CMAKE_C_COMPILER mpiicc-${ICC_VER})
+set(CMAKE_CXX_COMPILER mpiicpc-${ICC_VER})
+set(CMAKE_LINKER mpiicpc-${ICC_VER})
 
 set(SYS_TYPE $ENV{SYS_TYPE})
 set(PKG_PATH "/usr/gapps/bdiv/${SYS_TYPE}/opt")

@@ -2,8 +2,10 @@
  * Header file for the Input_Variables structure
  *--------------------------------------------------------------------------*/
 
-#ifndef included_input_variables
-#define included_input_variables
+#ifndef KRIPKE_INPUT_VARIABLES_H__
+#define KRIPKE_INPUT_VARIABLES_H__
+
+#include<string>
 
 /*--------------------------------------------------------------------------
  * Define the Input_Variables structure.
@@ -33,20 +35,23 @@
  * sigma_total_value     : Value for sigma_total constant
  *--------------------------------------------------------------------------*/
 
-typedef struct {
+struct Input_Variables {
+  void read(std::string const &fname);
+  void print(void) const;
+
   int npx, npy, npz;
   int nx, ny, nz;
   int num_directions_per_octant;
   int ncalls;
-  int *bndry_types;
 
   double xmin, xmax, ymin, ymax, zmin, zmax;
   double source_value;
   double sigma_total_value;
-  double *bndry_values;
+  double bndry_values[6];
+  int bndry_types[6];
 
   char run_name[256];
 
-} Input_Variables;
+};
 
 #endif

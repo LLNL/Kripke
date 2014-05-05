@@ -1,5 +1,4 @@
-#include "transport_headers.h"
-
+#include<Kripke/user_data.h>
 #include<cstdlib>
 
 /* Sweep routine for Diamond-Difference */
@@ -16,14 +15,13 @@
 #define J_PLANE_INDEX(i, k) (k)*(local_imax) + (i)
 #define K_PLANE_INDEX(i, j) (j)*(local_imax) + (i)
 
-void SweepDD(int d, Grid_Data *grid_data, std::vector<double> const &volume,
+void SweepDD(int d, Grid_Data *grid_data, std::vector<Directions> &directions, std::vector<double> const &volume,
     std::vector<double> &sigt, double *sors, double *psi,
              double *i_plane_psi, double *j_plane_psi, double *k_plane_psi,
              double *psi_lf, double *psi_fr, double *psi_bo)
 {
   int i, j, k, local_imax, local_jmax, local_kmax;
   int local_imax_1, local_jmax_1;
-  std::vector<Directions> &directions = grid_data->directions;
   int id, jd, kd, istartz, jstartz, kstartz;
   int istopz, jstopz, kstopz;
   int in, jn, kn, im, jm, km;

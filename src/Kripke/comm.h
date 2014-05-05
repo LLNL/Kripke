@@ -2,6 +2,7 @@
 #ifndef KRIPKE_COMM_H__
 #define KRIPKE_COMM_H__
 
+#include<mpi.h>
 
 /*================= POINT TO POINT MESSAGE PASSING ==================*/
 

@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "transport_headers.h"
-#include "comm.h"
+#include <Kripke/directions.h>
+#include <Kripke/user_data.h>
+#include<algorithm>
 
-static void InitOmegas(std::vector<Directions> &directions, int *omega_map,
-                int *omega_map_inv);
+static void InitOmegas(std::vector<Directions> &directions);
 
 /* Prototypes for routines internal to this file */
 struct Aux_Table {
@@ -14,26 +14,17 @@ struct Aux_Table {
   double value;
 };
 
-static int Compare(const void *i_v, const void *j_v)
+static bool Compare(Aux_Table const &i, Aux_Table const &j)
 {
-  struct Aux_Table *i = (struct Aux_Table *) i_v;
-  struct Aux_Table *j = (struct Aux_Table *) j_v;
-  /*Compare function used by qsort during omega mapping*/
-  if(i->value > j->value){
-    return(1);
-  }
-  if(i->value < j->value){
-    return(-1);
-  }
-  return(0);
+  return i.value < j.value;
 }
 
-void InitDirections(Grid_Data *grid_data, int num_directions_per_octant)
+void InitDirections(User_Data *user_data, int num_directions_per_octant)
 {
-  std::vector<Directions> &directions = grid_data->directions;
+  Grid_Data *grid_data = user_data->grid_data;
+  std::vector<Directions> &directions = user_data->directions;
   int d, id, jd, kd, num_directions,
-      direction_concurrency, *omega_map, *omega_map_inv,
-      full_moments;
+      direction_concurrency, full_moments;
   int in, ip, jn, jp, kn, kp;
 
   num_directions = 8*num_directions_per_octant;
@@ -47,13 +38,7 @@ void InitDirections(Grid_Data *grid_data, int num_directions_per_octant)
 
   directions.resize(num_directions);
 
-  NEW( omega_map, num_directions, int * );
-  NEW( omega_map_inv, num_directions, int * );
-
-  InitOmegas(directions, omega_map, omega_map_inv);
-
-  FREE( omega_map_inv );
-  FREE( omega_map );
+  InitOmegas(directions);
 
   std::vector<int> octant_map(num_directions);
 
@@ -95,26 +80,20 @@ void InitDirections(Grid_Data *grid_data, int num_directions_per_octant)
     directions[d].k_dst_subd = (kd>0) ? kp : kn;
   }
 
-  grid_data->octant_map = octant_map;
+  user_data->octant_map = octant_map;
 
 }
 
-void InitOmegas(std::vector<Directions> &directions, int *omega_map,
-                int *omega_map_inv)
+void InitOmegas(std::vector<Directions> &directions)
 {
   int num_directions = directions.size();
-  double ** omegas;
-  int i, j, m, n, d, omegas_per_octant=num_directions>>3, num_omegas[8],
-  *octant_omega[8];
+  int i, j, m, n, d, omegas_per_octant=num_directions>>3;
 
-  struct Aux_Table * aux;
+  std::vector<Aux_Table> aux(num_directions);
 
-  NEW( omegas, num_directions, double ** );
-
-  NEW(aux, num_directions, struct Aux_Table * );
-
+  std::vector<std::vector<double> > omegas(num_directions);
   for(m=0; m<num_directions; m++){
-    NEW( omegas[m], 3, double * );
+    omegas[m].resize(3);
   }
 
   d = 0;
@@ -185,9 +164,11 @@ void InitOmegas(std::vector<Directions> &directions, int *omega_map,
     }
   }
 
+  std::vector<int> octant_omega[8];
+  int num_omegas[8];
   for(i=0; i<8; i++){
     num_omegas[i] = 0;
-    NEW( octant_omega[i], omegas_per_octant, int * );
+    octant_omega[i].resize(omegas_per_octant);
   }
 /*Note that the octants are numbered in the following way (based on
   the sign of the direction cosine with the i,j, and k axis)
@@ -251,21 +232,19 @@ void InitOmegas(std::vector<Directions> &directions, int *omega_map,
                      + 10.*fabs(omegas[m][1])
                      + fabs(omegas[m][2]);
     }
-    qsort((struct Aux_Table *) aux, omegas_per_octant,
-          sizeof(struct Aux_Table), Compare);
+    std::sort(aux.begin(), aux.end(), Compare);
     for(j=0; j<omegas_per_octant; j++){
       octant_omega[i][j] = aux[j].m;
     }
   }
+
+  std::vector<int> omega_map(num_directions);
   for(m=0, j=0; j<omegas_per_octant; j++){
     for(i=0; i<8; i++, m++){
       omega_map[m] = octant_omega[i][j];
     }
   }
 
-  for(m=0; m<num_directions; m++){
-    omega_map_inv[omega_map[m]] = m;
-  }
 
   for(d=0, m=0; d<num_directions; d++, m++){
 
@@ -277,19 +256,8 @@ void InitOmegas(std::vector<Directions> &directions, int *omega_map,
     directions[d].xcos = fabs(omegas[n][0]);
     directions[d].ycos = fabs(omegas[n][1]);
     directions[d].zcos = fabs(omegas[n][2]);
-    /* printf("concurrency: q: %3d omega: %3d %+5.2e, %+5.2e, %+5.2e\n",
-                          q,n, omegas[n][0],omegas[n][1],omegas[n][2]);  */
   }
 
-  for(i=0; i<8; i++){
-    FREE( octant_omega[i] );
-  }
-  for(m=0; m<num_directions; m++){
-    FREE( omegas[m] );
-  }
-  FREE( omegas );
-
-  FREE(aux);
 }
 
 

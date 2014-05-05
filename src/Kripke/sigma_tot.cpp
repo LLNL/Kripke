@@ -1,9 +1,6 @@
-/*--------------------------------------------------------------------------
- * Initialization and evaluation functions for Sigma_Tot.
- *--------------------------------------------------------------------------*/
 
-#include "transport_headers.h"
-
+#include<Kripke/user_data.h>
+#include<vector>
 
 /*--------------------------------------------------------------------------
  * EvalSigmaTot : Evaluate the sigma_tot function for each spatial zone

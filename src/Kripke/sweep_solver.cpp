@@ -2,10 +2,11 @@
  * Sweep-based solver routine.
  *--------------------------------------------------------------------------*/
 
-#include "transport_headers.h"
-
+#include<Kripke/comm.h>
+#include<Kripke/user_data.h>
+#include<Kripke/transport_protos.h>
 #include<vector>
-
+#include<stdio.h>
 
 
 /* Local prototypes */
@@ -22,13 +23,13 @@ int SweepSolverSolve (User_Data *user_data, double **rhs, double **ans,
                       double **tempv)
 {
   /* Begin timing */
-  BeginTiming(user_data->timing_index[SWEEP]);
+  user_data->timing.start("Sweep");
 
   /* Diamond Difference */
   SweepSolverSolveDD(user_data, rhs, ans, tempv);
 
   /* End timing */
-  EndTiming(user_data->timing_index[SWEEP]);
+  user_data->timing.stop("Sweep");
 
   return(0);
 }
@@ -42,31 +43,24 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
                         double **ans, double **tempv)
 {
   Grid_Data  *grid_data         = user_data->grid_data;
-  std::vector<Directions> &directions        = grid_data->directions;
+  std::vector<Directions> &directions        = user_data->directions;
   std::vector<double>      &tmp_sigma_tot     = grid_data->tmp_sigma_tot;
 
-  Plane_Data &psi_i_plane       = grid_data->psi_i_plane;
-  Plane_Data &psi_j_plane       = grid_data->psi_j_plane;
-  Plane_Data &psi_k_plane       = grid_data->psi_k_plane;
-
   int *nzones          = grid_data->nzones;
-  int num_zones = nzones[0]*nzones[1]*nzones[2];
+  int num_zones = grid_data->num_zones;
   int nx=nzones[0], ny=nzones[1], nz=nzones[2];
-  int num_directions = grid_data->directions.size();
+  int num_directions = user_data->directions.size();
 
-  double *msg, **i_plane_data, **j_plane_data, **k_plane_data;
+  double *msg;
   int i, k, sweep_group, i_plane_zones, j_plane_zones, k_plane_zones,
       i_src_subd, j_src_subd, k_src_subd, i_dst_subd,
-      j_dst_subd, k_dst_subd, directions_left, in, ip, jn, jp, kn, kp, d,
-  *i_which, *j_which, *k_which;
+      j_dst_subd, k_dst_subd, directions_left, in, ip, jn, jp, kn, kp, d;
   int local_imax, local_jmax, local_kmax;
 
   int bc_ref_in, bc_ref_ip, bc_ref_jn, bc_ref_jp, bc_ref_kn, bc_ref_kp;
   double eta_ref_in, eta_ref_ip, eta_ref_jn, eta_ref_jp;
   double eta_ref_kn, eta_ref_kp;
   double eta_ref_i, eta_ref_j, eta_ref_k;
-
-  double *psi_lf_data, *psi_fr_data, *psi_bo_data;
 
   /*spectral reflection rules relating eminating and iminating fluxes
     for each of the 8 octant for the planes: i,j,k*/
@@ -139,22 +133,23 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
   i_plane_zones = local_jmax * local_kmax;
   j_plane_zones = local_imax * local_kmax;
   k_plane_zones = local_imax * local_jmax;
-  NEW( i_plane_data, num_directions, double ** );
-  NEW( j_plane_data, num_directions, double ** );
-  NEW( k_plane_data, num_directions, double ** );
 
-  NEW( i_which, num_directions, int * );
-  NEW( j_which, num_directions, int * );
-  NEW( k_which, num_directions, int * );
+  std::vector<double*> i_plane_data(num_directions, NULL);
+  std::vector<double*> j_plane_data(num_directions, NULL);
+  std::vector<double*> k_plane_data(num_directions, NULL);
+
+  std::vector<int> i_which(num_directions);
+  std::vector<int> j_which(num_directions);
+  std::vector<int> k_which(num_directions);
   for(d=0; d<num_directions; d++){
     i_which[d] = (directions[d].id>0) ? 0 : 1;
     j_which[d] = (directions[d].jd>0) ? 2 : 3;
     k_which[d] = (directions[d].kd>0) ? 4 : 5;
   }
 
-  NEW( psi_lf_data, (local_imax+1)*local_jmax*local_kmax, double * );
-  NEW( psi_fr_data, local_imax*(local_jmax+1)*local_kmax, double * );
-  NEW( psi_bo_data, local_imax*local_jmax*(local_kmax+1), double * );
+  std::vector<double> psi_lf_data((local_imax+1)*local_jmax*local_kmax);
+  std::vector<double> psi_fr_data( local_imax*(local_jmax+1)*local_kmax);
+  std::vector<double> psi_bo_data(local_imax*local_jmax*(local_kmax+1));
 
   /* Evaluate the total cross section for this group */
   EvalSigmaTot(user_data, tmp_sigma_tot);
@@ -277,10 +272,10 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
       }
 
       /* Use standard Diamond-Difference sweep */
-      SweepDD(d, grid_data, grid_data->volume, tmp_sigma_tot,
+      SweepDD(d, grid_data, user_data->directions, grid_data->volume, tmp_sigma_tot,
               rhs[d], ans[d], i_plane_data[d], j_plane_data[d],
-              k_plane_data[d], psi_lf_data, psi_fr_data,
-              psi_bo_data);
+              k_plane_data[d], &psi_lf_data[0], &psi_fr_data[0],
+              &psi_bo_data[0]);
 
       i_dst_subd = directions[d].i_dst_subd;
       j_dst_subd = directions[d].j_dst_subd;
@@ -302,7 +297,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
       eta_ref_k = (directions[d].kd>0) ? eta_ref_kp : eta_ref_kn;
 
       if(k_dst_subd == -1 && bc_ref_k == 1){
-        octant = grid_data->octant_map[d];
+        octant = user_data->octant_map[d];
         ref_octant = r_rules[octant][2];
         fundamental_d = (d - octant)/8;
         ref_d = 8 * fundamental_d + ref_octant;
@@ -319,7 +314,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
         k_plane_data[ref_d][k_plane_zones] = (double) ref_d;
       }
       if(j_dst_subd == -1 && bc_ref_j == 1){
-        octant = grid_data->octant_map[d];
+        octant = user_data->octant_map[d];
         ref_octant = r_rules[octant][1];
         fundamental_d = (d - octant)/8;
         ref_d = 8 * fundamental_d + ref_octant;
@@ -337,7 +332,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
 
       }
       if(i_dst_subd == -1 && bc_ref_i == 1){
-        octant = grid_data->octant_map[d];
+        octant = user_data->octant_map[d];
         ref_octant = r_rules[octant][0];
         fundamental_d = (d - octant)/8;
         ref_d = 8 * fundamental_d + ref_octant;
@@ -357,37 +352,11 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
       swept[d] = 1;
       directions_left--;
 
-      /* Copy outgoing face data into psi_i_plane, psi_j_plane and psi_k_plane.
-         These are needed for leakage calculation. */
-      for(k=0; k<i_plane_zones; k++){
-        psi_i_plane[d][k] = i_plane_data[d][k];
-      }
-      for(k=0; k<j_plane_zones; k++){
-        psi_j_plane[d][k] = j_plane_data[d][k];
-      }
-      for(k=0; k<k_plane_zones; k++){
-        psi_k_plane[d][k] = k_plane_data[d][k];
-      }
-
     }
   }
 
   /* Make sure all messages have been sent */
   R_wait_send();
-
-  /* SynchronizeR(); */
-
-  FREE( i_which );
-  FREE( j_which );
-  FREE( k_which );
-  FREE( i_plane_data );
-  FREE( j_plane_data );
-  FREE( k_plane_data );
-
-  FREE( psi_lf_data );
-  FREE( psi_fr_data );
-  FREE( psi_bo_data );
-
   return(0);
 }
 
@@ -407,11 +376,11 @@ void CreateBufferInfoDD(User_Data *user_data)
 void CreateBufferInfoDD3D(User_Data *user_data)
 {
   Grid_Data  *grid_data  = user_data->grid_data;
-  std::vector<Directions> &directions = grid_data->directions;
+  std::vector<Directions> &directions = user_data->directions;
 
   int *nzones          = grid_data->nzones;
   int local_imax, local_jmax, local_kmax;
-  int num_directions = grid_data->directions.size();
+  int num_directions = user_data->directions.size();
   int len[6], nm[6], length, i, d;
 
   local_imax = nzones[0];

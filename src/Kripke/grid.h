@@ -33,36 +33,31 @@
 
 typedef std::vector< std::vector<double> > Plane_Data;
 
+struct Input_Variables;
+
 struct Grid_Data {
-  Grid_Data(int npx, int npy, int npz, int num_directions_per_octant,
-                   double xmin, double xmax, int nx_g,
-                   double ymin, double ymax, int ny_g,
-                   double zmin, double zmax, int nz_g,
-                   MPI_Comm comm);
+public:
+  Grid_Data(Input_Variables *input_vars, int num_dirs, int num_grps, MPI_Comm comm);
 
-  int    nzones[3];
-  int    nprocs[3];
+  int num_zones;                    // Total Number of zones in this grid
+  int nzones[3];                    // Number of zones in each dimension
 
-  int mynbr[3][2];
+  int mynbr[3][2];                  // Neighboring MPI ranks in each dimension
 
-  double xmin, xmax, ymin, ymax, zmin, zmax;
-
-  std::vector<double> deltas[3];
-  std::vector<double> volume;
-  double eps;   /* unit roundoff */
-
-  double global_num_zones;
-  int ilower[3];
-  int iupper[3];
-
-  std::vector<Directions> directions;
-  std::vector<int> octant_map;
+  std::vector<double> deltas[3];    // Spatial grid deltas in each dimension
+  std::vector<double> volume;       // Spatial zone volumes
+  
+  int num_directions;
+  int num_groups;
 
   // Variables:
   std::vector<double>  tmp_sigma_tot;
   Plane_Data psi_i_plane;
   Plane_Data psi_j_plane;
   Plane_Data psi_k_plane;
+  
+private:
+  void computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax);
 };
 
 #endif

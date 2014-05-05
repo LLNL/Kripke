@@ -3,8 +3,10 @@
  * Note that user input data is only used in this file.
  *--------------------------------------------------------------------------*/
 
+#include <Kripke/comm.h>
 #include <Kripke/user_data.h>
-#include <Kripke/transport_headers.h>
+#include <Kripke/transport_protos.h>
+#include <stdio.h>
 
 
 static void InitBCData(int *types, double *vals, Grid_Data *grid_data,
@@ -82,56 +84,36 @@ static void InitBCData(int *types, double *vals, Grid_Data *grid_data,
 
 User_Data::User_Data(MPI_Comm comm, Input_Variables *input_vars)
 {
-  MPI_Comm R_group;
-  double  ***psi_zonal;
-  double    *phi_in, *phi_out;
-
-  int num_directions;
-  int num_zones;
-  int i, R;
-  int       *nzones;
-  int nx, ny, nz, npx, npy, npz, nx_l, ny_l, nz_l;
-
-
-  /* Initialize timing data */
-  num_timings = 6;
-  CNEW(timing_index, num_timings, int *);
-  timing_index[SWEEP] = InitializeTiming("Sweeping");
-
   /* Set the processor grid dimensions */
-  R = (input_vars->npx)*(input_vars->npy)*(input_vars->npz);;
+  int R = (input_vars->npx)*(input_vars->npy)*(input_vars->npz);;
   create_R_grid(R);
-  R_group = GetRGroup();
+  MPI_Comm R_group = GetRGroup();
+    
+  // Create the spatial grid  
+  num_directions = 8*input_vars->num_directions_per_octant;
+  num_groups = 1;
+  grid_data = new Grid_Data(input_vars, num_directions, num_groups,  R_group);
 
-  grid_data = new Grid_Data(input_vars->npx, input_vars->npy, input_vars->npz,
-            input_vars->num_directions_per_octant,
-            input_vars->xmin, input_vars->xmax,
-            input_vars->nx, input_vars->ymin, input_vars->ymax,
-            input_vars->ny, input_vars->zmin, input_vars->zmax,
-            input_vars->nz, R_group);
-  num_directions = grid_data->directions.size();
+  // Create base quadrature set
+  InitDirections(this, input_vars->num_directions_per_octant);
 
   /* Set ncalls */
   ncalls = input_vars->ncalls;
 
+  // setup cross-sections
   sigma_tot = input_vars->sigma_total_value;
 
-  nzones = grid_data->nzones;
-  nx_l = nzones[0];
-  ny_l = nzones[1];
-  nz_l = nzones[2];
-  num_zones = nzones[0]*nzones[1]*nzones[2];
-
+  // Compute number of zones
+  global_num_zones = (size_t)input_vars->nx 
+                   * (size_t)input_vars->ny 
+                   * (size_t)input_vars->nz;
 
 
   /* Create buffer info for sweeping if using Diamond-Difference */
   CreateBufferInfoDD(this);
 
-
-  double *values = input_vars->bndry_values;
-  int *types = input_vars->bndry_types;
-  InitBCData(types, values, grid_data, this);
-
+  // Initialize Boundary Conditions
+  InitBCData(input_vars->bndry_types, input_vars->bndry_values, grid_data, this);
 }
 
 /*--------------------------------------------------------------------------

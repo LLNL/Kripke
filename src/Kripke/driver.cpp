@@ -2,7 +2,14 @@
  * Driver routine for Sweep Kernel
  *--------------------------------------------------------------------------*/
 
-#include "transport_headers.h"
+#include <Kripke/transport_protos.h>
+#include <Kripke/comm.h>
+#include <Kripke/directions.h>
+#include <Kripke/grid.h>
+#include <Kripke/user_data.h>
+
+#include<stdio.h>
+
 
 /*--------------------------------------------------------------------------
  * SweepDriver : Solves the sweeping problem defined in user_data
@@ -10,28 +17,30 @@
 
 void SweepDriver(User_Data *user_data)
 {
-  double **rhs, **psi, **tempv;
   double sum=0.;
   double gsum=0.;
-  double global_num_zones = user_data->grid_data->global_num_zones;
+  double global_num_zones = user_data->global_num_zones;
 
   int *nzones = user_data->grid_data->nzones;
-  int num_directions = user_data->grid_data->directions.size();
+  int num_directions = user_data->directions.size();
   int num_zones = nzones[0]*nzones[1]*nzones[2];
   int d, zone;
   int myid;
 
   /* Allocate space for rhs, psi, tempv */
-  CNEW(rhs, num_directions, double **);
-  CNEW(psi, num_directions, double **);
-  CNEW(tempv, num_directions, double **);
+  double **rhs = new double*[num_directions];
+  double **psi = new double*[num_directions];
+  double **tempv = new double*[num_directions];
   for(d=0; d<num_directions; d++){
-    NEW(rhs[d], num_zones, double *);
+    rhs[d] = new double[num_zones];
+    psi[d] = new double[num_zones];
+    tempv[d] = new double[num_zones];
+
     for(zone=0; zone<num_zones; zone++){
       rhs[d][zone] = user_data->source_value;
+      psi[d][zone] = 0.0;
+      tempv[d][zone] = 0.0;
     }
-    CNEW(psi[d], num_zones, double *);
-    CNEW(tempv[d], num_zones, double *);
   }
 
   myid = GetRrank();
@@ -68,12 +77,12 @@ void SweepDriver(User_Data *user_data)
 
   /* Free rhs, psi, tempv */
   for(d=0; d<num_directions; d++){
-    FREE(rhs[d]);
-    FREE(psi[d]);
-    FREE(tempv[d]);
+    delete[] rhs[d];
+    delete[] psi[d];
+    delete[] tempv[d];
   }
-  FREE(rhs);
-  FREE(psi);
-  FREE(tempv);
+  delete[] rhs;
+  delete[] psi;
+  delete[] tempv;
 
 }
