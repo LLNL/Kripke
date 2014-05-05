@@ -47,7 +47,7 @@ void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data){
 #define Zonal_INDEX(i, j, k) (i) + (local_imax)*(j) \
   + (local_imax)*(local_jmax)*(k)
 
-void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set){
+void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set, double *i_plane_ptr, double *j_plane_ptr, double *k_plane_ptr){
   int num_directions = gd_set->num_directions;
   int num_groups = gd_set->num_groups;
   int num_zones = grid_data->num_zones;
@@ -71,9 +71,14 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set){
   SubTVec psi_bo(nesting(), num_groups, num_directions,
                   local_imax*local_jmax*(local_kmax+1));
 
-  SubTVec i_plane_v(nesting(), num_groups, num_directions, local_jmax*local_kmax);
+  // TODO: Move these to inputs (they should be communicated via MPI)
+  /*SubTVec i_plane_v(nesting(), num_groups, num_directions, local_jmax*local_kmax);
   SubTVec j_plane_v(nesting(), num_groups, num_directions, local_imax*local_kmax);
   SubTVec k_plane_v(nesting(), num_groups, num_directions, local_imax*local_jmax);
+  */
+  SubTVec i_plane_v(nesting(), num_groups, num_directions, local_jmax*local_kmax, i_plane_ptr);
+  SubTVec j_plane_v(nesting(), num_groups, num_directions, local_imax*local_kmax, j_plane_ptr);
+  SubTVec k_plane_v(nesting(), num_groups, num_directions, local_imax*local_jmax, k_plane_ptr);
   double ***i_plane = i_plane_v.data;
   double ***j_plane = j_plane_v.data;
   double ***k_plane = k_plane_v.data;

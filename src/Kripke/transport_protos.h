@@ -21,5 +21,5 @@ void EvalSigmaTot(User_Data *user_data, std::vector<double> &vector);
 
 /* sweep_solver.c */
 int SweepSolverSolve(User_Data *user_data);
-void CreateBufferInfoDD(User_Data *user_data);
+void CreateBufferInfo(User_Data *user_data);
 

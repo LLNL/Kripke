@@ -15,7 +15,7 @@ class Kernel_3d_GDZ : public Kernel {
     virtual void evalSigmaS(Grid_Data *grid_data);
     virtual void LTimes(Grid_Data *grid_data);
     virtual void LPlusTimes(Grid_Data *grid_data);
-    virtual void sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set);
+    virtual void sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set, double *i_plane_ptr, double *j_plane_ptr, double *k_plane_ptr);
 
 };
 

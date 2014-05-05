@@ -85,8 +85,9 @@ User_Data::User_Data(Input_Variables *input_vars)
   InitDirections(this, input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset);
 
   num_direction_sets = 8*input_vars->num_dirsets_per_octant;
+  num_directions_per_set = input_vars->num_dirs_per_dirset;
   num_group_sets = input_vars->num_groupsets;
-
+  num_groups_per_set = input_vars->num_groups_per_groupset;
 
   // Initialize Group and Direction Set Structures
   grid_data->gd_sets.resize(input_vars->num_groupsets);
@@ -130,7 +131,7 @@ User_Data::User_Data(Input_Variables *input_vars)
   kernel->allocateStorage(grid_data);
 
   /* Create buffer info for sweeping if using Diamond-Difference */
-  CreateBufferInfoDD(this);
+  CreateBufferInfo(this);
 }
 
 

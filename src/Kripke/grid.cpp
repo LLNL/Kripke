@@ -124,26 +124,8 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
   computeGrid(0, npx, nx_g, isub_ref, input_vars->xmin, input_vars->xmax);
   computeGrid(1, npy, ny_g, jsub_ref, input_vars->ymin, input_vars->ymax);
   computeGrid(2, npz, nz_g, ksub_ref, input_vars->zmin, input_vars->zmax);
-
-
-  /* Compute the volumes */
   num_zones = nzones[0]*nzones[1]*nzones[2];
-  volume.resize(num_zones);
-  for(int k = 0; k < nzones[2]; k++){
-    for(int j = 0; j < nzones[1]; j++){
-      for(int i = 0; i < nzones[0]; i++){
-        int ijk = i + nzones[0]*j + nzones[0]*nzones[1]*k;
-        volume[ijk] = deltas[0][i+1]*deltas[1][j+1]*deltas[2][k+1];
-      }
-    }
-  }
-
- 
   tmp_sigma_tot.resize(num_zones, 0.0);
-
-
-
-
 }
 
 

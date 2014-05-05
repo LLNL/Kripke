@@ -228,7 +228,6 @@ R_buf_init(int * len,
     size += len[i] * nm[i];   /* space for which direction bufs*/
     buf_total += nm[i];
   }
-  ;
 
   buf_which[0] = 0;
   for(i=1; i<6; i++){
@@ -246,9 +245,7 @@ R_buf_init(int * len,
       buf_pool[buf_which[i] + j] = bptr;     /* ptr to next message */
       bptr = bptr + k;    /* bump over this message */
     }
-    ;
   }
-  ;
 
   buf_s_req.resize(buf_total);
   buf_r_req.resize(buf_total);
