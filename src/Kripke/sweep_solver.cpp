@@ -19,6 +19,18 @@ int SweepSolverSolveDD (int group_set, User_Data *user_data);
 
 int SweepSolverSolve (User_Data *user_data)
 {
+
+  // Evaluate cross-sections
+  user_data->timing.start("Sigma_T");
+  Grid_Data *grid_data = user_data->grid_data;
+  for(int gs = 0;gs < grid_data->gd_sets.size();++ gs){
+    for(int ds = 0;ds < grid_data->gd_sets[gs].size();++ ds){
+      user_data->kernel->evalSigmaTot(user_data, &grid_data->gd_sets[gs][ds]);
+    }
+  }
+  user_data->timing.stop("Sigma_T");
+
+
   // Loop over group sets
   user_data->timing.start("Sweep");
   for(int group_set = 0;group_set < user_data->num_group_sets;++ group_set){
@@ -147,9 +159,6 @@ int SweepSolverSolveDD (int group_set, User_Data *user_data)
   std::vector<double> psi_lf_data((local_imax+1)*local_jmax*local_kmax);
   std::vector<double> psi_fr_data( local_imax*(local_jmax+1)*local_kmax);
   std::vector<double> psi_bo_data(local_imax*local_jmax*(local_kmax+1));
-
-  /* Evaluate the total cross section for this group */
-  //EvalSigmaTot(user_data, tmp_sigma_tot);
 
   /* Hang out receive requests for each of the 6 neighbors */
   if(in != -1){

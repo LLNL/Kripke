@@ -16,9 +16,6 @@ Nesting_Order Kernel_3d_GDZ::nesting(void) const{
 
 
 // Computational Kernels
-void Kernel_3d_GDZ::evalSigmaTot(Grid_Data *grid_data){
-
-}
 void Kernel_3d_GDZ::evalSigmaS(Grid_Data *grid_data){
 
 }
@@ -71,11 +68,7 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set, double *i
   SubTVec psi_bo(nesting(), num_groups, num_directions,
                   local_imax*local_jmax*(local_kmax+1));
 
-  // TODO: Move these to inputs (they should be communicated via MPI)
-  /*SubTVec i_plane_v(nesting(), num_groups, num_directions, local_jmax*local_kmax);
-  SubTVec j_plane_v(nesting(), num_groups, num_directions, local_imax*local_kmax);
-  SubTVec k_plane_v(nesting(), num_groups, num_directions, local_imax*local_jmax);
-  */
+  // Alias the MPI data with a SubTVec for the face data
   SubTVec i_plane_v(nesting(), num_groups, num_directions, local_jmax*local_kmax, i_plane_ptr);
   SubTVec j_plane_v(nesting(), num_groups, num_directions, local_imax*local_kmax, j_plane_ptr);
   SubTVec k_plane_v(nesting(), num_groups, num_directions, local_imax*local_jmax, k_plane_ptr);

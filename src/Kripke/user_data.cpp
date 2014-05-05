@@ -114,7 +114,8 @@ User_Data::User_Data(Input_Variables *input_vars)
   ncalls = input_vars->ncalls;
 
   // setup cross-sections
-  sigma_tot = input_vars->sigma_total_value;
+  sigma_tot.resize(num_group_sets*num_groups_per_set,
+      input_vars->sigma_total_value);
 
   // Compute number of zones
   global_num_zones = (size_t)input_vars->nx 

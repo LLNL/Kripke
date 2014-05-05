@@ -23,6 +23,7 @@ void SweepDriver(User_Data *user_data)
 
   int *nzones = user_data->grid_data->nzones;
   int num_directions = user_data->directions.size();
+  int total_groups = user_data->num_group_sets * user_data->num_groups_per_set;
   int num_zones = nzones[0]*nzones[1]*nzones[2];
   int d, zone;
   int myid;
@@ -44,9 +45,16 @@ void SweepDriver(User_Data *user_data)
 
   /* Sum all entries in psi and output average */
   sum = 0.0; // TODO: FIX THIS!!!
+  Grid_Data *grid_data = user_data->grid_data;
+  for(int gs = 0;gs < grid_data->gd_sets.size();++ gs){
+    for(int ds = 0;ds < grid_data->gd_sets[gs].size();++ ds){
+      sum += grid_data->gd_sets[gs][ds].psi->sum();
+    }
+  }
+
   gsum = sum;
   MPI_Allreduce( &sum, &gsum, 1, MPI_DOUBLE, MPI_SUM, GetRGroup());
-  sum = gsum/(global_num_zones*((double)num_directions));
+  sum = gsum/(global_num_zones*((double)num_directions)*total_groups);
   if(myid == 0){
     printf("\n");
     printf("Global number of zones = %22.16e\n",global_num_zones);

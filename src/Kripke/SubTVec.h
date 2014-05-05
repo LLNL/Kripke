@@ -174,6 +174,13 @@ struct SubTVec {
     return(data[idx[0]][idx[1]][idx[2]]);
   }
 
+  inline double sum(void) const {
+    double s = 0.0;
+    for(size_t i = 0;i < data_linear.size();++ i){
+      s+= data_linear[i];
+    }
+    return s;
+  }
 
   int ext_to_int[3]; // external index to internal index mapping
   int size_int[3]; // size of each dimension in internal indices

@@ -28,7 +28,7 @@ struct User_Data {
   int bc_types[6];                          // boundary condition type
   double bc_values[6];                      // Boundary condition value
 
-  double sigma_tot;                         // Dross section data
+  std::vector<double> sigma_tot;            // Cross section data
 
   Grid_Data *grid_data;                     // Spatial grids and variables
     

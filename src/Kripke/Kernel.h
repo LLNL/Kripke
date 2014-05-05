@@ -14,6 +14,7 @@ enum Nesting_Order {
   NEST_GZD
 };
 
+struct User_Data;
 struct Grid_Data;
 struct SubTVec;
 struct Group_Dir_Set;
@@ -29,7 +30,7 @@ class Kernel {
     void allocateStorage(Grid_Data *grid_data);
 
     // Computational Kernels
-    virtual void evalSigmaTot(Grid_Data *grid_data) = 0;
+    virtual void evalSigmaTot(User_Data *grid_data, Group_Dir_Set *ga_set) = 0;
     virtual void evalSigmaS(Grid_Data *grid_data) = 0;
     virtual void LTimes(Grid_Data *grid_data) = 0;
     virtual void LPlusTimes(Grid_Data *grid_data) = 0;

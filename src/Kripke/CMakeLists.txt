@@ -5,12 +5,12 @@ set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
   Kripke/driver.cpp
   Kripke/grid.cpp
   Kripke/input_variables.cpp
-  Kripke/Kernel.cpp
-  Kripke/sigma_tot.cpp  
+  Kripke/Kernel.cpp  
   Kripke/sweep_solver.cpp  
   Kripke/timing.cpp  
   Kripke/user_data.cpp
     
+  Kripke/Kernel/Kernel_GZ_Base.cpp
   Kripke/Kernel/Kernel_3d_GDZ.cpp
 )
                                                                                                           
