@@ -19,16 +19,7 @@ void SweepDriver(User_Data *user_data);
 
 void EvalSigmaTot(User_Data *user_data, std::vector<double> &vector);
 
-/* sweep.c */
-void SweepDD(int d, Grid_Data *grid_data, std::vector<Directions> &directions,
-            std::vector<double> const &volume,
-             std::vector<double> &sigt, double *sors, double *psi,
-             double *i_plane_psi, double *j_plane_psi,
-             double *k_plane_psi,
-             double *psi_lf, double *psi_fr, double *psi_bo);
-
 /* sweep_solver.c */
-int SweepSolverSolve(User_Data *user_data, double **rhs, double **ans,
-                     double **tempv);
+int SweepSolverSolve(User_Data *user_data);
 void CreateBufferInfoDD(User_Data *user_data);
 

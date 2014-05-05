@@ -6,9 +6,8 @@
 
 #include <Kripke/comm.h>
 #include <Kripke/input_variables.h>
-#include <cmath>
-#include <float.h>
 
+#include <cmath>
 
 Group_Dir_Set::Group_Dir_Set() :
   num_groups(0),
@@ -27,6 +26,29 @@ Group_Dir_Set::~Group_Dir_Set(){
   delete sigt;
 }
 
+
+void Group_Dir_Set::allocate(Grid_Data *grid_data, Nesting_Order nest){
+  delete psi;
+  psi = new SubTVec(nest,
+      num_groups, num_directions, grid_data->num_zones);
+
+  delete rhs;
+  rhs = new SubTVec(nest,
+      num_groups, num_directions, grid_data->num_zones);
+
+  // allocate sigt  1xGxZ if groups come before zones
+  delete sigt;
+  if(nest == NEST_GDZ || nest ==  NEST_DGZ || nest == NEST_GZD){
+    sigt = new SubTVec(NEST_DGZ,
+      num_groups, 1, grid_data->num_zones);
+  }
+  // otherwise, 1xZxG
+  else{
+    sigt = new SubTVec(NEST_DZG,
+      num_groups, 1, grid_data->num_zones);
+  }
+
+}
 
 
 /*--------------------------------------------------------------------------
@@ -120,33 +142,14 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
   tmp_sigma_tot.resize(num_zones, 0.0);
 
 
-  // Initialize Group and Direction Set Structures
-  gd_sets.resize(input_vars->num_groupsets);
-  int group0 = 0;
-  for(int gs = 0;gs < gd_sets.size();++ gs){
-    gd_sets[gs].resize(8*input_vars->num_dirsets_per_octant);
-    int dir0 = 0;
-    for(int ds = 0;ds < gd_sets[gs].size();++ ds){
-      Group_Dir_Set &gdset = gd_sets[gs][ds];
-      gdset.num_groups = input_vars->num_groups_per_groupset;
-      gdset.num_directions = input_vars->num_dirs_per_dirset;
 
-      gdset.group0 = group0;
-
-      gdset.direction0 = dir0;
-      gdset.directions = directions + dir0;
-
-      group0 += input_vars->num_groups_per_groupset;
-      dir0 += input_vars->num_dirs_per_dirset;
-    }
-  }
 
 }
 
 
 void Grid_Data::computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax){
  /* Calculate unit roundoff and load into grid_data */
-  double eps = DBL_EPSILON;
+  double eps = 1e-32;
   double thsnd_eps = 1000.e0*(eps);
  
   // Compute subset of global zone indices

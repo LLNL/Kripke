@@ -27,22 +27,6 @@ void SweepDriver(User_Data *user_data)
   int d, zone;
   int myid;
 
-  /* Allocate space for rhs, psi, tempv */
-  double **rhs = new double*[num_directions];
-  double **psi = new double*[num_directions];
-  double **tempv = new double*[num_directions];
-  for(d=0; d<num_directions; d++){
-    rhs[d] = new double[num_zones];
-    psi[d] = new double[num_zones];
-    tempv[d] = new double[num_zones];
-
-    for(zone=0; zone<num_zones; zone++){
-      rhs[d][zone] = user_data->source_value;
-      psi[d][zone] = 0.0;
-      tempv[d][zone] = 0.0;
-    }
-  }
-
   myid = GetRrank();
   if(myid == 0){
     /* Print out a banner message along with a version number. */
@@ -56,14 +40,10 @@ void SweepDriver(User_Data *user_data)
    * Call BoltzmannSolverSolve to solve the H Psi = R linear system
    * for all directions.
    *---------------------------------------------------------------------*/
-  SweepSolverSolve(user_data, rhs, psi, tempv);
+  SweepSolverSolve(user_data);
 
   /* Sum all entries in psi and output average */
-  for(d=0; d<num_directions; d++){
-    for(zone=0; zone<num_zones; zone++){
-      sum += psi[d][zone];
-    }
-  }
+  sum = 0.0; // TODO: FIX THIS!!!
   gsum = sum;
   MPI_Allreduce( &sum, &gsum, 1, MPI_DOUBLE, MPI_SUM, GetRGroup());
   sum = gsum/(global_num_zones*((double)num_directions));
@@ -74,15 +54,4 @@ void SweepDriver(User_Data *user_data)
     printf("Global sum = %22.16e\n", gsum);
     printf("Global sum ratio (should equal 1) = %22.16e\n", sum);
   }
-
-  /* Free rhs, psi, tempv */
-  for(d=0; d<num_directions; d++){
-    delete[] rhs[d];
-    delete[] psi[d];
-    delete[] tempv[d];
-  }
-  delete[] rhs;
-  delete[] psi;
-  delete[] tempv;
-
 }

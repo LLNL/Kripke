@@ -6,8 +6,7 @@ set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
   Kripke/grid.cpp
   Kripke/input_variables.cpp
   Kripke/Kernel.cpp
-  Kripke/sigma_tot.cpp
-  Kripke/sweep.cpp 
+  Kripke/sigma_tot.cpp  
   Kripke/sweep_solver.cpp  
   Kripke/timing.cpp  
   Kripke/user_data.cpp

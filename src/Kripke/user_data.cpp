@@ -77,14 +77,37 @@ User_Data::User_Data(Input_Variables *input_vars)
   int R = (input_vars->npx)*(input_vars->npy)*(input_vars->npz);;
   create_R_grid(R);
   MPI_Comm R_group = GetRGroup();
-    
-  // Create the spatial grid  
-  num_directions = 8*input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset;
-  num_groups = 1;
+
+  // Create the spatial grid
   grid_data = new Grid_Data(input_vars, &directions[0]);
 
   // Create base quadrature set
   InitDirections(this, input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset);
+
+  num_direction_sets = 8*input_vars->num_dirsets_per_octant;
+  num_group_sets = input_vars->num_groupsets;
+
+
+  // Initialize Group and Direction Set Structures
+  grid_data->gd_sets.resize(input_vars->num_groupsets);
+  int group0 = 0;
+  for(int gs = 0;gs < grid_data->gd_sets.size();++ gs){
+    grid_data->gd_sets[gs].resize(8*input_vars->num_dirsets_per_octant);
+    int dir0 = 0;
+    for(int ds = 0;ds < grid_data->gd_sets[gs].size();++ ds){
+      Group_Dir_Set &gdset = grid_data->gd_sets[gs][ds];
+      gdset.num_groups = input_vars->num_groups_per_groupset;
+      gdset.num_directions = input_vars->num_dirs_per_dirset;
+
+      gdset.group0 = group0;
+
+      gdset.direction0 = dir0;
+      gdset.directions = &directions[dir0];
+
+      group0 += input_vars->num_groups_per_groupset;
+      dir0 += input_vars->num_dirs_per_dirset;
+    }
+  }
 
   /* Set ncalls */
   ncalls = input_vars->ncalls;
@@ -97,19 +120,17 @@ User_Data::User_Data(Input_Variables *input_vars)
                    * (size_t)input_vars->ny 
                    * (size_t)input_vars->nz;
 
-
-  /* Create buffer info for sweeping if using Diamond-Difference */
-  CreateBufferInfoDD(this);
-
   // Initialize Boundary Conditions
   InitBCData(input_vars->bndry_types, input_vars->bndry_values, grid_data, this);
-
 
   // create the kernel object based on nesting
   kernel = createKernel(NEST_GDZ, 3);
 
   // Allocate data
   kernel->allocateStorage(grid_data);
+
+  /* Create buffer info for sweeping if using Diamond-Difference */
+  CreateBufferInfoDD(this);
 }
 
 

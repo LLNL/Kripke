@@ -85,7 +85,7 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set){
   double ***rhs = gd_set->rhs->data;
   double **sigt = gd_set->sigt->data[0];
 
-  // All directions have same id,jd,kd, since we are modeling an "Angle Set"
+  // All directions have same id,jd,kd, since these are all one Direction Set
   // So pull that information out now
   int istartz, istopz, in, il, ir;
   int id = direction[0].id;
@@ -201,22 +201,11 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set){
             psi_g_d[Zonal_INDEX(i, j, k)] = psi_g_d_z;
             /* Apply diamond-difference relationships */
             psi_lf_g_d[Left_INDEX(i+ir, j, k )] = 2.0*psi_g_d_z -
-                                                  psi_lf_g_d[Left_INDEX(i+il,
-                                                                        j,
-                                                                        k )];
+                                         psi_lf_g_d[Left_INDEX(i+il,j, k )];
             psi_fr_g_d[Front_INDEX(i, j+jb, k )] = 2.0*psi_g_d_z -
-                                                   psi_fr_g_d[Front_INDEX(i,
-                                                                          j+
-                                                                          jf,
-                                                                          k )
-                                                   ];
+                                         psi_fr_g_d[Front_INDEX(i,j+ jf,k ) ];
             psi_bo_g_d[Bottom_INDEX(i, j, k+kt )] =  2.0*psi_g_d_z -
-                                                    psi_bo_g_d[Bottom_INDEX(i,
-                                                                            j,
-                                                                            k
-                                                                            +
-                                                                            kb )
-                                                    ];
+                                     psi_bo_g_d[Bottom_INDEX(i, j, k + kb )];
           }
         }
       }
@@ -224,24 +213,21 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set){
       /* Copy the angular fluxes exiting this subdomain */
       for(int k=0; k<local_kmax; k++){
         for(int j=0; j<local_jmax; j++){
-          i_plane_g_d[I_PLANE_INDEX(j,
-                                    k)] =
+          i_plane_g_d[I_PLANE_INDEX(j,k)] =
             psi_lf_g_d[Left_INDEX(istopz+ir, j, k)];
         }
       }
 
       for(int k=0; k<local_kmax; k++){
         for(int i=0; i<local_imax; i++){
-          j_plane_g_d[J_PLANE_INDEX(i,
-                                    k)] =
+          j_plane_g_d[J_PLANE_INDEX(i, k)] =
             psi_fr_g_d[Front_INDEX(i, jstopz+jb, k)];
         }
       }
 
       for(int j=0; j<local_jmax; j++){
         for(int i=0; i<local_imax; i++){
-          k_plane_g_d[K_PLANE_INDEX(i,
-                                    j)] =
+          k_plane_g_d[K_PLANE_INDEX(i, j)] =
             psi_bo_g_d[Bottom_INDEX(i, j, kstopz+kt)];
         }
       }

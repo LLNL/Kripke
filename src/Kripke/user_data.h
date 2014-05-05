@@ -34,9 +34,7 @@ struct User_Data {
     
   size_t global_num_zones;                  // Total zones across all grids
   int num_group_sets;                       // Number of group-sets
-  int num_groups;                           // Number of groups PER SET
   int num_direction_sets;                   // Number of direction-sets
-  int num_directions;                       // Number of directions PER SET
   
   std::vector<Directions> directions;       // Direction data
   std::vector<int> octant_map;              // Direction origination octant

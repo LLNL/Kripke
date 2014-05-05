@@ -34,9 +34,13 @@
 
 struct Input_Variables;
 
+struct Grid_Data;
+
 struct Group_Dir_Set {
   Group_Dir_Set();
   ~Group_Dir_Set();
+
+  void allocate(Grid_Data *grid_data, Nesting_Order nesting);
 
   int num_groups;
   int num_directions;
@@ -50,6 +54,7 @@ struct Group_Dir_Set {
   SubTVec *psi;
   SubTVec *rhs;
   SubTVec *sigt;
+
 };
 
 struct Grid_Data {

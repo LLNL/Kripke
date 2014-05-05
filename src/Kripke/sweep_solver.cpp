@@ -11,24 +11,29 @@
 
 /* Local prototypes */
 void CreateBufferInfoDD3D(User_Data *user_data);
-int SweepSolverSolveDD (User_Data *user_data, double **rhs,
-                        double **ans, double **tempv);
+int SweepSolverSolveDD (int group_set, User_Data *user_data);
 
 
 /*----------------------------------------------------------------------
  * SweepSolverSolve
  *----------------------------------------------------------------------*/
 
-int SweepSolverSolve (User_Data *user_data, double **rhs, double **ans,
-                      double **tempv)
+int SweepSolverSolve (User_Data *user_data)
 {
-  /* Begin timing */
+  // Loop over group sets
   user_data->timing.start("Sweep");
+  for(int group_set = 0;group_set < user_data->num_group_sets;++ group_set){
 
-  /* Diamond Difference */
-  SweepSolverSolveDD(user_data, rhs, ans, tempv);
+    /* Begin timing */
+    user_data->timing.start("GSet_Sweep");
 
-  /* End timing */
+    /* Diamond Difference */
+    SweepSolverSolveDD(group_set, user_data);
+
+    /* End timing */
+    user_data->timing.stop("GSet_Sweep");
+
+  }
   user_data->timing.stop("Sweep");
 
   return(0);
@@ -39,28 +44,17 @@ int SweepSolverSolve (User_Data *user_data, double **rhs, double **ans,
  * SweepSolverSolveDD
  *----------------------------------------------------------------------*/
 
-int SweepSolverSolveDD (User_Data *user_data, double **rhs,
-                        double **ans, double **tempv)
+int SweepSolverSolveDD (int group_set, User_Data *user_data)
 {
   Grid_Data  *grid_data         = user_data->grid_data;
+  std::vector<Group_Dir_Set> &dir_sets = grid_data->gd_sets[group_set];
   std::vector<Directions> &directions        = user_data->directions;
   std::vector<double>      &tmp_sigma_tot     = grid_data->tmp_sigma_tot;
 
-  int *nzones          = grid_data->nzones;
-  int num_zones = grid_data->num_zones;
-  int nx=nzones[0], ny=nzones[1], nz=nzones[2];
-  int num_directions = user_data->directions.size();
+  int num_direction_sets = user_data->num_direction_sets;
 
   double *msg;
-  int i, k, sweep_group, i_plane_zones, j_plane_zones, k_plane_zones,
-      i_src_subd, j_src_subd, k_src_subd, i_dst_subd,
-      j_dst_subd, k_dst_subd, directions_left, in, ip, jn, jp, kn, kp, d;
-  int local_imax, local_jmax, local_kmax;
 
-  int bc_ref_in, bc_ref_ip, bc_ref_jn, bc_ref_jp, bc_ref_kn, bc_ref_kp;
-  double eta_ref_in, eta_ref_ip, eta_ref_jn, eta_ref_jp;
-  double eta_ref_kn, eta_ref_kp;
-  double eta_ref_i, eta_ref_j, eta_ref_k;
 
   /*spectral reflection rules relating eminating and iminating fluxes
     for each of the 8 octant for the planes: i,j,k*/
@@ -76,20 +70,23 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
   int bc_ref_i, bc_ref_j, bc_ref_k;
   int emminating_directions_left;
 
-  bc_ref_in = user_data->bc_types[0];
-  bc_ref_ip = user_data->bc_types[1];
-  bc_ref_jn = user_data->bc_types[2];
-  bc_ref_jp = user_data->bc_types[3];
-  bc_ref_kn = user_data->bc_types[4];
-  bc_ref_kp = user_data->bc_types[5];
+  int bc_ref_in = user_data->bc_types[0];
+  int bc_ref_ip = user_data->bc_types[1];
+  int bc_ref_jn = user_data->bc_types[2];
+  int bc_ref_jp = user_data->bc_types[3];
+  int bc_ref_kn = user_data->bc_types[4];
+  int bc_ref_kp = user_data->bc_types[5];
 
-  in = grid_data->mynbr[0][0];
-  ip = grid_data->mynbr[0][1];
-  jn = grid_data->mynbr[1][0];
-  jp = grid_data->mynbr[1][1];
-  kn = grid_data->mynbr[2][0];
-  kp = grid_data->mynbr[2][1];
+  int in = grid_data->mynbr[0][0];
+  int ip = grid_data->mynbr[0][1];
+  int jn = grid_data->mynbr[1][0];
+  int jp = grid_data->mynbr[1][1];
+  int kn = grid_data->mynbr[2][0];
+  int kp = grid_data->mynbr[2][1];
 
+  double eta_ref_in, eta_ref_ip, eta_ref_jn, eta_ref_jp;
+  double eta_ref_kn, eta_ref_kp;
+  double eta_ref_i, eta_ref_j, eta_ref_k;
   if(in == -1){
     eta_ref_in = user_data->bc_values[0];
   }
@@ -127,21 +124,21 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
     eta_ref_kp = 0.0;
   }
 
-  local_imax = nzones[0];
-  local_jmax = nzones[1];
-  local_kmax = nzones[2];
-  i_plane_zones = local_jmax * local_kmax;
-  j_plane_zones = local_imax * local_kmax;
-  k_plane_zones = local_imax * local_jmax;
+  int local_imax = 1; //nzones[0];
+  int local_jmax = 1; //nzones[1];
+  int local_kmax = 1; //nzones[2];
+  int i_plane_zones = local_jmax * local_kmax;
+  int j_plane_zones = local_imax * local_kmax;
+  int k_plane_zones = local_imax * local_jmax;
 
-  std::vector<double*> i_plane_data(num_directions, NULL);
-  std::vector<double*> j_plane_data(num_directions, NULL);
-  std::vector<double*> k_plane_data(num_directions, NULL);
+  std::vector<double*> i_plane_data(num_direction_sets, NULL);
+  std::vector<double*> j_plane_data(num_direction_sets, NULL);
+  std::vector<double*> k_plane_data(num_direction_sets, NULL);
 
-  std::vector<int> i_which(num_directions);
-  std::vector<int> j_which(num_directions);
-  std::vector<int> k_which(num_directions);
-  for(d=0; d<num_directions; d++){
+  std::vector<int> i_which(num_direction_sets);
+  std::vector<int> j_which(num_direction_sets);
+  std::vector<int> k_which(num_direction_sets);
+  for(int d=0; d<num_direction_sets; d++){
     i_which[d] = (directions[d].id>0) ? 0 : 1;
     j_which[d] = (directions[d].jd>0) ? 2 : 3;
     k_which[d] = (directions[d].kd>0) ? 4 : 5;
@@ -176,11 +173,11 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
 
   /* Allocate and initialize (set to zero for now) message
      buffers for subdomain faces on the problem boundary */
-  for(d=0; d<num_directions; d++){
+  for(int d=0; d<num_direction_sets; d++){
 
-    i_src_subd = directions[d].i_src_subd;
-    j_src_subd = directions[d].j_src_subd;
-    k_src_subd = directions[d].k_src_subd;
+    int i_src_subd = directions[d].i_src_subd;
+    int j_src_subd = directions[d].j_src_subd;
+    int k_src_subd = directions[d].k_src_subd;
 
     /* get reflective b.c. information for src faces */
     bc_ref_i = (directions[d].id>0) ? bc_ref_in : bc_ref_ip;
@@ -195,7 +192,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
         printf("Null buffer not returned to DD_Sweep\n");
         error_exit(1);
       }
-      for(k=0; k<k_plane_zones; k++){
+      for(int k=0; k<k_plane_zones; k++){
         k_plane_data[d][k] = eta_ref_k;
       }
       k_plane_data[d][k_plane_zones] = (double) d;
@@ -209,7 +206,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
         printf("Null buffer not returned to DD_Sweep\n");
         error_exit(1);
       }
-      for(k=0; k<j_plane_zones; k++){
+      for(int k=0; k<j_plane_zones; k++){
         j_plane_data[d][k] = eta_ref_j;
       }
       j_plane_data[d][j_plane_zones] = (double) d;
@@ -223,7 +220,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
         printf("Null buffer not returned to DD_Sweep\n");
         error_exit(1);
       }
-      for(i=0; i<i_plane_zones; i++){
+      for(int i=0; i<i_plane_zones; i++){
         i_plane_data[d][i] = eta_ref_i;
       }
       i_plane_data[d][i_plane_zones] = (double) d;
@@ -233,8 +230,8 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
     }
   }
 
-  directions_left = num_directions;
-  std::vector<int> swept(num_directions, 0.0);
+  int directions_left = num_direction_sets;
+  std::vector<int> swept(num_direction_sets, 0.0);
 
   while(directions_left){
 
@@ -263,7 +260,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
       k_plane_data[(int) msg[k_plane_zones]] = msg;
     }
 
-    for(d=0; d<num_directions; d++){
+    for(int d=0; d<num_direction_sets; d++){
       if(k_plane_data[d] == NULL ||
          j_plane_data[d] == NULL ||
          i_plane_data[d] == NULL ||
@@ -272,14 +269,19 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
       }
 
       /* Use standard Diamond-Difference sweep */
+
+      user_data->kernel->sweep(grid_data, &dir_sets[d]);
+      /*
+      void sweep(Grid_Data *grid_data, Group_Dir_Set *ga_set)
+
       SweepDD(d, grid_data, user_data->directions, grid_data->volume, tmp_sigma_tot,
               rhs[d], ans[d], i_plane_data[d], j_plane_data[d],
               k_plane_data[d], &psi_lf_data[0], &psi_fr_data[0],
-              &psi_bo_data[0]);
+              &psi_bo_data[0]);*/
 
-      i_dst_subd = directions[d].i_dst_subd;
-      j_dst_subd = directions[d].j_dst_subd;
-      k_dst_subd = directions[d].k_dst_subd;
+      int i_dst_subd = directions[d].i_dst_subd;
+      int j_dst_subd = directions[d].j_dst_subd;
+      int k_dst_subd = directions[d].k_dst_subd;
 
       R_send( i_plane_data[d], i_dst_subd, i_plane_zones+1 );
       R_send( j_plane_data[d], j_dst_subd, j_plane_zones+1 );
@@ -308,7 +310,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
           printf("Null buffer not returned to DD_Sweep\n");
           error_exit(1);
         }
-        for(k=0; k<k_plane_zones; k++){
+        for(int k=0; k<k_plane_zones; k++){
           k_plane_data[ref_d][k] = eta_ref_k * k_plane_data[d][k];
         }
         k_plane_data[ref_d][k_plane_zones] = (double) ref_d;
@@ -325,7 +327,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
           printf("Null buffer not returned to DD_Sweep\n");
           error_exit(1);
         }
-        for(k=0; k<j_plane_zones; k++){
+        for(int k=0; k<j_plane_zones; k++){
           j_plane_data[ref_d][k] = eta_ref_j * j_plane_data[d][k];
         }
         j_plane_data[ref_d][j_plane_zones] = (double) ref_d;
@@ -343,7 +345,7 @@ int SweepSolverSolveDD (User_Data *user_data, double **rhs,
           printf("Null buffer not returned to DD_Sweep\n");
           error_exit(1);
         }
-        for(k=0; k<i_plane_zones; k++){
+        for(int k=0; k<i_plane_zones; k++){
           i_plane_data[ref_d][k] = eta_ref_i * i_plane_data[d][k];
         }
         i_plane_data[ref_d][i_plane_zones] = (double) ref_d;
