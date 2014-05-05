@@ -41,7 +41,10 @@ struct Input_Variables {
 
   int npx, npy, npz;
   int nx, ny, nz;
-  int num_directions_per_octant;
+  int num_dirsets_per_octant;
+  int num_dirs_per_dirset;
+  int num_groupsets;
+  int num_groups_per_groupset;
   int ncalls;
 
   double xmin, xmax, ymin, ymax, zmin, zmax;

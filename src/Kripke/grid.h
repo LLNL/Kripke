@@ -6,6 +6,7 @@
 #define KRIPKE_GRID_DATA_H__
 
 #include <Kripke/directions.h>
+#include <Kripke/SubTVec.h>
 #include <mpi.h>
 #include <vector>
 
@@ -35,6 +36,21 @@ typedef std::vector< std::vector<double> > Plane_Data;
 
 struct Input_Variables;
 
+struct Group_Dir_Set {
+  int num_groups;
+  int num_directions;
+
+  int group0;
+  int direction0;
+
+  Directions *directions;
+
+  // Variables
+  SubTVec *psi;
+  SubTVec *rhs;
+  SubTVec *sigt;
+};
+
 struct Grid_Data {
 public:
   Grid_Data(Input_Variables *input_vars, int num_dirs, int num_grps, MPI_Comm comm);
@@ -50,11 +66,11 @@ public:
   int num_directions;
   int num_groups;
 
+  // Group/Angle sets
+  std::vector<Group_Dir_Set> gd_sets;
+
   // Variables:
   std::vector<double>  tmp_sigma_tot;
-  Plane_Data psi_i_plane;
-  Plane_Data psi_j_plane;
-  Plane_Data psi_k_plane;
   
 private:
   void computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax);

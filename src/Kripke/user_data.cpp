@@ -90,12 +90,12 @@ User_Data::User_Data(MPI_Comm comm, Input_Variables *input_vars)
   MPI_Comm R_group = GetRGroup();
     
   // Create the spatial grid  
-  num_directions = 8*input_vars->num_directions_per_octant;
+  num_directions = 8*input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset;
   num_groups = 1;
   grid_data = new Grid_Data(input_vars, num_directions, num_groups,  R_group);
 
   // Create base quadrature set
-  InitDirections(this, input_vars->num_directions_per_octant);
+  InitDirections(this, input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset);
 
   /* Set ncalls */
   ncalls = input_vars->ncalls;

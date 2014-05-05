@@ -13,6 +13,7 @@
 #include <mpi.h>
 
 
+class Kernel;
 
 struct User_Data {
   User_Data(MPI_Comm comm, Input_Variables *input_vars);
@@ -40,6 +41,7 @@ struct User_Data {
   std::vector<Directions> directions;       // Direction data
   std::vector<int> octant_map;              // Direction origination octant
   
+  Kernel *kernel;
 };
 
 #endif

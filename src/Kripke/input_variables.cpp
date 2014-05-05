@@ -192,10 +192,41 @@ void Input_Variables::read(std::string const &fname)
             fgets(file_line, 256, in_file);
           }
           sscanf(file_line, "%s %d", key_name, &int_tmp);
-          if(strcmp(key_name, "num_directions_per_octant") == 0){
-            num_directions_per_octant = int_tmp;
+          if(strcmp(key_name, "num_dirsets_per_octant") == 0){
+            num_dirsets_per_octant = int_tmp;
           }
-          else {printf("Error reading num_directions_per_octant.\n"); }
+          else {printf("Error reading num_dirsets_per_octant.\n"); }
+
+          fgets(file_line, 256, in_file);
+          while(file_line[0] == '#'){
+            fgets(file_line, 256, in_file);
+          }
+          sscanf(file_line, "%s %d", key_name, &int_tmp);
+          if(strcmp(key_name, "num_dirs_per_dirset") == 0){
+            num_dirs_per_dirset = int_tmp;
+          }
+          else {printf("Error reading num_dir_per_dirset.\n"); }
+        }
+        else if(strcmp(key_name, "Energy_Grid") == 0){
+          fgets(file_line, 256, in_file);
+          while(file_line[0] == '#'){
+            fgets(file_line, 256, in_file);
+          }
+          sscanf(file_line, "%s %d", key_name, &int_tmp);
+          if(strcmp(key_name, "num_groupsets") == 0){
+            num_groupsets = int_tmp;
+          }
+          else {printf("Error reading num_groupsets.\n"); }
+
+          fgets(file_line, 256, in_file);
+          while(file_line[0] == '#'){
+            fgets(file_line, 256, in_file);
+          }
+          sscanf(file_line, "%s %d", key_name, &int_tmp);
+          if(strcmp(key_name, "num_groups_per_groupset") == 0){
+            num_groups_per_groupset = int_tmp;
+          }
+          else {printf("Error reading num_groupsets.\n"); }
         }
         else if(strcmp(key_name, "Boundary_Condition_Types") == 0){
           fgets(file_line, 256, in_file);
@@ -401,9 +432,12 @@ void Input_Variables::print(void) const
           nx, ny, nz);
   printf("\n");
   printf("DiscreteOrdinates_Grid\n");
-  printf("   num_directions_per_octant = %i\n",
-          num_directions_per_octant);
+  printf("   num_dirsets_per_octant =  %i\n", num_dirsets_per_octant);
+  printf("   num_dirs_per_dirset =      %i\n", num_dirs_per_dirset);
   printf("\n");
+  printf("Energy_Grid\n");
+  printf("   num_groupsets =           %i\n", num_groupsets);
+  printf("   num_groups_per_groupset = %i\n", num_groups_per_groupset);
   printf("Boundary_Conditions\n");
   for(int j = 0; j < 6; j++){
     if( (bndry_types[j]) == 0){
