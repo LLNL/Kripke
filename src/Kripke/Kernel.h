@@ -27,7 +27,6 @@ class Kernel {
 
     // Variable Creation
     void allocateStorage(Grid_Data *grid_data);
-    SubTVec* newSubTVec(Grid_Data *grid_data);
 
     // Computational Kernels
     virtual void evalSigmaTot(Grid_Data *grid_data) = 0;

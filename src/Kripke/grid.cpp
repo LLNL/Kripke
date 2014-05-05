@@ -3,12 +3,29 @@
  *--------------------------------------------------------------------------*/
 
 #include <Kripke/grid.h>
+
+#include <Kripke/comm.h>
 #include <Kripke/input_variables.h>
 #include <cmath>
 #include <float.h>
 
 
-
+Group_Dir_Set::Group_Dir_Set() :
+  num_groups(0),
+  num_directions(0),
+  group0(0),
+  direction0(0),
+  directions(NULL),
+  psi(NULL),
+  rhs(NULL),
+  sigt(NULL)
+{
+}
+Group_Dir_Set::~Group_Dir_Set(){
+  delete psi;
+  delete rhs;
+  delete sigt;
+}
 
 
 
@@ -22,8 +39,7 @@
  *
  *--------------------------------------------------------------------------*/
 
-Grid_Data::Grid_Data(Input_Variables *input_vars, int num_dirs, int num_grps,
-                   MPI_Comm comm)
+Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
 {
   int npx = input_vars->npx;
   int npy = input_vars->npy;
@@ -34,7 +50,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, int num_dirs, int num_grps,
 
   /* Compute the local coordinates in the processor decomposition */
   int myid;
-  MPI_Comm_rank(comm, &myid);
+  MPI_Comm_rank(GetRGroup(), &myid);
 
   int isub_ref = myid % npx;
   int jsub_ref = ((myid - isub_ref) / npx) % npy;
@@ -89,7 +105,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, int num_dirs, int num_grps,
 
 
   /* Compute the volumes */
-  int num_zones = nzones[0]*nzones[1]*nzones[2];
+  num_zones = nzones[0]*nzones[1]*nzones[2];
   volume.resize(num_zones);
   for(int k = 0; k < nzones[2]; k++){
     for(int j = 0; j < nzones[1]; j++){
@@ -103,9 +119,27 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, int num_dirs, int num_grps,
  
   tmp_sigma_tot.resize(num_zones, 0.0);
 
-  // Allocate Storage for sweeps
-  num_directions = num_dirs;
-  num_groups = num_grps;
+
+  // Initialize Group and Direction Set Structures
+  gd_sets.resize(input_vars->num_groupsets);
+  int group0 = 0;
+  for(int gs = 0;gs < gd_sets.size();++ gs){
+    gd_sets[gs].resize(8*input_vars->num_dirsets_per_octant);
+    int dir0 = 0;
+    for(int ds = 0;ds < gd_sets[gs].size();++ ds){
+      Group_Dir_Set &gdset = gd_sets[gs][ds];
+      gdset.num_groups = input_vars->num_groups_per_groupset;
+      gdset.num_directions = input_vars->num_dirs_per_dirset;
+
+      gdset.group0 = group0;
+
+      gdset.direction0 = dir0;
+      gdset.directions = directions + dir0;
+
+      group0 += input_vars->num_groups_per_groupset;
+      dir0 += input_vars->num_dirs_per_dirset;
+    }
+  }
 
 }
 

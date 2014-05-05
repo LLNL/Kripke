@@ -16,7 +16,7 @@
 class Kernel;
 
 struct User_Data {
-  User_Data(MPI_Comm comm, Input_Variables *input_vars);
+  User_Data(Input_Variables *input_vars);
   ~User_Data();
 
   Timing timing;

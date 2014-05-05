@@ -1,10 +1,12 @@
-#include<Kripke/Kernel_3d_GDZ.h>
+#include<Kripke/Kernel/Kernel_3d_GDZ.h>
+#include<Kripke/user_data.h>
 #include<Kripke/SubTVec.h>
 
 Kernel_3d_GDZ::Kernel_3d_GDZ(){
 
 }
-~Kernel_3d_GDZ::Kernel_3d_GDZ(){
+
+Kernel_3d_GDZ::~Kernel_3d_GDZ(){
 
 }
 
@@ -12,12 +14,6 @@ Nesting_Order Kernel_3d_GDZ::nesting(void) const{
   return NEST_GDZ;
 }
 
-void Kernel_3d_GDZ::dimTransportVector(std::vector<double>, Grid_Data *grid_data){
-
-}
-void Kernel_3d_GDZ::dimDataVector(std::vector<double>, Grid_Data *grid_data){
-
-}
 
 // Computational Kernels
 void Kernel_3d_GDZ::evalSigmaTot(Grid_Data *grid_data){
@@ -52,9 +48,10 @@ void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data){
   + (local_imax)*(local_jmax)*(k)
 
 void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set){
-  int num_directions = grid_data->num_directions;
+  int num_directions = gd_set->num_directions;
+  int num_groups = gd_set->num_groups;
   int num_zones = grid_data->num_zones;
-  int num_groups = grid_data->num_groups;
+
   Directions *direction = gd_set->directions;
 
   int local_imax = grid_data->nzones[0];

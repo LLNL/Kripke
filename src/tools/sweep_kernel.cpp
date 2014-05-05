@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
   Input_Variables input_variables;
   input_variables.read(input_file_name);
   input_variables.print();
-  User_Data *user_data = new User_Data(MPI_COMM_WORLD, &input_variables);
+  User_Data *user_data = new User_Data(&input_variables);
 
   /* Begin timing of solve */
   user_data->timing.start("Solve");

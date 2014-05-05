@@ -25,8 +25,6 @@ static void InitBCData(int *types, double *vals, Grid_Data *grid_data,
   int  *nzones       = grid_data->nzones;
   int i1, i2;
   int ndir;
-  int dirmin, dirmax;
-  int n1, n2;
   int face;
   int index;
   int bc_type;
@@ -42,17 +40,6 @@ static void InitBCData(int *types, double *vals, Grid_Data *grid_data,
   }
 
   for(ndir = 0; ndir < 3; ndir++){
-    if( ((ndir+1)%3) > ((ndir+2)%3) ){
-      dirmin = (ndir+2)%3;
-      dirmax = (ndir+1)%3;
-    }
-    else {
-      dirmin = (ndir+1)%3;
-      dirmax = (ndir+2)%3;
-    }
-    n1 = nzones[dirmin];
-    n2 = nzones[dirmax];
-
     for(face = 0; face < 2; face++){
       if( (grid_data->mynbr[ndir][face]) == -1){
         user_data->bc_types[ndir*2 + face] = types[ndir*2 + face];
@@ -82,8 +69,10 @@ static void InitBCData(int *types, double *vals, Grid_Data *grid_data,
  * input_vars      : Structure with input data.
  *--------------------------------------------------------------------------*/
 
-User_Data::User_Data(MPI_Comm comm, Input_Variables *input_vars)
+User_Data::User_Data(Input_Variables *input_vars)
 {
+
+
   /* Set the processor grid dimensions */
   int R = (input_vars->npx)*(input_vars->npy)*(input_vars->npz);;
   create_R_grid(R);
@@ -92,7 +81,7 @@ User_Data::User_Data(MPI_Comm comm, Input_Variables *input_vars)
   // Create the spatial grid  
   num_directions = 8*input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset;
   num_groups = 1;
-  grid_data = new Grid_Data(input_vars, num_directions, num_groups,  R_group);
+  grid_data = new Grid_Data(input_vars, &directions[0]);
 
   // Create base quadrature set
   InitDirections(this, input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset);
@@ -114,20 +103,20 @@ User_Data::User_Data(MPI_Comm comm, Input_Variables *input_vars)
 
   // Initialize Boundary Conditions
   InitBCData(input_vars->bndry_types, input_vars->bndry_values, grid_data, this);
+
+
+  // create the kernel object based on nesting
+  kernel = createKernel(NEST_GDZ, 3);
+
+  // Allocate data
+  kernel->allocateStorage(grid_data);
 }
 
-/*--------------------------------------------------------------------------
- * FreeUserData : Frees a User_Data structure and all memory
- *                      associated with it.
- *--------------------------------------------------------------------------*/
 
-//void FreeUserData(User_Data *user_data)
 User_Data::~User_Data()
-/*--------------------------------------------------------------------------
- * user_data : The User_Data structure to be deallocated.
- *--------------------------------------------------------------------------*/
 {
   /* Free buffers used in sweeping */
   RBufFree();
   delete grid_data;
+  delete kernel;
 }

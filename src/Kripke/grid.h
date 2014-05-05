@@ -32,11 +32,12 @@
  * ilower         : Lower grid indices
  *--------------------------------------------------------------------------*/
 
-typedef std::vector< std::vector<double> > Plane_Data;
-
 struct Input_Variables;
 
 struct Group_Dir_Set {
+  Group_Dir_Set();
+  ~Group_Dir_Set();
+
   int num_groups;
   int num_directions;
 
@@ -53,7 +54,7 @@ struct Group_Dir_Set {
 
 struct Grid_Data {
 public:
-  Grid_Data(Input_Variables *input_vars, int num_dirs, int num_grps, MPI_Comm comm);
+  Grid_Data(Input_Variables *input_vars, Directions *directions);
 
   int num_zones;                    // Total Number of zones in this grid
   int nzones[3];                    // Number of zones in each dimension
@@ -62,12 +63,9 @@ public:
 
   std::vector<double> deltas[3];    // Spatial grid deltas in each dimension
   std::vector<double> volume;       // Spatial zone volumes
-  
-  int num_directions;
-  int num_groups;
 
   // Group/Angle sets
-  std::vector<Group_Dir_Set> gd_sets;
+  std::vector< std::vector<Group_Dir_Set> > gd_sets;
 
   // Variables:
   std::vector<double>  tmp_sigma_tot;
