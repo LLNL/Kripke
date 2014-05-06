@@ -40,4 +40,25 @@ class Timing {
 };
 
 
+// Aides timing a block of code, with automatic timer stopping
+class BlockTimer {
+  public:
+  inline BlockTimer(Timing &timer_obj, std::string const &timer_name) :
+      timer(timer_obj),
+      name(timer_name)
+  {
+      timer.start(name);
+  }
+  inline ~BlockTimer(){
+    timer.stop(name);
+  }
+
+  private:
+      Timing &timer;
+      std::string name;
+};
+
+#define BLOCK_TIMER(TIMER, NAME) BlockTimer BLK_TIMER_##NAME(TIMER, #NAME);
+
+
 #endif

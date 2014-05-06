@@ -16,47 +16,67 @@ Nesting_Order Kernel_3d_GDZ::nesting(void) const{
 
 
 // Computational Kernels
-void Kernel_3d_GDZ::evalSigmaS(Grid_Data *grid_data){
+void Kernel_3d_GDZ::scattering(Grid_Data *grid_data){
 
 }
 void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data){
-#if 0
-  // Grab parameters
-  double ***psi = gd_set->psi->data;
+  return;
+  // Outer parameters
   double ***phi = grid_data->phi->data;
   double ***ell = grid_data->ell->data;
-
-  int num_groups = gd_set->num_groups;
-  int num_local_directions = gd_set->num_directions;
   int num_zones = grid_data->num_zones;
-
   int num_moments = grid_data->num_moments;
 
-  /* 3D Cartesian Geometry */
-  for(int group = 0; group < num_groups; ++group){
-    double **psi_zonal = psi[group];
-    double **phi_g = phi[group];
-    for(int n = 0; n < num_moments; n++){
-      double **ell_n = ell[n];
-      double **phi_g_n = phi_g + n*n + n;
-      for(int m = -n; m <= n; m++){
-        double *__restrict__ phi_g_nm = phi_g_n[m];
-        double * __restrict__ ell_n_m = ell_n[m+n];
-        for(int i = 0; i < num_zones; i++){
-          phi_g_nm[i] = 0.0;
-        }
-        for(int d = 0; d < num_local_directions; d++){
-          double ell_n_m_d = ell_n_m[d];
-          double * __restrict__ psi_g_d = psi_zonal[d];
-          for(int i = 0; i < num_zones; i++){
-            phi_g_nm[i] += ell_n_m_d * psi_g_d[i];
+  // Loop over Group Sets
+  int num_group_sets = grid_data->gd_sets.size();
+  for(int gset = 0;gset < num_group_sets;++ gset){
+    std::vector<Group_Dir_Set> &dir_sets = grid_data->gd_sets[gset];
+    int num_dir_sets = dir_sets.size();
+
+    // Loop over Direction Sets
+    for(int dset = 0;dset < num_dir_sets;++ dset){
+      Group_Dir_Set &gd_set = dir_sets[dset];
+
+      // Get dimensioning
+      int num_local_groups = gd_set.num_groups;
+      int group0 = gd_set.group0;
+      int num_local_directions = gd_set.num_directions;
+      int dir0 = gd_set.direction0;
+
+      // Get Variables
+      double ***psi = gd_set.psi->data;
+
+      /* 3D Cartesian Geometry */
+      for(int group = 0; group < num_local_groups; ++group){
+        double **psi_g = psi[group];
+        double **phi_g = phi[group+group0];
+
+        for(int n = 0; n < num_moments; n++){
+          double **ell_n = ell[n];
+          double **phi_g_n = phi_g + n*n + n;
+
+          for(int m = -n; m <= n; m++){
+            double *__restrict__ phi_g_nm = phi_g_n[m];
+            double * __restrict__ ell_n_m = ell_n[m+n];
+            for(int i = 0; i < num_zones; i++){
+              phi_g_nm[i] = 0.0;
+            }
+            for(int d = 0; d < num_local_directions; d++){
+              double ell_n_m_d = ell_n_m[d+dir0];
+              double * __restrict__ psi_g_d = psi_g[d];
+              for(int i = 0; i < num_zones; i++){
+                phi_g_nm[i] += ell_n_m_d * psi_g_d[i];
+              }
+            }
           }
         }
       }
-    }
-  }
-#endif
+
+    } // Direction Set
+  } // Group Set
 }
+
+
 void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data){
 #if 0
   // Grab parameters

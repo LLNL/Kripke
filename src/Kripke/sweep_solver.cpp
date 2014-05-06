@@ -19,33 +19,56 @@ int SweepSolverSolveDD (int group_set, User_Data *user_data);
 
 int SweepSolverSolve (User_Data *user_data)
 {
-
-  // Evaluate cross-sections
-  user_data->timing.start("Sigma_T");
+  Kernel *kernel = user_data->kernel;
   Grid_Data *grid_data = user_data->grid_data;
-  for(int gs = 0;gs < grid_data->gd_sets.size();++ gs){
-    for(int ds = 0;ds < grid_data->gd_sets[gs].size();++ ds){
-      user_data->kernel->evalSigmaTot(user_data, &grid_data->gd_sets[gs][ds]);
+
+
+  /*
+   * Compute the RHS
+   */
+
+  // Discrete to Moments transformation
+  {
+    BLOCK_TIMER(user_data->timing, LTimes);
+    kernel->LTimes(grid_data);
+  }
+
+  // Scattering Kernel Evaluation
+  {
+    BLOCK_TIMER(user_data->timing, Scattering);
+    kernel->scattering(grid_data);
+  }
+
+  // Moments to Discrete transformation
+  {
+    BLOCK_TIMER(user_data->timing, LPlusTimes);
+    kernel->LTimes(grid_data);
+  }
+
+
+  /*
+   * Evaluate total cross section on the mesh
+   */
+  {
+    BLOCK_TIMER(user_data->timing, SigmaT);
+    for(int gs = 0;gs < grid_data->gd_sets.size();++ gs){
+      for(int ds = 0;ds < grid_data->gd_sets[gs].size();++ ds){
+        kernel->evalSigmaTot(user_data, &grid_data->gd_sets[gs][ds]);
+      }
     }
   }
-  user_data->timing.stop("Sigma_T");
 
 
-  // Loop over group sets
-  user_data->timing.start("Sweep");
-  for(int group_set = 0;group_set < user_data->num_group_sets;++ group_set){
-
-    /* Begin timing */
-    user_data->timing.start("GSet_Sweep");
-
-    /* Diamond Difference */
-    SweepSolverSolveDD(group_set, user_data);
-
-    /* End timing */
-    user_data->timing.stop("GSet_Sweep");
-
+  /*
+   * Sweep each Group Set
+   */
+  {
+    BLOCK_TIMER(user_data->timing, Sweep_All);
+    for(int group_set = 0;group_set < user_data->num_group_sets;++ group_set){
+      BLOCK_TIMER(user_data->timing, Sweep_GSet);
+      SweepSolverSolveDD(group_set, user_data);
+    }
   }
-  user_data->timing.stop("Sweep");
 
   return(0);
 }
