@@ -6,12 +6,18 @@
 #define KRIPKE_KERNEL_H__
 
 enum Nesting_Order {
+  // Nestings for Psi and Phi
+  // D referes to directions OR moments, depending on context
   NEST_GDZ,
   NEST_DGZ,
   NEST_ZDG,
   NEST_DZG,
   NEST_ZGD,
-  NEST_GZD
+  NEST_GZD,
+
+  // Nestings for L and L+ matrices
+  NEST_DNM,
+  NEST_NMD
 };
 
 struct User_Data;
@@ -24,10 +30,11 @@ class Kernel {
     Kernel();
     virtual ~Kernel();
 
-    virtual Nesting_Order nesting(void) const = 0;
+    virtual Nesting_Order nestingPsi(void) const = 0;
+    virtual Nesting_Order nestingPhi(void) const = 0;
 
     // Variable Creation
-    void allocateStorage(Grid_Data *grid_data);
+    void allocateStorage(User_Data *user_data);
 
     // Computational Kernels
     virtual void evalSigmaTot(User_Data *grid_data, Group_Dir_Set *ga_set) = 0;

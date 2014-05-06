@@ -105,9 +105,10 @@ User_Data::User_Data(Input_Variables *input_vars)
       gdset.direction0 = dir0;
       gdset.directions = &directions[dir0];
 
-      group0 += input_vars->num_groups_per_groupset;
       dir0 += input_vars->num_dirs_per_dirset;
     }
+
+    group0 += input_vars->num_groups_per_groupset;
   }
 
   /* Set ncalls */
@@ -129,7 +130,7 @@ User_Data::User_Data(Input_Variables *input_vars)
   kernel = createKernel(NEST_GDZ, 3);
 
   // Allocate data
-  kernel->allocateStorage(grid_data);
+  kernel->allocateStorage(this);
 
   /* Create buffer info for sweeping if using Diamond-Difference */
   CreateBufferInfo(this);

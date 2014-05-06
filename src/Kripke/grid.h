@@ -6,7 +6,7 @@
 #define KRIPKE_GRID_DATA_H__
 
 #include <Kripke/directions.h>
-#include <Kripke/SubTVec.h>
+#include <Kripke/Kernel.h>
 #include <mpi.h>
 #include <vector>
 
@@ -33,8 +33,10 @@
  *--------------------------------------------------------------------------*/
 
 struct Input_Variables;
-
 struct Grid_Data;
+
+struct SubTVec;
+struct LMat;
 
 struct Group_Dir_Set {
   Group_Dir_Set();
@@ -54,13 +56,12 @@ struct Group_Dir_Set {
   SubTVec *psi;         // Solution
   SubTVec *rhs;         // RHS, source term
   SubTVec *sigt;        // Zonal per-group cross-section
-
-
 };
 
 struct Grid_Data {
 public:
   Grid_Data(Input_Variables *input_vars, Directions *directions);
+  ~Grid_Data();
 
   int num_zones;                    // Total Number of zones in this grid
   int nzones[3];                    // Number of zones in each dimension
@@ -76,8 +77,8 @@ public:
   // Variables:
   int num_moments;
   SubTVec *phi;         // Moments of psi
-  SubTVec *ell;         // L matrix
-  SubTVec *ell_plus;    // L+ matrix
+  LMat *ell;         // L matrix
+  LMat *ell_plus;    // L+ matrix
   
 private:
   void computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax);

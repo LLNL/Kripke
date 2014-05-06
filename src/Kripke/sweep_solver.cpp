@@ -42,7 +42,7 @@ int SweepSolverSolve (User_Data *user_data)
   // Moments to Discrete transformation
   {
     BLOCK_TIMER(user_data->timing, LPlusTimes);
-    kernel->LTimes(grid_data);
+    kernel->LPlusTimes(grid_data);
   }
 
 

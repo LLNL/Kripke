@@ -7,6 +7,7 @@
 #include <Kripke/directions.h>
 #include <Kripke/grid.h>
 #include <Kripke/user_data.h>
+#include<Kripke/SubTVec.h>
 
 #include<stdio.h>
 

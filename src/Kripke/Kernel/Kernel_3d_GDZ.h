@@ -8,7 +8,8 @@ class Kernel_3d_GDZ : public Kernel_GZ_Base {
     Kernel_3d_GDZ();
     virtual ~Kernel_3d_GDZ();
 
-    virtual Nesting_Order nesting(void) const;
+    virtual Nesting_Order nestingPsi(void) const;
+    virtual Nesting_Order nestingPhi(void) const;
 
     // Computational Kernels
     virtual void scattering(Grid_Data *grid_data);
