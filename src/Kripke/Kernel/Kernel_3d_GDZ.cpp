@@ -20,10 +20,84 @@ void Kernel_3d_GDZ::evalSigmaS(Grid_Data *grid_data){
 
 }
 void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data){
+#if 0
+  // Grab parameters
+  double ***psi = gd_set->psi->data;
+  double ***phi = grid_data->phi->data;
+  double ***ell = grid_data->ell->data;
 
+  int num_groups = gd_set->num_groups;
+  int num_local_directions = gd_set->num_directions;
+  int num_zones = grid_data->num_zones;
+
+  int num_moments = grid_data->num_moments;
+
+  /* 3D Cartesian Geometry */
+  for(int group = 0; group < num_groups; ++group){
+    double **psi_zonal = psi[group];
+    double **phi_g = phi[group];
+    for(int n = 0; n < num_moments; n++){
+      double **ell_n = ell[n];
+      double **phi_g_n = phi_g + n*n + n;
+      for(int m = -n; m <= n; m++){
+        double *__restrict__ phi_g_nm = phi_g_n[m];
+        double * __restrict__ ell_n_m = ell_n[m+n];
+        for(int i = 0; i < num_zones; i++){
+          phi_g_nm[i] = 0.0;
+        }
+        for(int d = 0; d < num_local_directions; d++){
+          double ell_n_m_d = ell_n_m[d];
+          double * __restrict__ psi_g_d = psi_zonal[d];
+          for(int i = 0; i < num_zones; i++){
+            phi_g_nm[i] += ell_n_m_d * psi_g_d[i];
+          }
+        }
+      }
+    }
+  }
+#endif
 }
 void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data){
+#if 0
+  // Grab parameters
+  double ***psi = gd_set->psi->data;
+  double ***phi = grid_data->phi->data;
+  double ***ell_plus = grid_data->ell_plus->data;
 
+  int num_groups = gd_set->num_groups;
+  int num_local_directions = gd_set->num_directions;
+  int num_zones = grid_data->num_zones;
+
+  int num_moments = grid_data->num_moments;
+
+  /* 3D Cartesian Geometry */
+  for(int group = 0; group < num_groups; ++group){
+    double **phi_g = phi[group];
+    double **psi_g = psi[group];
+
+    for(int d=0; d < num_local_directions; d++){
+      double **ell_plus_d = ell_plus[d];
+      double * __restrict__ psi_g_d = psi_g[d];
+      for(int i=0; i < num_zones; i++){
+        psi_g_d[i] = 0.0;
+      }
+
+      for(int n=0; n< num_moments; n++){
+        double **phi_g_n = phi_g + n*n;
+        double *ell_plus_d_n = ell_plus_d[n];
+
+        for(int m = -n; m <= n; m++){
+          double ell_plus_d_n_m = ell_plus_d_n[m+n];
+          double * __restrict__ phi_g_nm = phi_g_n[m+n];
+
+          for(int i=0; i < num_zones; i++){
+            psi_g_d[i] += ell_plus_d_n_m * phi_g_nm[i];
+          }
+        }
+      }
+    }
+  }
+#endif
 }
 
 

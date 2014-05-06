@@ -23,7 +23,7 @@ void SweepDriver(User_Data *user_data)
 
   int *nzones = user_data->grid_data->nzones;
   int num_directions = user_data->directions.size();
-  int total_groups = user_data->num_group_sets * user_data->num_groups_per_set;
+  double total_groups = user_data->num_group_sets * user_data->num_groups_per_set;
   int num_zones = nzones[0]*nzones[1]*nzones[2];
   int d, zone;
   int myid;
@@ -44,7 +44,7 @@ void SweepDriver(User_Data *user_data)
   SweepSolverSolve(user_data);
 
   /* Sum all entries in psi and output average */
-  sum = 0.0; // TODO: FIX THIS!!!
+  sum = 0.0;
   Grid_Data *grid_data = user_data->grid_data;
   for(int gs = 0;gs < grid_data->gd_sets.size();++ gs){
     for(int ds = 0;ds < grid_data->gd_sets[gs].size();++ ds){
@@ -59,6 +59,7 @@ void SweepDriver(User_Data *user_data)
     printf("\n");
     printf("Global number of zones = %22.16e\n",global_num_zones);
     printf("Global number of directions = %d\n", num_directions);
+    printf("Global number of groups = %d\n", (int)total_groups);
     printf("Global sum = %22.16e\n", gsum);
     printf("Global sum ratio (should equal 1) = %22.16e\n", sum);
   }

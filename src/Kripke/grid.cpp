@@ -125,7 +125,6 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
   computeGrid(1, npy, ny_g, jsub_ref, input_vars->ymin, input_vars->ymax);
   computeGrid(2, npz, nz_g, ksub_ref, input_vars->zmin, input_vars->zmax);
   num_zones = nzones[0]*nzones[1]*nzones[2];
-  tmp_sigma_tot.resize(num_zones, 0.0);
 }
 
 

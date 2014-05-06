@@ -51,9 +51,10 @@ struct Group_Dir_Set {
   Directions *directions;
 
   // Variables
-  SubTVec *psi;
-  SubTVec *rhs;
-  SubTVec *sigt;
+  SubTVec *psi;         // Solution
+  SubTVec *rhs;         // RHS, source term
+  SubTVec *sigt;        // Zonal per-group cross-section
+
 
 };
 
@@ -73,7 +74,10 @@ public:
   std::vector< std::vector<Group_Dir_Set> > gd_sets;
 
   // Variables:
-  std::vector<double>  tmp_sigma_tot;
+  int num_moments;
+  SubTVec *phi;         // Moments of psi
+  SubTVec *ell;         // L matrix
+  SubTVec *ell_plus;    // L+ matrix
   
 private:
   void computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax);
