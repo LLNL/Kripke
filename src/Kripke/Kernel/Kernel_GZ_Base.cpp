@@ -1,5 +1,5 @@
 #include<Kripke/Kernel/Kernel_GZ_Base.h>
-#include<Kripke/user_data.h>
+#include<Kripke/User_Data.h>
 #include<Kripke/SubTVec.h>
 
 Kernel_GZ_Base::Kernel_GZ_Base(){

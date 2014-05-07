@@ -1,7 +1,7 @@
 #ifndef KRIPKE_LMAT_H__
 #define KRIPKE_LMAT_H__
 
-#include<Kripke/Kernel.h>
+#include <Kripke/Kernel.h>
 #include <algorithm>
 #include <vector>
 

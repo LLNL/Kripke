@@ -11,7 +11,7 @@
 
 */
 
-#include <Kripke/comm.h>
+#include <Kripke/Comm.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <mpi.h>

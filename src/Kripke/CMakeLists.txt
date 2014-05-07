@@ -1,14 +1,14 @@
 
 set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
-  Kripke/comm.cpp  
-  Kripke/directions.cpp
-  Kripke/driver.cpp
-  Kripke/grid.cpp
-  Kripke/input_variables.cpp
+  Kripke/Comm.cpp  
+  Kripke/Directions.cpp
+  Kripke/Driver.cpp
+  Kripke/Grid.cpp
+  Kripke/Input_Variables.cpp
   Kripke/Kernel.cpp  
-  Kripke/sweep_solver.cpp  
-  Kripke/timing.cpp  
-  Kripke/user_data.cpp
+  Kripke/Sweep_Solver.cpp  
+  Kripke/Timing.cpp  
+  Kripke/User_Data.cpp
     
   Kripke/Kernel/Kernel_GZ_Base.cpp
   Kripke/Kernel/Kernel_3d_GDZ.cpp

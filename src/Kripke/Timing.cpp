@@ -4,7 +4,7 @@
  *
  *****************************************************************************/
 
-#include <Kripke/timing.h>
+#include <Kripke/Timing.h>
 
 #include <stdio.h>
 #include <algorithm>

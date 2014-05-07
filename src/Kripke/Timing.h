@@ -7,8 +7,8 @@
 #ifndef KRIPKE_TIMING_H__
 #define KRIPKE_TIMING_H__
 
-#include<string>
-#include<map>
+#include <string>
+#include <map>
 
 struct Timer {
   Timer() :

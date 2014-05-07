@@ -3,62 +3,10 @@
  * Note that user input data is only used in this file.
  *--------------------------------------------------------------------------*/
 
-#include <Kripke/comm.h>
-#include <Kripke/user_data.h>
-#include <Kripke/transport_protos.h>
+#include <Kripke/Comm.h>
+#include <Kripke/User_Data.h>
+#include <Kripke.h>
 #include <stdio.h>
-
-
-static void InitBCData(int *types, double *vals, Grid_Data *grid_data,
-                User_Data *user_data)
-/*--------------------------------------------------------------------------
- * types     : Array of integers indicating the boundary condition type
- *             on each face for each energy group.
- *                            Type = 0  => Dirichlet
- *                            Type = 1  => Specular
- * vals      : Array of doubles with boundary data
- * grid_data : Grid information
- * bc_data   : The BC_Data structure of boundary condition
- *             information to be returned
- *--------------------------------------------------------------------------*/
-{
-  int  *nzones       = grid_data->nzones;
-  int i1, i2;
-  int ndir;
-  int face;
-  int index;
-  int bc_type;
-
-  if(((types[0] == 1) && (types[1] == 1)) ||
-     ((types[2] == 1) && (types[3] == 1)) ||
-     ((types[4] == 1) && (types[5] == 1))){
-    /* Cannot have opposing reflecting boundaries */
-    if(GetRrank() == 0){
-      printf("\nERROR: Opposing reflecting boundaries are not allowed.\n\n");
-      error_exit(1);
-    }
-  }
-
-  for(ndir = 0; ndir < 3; ndir++){
-    for(face = 0; face < 2; face++){
-      if( (grid_data->mynbr[ndir][face]) == -1){
-        user_data->bc_types[ndir*2 + face] = types[ndir*2 + face];
-        bc_type = types[ndir*2 + face];
-
-        if( (bc_type == 0) || (bc_type == 1) ){
-          /* Dirichlet or Neumann condition */
-          user_data->bc_values[ndir*2 + face] = vals[ndir*2 + face];
-        }
-        else {
-          /* Illegal type */
-          error_exit(1);
-        }
-      }
-    }
-  }
-
-}
-
 
 /*--------------------------------------------------------------------------
  * AllocUserData : Creates a new User_Data structure and
@@ -112,19 +60,15 @@ User_Data::User_Data(Input_Variables *input_vars)
   }
 
   /* Set ncalls */
-  ncalls = input_vars->ncalls;
+  niter = input_vars->niter;
 
   // setup cross-sections
-  sigma_tot.resize(num_group_sets*num_groups_per_set,
-      input_vars->sigma_total_value);
+  sigma_tot.resize(num_group_sets*num_groups_per_set, 0.0);
 
   // Compute number of zones
   global_num_zones = (size_t)input_vars->nx 
                    * (size_t)input_vars->ny 
                    * (size_t)input_vars->nz;
-
-  // Initialize Boundary Conditions
-  InitBCData(input_vars->bndry_types, input_vars->bndry_values, grid_data, this);
 
   // create the kernel object based on nesting
   kernel = createKernel(NEST_GDZ, 3);

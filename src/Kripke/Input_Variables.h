@@ -45,16 +45,7 @@ struct Input_Variables {
   int num_dirs_per_dirset;
   int num_groupsets;
   int num_groups_per_groupset;
-  int ncalls;
-
-  double xmin, xmax, ymin, ymax, zmin, zmax;
-  double source_value;
-  double sigma_total_value;
-  double bndry_values[6];
-  int bndry_types[6];
-
-  char run_name[256];
-
+  int niter;
 };
 
 #endif

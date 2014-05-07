@@ -1,7 +1,7 @@
 #include<Kripke/Kernel.h>
-#include<Kripke/comm.h>
-#include<Kripke/grid.h>
-#include<Kripke/user_data.h>
+#include<Kripke/Comm.h>
+#include<Kripke/Grid.h>
+#include<Kripke/User_Data.h>
 #include<Kripke/LMat.h>
 #include<Kripke/SubTVec.h>
 

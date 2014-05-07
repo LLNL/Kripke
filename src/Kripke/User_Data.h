@@ -5,9 +5,9 @@
 #ifndef KRIPKE_USER_DATA_H__
 #define KRIPKE_USER_DATA_H__
 
-#include <Kripke/grid.h>
-#include <Kripke/input_variables.h>
-#include <Kripke/timing.h>
+#include <Kripke/Grid.h>
+#include <Kripke/Input_Variables.h>
+#include <Kripke/Timing.h>
 
 #include <vector>
 #include <mpi.h>
@@ -21,12 +21,9 @@ struct User_Data {
 
   Timing timing;
 
-  int ncalls;
+  int niter;
 
   double source_value;
-
-  int bc_types[6];                          // boundary condition type
-  double bc_values[6];                      // Boundary condition value
 
   std::vector<double> sigma_tot;            // Cross section data
 

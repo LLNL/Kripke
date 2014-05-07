@@ -2,21 +2,20 @@
  * Driver routine for Sweep Kernel
  *--------------------------------------------------------------------------*/
 
-#include <Kripke/transport_protos.h>
-#include <Kripke/comm.h>
-#include <Kripke/directions.h>
-#include <Kripke/grid.h>
-#include <Kripke/user_data.h>
-#include<Kripke/SubTVec.h>
-
-#include<stdio.h>
+#include <Kripke.h>
+#include <Kripke/Comm.h>
+#include <Kripke/Directions.h>
+#include <Kripke/Grid.h>
+#include <Kripke/User_Data.h>
+#include <Kripke/SubTVec.h>
+#include <stdio.h>
 
 
 /*--------------------------------------------------------------------------
  * SweepDriver : Solves the sweeping problem defined in user_data
  *--------------------------------------------------------------------------*/
 
-void SweepDriver(User_Data *user_data)
+void Driver(User_Data *user_data)
 {
   double sum=0.;
   double gsum=0.;
@@ -29,6 +28,9 @@ void SweepDriver(User_Data *user_data)
   int d, zone;
   int myid;
 
+  /* Begin timing of solve */
+  user_data->timing.start("Solve");
+
   myid = GetRrank();
   if(myid == 0){
     /* Print out a banner message along with a version number. */
@@ -38,11 +40,12 @@ void SweepDriver(User_Data *user_data)
     printf("---------------------------------------------------------\n");
   }
 
-  /*---------------------------------------------------------------------
-   * Call BoltzmannSolverSolve to solve the H Psi = R linear system
-   * for all directions.
-   *---------------------------------------------------------------------*/
-  SweepSolverSolve(user_data);
+  for(int iter = 0;iter < user_data->niter;++ iter){
+    if(myid == 0){
+      printf("  iter %3d\n", iter);
+    }
+    SweepSolver(user_data);
+  }
 
   /* Sum all entries in psi and output average */
   sum = 0.0;
@@ -52,7 +55,6 @@ void SweepDriver(User_Data *user_data)
       sum += grid_data->gd_sets[gs][ds].psi->sum();
     }
   }
-
   gsum = sum;
   MPI_Allreduce( &sum, &gsum, 1, MPI_DOUBLE, MPI_SUM, GetRGroup());
   sum = gsum/(global_num_zones*((double)num_directions)*total_groups);
@@ -64,4 +66,7 @@ void SweepDriver(User_Data *user_data)
     printf("Global sum = %22.16e\n", gsum);
     printf("Global sum ratio (should equal 1) = %22.16e\n", sum);
   }
+
+  /* End timing of solve */
+  user_data->timing.stop("Solve");
 }

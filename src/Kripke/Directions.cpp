@@ -1,9 +1,9 @@
+#include <Kripke/Directions.h>
+#include <Kripke/User_Data.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <Kripke/directions.h>
-#include <Kripke/user_data.h>
-#include<algorithm>
+#include <algorithm>
 
 static void InitOmegas(std::vector<Directions> &directions);
 

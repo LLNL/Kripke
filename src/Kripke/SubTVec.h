@@ -1,7 +1,7 @@
 #ifndef KRIPKE_SUBTVEC_H__
 #define KRIPKE_SUBTVEC_H__
 
-#include<Kripke/Kernel.h>
+#include <Kripke/Kernel.h>
 #include <algorithm>
 #include <vector>
 

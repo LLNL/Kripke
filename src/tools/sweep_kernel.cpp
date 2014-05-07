@@ -6,13 +6,9 @@
 #include<stdlib.h>
 #include<string.h>
 
-#ifdef HAVE_PERFTOOLS_PROFILER
-#include "Kripke/profiler.h"
-#endif
-
-#include <Kripke/transport_protos.h>
-#include <Kripke/user_data.h>
-#include <Kripke/comm.h>
+#include <Kripke.h>
+#include <Kripke/User_Data.h>
+#include <Kripke/Comm.h>
 
 int main(int argc, char *argv[])
 {
@@ -36,7 +32,7 @@ int main(int argc, char *argv[])
     /* Print out a banner message along with a version number. */
     printf("\n");
     printf("---------------------------------------------------------\n");
-    printf("--------------- SWEEP KERNEL VERSION 1.0 ----------------\n");
+    printf("-------------- KRIPKE SWEEPER VERSION 1.0 ---------------\n");
     printf("---------------------------------------------------------\n");
   }
 
@@ -55,16 +51,8 @@ int main(int argc, char *argv[])
   input_variables.print();
   User_Data *user_data = new User_Data(&input_variables);
 
-  /* Begin timing of solve */
-  user_data->timing.start("Solve");
-
   /* Run the driver */
-  for(i=0; i<user_data->ncalls; i++){
-    SweepDriver(user_data);
-  }
-
-  /* End timing of solve */
-  user_data->timing.stop("Solve");
+  Driver(user_data);
 
   /*-----------------------------------------------------------------------
    * Print timing information

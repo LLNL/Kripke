@@ -5,7 +5,7 @@
 #ifndef KRIPKE_GRID_DATA_H__
 #define KRIPKE_GRID_DATA_H__
 
-#include <Kripke/directions.h>
+#include <Kripke/Directions.h>
 #include <Kripke/Kernel.h>
 #include <mpi.h>
 #include <vector>

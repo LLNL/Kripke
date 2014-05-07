@@ -2,26 +2,25 @@
  * Sweep-based solver routine.
  *--------------------------------------------------------------------------*/
 
-#include<Kripke/comm.h>
-#include<Kripke/user_data.h>
-#include<Kripke/transport_protos.h>
-#include<vector>
-#include<stdio.h>
+#include <Kripke.h>
+#include <Kripke/Comm.h>
+#include <Kripke/User_Data.h>
+#include <vector>
+#include <stdio.h>
 
 
 /* Local prototypes */
-int SweepSolverSolveDD (int group_set, User_Data *user_data);
+int SweepSolver_GroupSet (int group_set, User_Data *user_data);
 
 
 /*----------------------------------------------------------------------
  * SweepSolverSolve
  *----------------------------------------------------------------------*/
 
-int SweepSolverSolve (User_Data *user_data)
+int SweepSolver (User_Data *user_data)
 {
   Kernel *kernel = user_data->kernel;
   Grid_Data *grid_data = user_data->grid_data;
-
 
   /*
    * Compute the RHS
@@ -45,7 +44,6 @@ int SweepSolverSolve (User_Data *user_data)
     kernel->LPlusTimes(grid_data);
   }
 
-
   /*
    * Evaluate total cross section on the mesh
    */
@@ -58,7 +56,6 @@ int SweepSolverSolve (User_Data *user_data)
     }
   }
 
-
   /*
    * Sweep each Group Set
    */
@@ -66,7 +63,7 @@ int SweepSolverSolve (User_Data *user_data)
     BLOCK_TIMER(user_data->timing, Sweep_All);
     for(int group_set = 0;group_set < user_data->num_group_sets;++ group_set){
       BLOCK_TIMER(user_data->timing, Sweep_GSet);
-      SweepSolverSolveDD(group_set, user_data);
+      SweepSolver_GroupSet(group_set, user_data);
     }
   }
 
@@ -78,7 +75,7 @@ int SweepSolverSolve (User_Data *user_data)
  * SweepSolverSolveDD
  *----------------------------------------------------------------------*/
 
-int SweepSolverSolveDD (int group_set, User_Data *user_data)
+int SweepSolver_GroupSet (int group_set, User_Data *user_data)
 {
   Grid_Data  *grid_data         = user_data->grid_data;
   std::vector<Group_Dir_Set> &dir_sets = grid_data->gd_sets[group_set];
@@ -86,7 +83,6 @@ int SweepSolverSolveDD (int group_set, User_Data *user_data)
   int num_direction_sets = user_data->num_direction_sets;
 
   double *msg;
-
 
   /*spectral reflection rules relating eminating and iminating fluxes
     for each of the 8 octant for the planes: i,j,k*/
@@ -99,15 +95,8 @@ int SweepSolverSolveDD (int group_set, User_Data *user_data)
                        {7, 5, 2},
                        {6, 4, 3}, };
   int ref_d, octant, ref_octant, fundamental_d;
-  int bc_ref_i, bc_ref_j, bc_ref_k;
   int emminating_directions_left;
 
-  int bc_ref_in = user_data->bc_types[0];
-  int bc_ref_ip = user_data->bc_types[1];
-  int bc_ref_jn = user_data->bc_types[2];
-  int bc_ref_jp = user_data->bc_types[3];
-  int bc_ref_kn = user_data->bc_types[4];
-  int bc_ref_kp = user_data->bc_types[5];
 
   int in = grid_data->mynbr[0][0];
   int ip = grid_data->mynbr[0][1];
@@ -115,46 +104,6 @@ int SweepSolverSolveDD (int group_set, User_Data *user_data)
   int jp = grid_data->mynbr[1][1];
   int kn = grid_data->mynbr[2][0];
   int kp = grid_data->mynbr[2][1];
-
-  double eta_ref_in, eta_ref_ip, eta_ref_jn, eta_ref_jp;
-  double eta_ref_kn, eta_ref_kp;
-  double eta_ref_i, eta_ref_j, eta_ref_k;
-  if(in == -1){
-    eta_ref_in = user_data->bc_values[0];
-  }
-  else {
-    eta_ref_in = 0.0;
-  }
-  if(ip == -1){
-    eta_ref_ip = user_data->bc_values[1];
-  }
-  else {
-    eta_ref_ip = 0.0;
-  }
-  if(jn == -1){
-    eta_ref_jn = user_data->bc_values[2];
-  }
-  else {
-    eta_ref_jn = 0.0;
-  }
-  if(jp == -1){
-    eta_ref_jp = user_data->bc_values[3];
-  }
-  else {
-    eta_ref_jp = 0.0;
-  }
-  if(kn == -1){
-    eta_ref_kn = user_data->bc_values[4];
-  }
-  else {
-    eta_ref_kn = 0.0;
-  }
-  if(kp == -1){
-    eta_ref_kp = user_data->bc_values[5];
-  }
-  else {
-    eta_ref_kp = 0.0;
-  }
 
   int groups_dirs = user_data->num_groups_per_set
       * user_data->num_directions_per_set;
@@ -212,21 +161,13 @@ int SweepSolverSolveDD (int group_set, User_Data *user_data)
     int j_src_subd = directions[0].j_src_subd;
     int k_src_subd = directions[0].k_src_subd;
 
-    /* get reflective b.c. information for src faces */
-    bc_ref_i = (directions[0].id>0) ? bc_ref_in : bc_ref_ip;
-    bc_ref_j = (directions[0].jd>0) ? bc_ref_jn : bc_ref_jp;
-    bc_ref_k = (directions[0].kd>0) ? bc_ref_kn : bc_ref_kp;
-    eta_ref_i = (directions[0].id>0) ? eta_ref_in : eta_ref_ip;
-    eta_ref_j = (directions[0].jd>0) ? eta_ref_jn : eta_ref_jp;
-    eta_ref_k = (directions[0].kd>0) ? eta_ref_kn : eta_ref_kp;
-
-    if(k_src_subd == -1 && bc_ref_k == 0){
+    if(k_src_subd == -1){
       if(R_recv_test( k_which[ds], &(k_plane_data[ds]) ) == 0){
         printf("Null buffer not returned to DD_Sweep\n");
         error_exit(1);
       }
       for(int k=0; k<k_plane_zones; k++){
-        k_plane_data[ds][k] = eta_ref_k;
+        k_plane_data[ds][k] = 1.0;
       }
       k_plane_data[ds][k_plane_zones] = (double) ds;
     }
@@ -234,13 +175,13 @@ int SweepSolverSolveDD (int group_set, User_Data *user_data)
       k_plane_data[ds] = NULL;
     }
 
-    if(j_src_subd == -1 && bc_ref_j == 0){
+    if(j_src_subd == -1){
       if(R_recv_test( j_which[ds], &(j_plane_data[ds]) ) == 0){
         printf("Null buffer not returned to DD_Sweep\n");
         error_exit(1);
       }
       for(int k=0; k<j_plane_zones; k++){
-        j_plane_data[ds][k] = eta_ref_j;
+        j_plane_data[ds][k] = 1.0;
       }
       j_plane_data[ds][j_plane_zones] = (double) ds;
     }
@@ -248,13 +189,13 @@ int SweepSolverSolveDD (int group_set, User_Data *user_data)
       j_plane_data[ds] = NULL;
     }
 
-    if(i_src_subd == -1 && bc_ref_i == 0){
+    if(i_src_subd == -1){
       if(R_recv_test( i_which[ds], &(i_plane_data[ds]) ) == 0){
         printf("Null buffer not returned to DD_Sweep\n");
         error_exit(1);
       }
       for(int i=0; i<i_plane_zones; i++){
-        i_plane_data[ds][i] = eta_ref_i;
+        i_plane_data[ds][i] = 1.0;
       }
       i_plane_data[ds][i_plane_zones] = (double) ds;
     }
@@ -315,70 +256,6 @@ int SweepSolverSolveDD (int group_set, User_Data *user_data)
       R_send( i_plane_data[ds], i_dst_subd, i_plane_zones+1 );
       R_send( j_plane_data[ds], j_dst_subd, j_plane_zones+1 );
       R_send( k_plane_data[ds], k_dst_subd, k_plane_zones+1 );
-
-      /*Check if any of the 3 planes are reflective problem boundaries.
-    If so, generate the src for future sweeps */
-
-      /* get reflective b.c. information for dst faces */
-      bc_ref_i = (directions[0].id>0) ? bc_ref_ip : bc_ref_in;
-      bc_ref_j = (directions[0].jd>0) ? bc_ref_jp : bc_ref_jn;
-      bc_ref_k = (directions[0].kd>0) ? bc_ref_kp : bc_ref_kn;
-      eta_ref_i = (directions[0].id>0) ? eta_ref_ip : eta_ref_in;
-      eta_ref_j = (directions[0].jd>0) ? eta_ref_jp : eta_ref_jn;
-      eta_ref_k = (directions[0].kd>0) ? eta_ref_kp : eta_ref_kn;
-
-      if(k_dst_subd == -1 && bc_ref_k == 1){
-        octant = user_data->octant_map[ds];
-        ref_octant = r_rules[octant][2];
-        fundamental_d = (ds - octant)/8;
-        ref_d = 8 * fundamental_d + ref_octant;
-        /* printf("k: d= %2d o=%2d fund_d=%2d ref_o=%2d ref_d=%2d\n",
-           d, octant, fundamental_d,ref_octant,ref_d) ; */
-        if(R_recv_test( k_which[ref_d], &(k_plane_data[ref_d]) )
-           == 0){
-          printf("Null buffer not returned to DD_Sweep\n");
-          error_exit(1);
-        }
-        for(int k=0; k<k_plane_zones; k++){
-          k_plane_data[ref_d][k] = eta_ref_k * k_plane_data[ds][k];
-        }
-        k_plane_data[ref_d][k_plane_zones] = (double) ref_d;
-      }
-      if(j_dst_subd == -1 && bc_ref_j == 1){
-        octant = user_data->octant_map[ds];
-        ref_octant = r_rules[octant][1];
-        fundamental_d = (ds - octant)/8;
-        ref_d = 8 * fundamental_d + ref_octant;
-        /* printf("j: d= %2d o=%2d fund_d=%2d ref_o=%2d ref_d=%2d\n",
-           d, octant, fundamental_d,ref_octant,ref_d) ; */
-        if(R_recv_test( j_which[ref_d], &(j_plane_data[ref_d]) )
-           == 0){
-          printf("Null buffer not returned to DD_Sweep\n");
-          error_exit(1);
-        }
-        for(int k=0; k<j_plane_zones; k++){
-          j_plane_data[ref_d][k] = eta_ref_j * j_plane_data[ds][k];
-        }
-        j_plane_data[ref_d][j_plane_zones] = (double) ref_d;
-
-      }
-      if(i_dst_subd == -1 && bc_ref_i == 1){
-        octant = user_data->octant_map[ds];
-        ref_octant = r_rules[octant][0];
-        fundamental_d = (ds - octant)/8;
-        ref_d = 8 * fundamental_d + ref_octant;
-        /* printf("i: d= %2d o=%2d fund_d=%2d ref_o=%2d ref_d=%2d\n",
-           d, octant, fundamental_d,ref_octant,ref_d) ; */
-        if(R_recv_test( i_which[ref_d], &(i_plane_data[ref_d]) )
-           == 0){
-          printf("Null buffer not returned to DD_Sweep\n");
-          error_exit(1);
-        }
-        for(int k=0; k<i_plane_zones; k++){
-          i_plane_data[ref_d][k] = eta_ref_i * i_plane_data[ds][k];
-        }
-        i_plane_data[ref_d][i_plane_zones] = (double) ref_d;
-      }
 
       swept[ds] = 1;
       directions_left--;
