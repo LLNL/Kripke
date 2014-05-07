@@ -21,11 +21,6 @@ Nesting_Order Kernel_3d_GDZ::nestingPhi(void) const{
 
 
 
-// Computational Kernels
-void Kernel_3d_GDZ::scattering(Grid_Data *grid_data){
-
-}
-
 void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data){
   // Outer parameters
   double ***phi = grid_data->phi->data;
@@ -85,7 +80,7 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data){
 
 void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data){
   // Outer parameters
-  double ***phi = grid_data->phi->data;
+  double ***phi_out = grid_data->phi->data;
   double ***ell_plus = grid_data->ell_plus->data;
   int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_moments;
@@ -107,30 +102,30 @@ void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data){
       int dir0 = gd_set.direction0;
 
       // Get Variables
-      double ***psi = gd_set.psi->data;
+      double ***rhs = gd_set.rhs->data;
 
       /* 3D Cartesian Geometry */
       for(int group = 0; group < num_local_groups; ++group){
-        double **phi_g = phi[group+group0];
-        double **psi_g = psi[group];
+        double **phi_out_g = phi_out[group+group0];
+        double **rhs_g = rhs[group];
 
         for(int d=0; d < num_local_directions; d++){
           double **ell_plus_d = ell_plus[d+dir0];
-          double * __restrict__ psi_g_d = psi_g[d];
+          double * __restrict__ rhs_g_d = rhs_g[d];
           for(int i=0; i < num_zones; i++){
-            psi_g_d[i] = 0.0;
+            rhs_g_d[i] = 0.0;
           }
 
           for(int n=0; n< num_moments; n++){
-            double **phi_g_n = phi_g + n*n;
+            double **phi_out_g_n = phi_out_g + n*n;
             double *ell_plus_d_n = ell_plus_d[n];
 
             for(int m = -n; m <= n; m++){
               double ell_plus_d_n_m = ell_plus_d_n[m+n];
-              double * __restrict__ phi_g_nm = phi_g_n[m+n];
+              double * __restrict__ phi_g_nm = phi_out_g_n[m+n];
 
               for(int i=0; i < num_zones; i++){
-                psi_g_d[i] += ell_plus_d_n_m * phi_g_nm[i];
+                rhs_g_d[i] += ell_plus_d_n_m * phi_g_nm[i];
               }
             }
           }

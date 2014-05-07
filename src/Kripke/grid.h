@@ -76,10 +76,11 @@ public:
 
   // Variables:
   int num_moments;
-  SubTVec *phi;         // Moments of psi
-  LMat *ell;         // L matrix
-  LMat *ell_plus;    // L+ matrix
-  
+  SubTVec *phi;               // Moments of psi
+  SubTVec *phi_out;           // Scattering source (moments)
+  LMat *ell;                  // L matrix
+  LMat *ell_plus;             // L+ matrix
+  std::vector<double> sig_s;  // Evaluation of zonal sigma S for a n,g,gp
 private:
   void computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax);
 };

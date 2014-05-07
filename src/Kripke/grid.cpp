@@ -127,11 +127,14 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
   computeGrid(2, npz, nz_g, ksub_ref, input_vars->zmin, input_vars->zmax);
   num_zones = nzones[0]*nzones[1]*nzones[2];
 
-  num_moments = 3;
+  num_moments = 2;
+
+  sig_s.resize(num_zones, 0.0);
 }
 
 Grid_Data::~Grid_Data(){
   delete phi;
+  delete phi_out;
   delete ell;
   delete ell_plus;
 }
