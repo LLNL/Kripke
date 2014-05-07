@@ -71,7 +71,7 @@ User_Data::User_Data(Input_Variables *input_vars)
                    * (size_t)input_vars->nz;
 
   // create the kernel object based on nesting
-  kernel = createKernel(NEST_GDZ, 3);
+  kernel = createKernel(input_vars->nesting, 3);
 
   // Allocate data
   kernel->allocateStorage(this);

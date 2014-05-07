@@ -43,6 +43,8 @@ void Input_Variables::read(std::string const &fname)
     int_vars["num_groupsets"] = &num_groupsets;
     int_vars["num_groups_per_groupset"] = &num_groups_per_groupset;
 
+    int_vars["nesting"] = (int*)&nesting;
+
     /*
      * Parse input file
      */
@@ -121,6 +123,32 @@ void Input_Variables::print(void) const
   printf("Energy_Grid\n");
   printf("   num_groupsets =           %i\n", num_groupsets);
   printf("   num_groups_per_groupset = %i\n", num_groups_per_groupset);
+  printf("\n");
+  printf("Nesting: GS - DS - ");
+  switch(nesting){
+    case NEST_DGZ:
+      printf("D - G - Z\n");
+      break;
+    case NEST_GDZ:
+      printf("G - D - Z\n");
+      break;
+    case NEST_DZG:
+      printf("D - Z - G\n");
+      break;
+    case NEST_ZDG:
+      printf("Z - D - G\n");
+      break;
+    case NEST_GZD:
+      printf("G - Z - D\n");
+      break;
+    case NEST_ZGD:
+      printf("Z - G - D\n");
+      break;
+    default:
+      printf(" UNKNOWN\n");
+      error_exit(1);
+      break;
+  }
 
   printf("\n");
 }

@@ -14,5 +14,21 @@ int SweepSolver(User_Data *user_data);
 void CreateBufferInfo(User_Data *user_data);
 
 
+enum Nesting_Order {
+  // Nestings for Psi and Phi
+  // D referes to directions OR moments, depending on context
+  NEST_GDZ,
+  NEST_DGZ,
+  NEST_ZDG,
+  NEST_DZG,
+  NEST_ZGD,
+  NEST_GZD,
+
+  // Nestings for L and L+ matrices
+  NEST_DNM,
+  NEST_NMD
+};
+
+
 #endif
 
