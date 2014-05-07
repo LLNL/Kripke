@@ -10,6 +10,7 @@
 #include<Kripke/Kernel/Kernel_3d_ZDG.h>
 #include<Kripke/Kernel/Kernel_3d_DZG.h>
 #include<Kripke/Kernel/Kernel_3d_ZGD.h>
+#include<Kripke/Kernel/Kernel_3d_GZD.h>
 
 Kernel::Kernel(){
 
@@ -69,6 +70,8 @@ Kernel *createKernel(Nesting_Order nest, int num_dims){
       return new Kernel_3d_DZG();
     case NEST_ZGD:
       return new Kernel_3d_ZGD();
+    case NEST_GZD:
+      return new Kernel_3d_GZD();
     }
   }
 
