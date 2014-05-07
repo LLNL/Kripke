@@ -15,6 +15,7 @@ set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
   Kripke/Kernel/Kernel_3d_DGZ.cpp
   Kripke/Kernel/Kernel_3d_ZDG.cpp
   Kripke/Kernel/Kernel_3d_DZG.cpp
+  Kripke/Kernel/Kernel_3d_ZGD.cpp
 )
                                                                                                           
 set(KRIPKE_SOURCE ${KRIPKE_SOURCE} PARENT_SCOPE) 
