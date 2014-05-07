@@ -80,7 +80,7 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data){
 
 void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data){
   // Outer parameters
-  double ***phi_out = grid_data->phi->data;
+  double ***phi_out = grid_data->phi_out->data;
   double ***ell_plus = grid_data->ell_plus->data;
   int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_moments;

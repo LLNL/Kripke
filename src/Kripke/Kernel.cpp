@@ -6,6 +6,7 @@
 #include<Kripke/SubTVec.h>
 
 #include<Kripke/Kernel/Kernel_3d_GDZ.h>
+#include<Kripke/Kernel/Kernel_3d_DGZ.h>
 
 Kernel::Kernel(){
 
@@ -102,6 +103,8 @@ Kernel *createKernel(Nesting_Order nest, int num_dims){
     switch(nest){
     case NEST_GDZ:
       return new Kernel_3d_GDZ();
+    case NEST_DGZ:
+      return new Kernel_3d_DGZ();
     }
   }
 

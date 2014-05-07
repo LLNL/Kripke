@@ -1,4 +1,137 @@
-#include "../Param.h"
+#include<Kripke/Kernel/Kernel_3d_DGZ.h>
+#include<Kripke/User_Data.h>
+#include<Kripke/SubTVec.h>
+#include<Kripke/LMat.h>
+
+Kernel_3d_DGZ::Kernel_3d_DGZ(){
+
+}
+
+Kernel_3d_DGZ::~Kernel_3d_DGZ(){
+
+}
+
+Nesting_Order Kernel_3d_DGZ::nestingPsi(void) const{
+  return NEST_DGZ;
+}
+
+Nesting_Order Kernel_3d_DGZ::nestingPhi(void) const{
+  return NEST_GDZ;
+}
+
+
+void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data){
+  // Outer parameters
+  double ***phi = grid_data->phi->data;
+  double ***ell = grid_data->ell->data;
+  int num_zones = grid_data->num_zones;
+  int num_moments = grid_data->num_moments;
+
+  grid_data->phi->clear(0.0);
+
+  // Loop over Group Sets
+  int num_group_sets = grid_data->gd_sets.size();
+  for(int gset = 0;gset < num_group_sets;++ gset){
+    std::vector<Group_Dir_Set> &dir_sets = grid_data->gd_sets[gset];
+    int num_dir_sets = dir_sets.size();
+
+    // Loop over Direction Sets
+    for(int dset = 0;dset < num_dir_sets;++ dset){
+      Group_Dir_Set &gd_set = dir_sets[dset];
+
+      // Get dimensioning
+      int num_local_groups = gd_set.num_groups;
+      int group0 = gd_set.group0;
+      int num_local_directions = gd_set.num_directions;
+      int dir0 = gd_set.direction0;
+
+      // Get Variables
+      double ***psi = gd_set.psi->data;
+
+      /* 3D Cartesian Geometry */
+      for(int n = 0; n < num_moments; n++){
+        double ***phi_n = phi + n*n;
+        double **ell_n = ell[n];
+
+        for(int m = -n; m <= n; m++){
+          double **phi_nm = phi_n[m+n];
+          double *ell_n_m = ell_n[m+n];
+          for(int d = 0; d < num_local_directions; d++){
+            double **psi_d = psi[d];
+            double ell_n_m_d = ell_n_m[d];
+
+            for(int group = 0; group < num_local_groups; ++group){
+              double *  psi_d_g = psi_d[group];
+              double *  phi_nm_g = phi_nm[group];
+              for(int z = 0; z < num_zones; z++){
+                double psi_d_g_z = psi_d_g[z];
+                phi_nm_g[z] += ell_n_m_d * psi_d_g_z;
+              }
+            }
+          }
+        }
+      }
+
+    } // Direction Set
+  } // Group Set
+}
+
+
+void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data){
+  // Outer parameters
+  double ***phi_out = grid_data->phi_out->data;
+  double ***ell_plus = grid_data->ell_plus->data;
+  int num_zones = grid_data->num_zones;
+  int num_moments = grid_data->num_moments;
+
+  // Loop over Group Sets
+  int num_group_sets = grid_data->gd_sets.size();
+  for(int gset = 0;gset < num_group_sets;++ gset){
+    std::vector<Group_Dir_Set> &dir_sets = grid_data->gd_sets[gset];
+    int num_dir_sets = dir_sets.size();
+
+    // Loop over Direction Sets
+    for(int dset = 0;dset < num_dir_sets;++ dset){
+      Group_Dir_Set &gd_set = dir_sets[dset];
+
+      // Get dimensioning
+      int num_local_groups = gd_set.num_groups;
+      int group0 = gd_set.group0;
+      int num_local_directions = gd_set.num_directions;
+      int dir0 = gd_set.direction0;
+
+      // Get Variables
+      double ***rhs = gd_set.rhs->data;
+      gd_set.rhs->clear(0.0);
+
+      /* 3D Cartesian Geometry */
+      for(int d = 0; d < num_local_directions; d++){
+        double **psi_d = rhs[d];
+        double **ell_plus_d = ell_plus[d];
+
+        for(int n = 0; n < num_moments; n++){
+          double ***phi_out_n = phi_out + n*n;
+          double *ell_plus_d_n = ell_plus_d[n];
+
+          for(int m = 0; m <= 2*n; m++){
+            double **phi_out_nm = phi_out_n[m];
+            double ell_plus_d_n_m = ell_plus_d_n[m];
+
+            for(int group = 0; group < num_local_groups; ++group){
+              double * __restrict__ psi_d_g = psi_d[group];
+              double * __restrict__ phi_out_nm_g = phi_out_nm[group];
+
+              for(int z = 0; z < num_zones; z++){
+                psi_d_g[z] += ell_plus_d_n_m * phi_out_nm_g[z];
+              }
+            }
+          }
+        }
+      }
+
+    } // Direction Set
+  } // Group Set
+}
 
 
 /* Sweep routine for Diamond-Difference */
@@ -18,44 +151,46 @@
 #define Zonal_INDEX(i, j, k) (i) + (local_imax)*(j) \
   + (local_imax)*(local_jmax)*(k)
 
-void dgz_nmd_SweepDD_3d(dgz_nmd_Param &p) {
-  int num_directions = p.num_directions;
-  int num_zones = p.num_zones;
-  int num_groups = p.num_groups;
-  Direction *direction = p.direction;
+void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set, double *i_plane_ptr, double *j_plane_ptr, double *k_plane_ptr){
+  int num_directions = gd_set->num_directions;
+  int num_groups = gd_set->num_groups;
+  int num_zones = grid_data->num_zones;
 
-  int local_imax = p.nzones[0];
-  int local_jmax = p.nzones[1];
-  int local_kmax = p.nzones[2];
+  Directions *direction = gd_set->directions;
+
+  int local_imax = grid_data->nzones[0];
+  int local_jmax = grid_data->nzones[1];
+  int local_kmax = grid_data->nzones[2];
   int local_imax_1 = local_imax + 1;
   int local_jmax_1 = local_jmax + 1;
 
-  double * __restrict__ dx = p.deltas[0];
-  double * __restrict__ dy = p.deltas[1];
-  double * __restrict__ dz = p.deltas[2];
+  double * __restrict__ dx = &grid_data->deltas[0][0];
+  double * __restrict__ dy = &grid_data->deltas[1][0];
+  double * __restrict__ dz = &grid_data->deltas[2][0];
 
-  dgz_TVec psi_lf(num_groups, num_directions,
+  SubTVec psi_lf(nestingPsi(), num_groups, num_directions,
                   (local_imax+1)*local_jmax*local_kmax);
-  dgz_TVec psi_fr(num_groups, num_directions,
+  SubTVec psi_fr(nestingPsi(), num_groups, num_directions,
                   local_imax*(local_jmax+1)*local_kmax);
-  dgz_TVec psi_bo(num_groups, num_directions,
+  SubTVec psi_bo(nestingPsi(), num_groups, num_directions,
                   local_imax*local_jmax*(local_kmax+1));
 
-  dgz_TVec i_plane_v(num_groups, num_directions, local_jmax*local_kmax);
-  dgz_TVec j_plane_v(num_groups, num_directions, local_imax*local_kmax);
-  dgz_TVec k_plane_v(num_groups, num_directions, local_imax*local_jmax);
+  // Alias the MPI data with a SubTVec for the face data
+  SubTVec i_plane_v(nestingPsi(), num_groups, num_directions, local_jmax*local_kmax, i_plane_ptr);
+  SubTVec j_plane_v(nestingPsi(), num_groups, num_directions, local_imax*local_kmax, j_plane_ptr);
+  SubTVec k_plane_v(nestingPsi(), num_groups, num_directions, local_imax*local_jmax, k_plane_ptr);
   double ***i_plane = i_plane_v.data;
   double ***j_plane = j_plane_v.data;
   double ***k_plane = k_plane_v.data;
 
-  dgz_TVec psi_internal(num_groups, num_directions, num_zones);
+  SubTVec psi_internal(nestingPsi(), num_groups, num_directions, num_zones);
   double ***psi_internal_all = psi_internal.data;
 
-  double ***psi = p.psi.data;
-  double ***rhs = p.rhs.data;
-  double **sigt = p.sigt.data;
+  double ***psi = gd_set->psi->data;
+  double ***rhs = gd_set->rhs->data;
+  double **sigt = gd_set->sigt->data[0];
 
-  // All directions have same id,jd,kd, since we are modeling an "Angle Set"
+  // All directions have same id,jd,kd, since these are all one Direction Set
   // So pull that information out now
   int istartz, istopz, in, il, ir;
   int id = direction[0].id;
@@ -84,9 +219,6 @@ void dgz_nmd_SweepDD_3d(dgz_nmd_Param &p) {
     kstartz = local_kmax-1; kstopz = 0; kn = -1; kb = 1; kt = 0;
   }
 
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
   for(int d = 0; d < num_directions; ++d){
     double **psi_d = psi[d];
     double **rhs_d = rhs[d];
@@ -209,3 +341,4 @@ void dgz_nmd_SweepDD_3d(dgz_nmd_Param &p) {
   } // direction
 
 }
+

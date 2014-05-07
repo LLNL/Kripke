@@ -182,6 +182,10 @@ struct SubTVec {
     return s;
   }
 
+  inline void clear(double v){
+    std::fill(data_linear.begin(), data_linear.end(), v);
+  }
+
   int ext_to_int[3]; // external index to internal index mapping
   int size_int[3]; // size of each dimension in internal indices
 
