@@ -1,12 +1,12 @@
-#ifndef KRIPKE_KERNEL_3D_GDZ_H__
-#define KRIPKE_KERNEL_3D_GDZ_H__
+#ifndef KRIPKE_KERNEL_3D_ZDG_H__
+#define KRIPKE_KERNEL_3D_ZDG_H__
 
 #include<Kripke/Kernel/Kernel_GZ_Base.h>
 
-class Kernel_3d_GDZ : public Kernel_GZ_Base {
+class Kernel_3d_ZDG : public Kernel_GZ_Base {
   public:
-    Kernel_3d_GDZ();
-    virtual ~Kernel_3d_GDZ();
+  Kernel_3d_ZDG();
+    virtual ~Kernel_3d_ZDG();
 
     virtual Nesting_Order nestingPsi(void) const;
     virtual Nesting_Order nestingPhi(void) const;

@@ -20,6 +20,51 @@ Nesting_Order Kernel_3d_GDZ::nestingPhi(void) const{
 }
 
 
+void Kernel_3d_GDZ::scattering(Grid_Data *grid_data){
+  int num_moments = grid_data->num_moments;
+  int num_groups = grid_data->phi->groups;
+  int num_zones = grid_data->num_zones;
+
+  double ***phi_in = grid_data->phi->data;
+  double ***phi_out = grid_data->phi_out->data;
+
+  // Loop over destination group
+  for(int gp=0; gp < num_groups; gp++){
+
+    // Begin loop over scattering moments
+    for(int n=0; n < num_moments; n++){
+
+      int num_m = grid_data->ell->numM(n);
+
+      // Loop over source group
+      int m0 = 0;
+      for(int g=0; g < num_groups; g++){
+
+        // Evaluate sigs  for this (n,g,gp) triplet
+        evalSigmaS(grid_data, n, g, gp);
+
+        // Get variables
+        double *sig_s = &grid_data->sig_s[0];
+        double **phi_in_g = phi_in[g];
+        double **phi_out_g = phi_out[g];
+
+        for(int m=0; m < num_m; m++){
+          double * __restrict__ phi_out_g_nm = phi_out_g[m+m0];
+          double * __restrict__ phi_in_g_nm = phi_in_g[m+m0];
+
+          for(int zone=0; zone<num_zones; zone++){
+            phi_out_g_nm[zone] += sig_s[zone]*phi_in_g_nm[zone];
+          }
+
+        } // m
+      } // g
+
+      m0 += num_m;
+    } // n
+  } // gp
+}
+
+
 
 void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data){
   // Outer parameters
