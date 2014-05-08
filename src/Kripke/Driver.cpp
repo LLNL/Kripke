@@ -32,14 +32,14 @@ void Driver(User_Data *user_data)
   user_data->timing.start("Solve");
 
   myid = GetRrank();
-  if(myid == 0){
-    /* Print out a banner message along with a version number. */
+/*  if(myid == 0){
+    // Print out a banner message along with a version number.
     printf("\n");
     printf("---------------------------------------------------------\n");
     printf("Performing Sweeps\n");
     printf("---------------------------------------------------------\n");
   }
-
+*/
   for(int iter = 0;iter < user_data->niter;++ iter){
     if(myid == 0){
       printf("  iter %3d\n", iter);
@@ -48,6 +48,7 @@ void Driver(User_Data *user_data)
   }
 
   /* Sum all entries in psi and output average */
+  /*
   sum = 0.0;
   Grid_Data *grid_data = user_data->grid_data;
   for(int gs = 0;gs < grid_data->gd_sets.size();++ gs){
@@ -65,7 +66,7 @@ void Driver(User_Data *user_data)
     printf("Global number of groups = %d\n", (int)total_groups);
     printf("Global sum = %22.16e\n", gsum);
     printf("Global sum ratio (should equal 1) = %22.16e\n", sum);
-  }
+  }*/
 
   /* End timing of solve */
   user_data->timing.stop("Solve");

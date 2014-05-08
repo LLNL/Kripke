@@ -34,6 +34,8 @@ class Timing {
     
     void print(void) const;
     
+    double getTotal(std::string const &name) const;
+
   private:
     typedef std::map<std::string, Timer> TimerMap;
     TimerMap timers;

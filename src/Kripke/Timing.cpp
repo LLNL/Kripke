@@ -66,3 +66,10 @@ void Timing::print(void) const {
   }
 }
 
+double Timing::getTotal(std::string const &name) const{
+  TimerMap::const_iterator i = timers.find(name);
+  if(i == timers.end()){
+    return 0.0;
+  }
+  return (*i).second.total_time;
+}

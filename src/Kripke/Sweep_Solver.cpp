@@ -84,6 +84,9 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
 
   double *msg;
 
+  int myid;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+
   /*spectral reflection rules relating eminating and iminating fluxes
     for each of the 8 octant for the planes: i,j,k*/
   int r_rules[8][3] = {{1, 3, 4},
@@ -243,12 +246,9 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
       }
 
       /* Use standard Diamond-Difference sweep */
-
       user_data->kernel->sweep(grid_data, &dir_sets[ds], i_plane_data[ds], j_plane_data[ds], k_plane_data[ds]);
 
-
       Directions *directions = dir_sets[ds].directions;
-
       int i_dst_subd = directions[0].i_dst_subd;
       int j_dst_subd = directions[0].j_dst_subd;
       int k_dst_subd = directions[0].k_dst_subd;
@@ -275,12 +275,11 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
 void CreateBufferInfo(User_Data *user_data)
 {
   Grid_Data  *grid_data  = user_data->grid_data;
-  std::vector<Directions> &directions = user_data->directions;
 
   int *nzones          = grid_data->nzones;
   int local_imax, local_jmax, local_kmax;
-  int num_directions = user_data->directions.size();
-  int len[6], nm[6], length, i, d;
+  int num_direction_sets = grid_data->gd_sets[0].size();
+  int len[6], nm[6], length;
 
   // get group and direction dimensionality
   int dirs_groups = user_data->num_directions_per_set
@@ -302,20 +301,21 @@ void CreateBufferInfo(User_Data *user_data)
   length = local_imax * local_jmax + 1;
   len[4] = len[5] = length * dirs_groups;
 
-  for(i=0; i<6; i++){
+  for(int i=0; i<6; i++){
     nm[i] = 0;
   }
 
-  for(d=0; d<num_directions; d++){
-    if(directions[d].id > 0){
+  for(int ds=0; ds<num_direction_sets; ds++){
+    Directions *directions = grid_data->gd_sets[0][ds].directions;
+    if(directions[0].id > 0){
       nm[0]++;
     }
     else {nm[1]++; }
-    if(directions[d].jd > 0){
+    if(directions[0].jd > 0){
       nm[2]++;
     }
     else {nm[3]++; }
-    if(directions[d].kd > 0){
+    if(directions[0].kd > 0){
       nm[4]++;
     }
     else {nm[5]++; }

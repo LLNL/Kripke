@@ -204,10 +204,6 @@ create_R_grid(int R)
     }
     error_exit(1);
   }
-
-  if(myrank==0){
-    printf("Using MPI communication layer\n");
-  }
 }
 
 void
@@ -274,5 +270,5 @@ buf_reset()
 void
 RBufFree()
 {
-;
+
 }
