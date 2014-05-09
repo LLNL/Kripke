@@ -214,12 +214,9 @@ void Kernel_3d_DZG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   double * __restrict__ dy = &grid_data->deltas[1][0];
   double * __restrict__ dz = &grid_data->deltas[2][0];
 
-  SubTVec psi_lf(nestingPsi(), num_groups, num_directions,
-      (local_imax + 1) * local_jmax * local_kmax);
-  SubTVec psi_fr(nestingPsi(), num_groups, num_directions,
-      local_imax * (local_jmax + 1) * local_kmax);
-  SubTVec psi_bo(nestingPsi(), num_groups, num_directions,
-      local_imax * local_jmax * (local_kmax + 1));
+  SubTVec &psi_lf = *gd_set->psi_lf;
+  SubTVec &psi_fr = *gd_set->psi_fr;
+  SubTVec &psi_bo = *gd_set->psi_bo;
 
   // Alias the MPI data with a SubTVec for the face data
   SubTVec i_plane_v(nestingPsi(), num_groups, num_directions,

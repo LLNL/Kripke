@@ -36,7 +36,7 @@ void runPoint(Input_Variables &input_variables, FILE *out_fp){
       input_variables.num_groupsets,
       input_variables.num_groups_per_groupset,
       user_data->timing.getTotal("Solve")/niter,
-      user_data->timing.getTotal("Sweep_All")/niter,
+      user_data->timing.getTotal("Sweep")/niter,
       user_data->timing.getTotal("LTimes")/niter,
       user_data->timing.getTotal("LPlusTimes")/niter
     );

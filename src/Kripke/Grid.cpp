@@ -18,13 +18,20 @@ Group_Dir_Set::Group_Dir_Set() :
   directions(NULL),
   psi(NULL),
   rhs(NULL),
-  sigt(NULL)
+  sigt(NULL),
+  psi_lf(NULL),
+  psi_fr(NULL),
+  psi_bo(NULL)
 {
 }
 Group_Dir_Set::~Group_Dir_Set(){
   delete psi;
   delete rhs;
   delete sigt;
+
+  delete psi_lf;
+  delete psi_fr;
+  delete psi_bo;
 }
 
 
@@ -49,6 +56,16 @@ void Group_Dir_Set::allocate(Grid_Data *grid_data, Nesting_Order nest){
       num_groups, 1, grid_data->num_zones);
   }
 
+  // Allocate sweep boundary data
+  int local_imax = grid_data->nzones[0];
+  int local_jmax = grid_data->nzones[1];
+  int local_kmax = grid_data->nzones[2];
+  psi_lf = new SubTVec(nest, num_groups, num_directions,
+                    (local_imax+1)*local_jmax*local_kmax);
+  psi_fr = new SubTVec(nest, num_groups, num_directions,
+                    local_imax*(local_jmax+1)*local_kmax);
+  psi_bo = new SubTVec(nest, num_groups, num_directions,
+                    local_imax*local_jmax*(local_kmax+1));
 }
 
 
@@ -127,7 +144,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
   computeGrid(2, npz, nz_g, ksub_ref, 0.0, 1.0);
   num_zones = nzones[0]*nzones[1]*nzones[2];
 
-  num_moments = 2;
+  num_moments = 4;
 
   sig_s.resize(num_zones, 0.0);
 }

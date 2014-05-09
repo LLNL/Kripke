@@ -21,7 +21,7 @@ struct SubTVec {
     zones(nzones),
     elements(groups*directions*zones),
     data(NULL),
-    data_linear(elements, 0.0)
+    data_linear(elements)
   {
     // setup nesting order
     int int_to_ext[3];

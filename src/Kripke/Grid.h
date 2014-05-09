@@ -56,6 +56,11 @@ struct Group_Dir_Set {
   SubTVec *psi;         // Solution
   SubTVec *rhs;         // RHS, source term
   SubTVec *sigt;        // Zonal per-group cross-section
+
+  // Sweep temporary variables
+  SubTVec *psi_lf;
+  SubTVec *psi_fr;
+  SubTVec *psi_bo;
 };
 
 struct Grid_Data {

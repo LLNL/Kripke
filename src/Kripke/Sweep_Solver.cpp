@@ -63,9 +63,8 @@ int SweepSolver (User_Data *user_data)
    * Sweep each Group Set
    */
   {
-    BLOCK_TIMER(user_data->timing, Sweep_All);
+    BLOCK_TIMER(user_data->timing, Sweep);
     for(int group_set = 0;group_set < user_data->num_group_sets;++ group_set){
-      BLOCK_TIMER(user_data->timing, Sweep_GSet);
       SweepSolver_GroupSet(group_set, user_data);
     }
   }

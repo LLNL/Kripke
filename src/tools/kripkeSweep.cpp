@@ -34,14 +34,7 @@ int main(int argc, char *argv[])
    *-----------------------------------------------------------------------*/
   MPI_Comm_rank(MPI_COMM_WORLD, &myid );
 
-#ifdef KRIPKE_USE_PERFTOOLS
-  if(profile){
-    std::stringstream pfname;
-    pfname << "profile." << myid;
-    ProfilerStart(pfname.str().c_str());
-    ProfilerRegisterThread();
-  }
-#endif
+
 
   if(myid == 0){
     /* Print out a banner message along with a version number. */
@@ -75,8 +68,25 @@ int main(int argc, char *argv[])
   }
   user_data->timing.setPapiEvents(papi_names);
 
+#ifdef KRIPKE_USE_PERFTOOLS
+  if(profile){
+    std::stringstream pfname;
+    pfname << "profile." << myid;
+    ProfilerStart(pfname.str().c_str());
+    ProfilerRegisterThread();
+  }
+#endif
+
   /* Run the driver */
   Driver(user_data);
+
+#ifdef KRIPKE_USE_PERFTOOLS
+  if(profile){
+    ProfilerFlush();
+    ProfilerStop();
+  }
+#endif
+
 
   /*-----------------------------------------------------------------------
    * Print timing information
@@ -89,12 +99,7 @@ int main(int argc, char *argv[])
   delete user_data;
   MPI_Finalize();
 
-#ifdef KRIPKE_USE_PERFTOOLS
-  if(profile){
-    ProfilerFlush();
-    ProfilerStop();
-  }
-#endif
+
 
   return(0);
 }

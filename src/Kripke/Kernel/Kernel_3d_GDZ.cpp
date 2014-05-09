@@ -73,6 +73,9 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data){
   int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_moments;
 
+  // Clear phi
+  grid_data->phi->clear(0.0);
+
   // Loop over Group Sets
   int num_group_sets = grid_data->gd_sets.size();
   for(int gset = 0;gset < num_group_sets;++ gset){
@@ -104,12 +107,10 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data){
           for(int m = -n; m <= n; m++){
             double *__restrict__ phi_g_nm = phi_g_n[m];
             double * __restrict__ ell_n_m = ell_n[m+n];
-            for(int i = 0; i < num_zones; i++){
-              phi_g_nm[i] = 0.0;
-            }
+
             for(int d = 0; d < num_local_directions; d++){
-              double ell_n_m_d = ell_n_m[d+dir0];
               double * __restrict__ psi_g_d = psi_g[d];
+              double ell_n_m_d = ell_n_m[d+dir0];
               for(int i = 0; i < num_zones; i++){
                 phi_g_nm[i] += ell_n_m_d * psi_g_d[i];
               }
@@ -216,12 +217,9 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set, double *i
   double * __restrict__ dy = &grid_data->deltas[1][0];
   double * __restrict__ dz = &grid_data->deltas[2][0];
 
-  SubTVec psi_lf(nestingPsi(), num_groups, num_directions,
-                  (local_imax+1)*local_jmax*local_kmax);
-  SubTVec psi_fr(nestingPsi(), num_groups, num_directions,
-                  local_imax*(local_jmax+1)*local_kmax);
-  SubTVec psi_bo(nestingPsi(), num_groups, num_directions,
-                  local_imax*local_jmax*(local_kmax+1));
+  SubTVec &psi_lf = *gd_set->psi_lf;
+  SubTVec &psi_fr = *gd_set->psi_fr;
+  SubTVec &psi_bo = *gd_set->psi_bo;
 
   // Alias the MPI data with a SubTVec for the face data
   SubTVec i_plane_v(nestingPsi(), num_groups, num_directions, local_jmax*local_kmax, i_plane_ptr);
