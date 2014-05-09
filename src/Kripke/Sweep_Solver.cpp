@@ -8,6 +8,9 @@
 #include <vector>
 #include <stdio.h>
 
+#if KRIPKE_USE_PERFTOOLS
+#include <google/profiler.h>
+#endif
 
 /* Local prototypes */
 int SweepSolver_GroupSet (int group_set, User_Data *user_data);

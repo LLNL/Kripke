@@ -1,14 +1,18 @@
 /*--------------------------------------------------------------------------
  * Main program for 3-D Sweep Kernel
  *--------------------------------------------------------------------------*/
+#include <Kripke.h>
+#include <Kripke/User_Data.h>
+#include <Kripke/Comm.h>
 
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<sstream>
 
-#include <Kripke.h>
-#include <Kripke/User_Data.h>
-#include <Kripke/Comm.h>
+#if KRIPKE_USE_PERFTOOLS
+#include<google/profiler.h>
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -17,6 +21,8 @@ int main(int argc, char *argv[])
   int myid;
   int ierr=0;
   int i;
+
+  bool profile = true;
 
   /*-----------------------------------------------------------------------
    * Initialize MPI
@@ -27,6 +33,15 @@ int main(int argc, char *argv[])
    * Open input and  output files
    *-----------------------------------------------------------------------*/
   MPI_Comm_rank(MPI_COMM_WORLD, &myid );
+
+#ifdef KRIPKE_USE_PERFTOOLS
+  if(profile){
+    std::stringstream pfname;
+    pfname << "profile." << myid;
+    ProfilerStart(pfname.str().c_str());
+    ProfilerRegisterThread();
+  }
+#endif
 
   if(myid == 0){
     /* Print out a banner message along with a version number. */
@@ -51,6 +66,15 @@ int main(int argc, char *argv[])
   input_variables.print();
   User_Data *user_data = new User_Data(&input_variables);
 
+  std::vector<std::string> papi_names;
+  for(int i = 2;i < argc; ++i){
+    papi_names.push_back(argv[i]);
+    //papi_names.push_back("PAPI_TOT_CYC");
+    //papi_names.push_back("PAPI_FP_INS");
+    //papi_names.push_back("PAPI_VEC_DP");
+  }
+  user_data->timing.setPapiEvents(papi_names);
+
   /* Run the driver */
   Driver(user_data);
 
@@ -64,6 +88,13 @@ int main(int argc, char *argv[])
    *-----------------------------------------------------------------------*/
   delete user_data;
   MPI_Finalize();
+
+#ifdef KRIPKE_USE_PERFTOOLS
+  if(profile){
+    ProfilerFlush();
+    ProfilerStop();
+  }
+#endif
 
   return(0);
 }

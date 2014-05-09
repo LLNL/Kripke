@@ -3,6 +3,9 @@
 /* Prototypes */
 struct User_Data;
 
+#define KRIPKE_USE_PAPI 1
+#define KRIPKE_USE_PERFTOOLS 1
+
 /* directions.c */
 void InitDirections(User_Data *grid_data, int num_directions_per_octant);
 

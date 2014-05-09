@@ -13,10 +13,19 @@ project(KRIPKE)
 
 enable_language(CXX)
 
-set(INCLUDE_PATHS ${INCLUDE_PATHS} /usr/gapps/bdiv/chaos_5_x86_64_ib/opt/google-perftools/1.9/include)
-link_directories(/usr/gapps/bdiv/chaos_5_x86_64_ib/opt/google-perftools/1.9/lib)
+set(INCLUDE_PATHS ${INCLUDE_PATHS} 
+	/usr/gapps/bdiv/chaos_5_x86_64_ib/opt/google-perftools/1.9/include
+	/usr/gapps/bdiv/chaos_5_x86_64_ib/opt/papi/4.2.0/static/include
+)
 
-set(KRIPKE_BASE_LIBS kripke lapack profiler unwind) 
+link_directories(
+	/usr/gapps/bdiv/chaos_5_x86_64_ib/opt/google-perftools/1.9/lib
+	/usr/gapps/bdiv/chaos_5_x86_64_ib/opt/papi/4.2.0/static/lib
+)
+
+
+
+set(KRIPKE_BASE_LIBS kripke lapack profiler unwind papi) 
 
 set(KRIPKE_LIBS ${KRIPKE_BASE_LIBS})
 
