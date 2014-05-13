@@ -117,12 +117,14 @@ void Input_Variables::print(void) const
           nx, ny, nz);
   printf("\n");
   printf("DiscreteOrdinates_Grid\n");
-  printf("   num_dirsets_per_octant =  %i\n", num_dirsets_per_octant);
-  printf("   num_dirs_per_dirset =      %i\n", num_dirs_per_dirset);
+  printf("   num_dirsets_per_octant =   %d\n", num_dirsets_per_octant);
+  printf("   num_dirs_per_dirset =      %d\n", num_dirs_per_dirset);
+  printf("   total directions =         %d\n", 8*num_dirsets_per_octant*num_dirs_per_dirset);
   printf("\n");
   printf("Energy_Grid\n");
-  printf("   num_groupsets =           %i\n", num_groupsets);
-  printf("   num_groups_per_groupset = %i\n", num_groups_per_groupset);
+  printf("   num_groupsets =           %d\n", num_groupsets);
+  printf("   num_groups_per_groupset = %d\n", num_groups_per_groupset);
+  printf("   total groups =            %d\n", num_groupsets * num_groups_per_groupset);
   printf("\n");
   printf("Nesting: GS - DS - ");
   switch(nesting){
