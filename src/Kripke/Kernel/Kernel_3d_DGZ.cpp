@@ -106,11 +106,11 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data){
           double *ell_n_m = ell_n[m+n];
           for(int d = 0; d < num_local_directions; d++){
             double **psi_d = psi[d];
-            double ell_n_m_d = ell_n_m[d];
+            double ell_n_m_d = ell_n_m[d+dir0];
 
             for(int group = 0; group < num_local_groups; ++group){
               double *  psi_d_g = psi_d[group];
-              double *  phi_nm_g = phi_nm[group];
+              double *  phi_nm_g = phi_nm[group+group0];
               for(int z = 0; z < num_zones; z++){
                 double psi_d_g_z = psi_d_g[z];
                 phi_nm_g[z] += ell_n_m_d * psi_d_g_z;
@@ -155,7 +155,7 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data){
       /* 3D Cartesian Geometry */
       for(int d = 0; d < num_local_directions; d++){
         double **psi_d = rhs[d];
-        double **ell_plus_d = ell_plus[d];
+        double **ell_plus_d = ell_plus[d+dir0];
 
         for(int n = 0; n < num_moments; n++){
           double ***phi_out_n = phi_out + n*n;
@@ -167,7 +167,7 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data){
 
             for(int group = 0; group < num_local_groups; ++group){
               double * __restrict__ psi_d_g = psi_d[group];
-              double * __restrict__ phi_out_nm_g = phi_out_nm[group];
+              double * __restrict__ phi_out_nm_g = phi_out_nm[group+group0];
 
               for(int z = 0; z < num_zones; z++){
                 psi_d_g[z] += ell_plus_d_n_m * phi_out_nm_g[z];

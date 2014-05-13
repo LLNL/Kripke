@@ -19,76 +19,30 @@
 #include <stdio.h>
 
 
-/* declarations for MPI version of the code */
-MPI_Comm R_group;
-
-/* Saved values of R and r */
-static int R0;
-static int r0;
-
-/*  -------------------------- message buffer declarations -------------- */
-/* message buffer information, used in send-receive calls */
-/* the length of several arrays is not known until runtime, */
-/* so will be allocated via malloc in the buf_init routine   */
-
-/* these items are initialized in buf_init and don't change */
-int buf_total;     /* count of total number of messages */
-int which_num[6];  /* max number of message in each direction */
-int which_len[6];  /* size of messages in each direction */
-int buf_which[6];  /* array to say where in pool each direction starts */
-std::vector<double *> buf_pool; /* array of  pointers to each buffer in pool */
-std::vector<double> bptr_sv;  /* pointer to memory for all buffers */
-
-/* these items are reinitialized every iteration through the main code */
-int send_cnt;     /* index into buf_s_req for next send-handle */
-int buf_rec[6];   /* array to track whether which-direction is boundary */
-                  /* if value is 1 - receives have been posted in direction */
-                  /* if values is > 1 error: rcv's posted more than once*/
-                  /* if value is <= 0 direction may be used for boundry bufs*/
-                  /* amount less than  0 tracks which to allocate next  */
-std::vector<MPI_Request> buf_r_req; /* array to hold async recv message handles */
-                        /* entries 1-1 with buf_pool, initialed to null-handle
-                          */
-std::vector<MPI_Request> buf_s_req; /* array to hold async send message handles */
-                        /* entries made in order send's posted (see send_cnt)
-                          */
-std::vector<MPI_Status> buf_status; /* not used except for debug and MPI returns it */
-
-void buf_reset();  /* grump - decl just to avoid an error message */
 
 
 
-/*================= POINT TO POINT MESSAGE PASSING ==================*/
 
-/* note previous versions had a new and free call for use with boundaries
-     */
-/* in this mpi version --- the "new" function is handled via R_recv_test */
-/* and the "free" function is handled via reinitialization after R_send_wait
-  */
 
-void
-R_recv_dir(int which,
-           int r_member)
-/* post message receives - all receives in specific direction posted at once
-  */
-
-{
+/**
+ *  post message receives - all receives in specific direction posted at once
+ */
+void Comm::R_recv_dir(int which, int r_member){
   int i, j;
 
   i = buf_which[which];     /* get to right buffer pool */
   for(j = 0; j < which_num[which]; j++){
     MPI_Irecv(buf_pool[i+j], which_len[which], MPI_DOUBLE, r_member,
-              0, R_group, &buf_r_req[i+j]);
+              0, MPI_COMM_WORLD, &buf_r_req[i+j]);
   }
 
   buf_rec[which]+= 1;  /*record recv in process: += is debug error guard */
 }
 
-int
-R_recv_test(int which,
-            double **msg)
-{  /* test if any message buffer is complete and ready to use */
-   /* return 0 if not; return 1 and *msg if yes */
+/** test if any message buffer is complete and ready to use
+ * return 0 if not; return 1 and *msg if yes */
+int Comm::R_recv_test(int which,  double **msg){
+
 
   int i, j;
   int done;      /* index of which finished, if any */
@@ -132,27 +86,21 @@ R_recv_test(int which,
   return( 1);
 }
 
-void
-R_send(double * msg,
-       int r_member,
-       int length)
-{
-  /* post non-blocking send & remember handle to check completion later */
-  /* send-handles are all mixed together in one array */
 
+/* post non-blocking send & remember handle to check completion later */
+  /* send-handles are all mixed together in one array */
+void Comm::R_send(double * msg, int r_member, int length){
   if(r_member >= 0){
-    MPI_Isend(msg, length, MPI_DOUBLE, r_member, 0, R_group,
+    MPI_Isend(msg, length, MPI_DOUBLE, r_member, 0, MPI_COMM_WORLD,
               &buf_s_req[send_cnt]);
     send_cnt++; /* bump for next send */
   }
 }
 
-void
-R_wait_send ()
-{
-  /* come here to check that all sends have completed so that the */
-  /* buffers are free for reuse on next iteration */
 
+/* come here to check that all sends have completed so that the */
+  /* buffers are free for reuse on next iteration */
+void Comm::R_wait_send (){
   MPI_Waitall(send_cnt, &buf_s_req[0], &buf_status[0]);
 
   buf_reset();    /* all done - reset all the buffer info */
@@ -168,36 +116,29 @@ error_exit(int flag)
   MPI_Abort(MPI_COMM_WORLD, flag);
 }
 
-MPI_Comm GetRGroup() {
-  return(R_group);
+MPI_Comm Comm::GetRGroup() {
+  return(MPI_COMM_WORLD);
 }
 
-int GetRrank() {
+int Comm::GetRrank() {
+  int r0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &r0);
   return(r0);
 }
 
 /*===================INITIALIZATION AND TERMINATION =============*/
 
-void
-create_R_grid(int R)
+void Comm::create_R_grid(int R)
 {
-  int myrank, p, q, r, size;
-
-  /* Load R into saved version. */
-  R0 = R;
+  int myrank, size;
 
   /* Gte rank */
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-  r = myrank;
-
-  /* Load r into saved version. */
-  r0 = r;
 
   /*------------------------R Group---------------------------*/
-  R_group = MPI_COMM_WORLD;
 
   /* Check size of PQR_group */
-  MPI_Comm_size(R_group, &size);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
   if(R != size){
     if(myrank == 0){
       printf("ERROR: Incorrect number of MPI tasks. Need %d MPI tasks.", R);
@@ -206,13 +147,9 @@ create_R_grid(int R)
   }
 }
 
-void
-R_buf_init(int * len,
-           int *  nm)
-{
-  /* initialize storage for nm messages in 6 directions, and associated */
+/* initialize storage for nm messages in 6 directions, and associated */
   /* status information - each message is dlen long */
-
+Comm::Comm(int * len, int *  nm){
   int i, j, k;
   int size;
 
@@ -249,14 +186,11 @@ R_buf_init(int * len,
 
   buf_reset();
 }
-
-void
-buf_reset()
-{
+void Comm::buf_reset(void){
   /* initialize all the things that change each iteration */
-  int i;
   send_cnt = 0;
 
+  int i;
   for(i = 0; i < 6; i++){
     buf_rec[i] = 0;
   }
@@ -264,11 +198,11 @@ buf_reset()
     buf_r_req[i] = MPI_REQUEST_NULL;
     buf_s_req[i] = MPI_REQUEST_NULL;
   }
-  ;     /* don't worry about status array - not used anyway */
 }
 
-void
-RBufFree()
-{
+
+Comm::~Comm(){
+
 
 }
+

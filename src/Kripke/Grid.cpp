@@ -9,6 +9,7 @@
 #include <Kripke/Input_Variables.h>
 
 #include <cmath>
+#include <sstream>
 
 Group_Dir_Set::Group_Dir_Set() :
   num_groups(0),
@@ -68,6 +69,40 @@ void Group_Dir_Set::allocate(Grid_Data *grid_data, Nesting_Order nest){
                     local_imax*local_jmax*(local_kmax+1));
 }
 
+void Group_Dir_Set::randomizeData(void){
+  psi->randomizeData();
+  rhs->randomizeData();
+  sigt->randomizeData();
+  psi_lf->randomizeData();
+  psi_fr->randomizeData();
+  psi_bo->randomizeData();
+}
+
+void Group_Dir_Set::copy(Group_Dir_Set const &b){
+  psi->copy(*b.psi);
+  rhs->copy(*b.rhs);
+  sigt->copy(*b.sigt);
+  psi_lf->copy(*b.psi_lf);
+  psi_fr->copy(*b.psi_fr);
+  psi_bo->copy(*b.psi_bo);
+}
+
+bool Group_Dir_Set::compare(int gs, int ds, Group_Dir_Set const &b, double tol, bool verbose){
+  std::stringstream namess;
+  namess << "gdset[" << gs << "][" << ds << "]";
+  std::string name = namess.str();
+
+  bool is_diff = false;
+  is_diff |= psi->compare(name+".psi", *b.psi, tol, verbose);
+  is_diff |= rhs->compare(name+".rhs", *b.rhs, tol, verbose);
+  is_diff |= sigt->compare(name+".sigt", *b.sigt, tol, verbose);
+  is_diff |= psi_lf->compare(name+".psi_lf", *b.psi_lf, tol, verbose);
+  is_diff |= psi_fr->compare(name+".psi_fr", *b.psi_fr, tol, verbose);
+  is_diff |= psi_bo->compare(name+".psi_bo", *b.psi_bo, tol, verbose);
+
+  return is_diff;
+}
+
 
 /*--------------------------------------------------------------------------
  * GenGrid : Creates a new Grid_Data structure and allocates
@@ -90,7 +125,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
 
   /* Compute the local coordinates in the processor decomposition */
   int myid;
-  MPI_Comm_rank(GetRGroup(), &myid);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 
   int isub_ref = myid % npx;
   int jsub_ref = ((myid - isub_ref) / npx) % npy;
@@ -144,7 +179,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
   computeGrid(2, npz, nz_g, ksub_ref, 0.0, 1.0);
   num_zones = nzones[0]*nzones[1]*nzones[2];
 
-  num_moments = 4;
+  num_moments = 2;
 
   sig_s.resize(num_zones, 0.0);
 }
@@ -154,6 +189,75 @@ Grid_Data::~Grid_Data(){
   delete phi_out;
   delete ell;
   delete ell_plus;
+}
+
+void Grid_Data::randomizeData(void){
+  for(int d = 0;d < 3;++ d){
+    for(int i = 0;i < deltas[d].size();++ i){
+      deltas[d][i] = drand48();
+    }
+  }
+
+  for(int i = 0;i < volume.size();++ i){
+    volume[i] = drand48();
+  }
+
+  for(int gs = 0;gs < gd_sets.size();++ gs){
+    for(int ds = 0;ds < gd_sets[gs].size();++ ds){
+      gd_sets[gs][ds].randomizeData();
+    }
+  }
+
+  phi->randomizeData();
+  phi_out->randomizeData();
+  ell->randomizeData();
+  ell_plus->randomizeData();
+
+  for(int i = 0;i < sig_s.size();++ i){
+    sig_s[i] = drand48();
+  }
+}
+
+void Grid_Data::copy(Grid_Data const &b){
+  for(int d = 0;d < 3;++ d){
+    deltas[d] = b.deltas[d];
+  }
+  volume = b.volume;
+
+  for(int gs = 0;gs < gd_sets.size();++ gs){
+    for(int ds = 0;ds < gd_sets[gs].size();++ ds){
+      gd_sets[gs][ds].copy(b.gd_sets[gs][ds]);
+    }
+  }
+  phi->copy(*b.phi);
+  phi_out->copy(*b.phi_out);
+  ell->copy(*b.ell);
+  ell_plus->copy(*b.ell_plus);
+
+  sig_s = b.sig_s;
+}
+
+bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
+  bool is_diff = false;
+  is_diff |= compareVector("deltas[0]", deltas[0], b.deltas[0], tol, verbose);
+  is_diff |= compareVector("deltas[1]", deltas[1], b.deltas[1], tol, verbose);
+  is_diff |= compareVector("deltas[2]", deltas[2], b.deltas[2], tol, verbose);
+
+  is_diff |= compareVector("volume", volume, b.volume, tol, verbose);
+
+  for(int gs = 0;gs < gd_sets.size();++ gs){
+    for(int ds = 0;ds < gd_sets[gs].size();++ ds){
+      is_diff |= gd_sets[gs][ds].compare(
+          gs, ds, b.gd_sets[gs][ds], tol, verbose);
+    }
+  }
+
+  is_diff |= phi->compare("phi", *b.phi, tol, verbose);
+  is_diff |= phi_out->compare("phi_out", *b.phi_out, tol, verbose);
+  is_diff |= ell->compare("ell", *b.ell, tol, verbose);
+  is_diff |= ell_plus->compare("ell_plus", *b.ell_plus, tol, verbose);
+
+  return is_diff;
 }
 
 

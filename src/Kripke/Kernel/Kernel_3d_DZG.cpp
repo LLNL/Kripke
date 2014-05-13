@@ -153,7 +153,7 @@ void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
       /* 3D Cartesian Geometry */
       for (int d = 0; d < num_local_directions; d++) {
         double **rhs_d = rhs[d];
-        double **ell_plus_d = ell_plus[d];
+        double **ell_plus_d = ell_plus[d+dir0];
 
         for (int n = 0; n < num_moments; n++) {
           double ***phi_out_n = phi_out + n * n;
@@ -403,7 +403,7 @@ void Kernel_3d_DZG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
         double * __restrict__ psi_lf_d_z = psi_lf_d[Left_INDEX(istopz+ir, j, k)];
         double * __restrict__ i_plane_d_z = i_plane_d[I_PLANE_INDEX(j, k)];
         for (int group = 0; group < num_groups; ++group) {
-          psi_lf_d_z[group] = i_plane_d_z[group];
+          i_plane_d_z[group] = psi_lf_d_z[group];
         }
       }
     }
@@ -414,7 +414,7 @@ void Kernel_3d_DZG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
             psi_fr_d[Front_INDEX(i, jstopz+jb, k)];
         double * __restrict__ j_plane_d_z = j_plane_d[J_PLANE_INDEX(i, k)];
         for (int group = 0; group < num_groups; ++group) {
-          psi_fr_d_z[group] = j_plane_d_z[group];
+          j_plane_d_z[group] = psi_fr_d_z[group];
         }
       }
     }

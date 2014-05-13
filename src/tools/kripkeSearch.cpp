@@ -16,15 +16,7 @@ void runPoint(Input_Variables &input_variables, FILE *out_fp){
   /* Get timing data */
   //user_data->timing.print();
 
-  std::string nesting;
-  switch(input_variables.nesting){
-  case NEST_GDZ: nesting = "GDZ"; break;
-  case NEST_GZD: nesting = "GZD"; break;
-  case NEST_ZDG: nesting = "ZDG"; break;
-  case NEST_ZGD: nesting = "ZGD"; break;
-  case NEST_DGZ: nesting = "DGZ"; break;
-  case NEST_DZG: nesting = "DZG"; break;
-  }
+  std::string nesting = nestingString(input_variables.nesting);
 
   char line[2048];
   double niter = (double)input_variables.niter;

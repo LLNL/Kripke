@@ -74,6 +74,9 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
   int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_moments;
 
+  // Clear phi
+  grid_data->phi->clear(0.0);
+
   // Loop over Group Sets
   int num_group_sets = grid_data->gd_sets.size();
   for (int gset = 0; gset < num_group_sets; ++gset) {
@@ -99,23 +102,19 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
         double **phi_z = phi[z];
 
         for (int n = 0; n < num_moments; n++) {
-          double ** __restrict__ phi_z_n = phi_z + n * n + n;
+          double **phi_z_n = phi_z + n * n;
           double **ell_n = ell[n];
           for (int m = -n; m <= n; m++) {
-            double * __restrict__ ell_n_m = ell_n[m + n];
-            double * __restrict__ phi_z_nm = phi_z_n[m];
-
-            for (int group = 0; group < num_local_groups; ++group) {
-              phi_z_nm[group + group0] = 0;
-            }
+            double * __restrict__ ell_nm = ell_n[m + n];
+            double * __restrict__ phi_z_nm = phi_z_n[m + n];
 
             for (int d = 0; d < num_local_directions; d++) {
               double * __restrict__ psi_z_d = psi_z[d];
-              double ell_n_m_d = ell_n_m[d];
+              double ell_nm_d = ell_nm[d+dir0];
 
               for (int group = 0; group < num_local_groups; ++group) {
                 double psi_z_d_g = psi_z_d[group];
-                phi_z_nm[group + group0] += ell_n_m_d * psi_z_d_g;
+                phi_z_nm[group + group0] += ell_nm_d * psi_z_d_g;
               }
             }
           }
@@ -159,7 +158,7 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
         double **phi_z = phi_out[z];
 
         for (int d = 0; d < num_local_directions; d++) {
-          double **ell_plus_d = ell_plus[d];
+          double **ell_plus_d = ell_plus[d+dir0];
           double * __restrict__ psi_z_d = psi_z[d];
 
           for (int group = 0; group < num_local_groups; ++group) {

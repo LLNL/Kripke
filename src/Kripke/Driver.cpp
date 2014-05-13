@@ -31,7 +31,7 @@ void Driver(User_Data *user_data)
   /* Begin timing of solve */
   user_data->timing.start("Solve");
 
-  myid = GetRrank();
+  myid = user_data->comm->GetRrank();
 /*  if(myid == 0){
     // Print out a banner message along with a version number.
     printf("\n");

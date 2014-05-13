@@ -14,6 +14,7 @@
 
 
 class Kernel;
+class Comm;
 
 struct User_Data {
   User_Data(Input_Variables *input_vars);
@@ -39,6 +40,11 @@ struct User_Data {
   std::vector<int> octant_map;              // Direction origination octant
   
   Kernel *kernel;
+  Comm *comm;
+
+  void randomizeData();
+  void copy(User_Data const &b);
+  bool compare(User_Data const &b, double tol, bool verbose);
 };
 
 #endif

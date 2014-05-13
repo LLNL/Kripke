@@ -4,6 +4,7 @@
 #include <Kripke/Kernel.h>
 #include <algorithm>
 #include <vector>
+#include <stdlib.h>
 
 /* A transport vector (used for Psi and Phi, RHS, etc.)
  *
@@ -184,6 +185,45 @@ struct SubTVec {
 
   inline void clear(double v){
     std::fill(data_linear.begin(), data_linear.end(), v);
+  }
+
+  inline void randomizeData(void){
+    for(int i = 0;i < data_linear.size();++ i){
+      data_linear[i] = drand48();
+    }
+  }
+
+  inline void copy(SubTVec const &b){
+    for(int g = 0;g < groups;++ g){
+      for(int d = 0;d < directions; ++ d){
+        for(int z = 0;z < zones;++ z){
+          // Copy using abstract indexing
+          (*this)(g,d,z) = b(g,d,z);
+        }
+      }
+    }
+  }
+
+  inline bool compare(std::string const &name, SubTVec const &b,
+      double tol, bool verbose){
+
+    bool is_diff = false;
+    for(int g = 0;g < groups;++ g){
+      for(int d = 0;d < directions; ++ d){
+        for(int z = 0;z < zones;++ z){
+          // Copy using abstract indexing
+          double err = std::abs((*this)(g,d,z) - b(g,d,z));
+          if(err > tol){
+            is_diff = true;
+            if(verbose){
+              printf("%s[g=%d, d=%d, z=%d]: |%e - %e| = %e\n",
+                  name.c_str(), g,d,z, (*this)(g,d,z), b(g,d,z), err);
+            }
+          }
+        }
+      }
+    }
+    return is_diff;
   }
 
   int ext_to_int[3]; // external index to internal index mapping

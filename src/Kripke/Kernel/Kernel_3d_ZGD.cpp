@@ -79,6 +79,9 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
   int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_moments;
 
+  // Clear phi
+  grid_data->phi->clear(0.0);
+
   // Loop over Group Sets
   int num_group_sets = grid_data->gd_sets.size();
   for (int gset = 0; gset < num_group_sets; ++gset) {
@@ -114,7 +117,7 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
             for(int m = -n; m <= n; m++){
               double * __restrict__ ell_n_m = ell[n][m+n];
 
-              double phi_z_g_n_m = 0.;
+              double phi_z_g_n_m = phi_z_g_n[m];
               for(int d = 0; d < num_local_directions; d++){
                 double ell_n_m_d = ell_n_m[d+dir0];
                 double psi_z_g_d = psi_z_g[d];

@@ -4,6 +4,7 @@
 #include <Kripke/Kernel.h>
 #include <algorithm>
 #include <vector>
+#include <stdlib.h>
 
 /*
  * An L or L+ matrix (used for computing moments)
@@ -25,8 +26,8 @@ struct LMat {
         int_to_ext[2] = 2;
         break;
       case NEST_DNM:
-        int_to_ext[0] = 0;
-        int_to_ext[2] = 1;
+        int_to_ext[2] = 0;
+        int_to_ext[0] = 1;
         int_to_ext[1] = 2;
         break;
       default:
@@ -136,6 +137,45 @@ struct LMat {
 
   inline void clear(double v){
     std::fill(data_linear.begin(), data_linear.end(), v);
+  }
+
+  inline void randomizeData(void){
+    for(int i = 0;i < data_linear.size();++ i){
+      data_linear[i] = drand48();
+    }
+  }
+
+  inline void copy(LMat const &b){
+    for(int n = 0;n < num_moments;++ n){
+      int num_m = numM(n);
+      for(int m = 0;m < num_m;++ m){
+        for(int d = 0;d < num_directions;++ d){
+          (*this)(n,m,d) = b(n,m,d);
+        }
+      }
+    }
+  }
+
+  inline bool compare(std::string const &name, LMat const &b,
+      double tol, bool verbose){
+    bool is_diff = false;
+    for(int n = 0;n < num_moments;++ n){
+      int num_m = numM(n);
+      for(int m = 0;m < num_m;++ m){
+        for(int d = 0;d < num_directions;++ d){
+          // Copy using abstract indexing
+          double err = std::abs((*this)(n,m,d) - b(n,m,d));
+          if(err > tol){
+            is_diff = true;
+            if(verbose){
+              printf("%s[n=%d, m=%d, d=%d]: |%e - %e| = %e\n",
+                  name.c_str(), n,m,d, (*this)(n,m,d), b(n,m,d), err);
+            }
+          }
+        }
+      }
+    }
+    return is_diff;
   }
 
   int ext_to_int[3]; // external index to internal index mapping

@@ -75,6 +75,9 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
   int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_moments;
 
+  // Clear phi
+  grid_data->phi->clear(0.0);
+
   // Loop over Group Sets
   int num_group_sets = grid_data->gd_sets.size();
   for (int gset = 0; gset < num_group_sets; ++gset) {
@@ -110,7 +113,7 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
             for (int m = 0; m <= nn; m++) {
 
               double* __restrict__ ell_n_m = ell_n[m];
-              double phi_g_z_nm = 0.0;
+              double phi_g_z_nm = phi_g_z_n[m];
 
               for (int d = 0; d < num_local_directions; d++) {
                 double ell_n_m_d = ell_n_m[d + dir0];
@@ -412,7 +415,7 @@ void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
         double * __restrict__ psi_lf_g_z = psi_lf_g[Left_INDEX(istopz+ir, j, k)];
         double * __restrict__ i_plane_g_z = i_plane_g[I_PLANE_INDEX(j, k)];
         for (int d = 0; d < num_directions; ++d) {
-          psi_lf_g_z[d] = i_plane_g_z[d];
+          i_plane_g_z[d] = psi_lf_g_z[d];
         }
       }
     }
@@ -423,7 +426,7 @@ void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
             psi_fr_g[Front_INDEX(i, jstopz+jb, k)];
         double * __restrict__ j_plane_g_z = j_plane_g[J_PLANE_INDEX(i, k)];
         for (int d = 0; d < num_directions; ++d) {
-          psi_fr_g_z[d] = j_plane_g_z[d];
+          j_plane_g_z[d] = psi_fr_g_z[d];
         }
       }
     }

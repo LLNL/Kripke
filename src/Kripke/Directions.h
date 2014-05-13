@@ -7,6 +7,8 @@
 
 #include <vector>
 
+class User_Data;
+
 struct Directions{
   double xcos;              /* Absolute value of the x-direction cosine. */
   double ycos;              /* Absolute value of the y-direction cosine. */
@@ -43,5 +45,9 @@ struct Directions{
                             z-direction if kd = 1 or negative
                             z-direction if kd = -1. */
 };
+
+
+/* directions.c */
+void InitDirections(User_Data *grid_data, int num_directions_per_octant);
 
 #endif

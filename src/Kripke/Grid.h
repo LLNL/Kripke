@@ -43,6 +43,9 @@ struct Group_Dir_Set {
   ~Group_Dir_Set();
 
   void allocate(Grid_Data *grid_data, Nesting_Order nesting);
+  void randomizeData(void);
+  void copy(Group_Dir_Set const &b);
+  bool compare(int gs, int ds, Group_Dir_Set const &b, double tol, bool verbose);
 
   int num_groups;
   int num_directions;
@@ -67,6 +70,10 @@ struct Grid_Data {
 public:
   Grid_Data(Input_Variables *input_vars, Directions *directions);
   ~Grid_Data();
+
+  void randomizeData(void);
+  void copy(Grid_Data const &b);
+  bool compare(Grid_Data const &b, double tol, bool verbose);
 
   int num_zones;                    // Total Number of zones in this grid
   int nzones[3];                    // Number of zones in each dimension

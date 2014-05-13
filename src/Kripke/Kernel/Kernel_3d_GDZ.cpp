@@ -102,10 +102,10 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data){
 
         for(int n = 0; n < num_moments; n++){
           double **ell_n = ell[n];
-          double **phi_g_n = phi_g + n*n + n;
+          double **phi_g_n = phi_g + n*n;
 
           for(int m = -n; m <= n; m++){
-            double *__restrict__ phi_g_nm = phi_g_n[m];
+            double *__restrict__ phi_g_nm = phi_g_n[m+n];
             double * __restrict__ ell_n_m = ell_n[m+n];
 
             for(int d = 0; d < num_local_directions; d++){

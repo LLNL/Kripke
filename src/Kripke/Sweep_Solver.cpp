@@ -8,14 +8,6 @@
 #include <vector>
 #include <stdio.h>
 
-#if KRIPKE_USE_PERFTOOLS
-#include <google/profiler.h>
-#endif
-
-/* Local prototypes */
-int SweepSolver_GroupSet (int group_set, User_Data *user_data);
-
-
 /*----------------------------------------------------------------------
  * SweepSolverSolve
  *----------------------------------------------------------------------*/
@@ -80,6 +72,7 @@ int SweepSolver (User_Data *user_data)
 int SweepSolver_GroupSet (int group_set, User_Data *user_data)
 {
   Grid_Data  *grid_data         = user_data->grid_data;
+  Comm *comm = user_data->comm;
   std::vector<Group_Dir_Set> &dir_sets = grid_data->gd_sets[group_set];
 
   int num_direction_sets = user_data->num_direction_sets;
@@ -88,6 +81,8 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
 
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+
+
 
   /*spectral reflection rules relating eminating and iminating fluxes
     for each of the 8 octant for the planes: i,j,k*/
@@ -139,22 +134,22 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
 
   /* Hang out receive requests for each of the 6 neighbors */
   if(in != -1){
-    R_recv_dir( 0, in );
+    comm->R_recv_dir( 0, in );
   }
   if(ip != -1){
-    R_recv_dir( 1, ip );
+    comm->R_recv_dir( 1, ip );
   }
   if(jn != -1){
-    R_recv_dir( 2, jn );
+    comm->R_recv_dir( 2, jn );
   }
   if(jp != -1){
-    R_recv_dir( 3, jp );
+    comm->R_recv_dir( 3, jp );
   }
   if(kn != -1){
-    R_recv_dir( 4, kn );
+    comm->R_recv_dir( 4, kn );
   }
   if(kp != -1){
-    R_recv_dir( 5, kp );
+    comm->R_recv_dir( 5, kp );
   }
 
   /* Allocate and initialize (set to zero for now) message
@@ -167,7 +162,7 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
     int k_src_subd = directions[0].k_src_subd;
 
     if(k_src_subd == -1){
-      if(R_recv_test( k_which[ds], &(k_plane_data[ds]) ) == 0){
+      if(comm->R_recv_test( k_which[ds], &(k_plane_data[ds]) ) == 0){
         printf("Null buffer not returned to DD_Sweep\n");
         error_exit(1);
       }
@@ -181,7 +176,7 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
     }
 
     if(j_src_subd == -1){
-      if(R_recv_test( j_which[ds], &(j_plane_data[ds]) ) == 0){
+      if(comm->R_recv_test( j_which[ds], &(j_plane_data[ds]) ) == 0){
         printf("Null buffer not returned to DD_Sweep\n");
         error_exit(1);
       }
@@ -195,7 +190,7 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
     }
 
     if(i_src_subd == -1){
-      if(R_recv_test( i_which[ds], &(i_plane_data[ds]) ) == 0){
+      if(comm->R_recv_test( i_which[ds], &(i_plane_data[ds]) ) == 0){
         printf("Null buffer not returned to DD_Sweep\n");
         error_exit(1);
       }
@@ -215,27 +210,27 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
   while(directions_left){
 
     /* Check for a message from the 6 neighboring subdomains. */
-    if(in != -1 && R_recv_test( 0, &msg ) != 0){
+    if(in != -1 && comm->R_recv_test( 0, &msg ) != 0){
       i_plane_data[(int) msg[i_plane_zones]] = msg;
     }
 
-    if(ip != -1 && R_recv_test( 1, &msg ) != 0){
+    if(ip != -1 && comm->R_recv_test( 1, &msg ) != 0){
       i_plane_data[(int) msg[i_plane_zones]] = msg;
     }
 
-    if(jn != -1 && R_recv_test( 2, &msg ) != 0){
+    if(jn != -1 && comm->R_recv_test( 2, &msg ) != 0){
       j_plane_data[(int) msg[j_plane_zones]] = msg;
     }
 
-    if(jp != -1 && R_recv_test( 3, &msg ) != 0){
+    if(jp != -1 && comm->R_recv_test( 3, &msg ) != 0){
       j_plane_data[(int) msg[j_plane_zones]] = msg;
     }
 
-    if(kn != -1 && R_recv_test( 4, &msg ) != 0){
+    if(kn != -1 && comm->R_recv_test( 4, &msg ) != 0){
       k_plane_data[(int) msg[k_plane_zones]] = msg;
     }
 
-    if(kp != -1 && R_recv_test( 5, &msg ) != 0){
+    if(kp != -1 && comm->R_recv_test( 5, &msg ) != 0){
       k_plane_data[(int) msg[k_plane_zones]] = msg;
     }
 
@@ -255,9 +250,9 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
       int j_dst_subd = directions[0].j_dst_subd;
       int k_dst_subd = directions[0].k_dst_subd;
 
-      R_send( i_plane_data[ds], i_dst_subd, i_plane_zones+1 );
-      R_send( j_plane_data[ds], j_dst_subd, j_plane_zones+1 );
-      R_send( k_plane_data[ds], k_dst_subd, k_plane_zones+1 );
+      comm->R_send( i_plane_data[ds], i_dst_subd, i_plane_zones+1 );
+      comm->R_send( j_plane_data[ds], j_dst_subd, j_plane_zones+1 );
+      comm->R_send( k_plane_data[ds], k_dst_subd, k_plane_zones+1 );
 
       swept[ds] = 1;
       directions_left--;
@@ -266,7 +261,7 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
   }
 
   /* Make sure all messages have been sent */
-  R_wait_send();
+  comm->R_wait_send();
   return(0);
 }
 
@@ -323,5 +318,5 @@ void CreateBufferInfo(User_Data *user_data)
     else {nm[5]++; }
   }
 
-  R_buf_init( len, nm );
+  user_data->comm = new Comm( len, nm );
 }
