@@ -315,6 +315,7 @@ void Grid_Data::computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmi
 
 void Grid_Data::computeSweepIndexSets(Sweep_Order sweep_order, int block_size){
   octant_indexset.resize(8);
+  octant_extent.resize(8);
   for(int octant = 0;octant < 8;++ octant){
 
     int id, jd, kd;
@@ -354,21 +355,24 @@ void Grid_Data::computeSweepIndexSets(Sweep_Order sweep_order, int block_size){
       kstartz = nzones[2]-1; kstopz = 0; kn = -1; kb = 1; kt = 0;
     }
 
+    // Define extent block and pattern
+    Grid_Sweep_Block &extent = octant_extent[octant];
+    extent.start_i = istartz;
+    extent.start_j = jstartz;
+    extent.start_k = kstartz;
+    extent.end_i = istopz + in;
+    extent.end_j = jstopz + jn;
+    extent.end_k = kstopz + kn;
+    extent.inc_i = in;
+    extent.inc_j = jn;
+    extent.inc_k = kn;
+
     // Compute Pattern
     Grid_Sweep_IndexSet &idxset = octant_indexset[octant];
     if(sweep_order == SWEEP_DEFAULT){
-      // For blocks, we just need one
+      // For blocks, we just need the extent's
       idxset.resize(1);
-      Grid_Sweep_Block &block = idxset[0];
-      block.start_i = istartz;
-      block.start_j = jstartz;
-      block.start_k = kstartz;
-      block.end_i = istopz + in;
-      block.end_j = jstopz + jn;
-      block.end_k = kstopz + kn;
-      block.inc_i = in;
-      block.inc_j = jn;
-      block.inc_k = kn;
+      idxset[0] = extent;
     }
     else if(sweep_order == SWEEP_TILED){
       int idx = 0;

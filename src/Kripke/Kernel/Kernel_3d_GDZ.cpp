@@ -236,55 +236,14 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 
   // All directions have same id,jd,kd, since these are all one Direction Set
   // So pull that information out now
-  int istartz, istopz, in, il, ir;
-  int id = direction[0].id;
-  int jd = direction[0].jd;
-  int kd = direction[0].kd;
-  if (id > 0) {
-    istartz = 0;
-    istopz = local_imax - 1;
-    in = 1;
-    il = 0;
-    ir = 1;
-  } else {
-    istartz = local_imax - 1;
-    istopz = 0;
-    in = -1;
-    il = 1;
-    ir = 0;
-  }
-
-  int jstartz, jstopz, jn, jf, jb;
-  if (jd > 0) {
-    jstartz = 0;
-    jstopz = local_jmax - 1;
-    jn = 1;
-    jf = 0;
-    jb = 1;
-  } else {
-    jstartz = local_jmax - 1;
-    jstopz = 0;
-    jn = -1;
-    jf = 1;
-    jb = 0;
-  }
-
-  int kstartz, kstopz, kn, kb, kt;
-  if (kd > 0) {
-    kstartz = 0;
-    kstopz = local_kmax - 1;
-    kn = 1;
-    kb = 0;
-    kt = 1;
-  } else {
-    kstartz = local_kmax - 1;
-    kstopz = 0;
-    kn = -1;
-    kb = 1;
-    kt = 0;
-  }
-
   int octant = direction[0].octant;
+  Grid_Sweep_Block const &extent = grid_data->octant_extent[octant];
+  int il = (extent.inc_i > 0 ? 0 : 1);
+  int jf = (extent.inc_j > 0 ? 0 : 1);
+  int kb = (extent.inc_k > 0 ? 0 : 1);
+  int ir = !il;
+  int jb = !jf;
+  int kt = !kb;
   std::vector<Grid_Sweep_Block> const &idxset =
       grid_data->octant_indexset[octant];
 
@@ -323,7 +282,7 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       for (int k = 0; k < local_kmax; k++) {
         for (int j = 0; j < local_jmax; j++) {
           /* psi_lf has length (local_imax+1)*local_jmax*local_kmax */
-          psi_lf_g_d[Left_INDEX(istartz+il, j,
+          psi_lf_g_d[Left_INDEX(extent.start_i+il, j,
               k)] = i_plane_g_d[I_PLANE_INDEX(j, k)];
         }
       }
@@ -331,7 +290,7 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       for (int k = 0; k < local_kmax; k++) {
         for (int i = 0; i < local_imax; i++) {
           /* psi_fr has length local_imax*(local_jmax+1)*local_kmax */
-          psi_fr_g_d[Front_INDEX(i, jstartz+jf,
+          psi_fr_g_d[Front_INDEX(i, extent.start_j+jf,
               k)] = j_plane_g_d[J_PLANE_INDEX(i, k)];
         }
       }
@@ -339,7 +298,7 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       for (int j = 0; j < local_jmax; j++) {
         for (int i = 0; i < local_imax; i++) {
           /* psi_bo has length local_imax*local_jmax*(local_kmax+1) */
-          psi_bo_g_d[Bottom_INDEX(i, j, kstartz+
+          psi_bo_g_d[Bottom_INDEX(i, j, extent.start_k+
               kb)] = k_plane_g_d[K_PLANE_INDEX(i, j)];
         }
       }
@@ -391,21 +350,21 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
         for (int k = 0; k < local_kmax; k++) {
           for (int j = 0; j < local_jmax; j++) {
             i_plane_g_d[I_PLANE_INDEX(j,k)] =
-                psi_lf_g_d[Left_INDEX(istopz+ir, j, k)];
+                psi_lf_g_d[Left_INDEX(extent.end_i-extent.inc_i+ir, j, k)];
           }
         }
 
         for (int k = 0; k < local_kmax; k++) {
           for (int i = 0; i < local_imax; i++) {
             j_plane_g_d[J_PLANE_INDEX(i, k)] =
-                psi_fr_g_d[Front_INDEX(i, jstopz+jb, k)];
+                psi_fr_g_d[Front_INDEX(i, extent.end_j-extent.inc_j+jb, k)];
           }
         }
 
         for (int j = 0; j < local_jmax; j++) {
           for (int i = 0; i < local_imax; i++) {
             k_plane_g_d[K_PLANE_INDEX(i, j)] =
-                psi_bo_g_d[Bottom_INDEX(i, j, kstopz+kt)];
+                psi_bo_g_d[Bottom_INDEX(i, j, extent.end_k-extent.inc_k+kt)];
           }
         }
       }

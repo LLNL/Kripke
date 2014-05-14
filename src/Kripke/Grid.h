@@ -95,8 +95,10 @@ public:
   std::vector<double> volume;       // Spatial zone volumes
 
   // Sweep index sets for each octant
+
   typedef std::vector<Grid_Sweep_Block> Grid_Sweep_IndexSet;
   std::vector<Grid_Sweep_IndexSet> octant_indexset;
+  std::vector<Grid_Sweep_Block> octant_extent;
 
   // Group/Angle sets
   std::vector< std::vector<Group_Dir_Set> > gd_sets;

@@ -243,58 +243,21 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 
   // All directions have same id,jd,kd, since these are all one Direction Set
   // So pull that information out now
-  int istartz, istopz, in, il, ir;
-  int id = direction[0].id;
-  int jd = direction[0].jd;
-  int kd = direction[0].kd;
-  if (id > 0) {
-    istartz = 0;
-    istopz = local_imax - 1;
-    in = 1;
-    il = 0;
-    ir = 1;
-  } else {
-    istartz = local_imax - 1;
-    istopz = 0;
-    in = -1;
-    il = 1;
-    ir = 0;
-  }
-
-  int jstartz, jstopz, jn, jf, jb;
-  if (jd > 0) {
-    jstartz = 0;
-    jstopz = local_jmax - 1;
-    jn = 1;
-    jf = 0;
-    jb = 1;
-  } else {
-    jstartz = local_jmax - 1;
-    jstopz = 0;
-    jn = -1;
-    jf = 1;
-    jb = 0;
-  }
-
-  int kstartz, kstopz, kn, kb, kt;
-  if (kd > 0) {
-    kstartz = 0;
-    kstopz = local_kmax - 1;
-    kn = 1;
-    kb = 0;
-    kt = 1;
-  } else {
-    kstartz = local_kmax - 1;
-    kstopz = 0;
-    kn = -1;
-    kb = 1;
-    kt = 0;
-  }
+  int octant = direction[0].octant;
+  Grid_Sweep_Block const &extent = grid_data->octant_extent[octant];
+  int il = (extent.inc_i > 0 ? 0 : 1);
+  int jf = (extent.inc_j > 0 ? 0 : 1);
+  int kb = (extent.inc_k > 0 ? 0 : 1);
+  int ir = !il;
+  int jb = !jf;
+  int kt = !kb;
+  std::vector<Grid_Sweep_Block> const &idxset =
+      grid_data->octant_indexset[octant];
 
   /* Copy the angular fluxes incident upon this subdomain */
   for (int k = 0; k < local_kmax; k++) {
     for (int j = 0; j < local_jmax; j++) {
-      double ** psi_lf_z = psi_lf.data[Left_INDEX(istartz+il, j, k)];
+      double ** psi_lf_z = psi_lf.data[Left_INDEX(extent.start_i+il, j, k)];
       double ** i_plane_z = i_plane[I_PLANE_INDEX(j, k)];
       for (int d = 0; d < num_directions; ++d) {
         double * __restrict__ psi_lf_z_d = psi_lf_z[d];
@@ -308,7 +271,7 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 
   for (int k = 0; k < local_kmax; k++) {
     for (int i = 0; i < local_imax; i++) {
-      double ** psi_fr_z = psi_fr.data[Front_INDEX(i, jstartz+jf, k)];
+      double ** psi_fr_z = psi_fr.data[Front_INDEX(i, extent.start_j+jf, k)];
       double ** j_plane_z = j_plane[J_PLANE_INDEX(i, k)];
 
       for (int d = 0; d < num_directions; ++d) {
@@ -323,7 +286,7 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 
   for (int j = 0; j < local_jmax; j++) {
     for (int i = 0; i < local_imax; i++) {
-      double ** psi_bo_z = psi_bo.data[Bottom_INDEX(i, j, kstartz+ kb)];
+      double ** psi_bo_z = psi_bo.data[Bottom_INDEX(i, j, extent.start_k+ kb)];
       double ** k_plane_z = k_plane[K_PLANE_INDEX(i, j)];
 
       for (int d = 0; d < num_directions; ++d) {
@@ -336,9 +299,6 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     }
   }
 
-  int octant = direction[0].octant;
-  std::vector<Grid_Sweep_Block> const &idxset =
-      grid_data->octant_indexset[octant];
   for (int block_idx = 0; block_idx < idxset.size(); ++block_idx) {
     Grid_Sweep_Block const &block = idxset[block_idx];
 
@@ -430,7 +390,7 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   /* Copy the angular fluxes exiting this subdomain */
   for (int k = 0; k < local_kmax; k++) {
     for (int j = 0; j < local_jmax; j++) {
-      double ** psi_lf_z = psi_lf.data[Left_INDEX(istopz+ir, j, k)];
+      double ** psi_lf_z = psi_lf.data[Left_INDEX(extent.end_i-extent.inc_i+ir, j, k)];
       double ** i_plane_z = i_plane[I_PLANE_INDEX(j, k)];
       for (int d = 0; d < num_directions; ++d) {
         double * __restrict__ psi_lf_z_d = psi_lf_z[d];
@@ -444,7 +404,7 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 
   for (int k = 0; k < local_kmax; k++) {
     for (int i = 0; i < local_imax; i++) {
-      double ** psi_fr_z = psi_fr.data[Front_INDEX(i, jstopz+jb, k)];
+      double ** psi_fr_z = psi_fr.data[Front_INDEX(i, extent.end_j-extent.inc_j+jb, k)];
       double ** j_plane_z = j_plane[J_PLANE_INDEX(i, k)];
 
       for (int d = 0; d < num_directions; ++d) {
@@ -459,7 +419,7 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 
   for (int j = 0; j < local_jmax; j++) {
     for (int i = 0; i < local_imax; i++) {
-      double ** psi_bo_z = psi_bo.data[Bottom_INDEX(i, j, kstopz+kt)];
+      double ** psi_bo_z = psi_bo.data[Bottom_INDEX(i, j, extent.end_k-extent.inc_k+kt)];
       double ** k_plane_z = k_plane[K_PLANE_INDEX(i, j)];
 
       for (int d = 0; d < num_directions; ++d) {

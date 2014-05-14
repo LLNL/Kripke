@@ -20,6 +20,9 @@ struct Directions{
                             cosine is positive; = -1 if not). */
   int kd;                   /* direction flag (= 1 if z-direction
                             cosine is positive; = -1 if not). */
+  int il, ir;
+  int jf, jb;
+  int kt, kb;
   int i_src_subd;           /* Index of the neighboring spatial
                             subdomain in the negative
                             x-direction if id = 1 or positive
