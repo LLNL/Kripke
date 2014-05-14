@@ -44,6 +44,7 @@ struct Directions{
                             subdomain in the positive
                             z-direction if kd = 1 or negative
                             z-direction if kd = -1. */
+  int octant;
 };
 
 

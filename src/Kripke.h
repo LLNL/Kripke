@@ -50,6 +50,13 @@ inline std::string nestingString(Nesting_Order nesting){
   return("UNKNOWN");
 }
 
+enum Sweep_Order {
+  SWEEP_DEFAULT,
+  SWEEP_TILED,
+  SWEEP_OCTREE
+};
+
+
 inline bool compareVector(std::string const &name,
     std::vector<double> const &a,
     std::vector<double> const &b, double tol, bool verbose){

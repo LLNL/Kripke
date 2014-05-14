@@ -22,7 +22,8 @@ Group_Dir_Set::Group_Dir_Set() :
   sigt(NULL),
   psi_lf(NULL),
   psi_fr(NULL),
-  psi_bo(NULL)
+  psi_bo(NULL),
+  psi_internal(NULL)
 {
 }
 Group_Dir_Set::~Group_Dir_Set(){
@@ -33,6 +34,7 @@ Group_Dir_Set::~Group_Dir_Set(){
   delete psi_lf;
   delete psi_fr;
   delete psi_bo;
+  delete psi_internal;
 }
 
 
@@ -67,6 +69,8 @@ void Group_Dir_Set::allocate(Grid_Data *grid_data, Nesting_Order nest){
                     local_imax*(local_jmax+1)*local_kmax);
   psi_bo = new SubTVec(nest, num_groups, num_directions,
                     local_imax*local_jmax*(local_kmax+1));
+  psi_internal = new SubTVec(nest, num_groups, num_directions,
+                      grid_data->num_zones);
 }
 
 void Group_Dir_Set::randomizeData(void){
@@ -76,6 +80,7 @@ void Group_Dir_Set::randomizeData(void){
   psi_lf->randomizeData();
   psi_fr->randomizeData();
   psi_bo->randomizeData();
+  psi_internal->randomizeData();
 }
 
 void Group_Dir_Set::copy(Group_Dir_Set const &b){
@@ -85,6 +90,7 @@ void Group_Dir_Set::copy(Group_Dir_Set const &b){
   psi_lf->copy(*b.psi_lf);
   psi_fr->copy(*b.psi_fr);
   psi_bo->copy(*b.psi_bo);
+  psi_internal->copy(*b.psi_internal);
 }
 
 bool Group_Dir_Set::compare(int gs, int ds, Group_Dir_Set const &b, double tol, bool verbose){
@@ -182,6 +188,8 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
   num_moments = 2;
 
   sig_s.resize(num_zones, 0.0);
+
+  computeSweepIndexSets(input_vars->sweep_order, input_vars->block_size);
 }
 
 Grid_Data::~Grid_Data(){
@@ -303,4 +311,96 @@ void Grid_Data::computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmi
   }
   
   nzones[dim] = nx_l; 
+}
+
+void Grid_Data::computeSweepIndexSets(Sweep_Order sweep_order, int block_size){
+  octant_indexset.resize(8);
+  for(int octant = 0;octant < 8;++ octant){
+
+    int id, jd, kd;
+    switch(octant){
+      case 0: id = 1; jd = 1; kd = 1; break;
+      case 1: id = -1; jd = 1; kd = 1; break;
+      case 2: id = -1; jd = -1; kd = 1; break;
+      case 3: id = 1; jd = -1; kd = 1; break;
+      case 4: id = 1; jd = 1; kd = -1; break;
+      case 5: id = -1; jd = 1; kd = -1; break;
+      case 6: id = -1; jd = -1; kd = -1; break;
+      case 7: id = 1; jd = -1; kd = -1; break;
+    }
+
+    int istartz, istopz, in, il, ir;
+
+    if(id > 0){
+      istartz = 0; istopz = nzones[0]-1; in = 1; il = 0; ir = 1;
+    }
+    else {
+      istartz = nzones[0]-1; istopz = 0; in = -1; il = 1; ir = 0;
+    }
+
+    int jstartz, jstopz, jn, jf, jb;
+    if(jd > 0){
+      jstartz = 0; jstopz = nzones[1]-1; jn = 1; jf = 0; jb = 1;
+    }
+    else {
+      jstartz = nzones[1]-1; jstopz = 0; jn = -1; jf = 1; jb = 0;
+    }
+
+    int kstartz, kstopz, kn, kb, kt;
+    if(kd > 0){
+      kstartz = 0; kstopz = nzones[2]-1; kn =  1; kb = 0; kt = 1;
+    }
+    else {
+      kstartz = nzones[2]-1; kstopz = 0; kn = -1; kb = 1; kt = 0;
+    }
+
+    // Compute Pattern
+    Grid_Sweep_IndexSet &idxset = octant_indexset[octant];
+    if(sweep_order == SWEEP_DEFAULT){
+      // For blocks, we just need one
+      idxset.resize(1);
+      Grid_Sweep_Block &block = idxset[0];
+      block.start_i = istartz;
+      block.start_j = jstartz;
+      block.start_k = kstartz;
+      block.end_i = istopz + in;
+      block.end_j = jstopz + jn;
+      block.end_k = kstopz + kn;
+      block.inc_i = in;
+      block.inc_j = jn;
+      block.inc_k = kn;
+    }
+    else if(sweep_order == SWEEP_TILED){
+      int idx = 0;
+      int tile_size = block_size;
+
+      idxset.clear();
+      //printf("Setting up TILED x%d sweep order\n", tile_size);
+      for(int k=kstartz; std::abs(k-kstartz)<nzones[2]; k+=tile_size*kn){
+        for(int j=jstartz; std::abs(j-jstartz)<nzones[1]; j+=tile_size*jn){
+          for(int i=istartz; std::abs(i-istartz)<nzones[0]; i+=tile_size*in){
+
+            int num_ti = std::min(tile_size, (int)std::abs((int)(nzones[0]-std::abs(i-istartz))));
+            int num_tj = std::min(tile_size, (int)std::abs((int)(nzones[1]-std::abs(j-jstartz))));
+            int num_tk = std::min(tile_size, (int)std::abs((int)(nzones[2]-std::abs(k-kstartz))));
+
+            // Create Block
+            Grid_Sweep_Block block;
+            block.start_i = i;
+            block.start_j = j;
+            block.start_k = k;
+            block.end_i = i + num_ti*in;
+            block.end_j = j + num_tj*jn;
+            block.end_k = k + num_tk*kn;
+            block.inc_i = in;
+            block.inc_j = jn;
+            block.inc_k = kn;
+            idxset.push_back(block);
+
+          }
+        }
+      }
+    }
+
+  }
 }

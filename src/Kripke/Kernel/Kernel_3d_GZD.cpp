@@ -240,8 +240,7 @@ void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   double ***j_plane = j_plane_v.data;
   double ***k_plane = k_plane_v.data;
 
-  SubTVec psi_internal(nestingPsi(), num_groups, num_directions, num_zones);
-  double ***psi_internal_all = psi_internal.data;
+  double ***psi_internal_all = gd_set->psi_internal->data;
 
   double ***psi = gd_set->psi->data;
   double ***rhs = gd_set->rhs->data;

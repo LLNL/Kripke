@@ -64,6 +64,17 @@ struct Group_Dir_Set {
   SubTVec *psi_lf;
   SubTVec *psi_fr;
   SubTVec *psi_bo;
+  SubTVec *psi_internal;
+};
+
+/**
+ * Provides sweep index sets for a given octant.
+ * This generalizes the sweep pattern
+ */
+struct Grid_Sweep_Block {
+  int start_i, start_j, start_k; // starting index
+  int end_i, end_j, end_k; // termination conditon (one past)
+  int inc_i, inc_j, inc_k; // increment
 };
 
 struct Grid_Data {
@@ -83,6 +94,10 @@ public:
   std::vector<double> deltas[3];    // Spatial grid deltas in each dimension
   std::vector<double> volume;       // Spatial zone volumes
 
+  // Sweep index sets for each octant
+  typedef std::vector<Grid_Sweep_Block> Grid_Sweep_IndexSet;
+  std::vector<Grid_Sweep_IndexSet> octant_indexset;
+
   // Group/Angle sets
   std::vector< std::vector<Group_Dir_Set> > gd_sets;
 
@@ -93,8 +108,10 @@ public:
   LMat *ell;                  // L matrix
   LMat *ell_plus;             // L+ matrix
   std::vector<double> sig_s;  // Evaluation of zonal sigma S for a n,g,gp
+
 private:
   void computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax);
+  void computeSweepIndexSets(Sweep_Order sweep_order, int block_size);
 };
 
 #endif

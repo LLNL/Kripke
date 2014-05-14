@@ -54,6 +54,15 @@ int main(int argc, char *argv[])
   /*-----------------------------------------------------------------------
    * Initialize user input and put relevant data in the user_data structure
    *-----------------------------------------------------------------------*/
+#ifdef KRIPKE_USE_PERFTOOLS
+  if(profile){
+    std::stringstream pfname;
+    pfname << "profile." << myid;
+    ProfilerStart(pfname.str().c_str());
+    ProfilerRegisterThread();
+  }
+#endif
+
   Input_Variables input_variables;
   input_variables.read(input_file_name);
   input_variables.print();
@@ -68,14 +77,7 @@ int main(int argc, char *argv[])
   }
   user_data->timing.setPapiEvents(papi_names);
 
-#ifdef KRIPKE_USE_PERFTOOLS
-  if(profile){
-    std::stringstream pfname;
-    pfname << "profile." << myid;
-    ProfilerStart(pfname.str().c_str());
-    ProfilerRegisterThread();
-  }
-#endif
+
 
   /* Run the driver */
   Driver(user_data);

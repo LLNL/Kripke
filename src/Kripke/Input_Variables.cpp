@@ -44,6 +44,8 @@ void Input_Variables::read(std::string const &fname)
     int_vars["num_groups_per_groupset"] = &num_groups_per_groupset;
 
     int_vars["nesting"] = (int*)&nesting;
+    int_vars["sweep_order"] = (int*)&sweep_order;
+    int_vars["block_size"] = &block_size;
 
     /*
      * Parse input file

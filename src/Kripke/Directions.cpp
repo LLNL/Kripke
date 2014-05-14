@@ -28,36 +28,34 @@ void InitDirections(User_Data *user_data, int num_directions_per_octant)
 
   InitOmegas(directions);
 
-  std::vector<int> octant_map(num_directions);
-
   for(d=0; d<num_directions; d++){
     id = directions[d].id;
     jd = directions[d].jd;
     kd = directions[d].kd;
 
     if( (id>0) && (jd>0) && (kd>0) ){
-      octant_map[d] = 0;
+      directions[d].octant = 0;
     }
     else if( (id<0) && (jd>0) && (kd>0) ){
-      octant_map[d] = 1;
+      directions[d].octant = 1;
     }
     else if( (id<0) && (jd<0) && (kd>0) ){
-      octant_map[d] = 2;
+      directions[d].octant = 2;
     }
     else if( (id>0) && (jd<0) && (kd>0) ){
-      octant_map[d] = 3;
+      directions[d].octant = 3;
     }
     else if( (id>0) && (jd>0) && (kd<0) ){
-      octant_map[d] = 4;
+      directions[d].octant = 4;
     }
     else if( (id<0) && (jd>0) && (kd<0) ){
-      octant_map[d] = 5;
+      directions[d].octant = 5;
     }
     else if( (id<0) && (jd<0) && (kd<0) ){
-      octant_map[d] = 6;
+      directions[d].octant = 6;
     }
     else if( (id>0) && (jd<0) && (kd<0) ){
-      octant_map[d] = 7;
+      directions[d].octant = 7;
     }
 
     directions[d].i_src_subd = (id>0) ? in : ip;
@@ -67,9 +65,6 @@ void InitDirections(User_Data *user_data, int num_directions_per_octant)
     directions[d].j_dst_subd = (jd>0) ? jp : jn;
     directions[d].k_dst_subd = (kd>0) ? kp : kn;
   }
-
-  user_data->octant_map = octant_map;
-
 }
 
 void InitOmegas(std::vector<Directions> &directions)

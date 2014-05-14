@@ -34,6 +34,8 @@ struct Input_Variables {
   int niter;
 
   Nesting_Order nesting;
+  Sweep_Order sweep_order;
+  int block_size;
 };
 
 #endif

@@ -153,7 +153,7 @@ void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
       /* 3D Cartesian Geometry */
       for (int d = 0; d < num_local_directions; d++) {
         double **rhs_d = rhs[d];
-        double **ell_plus_d = ell_plus[d+dir0];
+        double **ell_plus_d = ell_plus[d + dir0];
 
         for (int n = 0; n < num_moments; n++) {
           double ***phi_out_n = phi_out + n * n;
@@ -229,8 +229,7 @@ void Kernel_3d_DZG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   double ***j_plane = j_plane_v.data;
   double ***k_plane = k_plane_v.data;
 
-  SubTVec psi_internal(nestingPsi(), num_groups, num_directions, num_zones);
-  double ***psi_internal_all = psi_internal.data;
+  double ***psi_internal_all = gd_set->psi_internal->data;
 
   double ***psi = gd_set->psi->data;
   double ***rhs = gd_set->rhs->data;
@@ -286,6 +285,10 @@ void Kernel_3d_DZG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     kt = 0;
   }
 
+  int octant = direction[0].octant;
+  std::vector<Grid_Sweep_Block> const &idxset =
+      grid_data->octant_indexset[octant];
+
   for (int d = 0; d < num_directions; ++d) {
     double **psi_d = psi[d];
     double **rhs_d = rhs[d];
@@ -338,60 +341,68 @@ void Kernel_3d_DZG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     }
 
     /*  Perform transport sweep of the grid 1 cell at a time.   */
-    for (int k = kstartz; std::abs(k - kstartz) < local_kmax; k += kn) {
-      double dzk = dz[k + 1];
-      double zcos_dzk = 2.0 * zcos / dzk;
-      for (int j = jstartz; std::abs(j - jstartz) < local_jmax; j += jn) {
-        double dyj = dy[j + 1];
-        double ycos_dyj = 2.0 * ycos / dyj;
-        for (int i = istartz; std::abs(i - istartz) < local_imax; i += in) {
-          double dxi = dx[i + 1];
-          double xcos_dxi = 2.0 * xcos / dxi;
+    for (int block_idx = 0; block_idx < idxset.size(); ++block_idx) {
+      Grid_Sweep_Block const &block = idxset[block_idx];
+      for (int k = block.start_k; k != block.end_k; k += block.inc_k) {
+        double dzk = dz[k + 1];
+        double zcos_dzk = 2.0 * zcos / dzk;
+        for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
+          double dyj = dy[j + 1];
+          double ycos_dyj = 2.0 * ycos / dyj;
+          for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
+            double dxi = dx[i + 1];
+            double xcos_dxi = 2.0 * xcos / dxi;
 
-          int z = Zonal_INDEX(i, j, k);
-          double * __restrict__ psi_d_z = psi_d[z];
-          double * __restrict__ rhs_d_z = rhs_d[z];
+            int z = Zonal_INDEX(i, j, k);
+            double * __restrict__ psi_d_z = psi_d[z];
+            double * __restrict__ rhs_d_z = rhs_d[z];
 
-          double * __restrict__ psi_lf_d_zil = psi_lf_d[Left_INDEX(i+il, j, k)];
-          double * __restrict__ psi_lf_d_zir = psi_lf_d[Left_INDEX(i+ir, j, k)];
+            double * __restrict__ psi_lf_d_zil =
+                psi_lf_d[Left_INDEX(i+il, j, k)];
+            double * __restrict__ psi_lf_d_zir =
+                psi_lf_d[Left_INDEX(i+ir, j, k)];
 
-          double * __restrict__ psi_fr_d_zjf = psi_fr_d[Front_INDEX(i, j+jf, k)];
-          double * __restrict__ psi_fr_d_zjb = psi_fr_d[Front_INDEX(i, j+jb, k)];
+            double * __restrict__ psi_fr_d_zjf =
+                psi_fr_d[Front_INDEX(i, j+jf, k)];
+            double * __restrict__ psi_fr_d_zjb =
+                psi_fr_d[Front_INDEX(i, j+jb, k)];
 
-          double * __restrict__ psi_bo_d_zkb =
-              psi_bo_d[Bottom_INDEX(i, j, k+kb)];
-          double * __restrict__ psi_bo_d_zkt =
-              psi_bo_d[Bottom_INDEX(i, j, k+kt)];
+            double * __restrict__ psi_bo_d_zkb =
+                psi_bo_d[Bottom_INDEX(i, j, k+kb)];
+            double * __restrict__ psi_bo_d_zkt =
+                psi_bo_d[Bottom_INDEX(i, j, k+kt)];
 
-          double * __restrict__ psi_internal_all_d_z = psi_internal_all_d[z];
-          double * __restrict__ i_plane_d_z = i_plane_d[I_PLANE_INDEX(j, k)];
-          double * __restrict__ j_plane_d_z = j_plane_d[J_PLANE_INDEX(i, k)];
-          double * __restrict__ k_plane_d_z = k_plane_d[K_PLANE_INDEX(i, j)];
+            double * __restrict__ psi_internal_all_d_z = psi_internal_all_d[z];
+            double * __restrict__ i_plane_d_z = i_plane_d[I_PLANE_INDEX(j, k)];
+            double * __restrict__ j_plane_d_z = j_plane_d[J_PLANE_INDEX(i, k)];
+            double * __restrict__ k_plane_d_z = k_plane_d[K_PLANE_INDEX(i, j)];
 
-          double * __restrict__ sigt_z = sigt[z];
+            double * __restrict__ sigt_z = sigt[z];
 
-          for (int group = 0; group < num_groups; ++group) {
-            double *psi_int_lf = psi_internal_all_d_z;
-            double *psi_int_fr = psi_internal_all_d_z;
-            double *psi_int_bo = psi_internal_all_d_z;
+            for (int group = 0; group < num_groups; ++group) {
+              double *psi_int_lf = psi_internal_all_d_z;
+              double *psi_int_fr = psi_internal_all_d_z;
+              double *psi_int_bo = psi_internal_all_d_z;
 
-            /* Add internal surface source data */
-            psi_lf_d_zil[group] += psi_int_lf[group];
-            psi_fr_d_zjf[group] += psi_int_fr[group];
-            psi_bo_d_zkb[group] += psi_int_bo[group];
+              /* Add internal surface source data */
+              psi_lf_d_zil[group] += psi_int_lf[group];
+              psi_fr_d_zjf[group] += psi_int_fr[group];
+              psi_bo_d_zkb[group] += psi_int_bo[group];
 
-            /* Calculate new zonal flux */
-            double psi_d_z_g = (rhs_d_z[group] + psi_lf_d_zil[group] * xcos_dxi
-                + psi_fr_d_zjf[group] * ycos_dyj
-                + psi_bo_d_zkb[group] * zcos_dzk)
-                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt_z[group]);
+              /* Calculate new zonal flux */
+              double psi_d_z_g = (rhs_d_z[group]
+                  + psi_lf_d_zil[group] * xcos_dxi
+                  + psi_fr_d_zjf[group] * ycos_dyj
+                  + psi_bo_d_zkb[group] * zcos_dzk)
+                  / (xcos_dxi + ycos_dyj + zcos_dzk + sigt_z[group]);
 
-            psi_d_z[group] = psi_d_z_g;
+              psi_d_z[group] = psi_d_z_g;
 
-            /* Apply diamond-difference relationships */
-            psi_lf_d_zir[group] = 2.0 * psi_d_z_g - psi_lf_d_zil[group];
-            psi_fr_d_zjb[group] = 2.0 * psi_d_z_g - psi_fr_d_zjf[group];
-            psi_bo_d_zkt[group] = 2.0 * psi_d_z_g - psi_bo_d_zkb[group];
+              /* Apply diamond-difference relationships */
+              psi_lf_d_zir[group] = 2.0 * psi_d_z_g - psi_lf_d_zil[group];
+              psi_fr_d_zjb[group] = 2.0 * psi_d_z_g - psi_fr_d_zjf[group];
+              psi_bo_d_zkt[group] = 2.0 * psi_d_z_g - psi_bo_d_zkb[group];
+            }
           }
         }
       }

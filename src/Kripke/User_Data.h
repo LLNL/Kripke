@@ -37,7 +37,6 @@ struct User_Data {
   int num_directions_per_set;               // Number of directions per dir set
   
   std::vector<Directions> directions;       // Direction data
-  std::vector<int> octant_map;              // Direction origination octant
   
   Kernel *kernel;
   Comm *comm;
