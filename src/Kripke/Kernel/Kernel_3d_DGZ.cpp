@@ -356,7 +356,6 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
                   - psi_fr_d_g[Front_INDEX(i, j+jf, k )];
               psi_bo_d_g[Bottom_INDEX(i, j, k+kt )] = 2.0 * psi_d_g_z
                   - psi_bo_d_g[Bottom_INDEX(i, j, k+kb)];
-
             }
           }
         }

@@ -24,12 +24,12 @@ void CreateBufferInfo(User_Data *user_data);
 enum Nesting_Order {
   // Nestings for Psi and Phi
   // D referes to directions OR moments, depending on context
-  NEST_GDZ,
   NEST_DGZ,
-  NEST_ZDG,
   NEST_DZG,
-  NEST_ZGD,
+  NEST_GDZ,
   NEST_GZD,
+  NEST_ZDG,
+  NEST_ZGD,
 
   // Nestings for L and L+ matrices
   NEST_DNM,
@@ -38,12 +38,13 @@ enum Nesting_Order {
 
 inline std::string nestingString(Nesting_Order nesting){
   switch(nesting){
+    case NEST_DGZ: return("DGZ");
+    case NEST_DZG: return("DZG");
     case NEST_GDZ: return("GDZ");
     case NEST_GZD: return("GZD");
     case NEST_ZDG: return("ZDG");
     case NEST_ZGD: return("ZGD");
-    case NEST_DGZ: return("DGZ");
-    case NEST_DZG: return("DZG");
+
     case NEST_DNM: return("DNM");
     case NEST_NMD: return("NMD");
   }
