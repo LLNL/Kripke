@@ -114,9 +114,9 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
   int j_plane_zones = local_imax * local_kmax * groups_dirs;
   int k_plane_zones = local_imax * local_jmax * groups_dirs;
 
-  std::vector<double*> i_plane_data(num_direction_sets, NULL);
-  std::vector<double*> j_plane_data(num_direction_sets, NULL);
-  std::vector<double*> k_plane_data(num_direction_sets, NULL);
+  std::vector<double*> i_plane_data(num_direction_sets, (double*)NULL);
+  std::vector<double*> j_plane_data(num_direction_sets, (double*)NULL);
+  std::vector<double*> k_plane_data(num_direction_sets, (double*)NULL);
 
   std::vector<int> i_which(num_direction_sets);
   std::vector<int> j_which(num_direction_sets);

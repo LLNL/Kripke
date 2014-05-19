@@ -10,7 +10,7 @@
 #include<string.h>
 #include<sstream>
 
-#if KRIPKE_USE_PERFTOOLS
+#ifdef KRIPKE_USE_PERFTOOLS
 #include<google/profiler.h>
 #endif
 
@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
   int ierr=0;
   int i;
 
-  bool profile = false;
+  bool profile = true;
 
   /*-----------------------------------------------------------------------
    * Initialize MPI

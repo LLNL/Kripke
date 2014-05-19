@@ -1,54 +1,74 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(ICC_VER 14.0.174)
-
-set(CMAKE_C_COMPILER mpiicc-${ICC_VER})
-set(CMAKE_CXX_COMPILER mpiicpc-${ICC_VER})
-set(CMAKE_LINKER mpiicpc-${ICC_VER})
+#
+# Figure out toolchain files to use in this build
+#
 
 set(SYS_TYPE $ENV{SYS_TYPE})
-set(PKG_PATH "/usr/gapps/bdiv/${SYS_TYPE}/opt")
 
+set(CMAKE_TOOLCHAIN_PATH "./cmake/Toolchain")
+
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+
+  # If the user didn't specify a toolchain, then default the toolchain file
+  if(NOT DEFINED TOOLCHAIN)  
+    if(SYS_TYPE MATCHES bgqos_0)
+      set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/bgqos_0-xlc.cmake")
+    elseif(SYS_TYPE MATCHES chaos_5_x86_64_ib)
+      set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/chaos_5_x86_64_ib-ic14.cmake")
+    endif()
+    
+  # If the user selected a toolchain (ex. ic14, gcc) then prepend the systype
+  else()
+    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/${SYS_TYPE}-${TOOLCHAIN}.cmake")
+  endif()
+  
+  message(STATUS "Selected toolchain file ${CMAKE_TOOLCHAIN_FILE}")
+endif()
+
+
+
+
+#
+# Invoke the project, choose language, display some debug info
+#
 
 project(KRIPKE)
 
 enable_language(CXX)
 
-set(INCLUDE_PATHS ${INCLUDE_PATHS} 
-	/usr/gapps/bdiv/${SYS_TYPE}/opt/google-perftools/1.9/include
-	/usr/gapps/bdiv/${SYS_TYPE}/opt/papi/4.2.0/static/include
-)
-
-link_directories(
-	/usr/gapps/bdiv/${SYS_TYPE}/opt/google-perftools/1.9/lib
-	/usr/gapps/bdiv/${SYS_TYPE}/opt/papi/4.2.0/static/lib
-)
-
-
-
-set(KRIPKE_BASE_LIBS kripke lapack profiler unwind papi) 
-
-set(KRIPKE_LIBS ${KRIPKE_BASE_LIBS})
-
-include_directories(${INCLUDE_PATHS})
+message(STATUS "Selected C++ Compiler ${CMAKE_CXX_COMPILER}")
+message(STATUS "Selected BDIV Package Path ${PKG_PATH}")
 
 
 
 #
-# OpenMP
+# Libraries to include
+#  
+
+# Include macros to aid in BDIV packages
+set(BDIV_LIBRARY_PATH "${KRIPKE_SOURCE_DIR}/cmake/Library")
+
+include(cmake/bdiv_pkg.cmake)
+
+
+bdiv_opt_pkg(PAPI 4.2.0 ON)
+bdiv_opt_pkg(perftools 1.9 ON)
+
+
+
+#
+# Other Build Options
 # 
-option(ENABLE_OPENMP "Turn on compiler support for OpenMP" OFF)
 
-if(${ENABLE_OPENMP})
-  find_package(OpenMP)
-  if (OPENMP_FOUND)
-      set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-      set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-      add_definitions (-DKRIPKE_USE_OPENMP=1)
-  endif()
-endif()
+# OpenMP build option
+include(cmake/OpenMP.cmake)
 
 
+#
+# Process build files for Kripke
+#
+set(KRIPKE_LIBS kripke ${BDIV_LIBS})
+set(KRIPKE_LIBS ${KRIPKE_LIBS} ${KRIPKE_LIBS})
 add_subdirectory(src)
 

@@ -1,0 +1,11 @@
+
+set(PAPI_DEFAULT_INCLUDE_DIRS "${PAPI_PREFIX}/static/include")
+
+set(PAPI_DEFAULT_LIB_DIR "${PAPI_PREFIX}/static/lib")
+set(PAPI_DEFAULT_LIBS "papi")
+
+set(PAPI_DEFAULT_DEFINITIONS "-DKRIPKE_USE_PAPI")
+
+
+
+

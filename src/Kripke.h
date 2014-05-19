@@ -6,23 +6,12 @@
 #include<stdio.h>
 #include<cmath>
 
-// Performance Tool Support
-#define KRIPKE_USE_PAPI 1
-#define KRIPKE_USE_PERFTOOLS 1
-
-
-// OpenMP Threading Support
-#ifndef KRIPKE_USE_OPENMP
-#define KRIPKE_USE_OPENMP 0
-#endif
-
 // Make sure that there's openmp support, otherwise error out
 #if KRIPKE_USE_OPENMP
 #ifndef _OPENMP
 #error "OpenMP selected for build, but OpenMP is not available"
 #endif
 #endif
-
 
 
 /* Prototypes */
