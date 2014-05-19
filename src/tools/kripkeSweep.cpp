@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
   int ierr=0;
   int i;
 
-  bool profile = true;
+  bool profile = false;
 
   /*-----------------------------------------------------------------------
    * Initialize MPI

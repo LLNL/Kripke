@@ -1,4 +1,14 @@
 
+
+
+#
+# OpenMP
+#
+
+
+
+
+
 include_directories(.)
 
 #set(CMAKE_BUILD_TYPE Debug)

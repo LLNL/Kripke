@@ -251,6 +251,9 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   std::vector<double> ycos_dyj_all(local_jmax);
   std::vector<double> zcos_dzk_all(local_kmax);
 
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
   for (int d = 0; d < num_directions; ++d) {
     double **psi_d = psi[d];
     double **rhs_d = rhs[d];

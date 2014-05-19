@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
     fp = fopen(output_file_name.c_str(), "wb");
   }
 
-  int total_dpow = 4;
-  int total_gpow = 4;
+  int total_dpow = 5;
+  int total_gpow = 5;
 
   for(int dset_pow = 0;dset_pow <= total_dpow;++dset_pow){
     int n_dset = 1 << dset_pow;

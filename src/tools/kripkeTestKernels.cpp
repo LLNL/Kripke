@@ -99,6 +99,9 @@ int main(int argc, char *argv[])
     printf("---------------------------------------------------------\n");
     printf("------------------- KRIPKE KERNEL TEST ------------------\n");
     printf("---------------------------------------------------------\n");
+#if KRIPKE_USE_OPENMP
+    printf("Built with OpenMP\n");
+#endif
   }
 
   if(argc < 2){
