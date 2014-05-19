@@ -10,10 +10,6 @@
 #include<string.h>
 #include<sstream>
 
-#if KRIPKE_USE_PERFTOOLS
-#include<google/profiler.h>
-#endif
-
 int main(int argc, char *argv[])
 {
   FILE             *in_file;
@@ -21,8 +17,6 @@ int main(int argc, char *argv[])
   int myid;
   int ierr=0;
   int i;
-
-  bool profile = false;
 
   /*-----------------------------------------------------------------------
    * Initialize MPI
@@ -33,8 +27,6 @@ int main(int argc, char *argv[])
    * Open input and  output files
    *-----------------------------------------------------------------------*/
   MPI_Comm_rank(MPI_COMM_WORLD, &myid );
-
-
 
   if(myid == 0){
     /* Print out a banner message along with a version number. */
@@ -54,41 +46,13 @@ int main(int argc, char *argv[])
   /*-----------------------------------------------------------------------
    * Initialize user input and put relevant data in the user_data structure
    *-----------------------------------------------------------------------*/
-#ifdef KRIPKE_USE_PERFTOOLS
-  if(profile){
-    std::stringstream pfname;
-    pfname << "profile." << myid;
-    ProfilerStart(pfname.str().c_str());
-    ProfilerRegisterThread();
-  }
-#endif
-
   Input_Variables input_variables;
   input_variables.read(input_file_name);
   input_variables.print();
   User_Data *user_data = new User_Data(&input_variables);
 
-  std::vector<std::string> papi_names;
-  for(int i = 2;i < argc; ++i){
-    papi_names.push_back(argv[i]);
-    //papi_names.push_back("PAPI_TOT_CYC");
-    //papi_names.push_back("PAPI_FP_INS");
-    //papi_names.push_back("PAPI_VEC_DP");
-  }
-  user_data->timing.setPapiEvents(papi_names);
-
-
-
-  /* Run the driver */
+    /* Run the driver */
   Driver(user_data);
-
-#ifdef KRIPKE_USE_PERFTOOLS
-  if(profile){
-    ProfilerFlush();
-    ProfilerStop();
-  }
-#endif
-
 
   /*-----------------------------------------------------------------------
    * Print timing information

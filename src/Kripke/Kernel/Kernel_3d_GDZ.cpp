@@ -48,8 +48,8 @@ void Kernel_3d_GDZ::scattering(Grid_Data *grid_data) {
         double **phi_out_g = phi_out[g];
 
         for (int m = 0; m < num_m; m++) {
-          double * __restrict__ phi_out_g_nm = phi_out_g[m + m0];
-          double * __restrict__ phi_in_g_nm = phi_in_g[m + m0];
+          double * phi_out_g_nm = phi_out_g[m + m0];
+          double * phi_in_g_nm = phi_in_g[m + m0];
 
           for (int zone = 0; zone < num_zones; zone++) {
             phi_out_g_nm[zone] += sig_s[zone] * phi_in_g_nm[zone];
@@ -102,11 +102,11 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data) {
           double **phi_g_n = phi_g + n * n;
 
           for (int m = -n; m <= n; m++) {
-            double *__restrict__ phi_g_nm = phi_g_n[m + n];
-            double * __restrict__ ell_n_m = ell_n[m + n];
+            double * phi_g_nm = phi_g_n[m + n];
+            double * ell_n_m = ell_n[m + n];
 
             for (int d = 0; d < num_local_directions; d++) {
-              double * __restrict__ psi_g_d = psi_g[d];
+              double * psi_g_d = psi_g[d];
               double ell_n_m_d = ell_n_m[d + dir0];
               for (int i = 0; i < num_zones; i++) {
                 phi_g_nm[i] += ell_n_m_d * psi_g_d[i];
@@ -153,7 +153,7 @@ void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data) {
 
         for (int d = 0; d < num_local_directions; d++) {
           double **ell_plus_d = ell_plus[d + dir0];
-          double * __restrict__ rhs_g_d = rhs_g[d];
+          double * rhs_g_d = rhs_g[d];
           for (int i = 0; i < num_zones; i++) {
             rhs_g_d[i] = 0.0;
           }
@@ -164,7 +164,7 @@ void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data) {
 
             for (int m = -n; m <= n; m++) {
               double ell_plus_d_n_m = ell_plus_d_n[m + n];
-              double * __restrict__ phi_g_nm = phi_out_g_n[m + n];
+              double * phi_g_nm = phi_out_g_n[m + n];
 
               for (int i = 0; i < num_zones; i++) {
                 rhs_g_d[i] += ell_plus_d_n_m * phi_g_nm[i];
@@ -209,9 +209,9 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   int local_imax_1 = local_imax + 1;
   int local_jmax_1 = local_jmax + 1;
 
-  double * __restrict__ dx = &grid_data->deltas[0][0];
-  double * __restrict__ dy = &grid_data->deltas[1][0];
-  double * __restrict__ dz = &grid_data->deltas[2][0];
+  double * dx = &grid_data->deltas[0][0];
+  double * dy = &grid_data->deltas[1][0];
+  double * dz = &grid_data->deltas[2][0];
 
   SubTVec &psi_lf = *gd_set->psi_lf;
   SubTVec &psi_fr = *gd_set->psi_fr;
@@ -257,18 +257,18 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     double **i_plane_g = i_plane[group];
     double **j_plane_g = j_plane[group];
     double **k_plane_g = k_plane[group];
-    double * __restrict__ sigt_g = sigt[group];
+    double * sigt_g = sigt[group];
 
     for (int d = 0; d < num_directions; ++d) {
-      double * __restrict__ psi_g_d = psi_g[d];
-      double * __restrict__ rhs_g_d = rhs_g[d];
-      double * __restrict__ psi_lf_g_d = psi_lf_g[d];
-      double * __restrict__ psi_fr_g_d = psi_fr_g[d];
-      double * __restrict__ psi_bo_g_d = psi_bo_g[d];
-      double * __restrict__ psi_internal_all_g_d = psi_internal_all_g[d];
-      double * __restrict__ i_plane_g_d = i_plane_g[d];
-      double * __restrict__ j_plane_g_d = j_plane_g[d];
-      double * __restrict__ k_plane_g_d = k_plane_g[d];
+      double * psi_g_d = psi_g[d];
+      double * rhs_g_d = rhs_g[d];
+      double * psi_lf_g_d = psi_lf_g[d];
+      double * psi_fr_g_d = psi_fr_g[d];
+      double * psi_bo_g_d = psi_bo_g[d];
+      double * psi_internal_all_g_d = psi_internal_all_g[d];
+      double * i_plane_g_d = i_plane_g[d];
+      double * j_plane_g_d = j_plane_g[d];
+      double * k_plane_g_d = k_plane_g[d];
 
       double xcos = direction[d].xcos;
       double ycos = direction[d].ycos;

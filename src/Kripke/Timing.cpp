@@ -13,11 +13,6 @@
 #include <vector>
 #include <mpi.h>
 
-
-#if KRIPKE_USE_PAPI
-#include <papi.h>
-#endif
-
 void Timing::start(std::string const &name){
   // get or create timer
   Timer &timer = timers[name];
@@ -25,22 +20,6 @@ void Timing::start(std::string const &name){
   if(!timer.started){
     timer.started = true;
     timer.start_time = MPI_Wtime();
-
-#if KRIPKE_USE_PAPI
-    int num_papi = papi_event.size();
-    if(num_papi > 0){
-      if(timer.papi_total.size() == 0){
-        timer.papi_total.resize(num_papi, 0);
-      }
-
-      // start timers
-      PAPI_start_counters(&papi_event[0], num_papi);
-
-      // clear timers
-      long long tmp[16];
-      PAPI_read_counters(tmp, num_papi);
-    }
-#endif
   }
 }
 
@@ -49,24 +28,6 @@ void Timing::stop(std::string const &name){
   Timer &timer = timers[name];
 
   if(timer.started){
-#if KRIPKE_USE_PAPI
-    int num_papi = papi_event.size();
-    if(num_papi > 0){
-      // read timers
-      long long tmp[16];
-      PAPI_stop_counters(tmp, num_papi);
-
-      // accumulate to all started timers (since this clears the PAPI values)
-      for(TimerMap::iterator t = timers.begin();t != timers.end();++ t){
-        if((*t).second.started){
-          for(int i = 0;i < num_papi;++ i){
-            (*t).second.papi_total[i] += tmp[i];
-          }
-        }
-      }
-    }
-#endif
-
     // Stop the timer
     timer.started = false;
     timer.total_time += MPI_Wtime() - timer.start_time;
@@ -113,24 +74,6 @@ void Timing::print(void) const {
   for(int i = 0;i < names.size();++ i){
     printf("  %-16s  %12d  %12.5lf\n", names[i].c_str(), ord_timers[i]->count, ord_timers[i]->total_time);
   }
-#if KRIPKE_USE_PAPI
-  int num_papi = papi_names.size();
-  if(num_papi > 0){
-    printf("\nPAPI\n");
-    printf("  %-16s", "Timer");
-    for(int i = 0;i < papi_names.size();++i){
-      printf("  %16s", papi_names[i].c_str());
-    }
-    printf("\n");
-    for(int i = 0;i < names.size();++ i){
-     printf("  %-16s", names[i].c_str());
-     for(int p = 0;p < num_papi;++ p){
-       printf("  %16ld", (long)ord_timers[i]->papi_total[p]);
-     }
-     printf("\n");
-    }
-  }
-#endif
 }
 
 double Timing::getTotal(std::string const &name) const{
@@ -141,33 +84,3 @@ double Timing::getTotal(std::string const &name) const{
   return (*i).second.total_time;
 }
 
-
-
-void Timing::setPapiEvents(std::vector<std::string> names){
-#if KRIPKE_USE_PAPI
-
-  static bool papi_initialized = false;
-  if(!papi_initialized){
-    PAPI_library_init(PAPI_VER_CURRENT);
-    papi_initialized = true;
-  }
-
-  for(int i = 0;i < names.size();++ i){
-    // Convert text string to PAPI id
-    int event_code;
-    PAPI_event_name_to_code(
-        const_cast<char*>(names[i].c_str()),
-        &event_code);
-
-    // TODO: error checking?
-
-    // Add to our list of PAPI events
-    papi_names.push_back(names[i]);
-    papi_event.push_back(event_code);
-  }
-#else
-  if(names.size() > 0){
-    printf("WARNING: PAPI NOT ENABLED, IGNORING PAPI EVENTS\n");
-  }
-#endif
-}

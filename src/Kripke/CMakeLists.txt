@@ -20,5 +20,3 @@ set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
 )
                                                                                                           
 set(KRIPKE_SOURCE ${KRIPKE_SOURCE} PARENT_SCOPE) 
-
-

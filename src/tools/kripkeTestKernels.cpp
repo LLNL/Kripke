@@ -99,9 +99,6 @@ int main(int argc, char *argv[])
     printf("---------------------------------------------------------\n");
     printf("------------------- KRIPKE KERNEL TEST ------------------\n");
     printf("---------------------------------------------------------\n");
-#if KRIPKE_USE_OPENMP
-    printf("Built with OpenMP\n");
-#endif
   }
 
   if(argc < 2){
@@ -116,7 +113,7 @@ int main(int argc, char *argv[])
    *-----------------------------------------------------------------------*/
   Input_Variables input_variables;
   input_variables.read(input_file_name);
-/*
+
   // Run LTimes
   for(int nesting = 0;nesting < 6; ++ nesting){
     testKernel<runLTimes>(input_variables, (Nesting_Order)nesting);
@@ -125,7 +122,7 @@ int main(int argc, char *argv[])
   // Run LPlusTimes
   for(int nesting = 0;nesting < 6; ++ nesting){
     testKernel<runLPlusTimes>(input_variables, (Nesting_Order)nesting);
-  } */
+  }
 
   // Run Sweep
   for(int nesting = 0;nesting < 6; ++ nesting){
