@@ -86,13 +86,15 @@ void runPoint(Input_Variables &input_variables, FILE *out_fp){
 
   char line[2048];
   double niter = (double)input_variables.niter;
-  snprintf(line, 2048, "%d %s %3d %3d %3d %3d %8.4lf %8.4lf %8.4lf %8.4lf\n",
+  snprintf(line, 2048, "nestid=%d nest=%s D=%-3d d=%-3d dirs=%d G=%-3d g=%-3d grps=%d Solve=%-8.4lf Sweep=%-8.4lf LTimes=%-8.4lf LPlusTimes=%-8.4lf\n",
       (int)input_variables.nesting,
       nesting.c_str(),
       input_variables.num_dirsets_per_octant,
       input_variables.num_dirs_per_dirset,
+      8*input_variables.num_dirsets_per_octant*input_variables.num_dirs_per_dirset,
       input_variables.num_groupsets,
       input_variables.num_groups_per_groupset,
+      input_variables.num_groupsets * input_variables.num_groups_per_groupset,
       user_data->timing.getTotal("Solve")/niter,
       user_data->timing.getTotal("Sweep")/niter,
       user_data->timing.getTotal("LTimes")/niter,
