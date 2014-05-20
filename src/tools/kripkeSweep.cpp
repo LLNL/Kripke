@@ -11,7 +11,7 @@
 #include<sstream>
 
 #ifdef KRIPKE_USE_OPENMP
-//#include<openmp.h>
+#include<omp.h>
 #endif
 
 #ifdef KRIPKE_USE_PERFTOOLS
@@ -48,6 +48,15 @@ int main(int argc, char *argv[])
     printf("---------------------------------------------------------\n");
 #ifdef KRIPKE_USE_OPENMP
   printf("Using OpenMP\n");
+#pragma omp parallel
+  {
+    if(omp_get_thread_num() == 0){
+      int num_tasks;
+      MPI_Comm_size(MPI_COMM_WORLD, &num_tasks);
+      printf("OPENMP: Number of threads per task: %d\n", omp_get_num_threads());
+      printf("OPENMP: Total number of threads:    %d\n", omp_get_num_threads() * num_tasks);
+    }
+  }
 #endif
   }
 
