@@ -10,10 +10,6 @@
 #include<string.h>
 #include<sstream>
 
-#ifdef KRIPKE_USE_OPENMP
-//#include<openmp.h>
-#endif
-
 #ifdef KRIPKE_USE_PERFTOOLS
 #include<google/profiler.h>
 #endif
@@ -46,9 +42,6 @@ int main(int argc, char *argv[])
     printf("---------------------------------------------------------\n");
     printf("-------------- KRIPKE SWEEPER VERSION 1.0 ---------------\n");
     printf("---------------------------------------------------------\n");
-#ifdef KRIPKE_USE_OPENMP
-  printf("Using OpenMP\n");
-#endif
   }
 
   if(argc < 2){

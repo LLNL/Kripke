@@ -55,15 +55,6 @@ bdiv_opt_pkg(PAPI 4.2.0 OFF)
 bdiv_opt_pkg(perftools 1.9 OFF)
 
 
-
-#
-# Other Build Options
-# 
-
-# OpenMP build option
-include(cmake/OpenMP.cmake)
-
-
 #
 # Process build files for Kripke
 #

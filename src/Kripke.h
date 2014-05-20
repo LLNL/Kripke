@@ -6,14 +6,6 @@
 #include<stdio.h>
 #include<cmath>
 
-// Make sure that there's openmp support, otherwise error out
-#if KRIPKE_USE_OPENMP
-#ifndef _OPENMP
-#error "OpenMP selected for build, but OpenMP is not available"
-#endif
-#endif
-
-
 /* Prototypes */
 struct User_Data;
 
