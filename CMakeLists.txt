@@ -36,7 +36,7 @@ endif()
 project(KRIPKE)
 
 enable_language(CXX)
-set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Debug)
 
 message(STATUS "Selected C++ Compiler ${CMAKE_CXX_COMPILER}")
 message(STATUS "Selected BDIV Package Path ${PKG_PATH}")
