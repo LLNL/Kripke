@@ -3,8 +3,7 @@ set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
   Kripke/Comm.cpp  
   Kripke/Directions.cpp
   Kripke/Driver.cpp
-  Kripke/Grid.cpp
-  Kripke/Input_Variables.cpp
+  Kripke/Grid.cpp  
   Kripke/Kernel.cpp  
   Kripke/Sweep_Solver.cpp  
   Kripke/Timing.cpp  

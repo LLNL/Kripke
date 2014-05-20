@@ -30,12 +30,7 @@ void Driver(User_Data *user_data)
 
   /* Begin timing of solve */
   user_data->timing.start("Solve");
-
-  myid = user_data->comm->GetRrank();
   for(int iter = 0;iter < user_data->niter;++ iter){
-    if(myid == 0){
-      printf("  iter %3d\n", iter);
-    }
     SweepSolver(user_data);
   }
 

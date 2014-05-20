@@ -5,6 +5,7 @@
 #include<vector>
 #include<stdio.h>
 #include<cmath>
+#include<strings.h>
 
 /* Prototypes */
 struct User_Data;
@@ -46,6 +47,14 @@ inline std::string nestingString(Nesting_Order nesting){
     case NEST_NMD: return("NMD");
   }
   return("UNKNOWN");
+}
+inline Nesting_Order nestingFromString(std::string const &str){
+  for(int i = 0;i < 6;++ i){
+    if(!strcasecmp(str.c_str(), nestingString((Nesting_Order)i).c_str())){
+      return (Nesting_Order)i;
+  }
+ }
+  return (Nesting_Order)-1;
 }
 
 enum Sweep_Order {
