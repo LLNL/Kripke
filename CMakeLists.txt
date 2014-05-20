@@ -36,6 +36,7 @@ endif()
 project(KRIPKE)
 
 enable_language(CXX)
+set(CMAKE_BUILD_TYPE Debug)
 
 message(STATUS "Selected C++ Compiler ${CMAKE_CXX_COMPILER}")
 message(STATUS "Selected BDIV Package Path ${PKG_PATH}")
@@ -54,6 +55,8 @@ include(cmake/bdiv_pkg.cmake)
 bdiv_opt_pkg(PAPI 4.2.0 OFF)
 bdiv_opt_pkg(perftools 1.9 OFF)
 
+set(KRIPKE_BASE_LIBS kripkelib)
+set(KRIPKE_LIBS ${KRIPKE_BASE_LIBS})
 
 
 #
