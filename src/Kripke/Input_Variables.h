@@ -22,9 +22,6 @@
  *--------------------------------------------------------------------------*/
 
 struct Input_Variables {
-  void read(std::string const &fname);
-  void print(void) const;
-
   int npx, npy, npz;
   int nx, ny, nz;
   int num_dirsets_per_octant;
