@@ -48,12 +48,11 @@ message(STATUS "Selected BDIV Package Path ${PKG_PATH}")
 
 # Include macros to aid in BDIV packages
 set(BDIV_LIBRARY_PATH "${KRIPKE_SOURCE_DIR}/cmake/Library")
-
 include(cmake/bdiv_pkg.cmake)
 
 
-bdiv_opt_pkg(PAPI 4.2.0 ON)
-bdiv_opt_pkg(perftools 1.9 ON)
+bdiv_opt_pkg(PAPI 4.2.0 OFF)
+bdiv_opt_pkg(perftools 1.9 OFF)
 
 
 
