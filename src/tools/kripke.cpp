@@ -79,7 +79,7 @@ std::vector<std::string> split(std::string const &str, char delim){
 }
 
 
-void runPoint(Input_Variables &input_variables, FILE *out_fp){
+void runPoint(int num_tasks, int num_threads, Input_Variables &input_variables, FILE *out_fp){
   /* Allocate problem */
   User_Data *user_data = new User_Data(&input_variables);
 
@@ -90,7 +90,9 @@ void runPoint(Input_Variables &input_variables, FILE *out_fp){
 
   char line[2048];
   double niter = (double)input_variables.niter;
-  snprintf(line, 2048, "nestid=%d nest=%s D=%-3d d=%-3d dirs=%d G=%-3d g=%-3d grps=%d Solve=%-8.4lf Sweep=%-8.4lf LTimes=%-8.4lf LPlusTimes=%-8.4lf\n",
+  snprintf(line, 2048, "ntasks=%d nthreads=%d nestid=%d nest=%s D=%-3d d=%-3d dirs=%d G=%-3d g=%-3d grps=%d Solve=%-8.4lf Sweep=%-8.4lf LTimes=%-8.4lf LPlusTimes=%-8.4lf\n",
+      num_tasks,
+      num_threads,
       (int)input_variables.nesting,
       nesting.c_str(),
       input_variables.num_dirsets_per_octant,
@@ -106,6 +108,7 @@ void runPoint(Input_Variables &input_variables, FILE *out_fp){
     );
   if(out_fp != NULL){
     fprintf(out_fp, line);
+    fflush(out_fp);
     printf(line);
   }
 
@@ -220,13 +223,14 @@ int main(int argc, char **argv) {
    * Display Options
    */
   int nsearches = grp_list.size() * dir_list.size() * nest_list.size();
+  int num_threads;
   if (myid == 0) {
     printf("Number of MPI tasks:   %d\n", num_tasks);
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel
     {
+      num_threads = omp_get_num_threads();
       if(omp_get_thread_num() == 0){
-          int num_threads = omp_get_num_threads();
           printf("OpenMP threads/task:   %d\n", num_threads);
           printf("OpenMP total threads:  %d\n", num_threads*num_tasks);
         }
@@ -311,7 +315,7 @@ int main(int argc, char **argv) {
         }
         else{
           // Just run the "solver"
-          runPoint(ivars, outfp);
+          runPoint(num_tasks, num_threads, ivars, outfp);
         }
 
         point ++;
