@@ -9,6 +9,10 @@
 #include<string>
 #include<sstream>
 
+#ifdef KRIPKE_USE_OPENMP
+#include<omp.h>
+#endif
+
 typedef std::pair<int, int> IntPair;
 
 
@@ -30,7 +34,7 @@ void usage(void){
     printf("  --procs <npx,npy,npz>  MPI task spatial decomposition\n");
     printf("                         Default:  --procs 1,1,1\n");
     printf("  --test                 Run Kernel Test instead of solver\n");
-    printf("  --zones <x,y,z>        Number of zones per MPI task in x,y,z\n");
+    printf("  --zones <x,y,z>        Number of zones in x,y,z\n");
     printf("                         Default:  --zones 8,8,8\n");
     printf("\n");
   }
@@ -218,9 +222,19 @@ int main(int argc, char **argv) {
   int nsearches = grp_list.size() * dir_list.size() * nest_list.size();
   if (myid == 0) {
     printf("Number of MPI tasks:   %d\n", num_tasks);
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel
+    {
+      if(omp_get_thread_num() == 0){
+          int num_threads = omp_get_num_threads();
+          printf("OpenMP threads/task:   %d\n", num_threads);
+          printf("OpenMP total threads:  %d\n", num_threads*num_tasks);
+        }
+    }
+#endif
     printf("Output File:           %s\n", outfile.c_str());
     printf("Processors:            %d x %d x %d\n", nprocs[0], nprocs[1], nprocs[2]);
-    printf("Zones per processor:   %d x %d x %d\n", nzones[0], nzones[1], nzones[2]);
+    printf("Zones:                 %d x %d x %d\n", nzones[0], nzones[1], nzones[2]);
     printf("Number iterations:     %d\n", niter);
 
     if(grp_list.size() == 0){
@@ -259,9 +273,9 @@ int main(int argc, char **argv) {
     outfp = fopen(outfile.c_str(), "wb");
   }
   Input_Variables ivars;
-  ivars.nx = nzones[0] * nprocs[0];
-  ivars.ny = nzones[1] * nprocs[1];
-  ivars.nz = nzones[2] * nprocs[2];
+  ivars.nx = nzones[0];
+  ivars.ny = nzones[1];
+  ivars.nz = nzones[2];
   ivars.npx = nprocs[0];
   ivars.npy = nprocs[1];
   ivars.npz = nprocs[2];
@@ -273,13 +287,15 @@ int main(int argc, char **argv) {
     for(int g = 0;g < grp_list.size();++ g){
       for(int n = 0;n < nest_list.size();++ n){
 
-        printf("Running point %d/%d: D:d=%d:%d, G:g=%d:%d, Nest=%s\n",
+        if(myid == 0){
+          printf("Running point %d/%d: D:d=%d:%d, G:g=%d:%d, Nest=%s\n",
             point+1, nsearches,
             dir_list[d].first,
             dir_list[d].second,
             grp_list[d].first,
             grp_list[d].second,
             nestingString(nest_list[n]).c_str());
+        }
 
         // Setup Current Search Point
         ivars.num_dirsets_per_octant = dir_list[d].first;

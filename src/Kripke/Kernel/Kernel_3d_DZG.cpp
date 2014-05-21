@@ -101,6 +101,10 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
       for (int n = 0; n < num_moments; n++) {
         double ***phi_n = phi + n * n;
         double **ell_n = ell[n];
+
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
         for (int m = -n; m <= n; m++) {
           double **phi_n_m = phi_n[m + n];
           double *ell_n_m = ell_n[m + n];
@@ -163,6 +167,9 @@ void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
             double **phi_out_n_m = phi_out_n[m];
             double ell_plus_d_n_m = ell_plus_d_n[m];
 
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
             for (int z = 0; z < num_zones; z++) {
               double * __restrict__ rhs_d_z = rhs_d[z];
               double * __restrict__ phi_n_m_z = phi_out_n_m[z] + group0;
@@ -249,6 +256,9 @@ void Kernel_3d_DZG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   std::vector<Grid_Sweep_Block> const &idxset =
       grid_data->octant_indexset[octant];
 
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
   for (int d = 0; d < num_directions; ++d) {
     double **psi_d = psi[d];
     double **rhs_d = rhs[d];

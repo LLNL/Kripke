@@ -93,6 +93,9 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data) {
       double ***psi = gd_set.psi->data;
 
       /* 3D Cartesian Geometry */
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
       for (int group = 0; group < num_local_groups; ++group) {
         double **psi_g = psi[group];
         double **phi_g = phi[group + group0];
@@ -147,6 +150,9 @@ void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data) {
       double ***rhs = gd_set.rhs->data;
 
       /* 3D Cartesian Geometry */
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
       for (int group = 0; group < num_local_groups; ++group) {
         double **phi_out_g = phi_out[group + group0];
         double **rhs_g = rhs[group];
@@ -247,6 +253,9 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   std::vector<Grid_Sweep_Block> const &idxset =
       grid_data->octant_indexset[octant];
 
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
   for (int group = 0; group < num_groups; ++group) {
     double **psi_g = psi[group];
     double **rhs_g = rhs[group];

@@ -97,6 +97,9 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
       double ***psi = gd_set.psi->data;
 
       /* 3D Cartesian Geometry */
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
       for (int z = 0; z < num_zones; z++) {
         double **psi_z = psi[z];
         double **phi_z = phi[z];
@@ -153,6 +156,9 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
       gd_set.rhs->clear(0.0);
 
       /* 3D Cartesian Geometry */
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
       for (int z = 0; z < num_zones; z++) {
         double **psi_z = rhs[z];
         double **phi_z = phi_out[z];
@@ -259,6 +265,9 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     for (int j = 0; j < local_jmax; j++) {
       double ** psi_lf_z = psi_lf.data[Left_INDEX(extent.start_i+il, j, k)];
       double ** i_plane_z = i_plane[I_PLANE_INDEX(j, k)];
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
       for (int d = 0; d < num_directions; ++d) {
         double * __restrict__ psi_lf_z_d = psi_lf_z[d];
         double * __restrict__ i_plane_z_d = i_plane_z[d];
@@ -273,7 +282,9 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     for (int i = 0; i < local_imax; i++) {
       double ** psi_fr_z = psi_fr.data[Front_INDEX(i, extent.start_j+jf, k)];
       double ** j_plane_z = j_plane[J_PLANE_INDEX(i, k)];
-
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
       for (int d = 0; d < num_directions; ++d) {
         double * __restrict__ psi_fr_z_d = psi_fr_z[d];
         double * __restrict__ j_plane_d_z = j_plane_z[d];
@@ -288,7 +299,9 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     for (int i = 0; i < local_imax; i++) {
       double ** psi_bo_z = psi_bo.data[Bottom_INDEX(i, j, extent.start_k+ kb)];
       double ** k_plane_z = k_plane[K_PLANE_INDEX(i, j)];
-
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
       for (int d = 0; d < num_directions; ++d) {
         double * __restrict__ psi_bo_z_d = psi_bo_z[d];
         double * __restrict__ k_plane_z_d = k_plane_z[d];
@@ -326,7 +339,9 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
           double **i_plane_z = i_plane[I_PLANE_INDEX(j, k)];
           double **j_plane_z = j_plane[J_PLANE_INDEX(i, k)];
           double **k_plane_z = k_plane[K_PLANE_INDEX(i, j)];
-
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
           for (int d = 0; d < num_directions; ++d) {
             double xcos = direction[d].xcos;
             double ycos = direction[d].ycos;
@@ -392,6 +407,9 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     for (int j = 0; j < local_jmax; j++) {
       double ** psi_lf_z = psi_lf.data[Left_INDEX(extent.end_i-extent.inc_i+ir, j, k)];
       double ** i_plane_z = i_plane[I_PLANE_INDEX(j, k)];
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
       for (int d = 0; d < num_directions; ++d) {
         double * __restrict__ psi_lf_z_d = psi_lf_z[d];
         double * __restrict__ i_plane_z_d = i_plane_z[d];
@@ -406,7 +424,9 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     for (int i = 0; i < local_imax; i++) {
       double ** psi_fr_z = psi_fr.data[Front_INDEX(i, extent.end_j-extent.inc_j+jb, k)];
       double ** j_plane_z = j_plane[J_PLANE_INDEX(i, k)];
-
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
       for (int d = 0; d < num_directions; ++d) {
         double * __restrict__ psi_fr_z_d = psi_fr_z[d];
         double * __restrict__ j_plane_d_z = j_plane_z[d];
@@ -421,7 +441,9 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     for (int i = 0; i < local_imax; i++) {
       double ** psi_bo_z = psi_bo.data[Bottom_INDEX(i, j, extent.end_k-extent.inc_k+kt)];
       double ** k_plane_z = k_plane[K_PLANE_INDEX(i, j)];
-
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
       for (int d = 0; d < num_directions; ++d) {
         double * __restrict__ psi_bo_z_d = psi_bo_z[d];
         double * __restrict__ k_plane_z_d = k_plane_z[d];

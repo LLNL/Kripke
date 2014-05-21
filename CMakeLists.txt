@@ -70,7 +70,7 @@ include(cmake/OpenMP.cmake)
 #
 # Process build files for Kripke
 #
-set(KRIPKE_LIBS kripke ${BDIV_LIBS})
+set(KRIPKE_LIBS kripkelib ${BDIV_LIBS})
 set(KRIPKE_LIBS ${KRIPKE_LIBS} ${KRIPKE_LIBS})
 add_subdirectory(src)
 

@@ -99,6 +99,9 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
         double ***phi_n = phi + n * n;
         double **ell_n = ell[n];
 
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
         for (int m = -n; m <= n; m++) {
           double **phi_nm = phi_n[m + n];
           double *ell_n_m = ell_n[m + n];
@@ -162,6 +165,9 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
             double **phi_out_nm = phi_out_n[m];
             double ell_plus_d_n_m = ell_plus_d_n[m];
 
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
             for (int group = 0; group < num_local_groups; ++group) {
               double * __restrict__ psi_d_g = psi_d[group];
               double * __restrict__ phi_out_nm_g = phi_out_nm[group + group0];
