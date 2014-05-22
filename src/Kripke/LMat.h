@@ -119,6 +119,10 @@ struct LMat {
     return 0;
   }
 
+  inline double* ptr(void){
+    return &data_linear[0];
+  }
+
   // These are NOT efficient.. just used to re-stride data for comparisons
   inline double &operator()(int n, int m, int d) {
     int idx[3];
