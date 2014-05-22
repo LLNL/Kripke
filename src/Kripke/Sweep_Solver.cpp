@@ -30,7 +30,7 @@ int SweepSolver (User_Data *user_data)
   // Scattering Kernel Evaluation
   {
     BLOCK_TIMER(user_data->timing, Scattering);
-    kernel->scattering(grid_data);
+    //kernel->scattering(grid_data);
   }
 
   // Moments to Discrete transformation

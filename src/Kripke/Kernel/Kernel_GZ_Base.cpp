@@ -14,11 +14,10 @@ Kernel_GZ_Base::~Kernel_GZ_Base(){
 void Kernel_GZ_Base::evalSigmaTot(User_Data *user_data, Group_Dir_Set *ga_set){
   int num_groups = ga_set->num_groups;
   int num_zones = user_data->grid_data->num_zones;
-  double **sigt = ga_set->sigt->data[0];
   double *sigt_table = &user_data->sigma_tot[0];
 
   for(int g = 0;g < num_groups;++ g){
-    double *sigt_g = sigt[g];
+    double *sigt_g = ga_set->sigt->ptr(g, 0, 0);
     double g_sigt_table = sigt_table[g];
 
     for(int z = 0;z < num_zones;++ z){

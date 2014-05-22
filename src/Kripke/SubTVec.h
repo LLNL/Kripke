@@ -21,66 +21,9 @@ struct SubTVec {
     directions(ndir_mom),
     zones(nzones),
     elements(groups*directions*zones),
-    data(NULL),
     data_linear(elements)
   {
-    // setup nesting order
-    int int_to_ext[3];
-    switch(nesting){
-      case NEST_GDZ:
-        int_to_ext[0] = 0;
-        int_to_ext[1] = 1;
-        int_to_ext[2] = 2;
-        break;
-      case NEST_GZD:
-        int_to_ext[0] = 0;
-        int_to_ext[2] = 1;
-        int_to_ext[1] = 2;
-        break;
-      case NEST_DZG:
-        int_to_ext[1] = 0;
-        int_to_ext[2] = 1;
-        int_to_ext[0] = 2;
-        break;
-      case NEST_DGZ:
-        int_to_ext[1] = 0;
-        int_to_ext[0] = 1;
-        int_to_ext[2] = 2;
-        break;
-      case NEST_ZDG:
-        int_to_ext[2] = 0;
-        int_to_ext[1] = 1;
-        int_to_ext[0] = 2;
-        break;
-      case NEST_ZGD:
-        int_to_ext[2] = 0;
-        int_to_ext[0] = 1;
-        int_to_ext[1] = 2;
-        break;
-    }
-
-    // setup dimensionality
-    int size_ext[3];
-    size_ext[0] = groups;
-    size_ext[1] = directions;
-    size_ext[2] = zones;
-
-    // map to internal indices
-    for(int i = 0; i < 3; ++i){
-      ext_to_int[i] = int_to_ext[i];
-    }
-    for(int i = 0; i < 3; ++i){
-      size_int[ext_to_int[i]] = size_ext[i];
-    }
-
-    data = new double**[size_int[0]];
-    for(int a = 0; a < size_int[0]; ++a){
-      data[a] = new double*[size_int[1]];
-      for(int b = 0; b < size_int[1]; ++b){
-        data[a][b] = &data_linear[0] + a * size_int[1]*size_int[2] + b *
-                     size_int[2];
-      }
-    }
+    setupIndices(nesting, &data_linear[0]);
   }
 
 
@@ -90,41 +33,47 @@ struct SubTVec {
     directions(ndir_mom),
     zones(nzones),
     elements(groups*directions*zones),
-    data(NULL),
     data_linear(0)
   {
+    setupIndices(nesting, ptr);
+  }
+
+  ~SubTVec(){
+
+  }
+
+  void setupIndices(Nesting_Order nesting, double *ptr){
     // setup nesting order
-    int int_to_ext[3];
     switch(nesting){
       case NEST_GDZ:
-        int_to_ext[0] = 0;
-        int_to_ext[1] = 1;
-        int_to_ext[2] = 2;
+        ext_to_int[0] = 0;
+        ext_to_int[1] = 1;
+        ext_to_int[2] = 2;
         break;
       case NEST_GZD:
-        int_to_ext[0] = 0;
-        int_to_ext[2] = 1;
-        int_to_ext[1] = 2;
+        ext_to_int[0] = 0;
+        ext_to_int[2] = 1;
+        ext_to_int[1] = 2;
         break;
       case NEST_DZG:
-        int_to_ext[1] = 0;
-        int_to_ext[2] = 1;
-        int_to_ext[0] = 2;
+        ext_to_int[1] = 0;
+        ext_to_int[2] = 1;
+        ext_to_int[0] = 2;
         break;
       case NEST_DGZ:
-        int_to_ext[1] = 0;
-        int_to_ext[0] = 1;
-        int_to_ext[2] = 2;
+        ext_to_int[1] = 0;
+        ext_to_int[0] = 1;
+        ext_to_int[2] = 2;
         break;
       case NEST_ZDG:
-        int_to_ext[2] = 0;
-        int_to_ext[1] = 1;
-        int_to_ext[0] = 2;
+        ext_to_int[2] = 0;
+        ext_to_int[1] = 1;
+        ext_to_int[0] = 2;
         break;
       case NEST_ZGD:
-        int_to_ext[2] = 0;
-        int_to_ext[0] = 1;
-        int_to_ext[1] = 2;
+        ext_to_int[2] = 0;
+        ext_to_int[0] = 1;
+        ext_to_int[1] = 2;
         break;
     }
 
@@ -136,27 +85,18 @@ struct SubTVec {
 
     // map to internal indices
     for(int i = 0; i < 3; ++i){
-      ext_to_int[i] = int_to_ext[i];
-    }
-    for(int i = 0; i < 3; ++i){
       size_int[ext_to_int[i]] = size_ext[i];
     }
 
-    data = new double**[size_int[0]];
-    for(int a = 0; a < size_int[0]; ++a){
-      data[a] = new double*[size_int[1]];
-      for(int b = 0; b < size_int[1]; ++b){
-        data[a][b] = ptr + a * size_int[1]*size_int[2] + b *
-                     size_int[2];
-      }
-    }
+    data_pointer = ptr;
   }
 
-  ~SubTVec(){
-    for(int a = 0; a < size_int[0]; ++a){
-      delete[] data[a];
-    }
-    delete[] data;
+  inline double* ptr(void){
+    return data_pointer;
+  }
+
+  inline double* ptr(int g, int d, int z){
+    return &(*this)(g,d,z);
   }
 
   // These are NOT efficient.. just used to re-stride data for comparisons
@@ -165,14 +105,13 @@ struct SubTVec {
     idx[ext_to_int[0]] = g;
     idx[ext_to_int[1]] = d;
     idx[ext_to_int[2]] = z;
-    return(data[idx[0]][idx[1]][idx[2]]);
+    int offset = idx[0] * size_int[1]*size_int[2] +
+                 idx[1] * size_int[2] +
+                 idx[2];
+    return data_pointer[offset];
   }
   inline double operator()(int g, int d, int z) const {
-    int idx[3];
-    idx[ext_to_int[0]] = g;
-    idx[ext_to_int[1]] = d;
-    idx[ext_to_int[2]] = z;
-    return(data[idx[0]][idx[1]][idx[2]]);
+    return (*const_cast<SubTVec*>(this))(g,d,z);
   }
 
   inline double sum(void) const {
@@ -230,7 +169,7 @@ struct SubTVec {
   int size_int[3]; // size of each dimension in internal indices
 
   int groups, directions, zones, elements;
-  double ***data;
+  double *data_pointer;
   std::vector<double> data_linear;
 };
 
