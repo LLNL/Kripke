@@ -16,6 +16,8 @@
 typedef std::pair<int, int> IntPair;
 
 
+std::vector<std::string> papi_names;
+
 void usage(void){
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
@@ -83,6 +85,8 @@ void runPoint(int num_tasks, int num_threads, Input_Variables &input_variables, 
   /* Allocate problem */
   User_Data *user_data = new User_Data(&input_variables);
 
+  user_data->timing.setPapiEvents(papi_names);
+
   /* Run the driver */
   Driver(user_data);
 
@@ -107,10 +111,15 @@ void runPoint(int num_tasks, int num_threads, Input_Variables &input_variables, 
       user_data->timing.getTotal("LPlusTimes")/niter
     );
   if(out_fp != NULL){
-    fprintf(out_fp, line);
-    fflush(out_fp);
+    user_data->timing.print();
+
+    if(out_fp != stdout){
+      fprintf(out_fp, line);
+    }
     printf(line);
   }
+
+
 
   /* Cleanup */
   delete user_data;
@@ -213,6 +222,9 @@ int main(int argc, char **argv) {
     else if(opt == "--test"){
       test = true;
     }
+    else if(opt == "--papi"){
+      papi_names = split(cmd.pop(), ',');
+    }
     else{
       printf("Unknwon options %s\n", opt.c_str());
       usage();
@@ -275,6 +287,9 @@ int main(int argc, char **argv) {
   FILE *outfp = NULL;
   if(outfile != "" && myid == 0){
     outfp = fopen(outfile.c_str(), "wb");
+  }
+  else if(myid == 0){
+    outfp = stdout;
   }
   Input_Variables ivars;
   ivars.nx = nzones[0];
