@@ -135,24 +135,28 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
       int num_local_directions = gd_set.num_directions;
       int dir0 = gd_set.direction0;
 
+      gd_set.rhs->clear(0.0);
+
       /* 3D Cartesian Geometry */
       for (int group = 0; group < num_local_groups; ++group) {
         for (int z = 0; z < num_zones; z++) {
-          double *rhs = gd_set.rhs->ptr(group, 0, z);
-          double const *phi_out = grid_data->phi_out->ptr(group0+group, 0, z);
-          for (int d = 0; d < num_local_directions; d++) {
-            double **ell_plus_d = ell_plus[d + dir0];
 
-            double psi_acc = 0.0;
-            int nm_offset = 0;
-            for (int n = 0; n < num_moments; n++) {
-              double const * ell_plus_d_n = ell_plus_d[n];
-              for (int m = -n; m <= n; m++) {
-                psi_acc += ell_plus_d_n[n+m] * phi_out[nm_offset+n+m];
+          double *rhs = gd_set.rhs->ptr(group, 0, z);
+          double * KRESTRICT phi_out = grid_data->phi_out->ptr(group + group0,
+              0, z);
+
+          for (int n = 0; n < num_moments; n++) {
+            double ** ell_plus_n = ell_plus[n];
+            int mmax = 2 * n + 1;
+            for (int m = 0; m < mmax; m++) {
+              double * KRESTRICT ell_plus_n_m = ell_plus_n[m] + dir0;
+              double phi_out_z_n_m = *phi_out;
+
+              for (int d = 0; d < num_local_directions; d++) {
+                rhs[d] += ell_plus_n_m[d] * phi_out_z_n_m;
               }
-              nm_offset += 2*n+1;
+              ++phi_out;
             }
-            rhs[d] = psi_acc;
           }
         }
       }
@@ -271,22 +275,26 @@ void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
             double two_dx = 2.0 / dxi;
 
             int z = Zonal_INDEX(i, j, k);
-            double *psi_g_z = gd_set->psi->ptr(group, 0, z);
-            double *rhs_g_z = gd_set->rhs->ptr(group, 0, z);
+            double * KRESTRICT psi_g_z = gd_set->psi->ptr(group, 0, z);
+            double * KRESTRICT rhs_g_z = gd_set->rhs->ptr(group, 0, z);
 
-            double * psi_lf_g_zil = psi_lf.ptr(group, 0, Left_INDEX(i+il, j, k));
-            double * psi_lf_g_zir = psi_lf.ptr(group, 0, Left_INDEX(i+ir, j, k));
+            double * KRESTRICT  psi_lf_g_zil = psi_lf.ptr(group, 0, Left_INDEX(i+il, j, k));
+            double * KRESTRICT  psi_lf_g_zir = psi_lf.ptr(group, 0, Left_INDEX(i+ir, j, k));
 
-            double * psi_fr_g_zjf = psi_fr.ptr(group, 0, Front_INDEX(i, j+jf, k));
-            double * psi_fr_g_zjb = psi_fr.ptr(group, 0, Front_INDEX(i, j+jb, k));
+            double * KRESTRICT  psi_fr_g_zjf = psi_fr.ptr(group, 0, Front_INDEX(i, j+jf, k));
+            double *  KRESTRICT psi_fr_g_zjb = psi_fr.ptr(group, 0, Front_INDEX(i, j+jb, k));
 
-            double * psi_bo_g_zkb = psi_bo.ptr(group, 0, Bottom_INDEX(i, j, k+kb));
-            double * psi_bo_g_zkt = psi_bo.ptr(group, 0, Bottom_INDEX(i, j, k+kt));
+            double * KRESTRICT  psi_bo_g_zkb = psi_bo.ptr(group, 0, Bottom_INDEX(i, j, k+kb));
+            double *  KRESTRICT psi_bo_g_zkt = psi_bo.ptr(group, 0, Bottom_INDEX(i, j, k+kt));
 
-            double *psi_internal_all_g_z = gd_set->psi_internal->ptr(group, 0, z);
-            double * i_plane_g_z = i_plane.ptr(group, 0, I_PLANE_INDEX(j, k));
-            double * j_plane_g_z = j_plane.ptr(group, 0, J_PLANE_INDEX(i, k));
-            double * k_plane_g_z = k_plane.ptr(group, 0, K_PLANE_INDEX(i, j));
+            double * KRESTRICT psi_internal_all_g_z = gd_set->psi_internal->ptr(group, 0, z);
+            double * KRESTRICT psi_int_lf = psi_internal_all_g_z;
+            double * KRESTRICT psi_int_fr = psi_internal_all_g_z;
+            double * KRESTRICT psi_int_bo = psi_internal_all_g_z;
+
+            double *  KRESTRICT i_plane_g_z = i_plane.ptr(group, 0, I_PLANE_INDEX(j, k));
+            double *  KRESTRICT j_plane_g_z = j_plane.ptr(group, 0, J_PLANE_INDEX(i, k));
+            double *  KRESTRICT k_plane_g_z = k_plane.ptr(group, 0, K_PLANE_INDEX(i, j));
 
             for (int d = 0; d < num_directions; ++d) {
               double xcos = direction[d].xcos;
@@ -296,10 +304,6 @@ void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
               double zcos_dzk = zcos * two_dz;
               double ycos_dyj = ycos * two_dy;
               double xcos_dxi = xcos * two_dx;
-
-              double *psi_int_lf = psi_internal_all_g_z;
-              double *psi_int_fr = psi_internal_all_g_z;
-              double *psi_int_bo = psi_internal_all_g_z;
 
               /* Add internal surface source data */
               psi_lf_g_zil[d] += psi_int_lf[d];

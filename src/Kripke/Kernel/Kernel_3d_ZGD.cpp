@@ -149,13 +149,11 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
         for (int group = 0; group < num_local_groups; ++group) {
 
           double *rhs = gd_set.rhs->ptr(group, 0, z);
-
           double * KRESTRICT phi_out = grid_data->phi_out->ptr(group + group0,
               0, z);
 
           for (int n = 0; n < num_moments; n++) {
             double ** ell_plus_n = ell_plus[n];
-
             int mmax = 2 * n + 1;
             for (int m = 0; m < mmax; m++) {
               double * KRESTRICT ell_plus_n_m = ell_plus_n[m] + dir0;
@@ -167,9 +165,7 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
 
               ++phi_out;
             }
-
           }
-
         }
       }
 
