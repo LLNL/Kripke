@@ -162,7 +162,6 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
               for (int d = 0; d < num_local_directions; d++) {
                 rhs[d] += ell_plus_n_m[d] * phi_out_z_n_m;
               }
-
               ++phi_out;
             }
           }
