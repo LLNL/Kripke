@@ -93,11 +93,11 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
             double **ell_n = ell[n];
 
             for (int m = -n; m <= n; m++) {
-              double *ell_n_m = ell_n[n+m];
+              double *ell_n_m = ell_n[n+m] + dir0;
               double phi_acc = 0.0;
 
               for (int d = 0; d < num_local_directions; d++) {
-                double ell_n_m_d = ell_n_m[d + dir0];
+                double ell_n_m_d = ell_n_m[d];
                 double psi_g_z_d = psi[d];
                 phi_acc += ell_n_m_d * psi_g_z_d;
               }
@@ -262,10 +262,13 @@ void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       Grid_Sweep_Block const &block = idxset[block_idx];
       for (int k = block.start_k; k != block.end_k; k += block.inc_k) {
         double dzk = dz[k + 1];
+        double two_dz = 2.0 / dzk;
         for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
           double dyj = dy[j + 1];
+          double two_dy = 2.0 / dyj;
           for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
             double dxi = dx[i + 1];
+            double two_dx = 2.0 / dxi;
 
             int z = Zonal_INDEX(i, j, k);
             double *psi_g_z = gd_set->psi->ptr(group, 0, z);
@@ -290,9 +293,9 @@ void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
               double ycos = direction[d].ycos;
               double zcos = direction[d].zcos;
 
-              double zcos_dzk = 2.0 * zcos / dzk;
-              double ycos_dyj = 2.0 * ycos / dyj;
-              double xcos_dxi = 2.0 * xcos / dxi;
+              double zcos_dzk = zcos * two_dz;
+              double ycos_dyj = ycos * two_dy;
+              double xcos_dxi = xcos * two_dx;
 
               double *psi_int_lf = psi_internal_all_g_z;
               double *psi_int_fr = psi_internal_all_g_z;
