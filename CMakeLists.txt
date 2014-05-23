@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 # Figure out toolchain files to use in this build
 #
 
+
 set(SYS_TYPE $ENV{SYS_TYPE})
 
 set(CMAKE_TOOLCHAIN_PATH "./cmake/Toolchain")
@@ -16,6 +17,7 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
       set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/bgqos_0-xlc.cmake")
     elseif(SYS_TYPE MATCHES chaos_5_x86_64_ib)
       set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/chaos_5_x86_64_ib-ic14.cmake")
+      include("${CMAKE_TOOLCHAIN_PATH}/chaos_5_x86_64_ib-ic14.cmake")
     endif()
     
   # If the user selected a toolchain (ex. ic14, gcc) then prepend the systype
@@ -35,10 +37,19 @@ endif()
 
 project(KRIPKE)
 
-enable_language(CXX)
-#set(CMAKE_BUILD_TYPE Debug)
 
+# Re-incluing the toolchain file, which allows us to modify the compiler flags
+# since all of the flags are lost after calling project()
+include(${CMAKE_TOOLCHAIN_FILE})
+
+#set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
+
+enable_language(CXX)
+
+message(STATUS "Selected Build Type ${CMAKE_BUILD_TYPE}")
 message(STATUS "Selected C++ Compiler ${CMAKE_CXX_COMPILER}")
+message(STATUS "Selected C++ Flags: ${CMAKE_CXX_FLAGS}")
 message(STATUS "Selected BDIV Package Path ${PKG_PATH}")
 
 

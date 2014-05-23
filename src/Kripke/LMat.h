@@ -26,9 +26,9 @@ struct LMat {
         int_to_ext[2] = 2;
         break;
       case NEST_DNM:
-        int_to_ext[2] = 0;
-        int_to_ext[0] = 1;
-        int_to_ext[1] = 2;
+        int_to_ext[0] = 2;
+        int_to_ext[1] = 0;
+        int_to_ext[2] = 1;
         break;
       default:
         throw "Invalid nesting for L or L+ matrix";
@@ -65,7 +65,7 @@ struct LMat {
 
     // map to internal indices
     for(int i = 0; i < 3; ++i){
-      ext_to_int[i] = int_to_ext[i];
+      ext_to_int[int_to_ext[i]] = i;
     }
     for(int i = 0; i < 3; ++i){
       size_int[ext_to_int[i]] = size_ext[i];
