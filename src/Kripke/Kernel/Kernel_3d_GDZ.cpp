@@ -95,8 +95,8 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data) {
             int nm_offset = n*n + n + m;
             double * ell_n_m = ell_n[m + n];
 
-            double *phi = grid_data->phi->ptr(group0+group, nm_offset, 0);
-            double *psi = gd_set.psi->ptr(group, 0, 0);
+            double * KRESTRICT phi = grid_data->phi->ptr(group0+group, nm_offset, 0);
+            double * KRESTRICT psi = gd_set.psi->ptr(group, 0, 0);
 
             for (int d = 0; d < num_local_directions; d++) {
               double ell_n_m_d = ell_n_m[d + dir0];
@@ -229,6 +229,10 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   std::vector<Grid_Sweep_Block> const &idxset =
       grid_data->octant_indexset[octant];
 
+  std::vector<double> xcos_dxi_all(local_imax);
+  std::vector<double> ycos_dyj_all(local_jmax);
+  std::vector<double> zcos_dzk_all(local_kmax);
+
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
@@ -236,23 +240,37 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     double * sigt_g = gd_set->sigt->ptr(group, 0, 0);
 
     for (int d = 0; d < num_directions; ++d) {
-      double * psi_g_d = gd_set->psi->ptr(group, d, 0);
-      double * rhs_g_d = gd_set->rhs->ptr(group, d, 0);
-      double * psi_lf_g_d = gd_set->psi_lf->ptr(group, d, 0);
-      double * psi_fr_g_d = gd_set->psi_fr->ptr(group, d, 0);
-      double * psi_bo_g_d = gd_set->psi_bo->ptr(group, d, 0);
-      double * psi_internal_all_g_d = gd_set->psi_internal->ptr(group, d, 0);
-      double * i_plane_g_d = i_plane.ptr(group, d, 0);
-      double * j_plane_g_d = j_plane.ptr(group, d, 0);
-      double * k_plane_g_d = k_plane.ptr(group, d, 0);
+      double * KRESTRICT psi_g_d = gd_set->psi->ptr(group, d, 0);
+      double * KRESTRICT rhs_g_d = gd_set->rhs->ptr(group, d, 0);
+      double * KRESTRICT psi_lf_g_d = gd_set->psi_lf->ptr(group, d, 0);
+      double * KRESTRICT psi_fr_g_d = gd_set->psi_fr->ptr(group, d, 0);
+      double * KRESTRICT psi_bo_g_d = gd_set->psi_bo->ptr(group, d, 0);
+      double * KRESTRICT psi_internal_all_g_d = gd_set->psi_internal->ptr(group, d, 0);
+      double * KRESTRICT i_plane_g_d = i_plane.ptr(group, d, 0);
+      double * KRESTRICT j_plane_g_d = j_plane.ptr(group, d, 0);
+      double * KRESTRICT k_plane_g_d = k_plane.ptr(group, d, 0);
 
       double xcos = direction[d].xcos;
       double ycos = direction[d].ycos;
       double zcos = direction[d].zcos;
+      for (int i = 0; i < local_imax; ++i) {
+        double dxi = dx[i + 1];
+        xcos_dxi_all[i] = 2.0 * xcos / dxi;
+      }
 
-      double *psi_int_lf = psi_internal_all_g_d;
-      double *psi_int_fr = psi_internal_all_g_d;
-      double *psi_int_bo = psi_internal_all_g_d;
+      for (int j = 0; j < local_jmax; ++j) {
+        double dyj = dy[j + 1];
+        ycos_dyj_all[j] = 2.0 * ycos / dyj;
+      }
+
+      for (int k = 0; k < local_kmax; ++k) {
+        double dzk = dz[k + 1];
+        zcos_dzk_all[k] = 2.0 * zcos / dzk;
+      }
+
+      double * KRESTRICT psi_int_lf = psi_internal_all_g_d;
+      double * KRESTRICT psi_int_fr = psi_internal_all_g_d;
+      double * KRESTRICT psi_int_bo = psi_internal_all_g_d;
 
       /* Copy the angular fluxes incident upon this subdomain */
       for (int k = 0; k < local_kmax; k++) {
@@ -283,14 +301,11 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       for (int block_idx = 0; block_idx < idxset.size(); ++block_idx) {
         Grid_Sweep_Block const &block = idxset[block_idx];
         for (int k = block.start_k; k != block.end_k; k += block.inc_k) {
-          double dzk = dz[k + 1];
-          double zcos_dzk = 2.0 * zcos / dzk;
+          double zcos_dzk = zcos_dzk_all[k];
           for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
-            double dyj = dy[j + 1];
-            double ycos_dyj = 2.0 * ycos / dyj;
+            double ycos_dyj = ycos_dyj_all[j];
             for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
-              double dxi = dx[i + 1];
-              double xcos_dxi = 2.0 * xcos / dxi;
+              double xcos_dxi = xcos_dxi_all[i];
 
               /* Add internal surface source data */
               psi_lf_g_d[Left_INDEX(i+il, j,
