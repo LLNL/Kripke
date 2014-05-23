@@ -94,14 +94,14 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
 #endif
       for (int z = 0; z < num_zones; z++) {
         for (int group = 0; group < num_local_groups; ++group) {
-          double *phi = grid_data->phi->ptr(group+group0, 0, z);
+          double *phi = grid_data->phi->ptr(group + group0, 0, z);
           double *psi = gd_set.psi->ptr(group, 0, z);
 
           for (int n = 0; n < num_moments; n++) {
             double **ell_n = ell[n];
 
             for (int m = -n; m <= n; m++) {
-              int nm_offset = n*n + n + m;
+              int nm_offset = n * n + n + m;
               double * ell_n_m = ell[n][m + n];
 
               double phi_acc = 0.0;
@@ -153,26 +153,29 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
 #endif
       for (int z = 0; z < num_zones; z++) {
         for (int group = 0; group < num_local_groups; ++group) {
+
           double *rhs = gd_set.rhs->ptr(group, 0, z);
 
-          for (int d = 0; d < num_local_directions; d++) {
-            double **ell_plus_d = ell_plus[d + dir0];
-            double psi_z_g_d = 0.0;
+          double * KRESTRICT phi_out = grid_data->phi_out->ptr(group + group0,
+              0, z);
 
-            double *phi_out = grid_data->phi_out->ptr(group+group0, 0, z);
+          for (int n = 0; n < num_moments; n++) {
+            double ** ell_plus_n = ell_plus[n];
 
-            for (int n = 0; n < num_moments; n++) {
-              double * ell_plus_d_n = ell_plus_d[n];
+            int mmax = 2 * n + 1;
+            for (int m = 0; m < mmax; m++) {
+              double * KRESTRICT ell_plus_n_m = ell_plus_n[m] + dir0;
+              double phi_out_z_n_m = *phi_out;
 
-              int mmax = 2 * n + 1;
-              for (int m = 0; m < mmax; m++) {
-                psi_z_g_d += ell_plus_d_n[m] * phi_out[m];
+              for (int d = 0; d < num_local_directions; d++) {
+                rhs[d] += ell_plus_n_m[d] * phi_out_z_n_m;
               }
-              phi_out += mmax;
+
+              ++phi_out;
             }
 
-            rhs[d] = psi_z_g_d;
           }
+
         }
       }
 
@@ -243,12 +246,13 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   /* Copy the angular fluxes incident upon this subdomain */
   for (int k = 0; k < local_kmax; k++) {
     for (int j = 0; j < local_jmax; j++) {
-      double *psi_lf_z_d = psi_lf.ptr(0, 0, Left_INDEX(extent.start_i+il, j, k));
+      double *psi_lf_z_d = psi_lf.ptr(0, 0,
+          Left_INDEX(extent.start_i+il, j, k));
       double *i_plane_z_d = i_plane.ptr(0, 0, I_PLANE_INDEX(j, k));
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-      for(int off = 0;off < num_directions*num_groups;++ off){
+      for (int off = 0; off < num_directions * num_groups; ++off) {
         psi_lf_z_d[off] = i_plane_z_d[off];
       }
     }
@@ -256,12 +260,13 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 
   for (int k = 0; k < local_kmax; k++) {
     for (int i = 0; i < local_imax; i++) {
-      double *psi_fr_z_d = psi_fr.ptr(0, 0, Front_INDEX(i, extent.start_j+jf, k));
+      double *psi_fr_z_d = psi_fr.ptr(0, 0,
+          Front_INDEX(i, extent.start_j+jf, k));
       double *j_plane_z_d = j_plane.ptr(0, 0, J_PLANE_INDEX(i, k));
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-      for(int off = 0;off < num_directions*num_groups;++ off){
+      for (int off = 0; off < num_directions * num_groups; ++off) {
         psi_fr_z_d[off] = j_plane_z_d[off];
       }
     }
@@ -269,12 +274,13 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 
   for (int j = 0; j < local_jmax; j++) {
     for (int i = 0; i < local_imax; i++) {
-      double *psi_bo_z_d = psi_bo.ptr(0, 0, Bottom_INDEX(i, j, extent.start_k+ kb));
+      double *psi_bo_z_d = psi_bo.ptr(0, 0,
+          Bottom_INDEX(i, j, extent.start_k+ kb));
       double *k_plane_z_d = k_plane.ptr(0, 0, K_PLANE_INDEX(i, j));
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-      for(int off = 0;off < num_directions*num_groups;++ off){
+      for (int off = 0; off < num_directions * num_groups; ++off) {
         psi_bo_z_d[off] = k_plane_z_d[off];
       }
     }
@@ -304,15 +310,23 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
           double *psi_fr_zjf_g = psi_fr.ptr(0, 0, Front_INDEX(i, j+jf, k));
           double *psi_fr_zjb_g = psi_fr.ptr(0, 0, Front_INDEX(i, j+jb, k));
 
-          double *psi_bo_zkb_g = psi_bo.ptr(0, 0, Bottom_INDEX(i, j, k+kb));
-          double *psi_bo_zkt_g = psi_bo.ptr(0, 0, Bottom_INDEX(i, j, k+kt));
-
-          double * psi_internal_all_z_g = gd_set->psi_internal->ptr(0, 0, z);
-          double * i_plane_z_g = i_plane.ptr(0, 0, z);
-          double * j_plane_z_g = j_plane.ptr(0, 0, z);
-          double * k_plane_z_g = k_plane.ptr(0, 0, z);
-
           for (int group = 0; group < num_groups; ++group) {
+
+            double *psi_fr_zjf_g = psi_fr.ptr(group, 0,
+                Front_INDEX(i, j+jf, k));
+            double *psi_fr_zjb_g = psi_fr.ptr(group, 0,
+                Front_INDEX(i, j+jb, k));
+
+            double *psi_bo_zkb_g = psi_bo.ptr(group, 0,
+                Bottom_INDEX(i, j, k+kb));
+            double *psi_bo_zkt_g = psi_bo.ptr(group, 0,
+                Bottom_INDEX(i, j, k+kt));
+
+            double * psi_internal_all_z_g = gd_set->psi_internal->ptr(group, 0,
+                z);
+            double * i_plane_z_g = i_plane.ptr(group, 0, z);
+            double * j_plane_z_g = j_plane.ptr(group, 0, z);
+            double * k_plane_z_g = k_plane.ptr(group, 0, z);
 
             double *psi_int_lf = psi_internal_all_z_g;
             double *psi_int_fr = psi_internal_all_z_g;
@@ -373,12 +387,13 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   /* Copy the angular fluxes exiting this subdomain */
   for (int k = 0; k < local_kmax; k++) {
     for (int j = 0; j < local_jmax; j++) {
-      double *psi_lf_z_d = psi_lf.ptr(0, 0, Left_INDEX(extent.start_i+il, j, k));
+      double *psi_lf_z_d = psi_lf.ptr(0, 0,
+          Left_INDEX(extent.start_i+il, j, k));
       double *i_plane_z_d = i_plane.ptr(0, 0, I_PLANE_INDEX(j, k));
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-      for(int off = 0;off < num_directions*num_groups;++ off){
+      for (int off = 0; off < num_directions * num_groups; ++off) {
         i_plane_z_d[off] = psi_lf_z_d[off];
       }
     }
@@ -386,12 +401,13 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 
   for (int k = 0; k < local_kmax; k++) {
     for (int i = 0; i < local_imax; i++) {
-      double *psi_fr_z_d = psi_fr.ptr(0, 0, Front_INDEX(i, extent.start_j+jf, k));
+      double *psi_fr_z_d = psi_fr.ptr(0, 0,
+          Front_INDEX(i, extent.start_j+jf, k));
       double *j_plane_z_d = j_plane.ptr(0, 0, J_PLANE_INDEX(i, k));
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-      for(int off = 0;off < num_directions*num_groups;++ off){
+      for (int off = 0; off < num_directions * num_groups; ++off) {
         j_plane_z_d[off] = psi_fr_z_d[off];
       }
     }
@@ -399,12 +415,13 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 
   for (int j = 0; j < local_jmax; j++) {
     for (int i = 0; i < local_imax; i++) {
-      double *psi_bo_z_d = psi_bo.ptr(0, 0, Bottom_INDEX(i, j, extent.start_k+ kb));
+      double *psi_bo_z_d = psi_bo.ptr(0, 0,
+          Bottom_INDEX(i, j, extent.start_k+ kb));
       double *k_plane_z_d = k_plane.ptr(0, 0, K_PLANE_INDEX(i, j));
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-      for(int off = 0;off < num_directions*num_groups;++ off){
+      for (int off = 0; off < num_directions * num_groups; ++off) {
         k_plane_z_d[off] = psi_bo_z_d[off];
       }
     }

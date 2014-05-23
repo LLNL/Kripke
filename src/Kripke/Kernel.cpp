@@ -38,7 +38,12 @@ void Kernel::allocateStorage(User_Data *user_data){
   int num_groups = user_data->num_group_sets * user_data->num_groups_per_set;
 
   grid_data->ell = new LMat(NEST_NMD, num_dims, num_moments, total_dirs);
-  grid_data->ell_plus = new LMat(NEST_DNM, num_dims, num_moments, total_dirs);
+  if(nest == NEST_ZGD){
+    grid_data->ell_plus = new LMat(NEST_NMD, num_dims, num_moments, total_dirs);
+  }
+  else{
+    grid_data->ell_plus = new LMat(NEST_DNM, num_dims, num_moments, total_dirs);
+  }
 
   int total_moments = grid_data->ell->total_moments;
   grid_data->phi = new SubTVec(nestingPhi(), num_groups, total_moments, num_zones);
