@@ -85,15 +85,42 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
       int num_groups_zones = num_local_groups*num_zones;
 
       /* 3D Cartesian Geometry */
+#if 1
+//#ifdef KRIPKE_USE_OPENMP
+//#pragma omp parallel for num_threads(2)
+//#endif
       for (int n = 0; n < num_moments; n++) {
         double **ell_n = ell[n];
 
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef KRIPKE_USE_OPENMP
+//#pragma omp parallel for num_threads(4)
+//#endif
+
         for (int m = -n; m <= n; m++) {
           double *ell_n_m = ell_n[m + n];
           int nm_offset = n*n + n + m;
+#else
+      // setup nm table
+      std::vector<int> ntable;
+      for (int n = 0; n < num_moments; n++) {
+        for (int m = -n; m <= n; m++) {
+          ntable.push_back(n);
+        }
+      }
+      int nidx = ntable.size();
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
+
+      for(int idx = 0;idx < nidx;++idx){
+        int n = ntable[idx];
+        int m = idx - n*n - n;
+
+        double *ell_n_m = ell[n][m + n];
+        int nm_offset = n*n + n + m;
+
+#endif
+
 
           double *psi = gd_set.psi->ptr();
           for (int d = 0; d < num_local_directions; d++) {
@@ -252,6 +279,7 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       zcos_dzk_all[k] = 2.0 * zcos / dzk;
     }
 
+
     for (int group = 0; group < num_groups; ++group) {
       double * KRESTRICT  psi_d_g = gd_set->psi->ptr(group, d, 0);
       double *  KRESTRICT rhs_d_g = gd_set->rhs->ptr(group, d, 0);
@@ -337,14 +365,12 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
               psi_lf_d_g[Left_INDEX(extent.end_i+ir-extent.inc_i, j, k)];
         }
       }
-
       for (int k = 0; k < local_kmax; k++) {
         for (int i = 0; i < local_imax; i++) {
           j_plane_d_g[J_PLANE_INDEX(i, k)] =
               psi_fr_d_g[Front_INDEX(i, extent.end_j+jb-extent.inc_j, k)];
         }
       }
-
       for (int j = 0; j < local_jmax; j++) {
         for (int i = 0; i < local_imax; i++) {
           k_plane_d_g[K_PLANE_INDEX(i, j)] =
