@@ -29,6 +29,7 @@ struct Input_Variables {
   int num_groupsets;
   int num_groups_per_groupset;
   int niter;
+  int legendre_order;
 
   Nesting_Order nesting;
   Sweep_Order sweep_order;

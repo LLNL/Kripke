@@ -29,6 +29,8 @@ void usage(void){
     printf("                         Example:  --dir 1:4,2:2,4:1\n");
     printf("  --grp [G:g,G:g,...]    List of grpsets and groups/set pairs\n");
     printf("                         Default:  --grp 1:1\n");
+    printf("  --legendre <lorder>    Scattering Legendre Expansion Order (0, 1, ...)\n");
+    printf("                         Default:  --legendre 2\n");
     printf("  --nest [n,n,...]       List of data nestings\n");
     printf("                         Default:  --nest DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
     printf("  --niter <NITER>        Number of solver iterations to run (default: 10)\n");
@@ -154,6 +156,7 @@ int main(int argc, char **argv) {
   std::string outfile;
   int nprocs[3] = {1, 1, 1};
   int nzones[3] = {8, 8, 8};
+  int lorder = 2;
   int niter = 10;
   bool test = false;
 
@@ -207,6 +210,9 @@ int main(int argc, char **argv) {
         dir_list.push_back(IntPair(std::atoi(p[0].c_str()), std::atoi(p[1].c_str())));
       }
     }
+    else if(opt == "--legendre"){
+      lorder = std::atoi(cmd.pop().c_str());
+    }
     else if(opt == "--niter"){
       niter = std::atoi(cmd.pop().c_str());
     }
@@ -252,6 +258,7 @@ int main(int argc, char **argv) {
     printf("Output File:           %s\n", outfile.c_str());
     printf("Processors:            %d x %d x %d\n", nprocs[0], nprocs[1], nprocs[2]);
     printf("Zones:                 %d x %d x %d\n", nzones[0], nzones[1], nzones[2]);
+    printf("Legendre Order:        %d\n", lorder);
     printf("Number iterations:     %d\n", niter);
 
     if(grp_list.size() == 0){
@@ -300,6 +307,7 @@ int main(int argc, char **argv) {
   ivars.npy = nprocs[1];
   ivars.npz = nprocs[2];
   ivars.block_size = 0;
+  ivars.legendre_order = lorder + 1;
   ivars.sweep_order = SWEEP_DEFAULT;
   ivars.niter = niter;
   int point = 0;
