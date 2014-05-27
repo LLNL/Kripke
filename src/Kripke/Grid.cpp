@@ -185,7 +185,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
   computeGrid(2, npz, nz_g, ksub_ref, 0.0, 1.0);
   num_zones = nzones[0]*nzones[1]*nzones[2];
 
-  num_moments = 2;
+  num_moments = input_vars->legendre_order;
 
   sig_s.resize(num_zones, 0.0);
 
