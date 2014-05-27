@@ -232,9 +232,6 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   std::vector<double> ycos_dyj_all(local_jmax);
   std::vector<double> zcos_dzk_all(local_kmax);
 
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
   for (int d = 0; d < num_directions; ++d) {
     double xcos = direction[d].xcos;
     double ycos = direction[d].ycos;
@@ -256,20 +253,20 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     }
 
     for (int group = 0; group < num_groups; ++group) {
-      double * psi_d_g = gd_set->psi->ptr(group, d, 0);
-      double * rhs_d_g = gd_set->rhs->ptr(group, d, 0);
-      double * psi_lf_d_g = psi_lf.ptr(group, d, 0);
-      double * psi_fr_d_g = psi_fr.ptr(group, d, 0);
-      double * psi_bo_d_g = psi_bo.ptr(group, d, 0);
-      double * psi_internal_all_d_g = gd_set->psi_internal->ptr(group, d, 0);
-      double * i_plane_d_g = &i_plane(group, d, 0);
-      double * j_plane_d_g = &j_plane(group, d, 0);
-      double * k_plane_d_g = &k_plane(group, d, 0);
-      double * sigt_g = gd_set->sigt->ptr(group, 0, 0);
+      double * KRESTRICT  psi_d_g = gd_set->psi->ptr(group, d, 0);
+      double *  KRESTRICT rhs_d_g = gd_set->rhs->ptr(group, d, 0);
+      double *  KRESTRICT psi_lf_d_g = psi_lf.ptr(group, d, 0);
+      double *  KRESTRICT psi_fr_d_g = psi_fr.ptr(group, d, 0);
+      double * KRESTRICT  psi_bo_d_g = psi_bo.ptr(group, d, 0);
+      double *  KRESTRICT psi_internal_all_d_g = gd_set->psi_internal->ptr(group, d, 0);
+      double *  KRESTRICT i_plane_d_g = &i_plane(group, d, 0);
+      double *  KRESTRICT j_plane_d_g = &j_plane(group, d, 0);
+      double *  KRESTRICT k_plane_d_g = &k_plane(group, d, 0);
+      double *  KRESTRICT sigt_g = gd_set->sigt->ptr(group, 0, 0);
 
-      double *psi_int_lf = psi_internal_all_d_g;
-      double *psi_int_fr = psi_internal_all_d_g;
-      double *psi_int_bo = psi_internal_all_d_g;
+      double * KRESTRICT psi_int_lf = psi_internal_all_d_g;
+      double * KRESTRICT psi_int_fr = psi_internal_all_d_g;
+      double * KRESTRICT psi_int_bo = psi_internal_all_d_g;
 
       /* Copy the angular fluxes incident upon this subdomain */
       for (int k = 0; k < local_kmax; k++) {

@@ -66,9 +66,6 @@ include(cmake/bdiv_pkg.cmake)
 bdiv_opt_pkg(PAPI 4.2.0 OFF)
 bdiv_opt_pkg(perftools 1.9 OFF)
 
-set(KRIPKE_BASE_LIBS kripkelib)
-set(KRIPKE_LIBS ${KRIPKE_BASE_LIBS} ${BDIV_LIBS})
-
 
 #
 # Other Build Options
@@ -83,5 +80,7 @@ include(cmake/OpenMP.cmake)
 #
 set(KRIPKE_LIBS kripkelib ${BDIV_LIBS})
 set(KRIPKE_LIBS ${KRIPKE_LIBS} ${KRIPKE_LIBS})
+
+
 add_subdirectory(src)
 

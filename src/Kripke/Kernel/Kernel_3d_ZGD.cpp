@@ -155,13 +155,11 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
         for (int group = 0; group < num_local_groups; ++group) {
 
           double *rhs = gd_set.rhs->ptr(group, 0, z);
-
           double * KRESTRICT phi_out = grid_data->phi_out->ptr(group + group0,
               0, z);
 
           for (int n = 0; n < num_moments; n++) {
             double ** ell_plus_n = ell_plus[n];
-
             int mmax = 2 * n + 1;
             for (int m = 0; m < mmax; m++) {
               double * KRESTRICT ell_plus_n_m = ell_plus_n[m] + dir0;
@@ -170,10 +168,8 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
               for (int d = 0; d < num_local_directions; d++) {
                 rhs[d] += ell_plus_n_m[d] * phi_out_z_n_m;
               }
-
               ++phi_out;
             }
-
           }
 
         }
@@ -277,6 +273,7 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       double *psi_bo_z_d = psi_bo.ptr(0, 0,
           Bottom_INDEX(i, j, extent.start_k+ kb));
       double *k_plane_z_d = k_plane.ptr(0, 0, K_PLANE_INDEX(i, j));
+
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
@@ -292,45 +289,44 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 
     for (int k = block.start_k; k != block.end_k; k += block.inc_k) {
       double dzk = dz[k + 1];
+      double two_dz = 2.0 / dzk;
       for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
         double dyj = dy[j + 1];
+        double two_dy = 2.0 / dyj;
         for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
           double dxi = dx[i + 1];
+          double two_dx = 2.0 / dxi;
 
           int z = Zonal_INDEX(i, j, k);
           double * sigt_z = gd_set->sigt->ptr(0, 0, z);
-
-
-          double * psi_z_g = gd_set->psi->ptr(0, 0, z);
-          double * rhs_z_g = gd_set->rhs->ptr(0, 0, z);
-
-          double *psi_lf_zil_g = psi_lf.ptr(0, 0, Left_INDEX(i+il, j, k));
-          double *psi_lf_zir_g = psi_lf.ptr(0, 0, Left_INDEX(i+ir, j, k));
-
-          double *psi_fr_zjf_g = psi_fr.ptr(0, 0, Front_INDEX(i, j+jf, k));
-          double *psi_fr_zjb_g = psi_fr.ptr(0, 0, Front_INDEX(i, j+jb, k));
-
           for (int group = 0; group < num_groups; ++group) {
 
-            double *psi_fr_zjf_g = psi_fr.ptr(group, 0,
+            double *  KRESTRICT psi_z_g = gd_set->psi->ptr(group, 0, z);
+            double *  KRESTRICT rhs_z_g = gd_set->rhs->ptr(group, 0, z);
+
+            double * KRESTRICT psi_lf_zil_g = psi_lf.ptr(group, 0, Left_INDEX(i+il, j, k));
+            double * KRESTRICT psi_lf_zir_g = psi_lf.ptr(group, 0, Left_INDEX(i+ir, j, k));
+
+            double * KRESTRICT psi_fr_zjf_g = psi_fr.ptr(group, 0,
                 Front_INDEX(i, j+jf, k));
-            double *psi_fr_zjb_g = psi_fr.ptr(group, 0,
+            double * KRESTRICT psi_fr_zjb_g = psi_fr.ptr(group, 0,
                 Front_INDEX(i, j+jb, k));
 
-            double *psi_bo_zkb_g = psi_bo.ptr(group, 0,
+            double * KRESTRICT psi_bo_zkb_g = psi_bo.ptr(group, 0,
                 Bottom_INDEX(i, j, k+kb));
-            double *psi_bo_zkt_g = psi_bo.ptr(group, 0,
+            double * KRESTRICT psi_bo_zkt_g = psi_bo.ptr(group, 0,
                 Bottom_INDEX(i, j, k+kt));
 
-            double * psi_internal_all_z_g = gd_set->psi_internal->ptr(group, 0,
+            double *  KRESTRICT psi_internal_all_z_g = gd_set->psi_internal->ptr(group, 0,
                 z);
-            double * i_plane_z_g = i_plane.ptr(group, 0, z);
-            double * j_plane_z_g = j_plane.ptr(group, 0, z);
-            double * k_plane_z_g = k_plane.ptr(group, 0, z);
+            double *  KRESTRICT i_plane_z_g = i_plane.ptr(group, 0, z);
+            double *  KRESTRICT j_plane_z_g = j_plane.ptr(group, 0, z);
+            double *  KRESTRICT k_plane_z_g = k_plane.ptr(group, 0, z);
 
-            double *psi_int_lf = psi_internal_all_z_g;
-            double *psi_int_fr = psi_internal_all_z_g;
-            double *psi_int_bo = psi_internal_all_z_g;
+
+            double * KRESTRICT psi_int_lf = psi_internal_all_z_g;
+            double * KRESTRICT psi_int_fr = psi_internal_all_z_g;
+            double * KRESTRICT psi_int_bo = psi_internal_all_z_g;
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
@@ -341,9 +337,9 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
               double ycos = direction[d].ycos;
               double zcos = direction[d].zcos;
 
-              double zcos_dzk = 2.0 * zcos / dzk;
-              double ycos_dyj = 2.0 * ycos / dyj;
-              double xcos_dxi = 2.0 * xcos / dxi;
+              double zcos_dzk = zcos * two_dz;
+              double ycos_dyj = ycos * two_dy;
+              double xcos_dxi = xcos * two_dx;
 
               /* Add internal surface source data */
               psi_lf_zil_g[d] += psi_int_lf[d];

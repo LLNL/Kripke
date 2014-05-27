@@ -82,6 +82,7 @@ std::vector<std::string> split(std::string const &str, char delim){
 
 
 void runPoint(int num_tasks, int num_threads, Input_Variables &input_variables, FILE *out_fp){
+
   /* Allocate problem */
   User_Data *user_data = new User_Data(&input_variables);
 
