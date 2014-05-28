@@ -45,6 +45,14 @@ void Kernel::allocateStorage(User_Data *user_data){
     grid_data->ell_plus = new LMat(NEST_DNM, num_dims, num_moments, total_dirs);
   }
 
+  // Allocate L, L+ table nm indicies which make threading easier
+  grid_data->nm_table.clear();
+  for (int n = 0; n < num_moments; n++) {
+    for (int m = -n; m <= n; m++) {
+      grid_data->nm_table.push_back(n);
+    }
+  }
+
   int total_moments = grid_data->ell->total_moments;
   grid_data->phi = new SubTVec(nestingPhi(), num_groups, total_moments, num_zones);
   grid_data->phi_out = new SubTVec(nestingPhi(), num_groups, total_moments, num_zones);

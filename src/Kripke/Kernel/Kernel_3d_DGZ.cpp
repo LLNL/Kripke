@@ -64,8 +64,11 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
   double ***ell = grid_data->ell->data;
   int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_moments;
+  int nidx = grid_data->nm_table.size();
 
   grid_data->phi->clear(0.0);
+
+
 
   // Loop over Group Sets
   int num_group_sets = grid_data->gd_sets.size();
@@ -85,55 +88,27 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
       int num_groups_zones = num_local_groups*num_zones;
 
       /* 3D Cartesian Geometry */
-#if 1
-//#ifdef KRIPKE_USE_OPENMP
-//#pragma omp parallel for num_threads(2)
-//#endif
-      for (int n = 0; n < num_moments; n++) {
-        double **ell_n = ell[n];
-
-//#ifdef KRIPKE_USE_OPENMP
-//#pragma omp parallel for num_threads(4)
-//#endif
-
-        for (int m = -n; m <= n; m++) {
-          double *ell_n_m = ell_n[m + n];
-          int nm_offset = n*n + n + m;
-#else
-      // setup nm table
-      std::vector<int> ntable;
-      for (int n = 0; n < num_moments; n++) {
-        for (int m = -n; m <= n; m++) {
-          ntable.push_back(n);
-        }
-      }
-      int nidx = ntable.size();
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-
       for(int idx = 0;idx < nidx;++idx){
-        int n = ntable[idx];
+        int n = grid_data->nm_table[idx];
         int m = idx - n*n - n;
 
         double *ell_n_m = ell[n][m + n];
         int nm_offset = n*n + n + m;
 
-#endif
+        double *psi = gd_set.psi->ptr();
+        for (int d = 0; d < num_local_directions; d++) {
 
+          double ell_n_m_d = ell_n_m[d + dir0];
+          double * KRESTRICT phi = grid_data->phi->ptr(group0, nm_offset, 0);
+          double * KRESTRICT psi_ptr = psi;
 
-          double *psi = gd_set.psi->ptr();
-          for (int d = 0; d < num_local_directions; d++) {
-
-            double ell_n_m_d = ell_n_m[d + dir0];
-            double * KRESTRICT phi = grid_data->phi->ptr(group0, nm_offset, 0);
-            double * KRESTRICT psi_ptr = psi;
-
-            for(int gz = 0;gz < num_groups_zones;++ gz){
-              phi[gz] += ell_n_m_d * psi_ptr[gz];
-            }
-            psi += num_groups_zones;
+          for(int gz = 0;gz < num_groups_zones;++ gz){
+            phi[gz] += ell_n_m_d * psi_ptr[gz];
           }
+          psi += num_groups_zones;
         }
       }
 
@@ -146,6 +121,7 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
   double ***ell_plus = grid_data->ell_plus->data;
   int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_moments;
+  int nidx = grid_data->nm_table.size();
 
   // Loop over Group Sets
   int num_group_sets = grid_data->gd_sets.size();
@@ -278,8 +254,9 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       double dzk = dz[k + 1];
       zcos_dzk_all[k] = 2.0 * zcos / dzk;
     }
-
-
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
     for (int group = 0; group < num_groups; ++group) {
       double * KRESTRICT  psi_d_g = gd_set->psi->ptr(group, d, 0);
       double *  KRESTRICT rhs_d_g = gd_set->rhs->ptr(group, d, 0);
