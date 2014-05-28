@@ -62,6 +62,7 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
   double ***ell = grid_data->ell->data;
   int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_moments;
+  int nidx = grid_data->nm_table.size();
 
   grid_data->phi->clear(0.0);
 
@@ -82,26 +83,24 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
       int dir0 = gd_set.direction0;
 
       /* 3D Cartesian Geometry */
-      for (int n = 0; n < num_moments; n++) {
-        double **ell_n = ell[n];
-
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-        for (int m = -n; m <= n; m++) {
-          int nm_offset = n*n + n + m;
-          double *ell_n_m = ell_n[m + n];
-          for (int d = 0; d < num_local_directions; d++) {
-            double ell_n_m_d = ell_n_m[d + dir0];
-            for (int z = 0; z < num_zones; z++) {
+      for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+        int n = grid_data->nm_table[nm_offset];
+        int m = nm_offset - n*n - n;
 
-              double *phi = grid_data->phi->ptr(group0, nm_offset, z);
-              double *psi = gd_set.psi->ptr(0, d, z);
-              for (int group = 0; group < num_local_groups; ++group) {
-                phi[group] += ell_n_m_d * psi[group];
-              }
+        double *ell_n_m = ell[n][m + n];
+        for (int d = 0; d < num_local_directions; d++) {
+          double ell_n_m_d = ell_n_m[d + dir0];
+          for (int z = 0; z < num_zones; z++) {
 
+            double *phi = grid_data->phi->ptr(group0, nm_offset, z);
+            double *psi = gd_set.psi->ptr(0, d, z);
+            for (int group = 0; group < num_local_groups; ++group) {
+              phi[group] += ell_n_m_d * psi[group];
             }
+
           }
         }
       }
@@ -226,10 +225,6 @@ void Kernel_3d_DZG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   std::vector<Grid_Sweep_Block> const &idxset =
       grid_data->octant_indexset[octant];
 
-  std::vector<double> xcos_dxi_all(local_imax);
-  std::vector<double> ycos_dyj_all(local_jmax);
-  std::vector<double> zcos_dzk_all(local_kmax);
-
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
@@ -237,21 +232,6 @@ void Kernel_3d_DZG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     double xcos = direction[d].xcos;
     double ycos = direction[d].ycos;
     double zcos = direction[d].zcos;
-
-    for (int i = 0; i < local_imax; ++i) {
-      double dxi = dx[i + 1];
-      xcos_dxi_all[i] = 2.0 * xcos / dxi;
-    }
-
-    for (int j = 0; j < local_jmax; ++j) {
-      double dyj = dy[j + 1];
-      ycos_dyj_all[j] = 2.0 * ycos / dyj;
-    }
-
-    for (int k = 0; k < local_kmax; ++k) {
-      double dzk = dz[k + 1];
-      zcos_dzk_all[k] = 2.0 * zcos / dzk;
-    }
 
     /* Copy the angular fluxes incident upon this subdomain */
     for (int k = 0; k < local_kmax; k++) {
@@ -289,12 +269,16 @@ void Kernel_3d_DZG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     /*  Perform transport sweep of the grid 1 cell at a time.   */
     for (int block_idx = 0; block_idx < idxset.size(); ++block_idx) {
       Grid_Sweep_Block const &block = idxset[block_idx];
+
       for (int k = block.start_k; k != block.end_k; k += block.inc_k) {
-        double zcos_dzk = zcos_dzk_all[k];
+        double dzk = dz[k + 1];
+        double zcos_dzk = 2.0 * zcos / dzk;
         for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
-          double ycos_dyj = ycos_dyj_all[j];
+          double dyj = dy[j + 1];
+          double ycos_dyj = 2.0 * ycos / dyj;
           for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
-            double xcos_dxi = xcos_dxi_all[i];
+            double dxi = dx[i + 1];
+            double xcos_dxi = 2.0 * xcos / dxi;
 
             int z = Zonal_INDEX(i, j, k);
             double * KRESTRICT psi_d_z = gd_set->psi->ptr(0, d, z);

@@ -123,7 +123,13 @@ struct SubTVec {
   }
 
   inline void clear(double v){
-    std::fill(data_linear.begin(), data_linear.end(), v);
+    int num_elem = data_linear.size();
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
+    for(int i = 0;i < num_elem;++ i){
+      data_linear[i] = v;
+    }
   }
 
   inline void randomizeData(void){
