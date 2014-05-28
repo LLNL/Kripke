@@ -233,9 +233,9 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   std::vector<double> ycos_dyj_all(local_jmax);
   std::vector<double> zcos_dzk_all(local_kmax);
 
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef KRIPKE_USE_OPENMP
+//#pragma omp parallel for
+//#endif
   for (int group = 0; group < num_groups; ++group) {
     double * sigt_g = gd_set->sigt->ptr(group, 0, 0);
 
