@@ -240,43 +240,44 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       grid_data->octant_indexset[octant];
 
   /* Copy the angular fluxes incident upon this subdomain */
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
   for (int k = 0; k < local_kmax; k++) {
     for (int j = 0; j < local_jmax; j++) {
       double *psi_lf_z_d = psi_lf.ptr(0, 0,
           Left_INDEX(extent.start_i+il, j, k));
       double *i_plane_z_d = i_plane.ptr(0, 0, I_PLANE_INDEX(j, k));
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
+
       for (int off = 0; off < num_directions * num_groups; ++off) {
         psi_lf_z_d[off] = i_plane_z_d[off];
       }
     }
   }
 
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
   for (int k = 0; k < local_kmax; k++) {
     for (int i = 0; i < local_imax; i++) {
       double *psi_fr_z_d = psi_fr.ptr(0, 0,
           Front_INDEX(i, extent.start_j+jf, k));
       double *j_plane_z_d = j_plane.ptr(0, 0, J_PLANE_INDEX(i, k));
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
       for (int off = 0; off < num_directions * num_groups; ++off) {
         psi_fr_z_d[off] = j_plane_z_d[off];
       }
     }
   }
 
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
   for (int j = 0; j < local_jmax; j++) {
     for (int i = 0; i < local_imax; i++) {
       double *psi_bo_z_d = psi_bo.ptr(0, 0,
           Bottom_INDEX(i, j, extent.start_k+ kb));
       double *k_plane_z_d = k_plane.ptr(0, 0, K_PLANE_INDEX(i, j));
 
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
       for (int off = 0; off < num_directions * num_groups; ++off) {
         psi_bo_z_d[off] = k_plane_z_d[off];
       }
@@ -299,6 +300,9 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 
           int z = Zonal_INDEX(i, j, k);
           double * sigt_z = gd_set->sigt->ptr(0, 0, z);
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
           for (int group = 0; group < num_groups; ++group) {
 
             double *  KRESTRICT psi_z_g = gd_set->psi->ptr(group, 0, z);
@@ -328,9 +332,6 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
             double * KRESTRICT psi_int_fr = psi_internal_all_z_g;
             double * KRESTRICT psi_int_bo = psi_internal_all_z_g;
 
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
             for (int d = 0; d < num_directions; ++d) {
 
               double xcos = direction[d].xcos;
@@ -381,42 +382,42 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   }
 
   /* Copy the angular fluxes exiting this subdomain */
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
   for (int k = 0; k < local_kmax; k++) {
     for (int j = 0; j < local_jmax; j++) {
       double *psi_lf_z_d = psi_lf.ptr(0, 0,
           Left_INDEX(extent.start_i+il, j, k));
       double *i_plane_z_d = i_plane.ptr(0, 0, I_PLANE_INDEX(j, k));
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
       for (int off = 0; off < num_directions * num_groups; ++off) {
         i_plane_z_d[off] = psi_lf_z_d[off];
       }
     }
   }
 
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
   for (int k = 0; k < local_kmax; k++) {
     for (int i = 0; i < local_imax; i++) {
       double *psi_fr_z_d = psi_fr.ptr(0, 0,
           Front_INDEX(i, extent.start_j+jf, k));
       double *j_plane_z_d = j_plane.ptr(0, 0, J_PLANE_INDEX(i, k));
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
       for (int off = 0; off < num_directions * num_groups; ++off) {
         j_plane_z_d[off] = psi_fr_z_d[off];
       }
     }
   }
 
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
   for (int j = 0; j < local_jmax; j++) {
     for (int i = 0; i < local_imax; i++) {
       double *psi_bo_z_d = psi_bo.ptr(0, 0,
           Bottom_INDEX(i, j, extent.start_k+ kb));
       double *k_plane_z_d = k_plane.ptr(0, 0, K_PLANE_INDEX(i, j));
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
       for (int off = 0; off < num_directions * num_groups; ++off) {
         k_plane_z_d[off] = psi_bo_z_d[off];
       }
