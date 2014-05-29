@@ -140,15 +140,20 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
       int dir0 = gd_set.direction0;
       int num_groups_zones = num_local_groups*num_zones;
 
-      // Get Variables
-      gd_set.rhs->clear(0.0);
 
       /* 3D Cartesian Geometry */
+#if 0
+
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
       for (int d = 0; d < num_local_directions; d++) {
         double **ell_plus_d = ell_plus[d + dir0];
+        double * KRESTRICT rhs = gd_set.rhs->ptr(0, d, 0);
+
+        for(int gz = 0;gz < num_groups_zones;++ gz){
+          rhs[gz] = 0;
+        }
 
         for (int n = 0; n < num_moments; n++) {
           double *ell_plus_d_n = ell_plus_d[n];
@@ -158,7 +163,6 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
             double ell_plus_d_n_m = ell_plus_d_n[n+m];
 
             double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0, nm_offset, 0);
-            double * KRESTRICT rhs = gd_set.rhs->ptr(0, d, 0);
 
             for(int gz = 0;gz < num_groups_zones;++ gz){
               rhs[gz] += ell_plus_d_n_m * phi_out[gz];
@@ -166,6 +170,42 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
           }
         }
       }
+#else
+
+      int blk_size = 512;
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
+      for(int gz_start = 0;gz_start < num_groups_zones;gz_start += blk_size){
+        for (int d = 0; d < num_local_directions; d++) {
+          double **ell_plus_d = ell_plus[d + dir0];
+          double * KRESTRICT rhs = gd_set.rhs->ptr(0, d, 0);
+
+
+          int gz_end = std::min(gz_start + blk_size, num_groups_zones);
+
+          for(int gz = gz_start;gz < gz_end;++ gz){
+            rhs[gz] = 0;
+          }
+
+          for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+            int n = grid_data->nm_table[nm_offset];
+            int m = nm_offset - n*n - n;
+            double ell_plus_d_n_m = ell_plus_d[n][n+m];
+            double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0, nm_offset, 0);
+
+            for(int gz = gz_start;gz < gz_end;++ gz){
+              rhs[gz] += ell_plus_d_n_m * phi_out[gz];
+            }
+          }
+
+        }
+      }
+
+#endif
+
+
+
 
     } // Direction Set
   } // Group Set
@@ -254,52 +294,54 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       double dzk = dz[k + 1];
       zcos_dzk_all[k] = 2.0 * zcos / dzk;
     }
+    for (int block_idx = 0; block_idx < idxset.size(); ++block_idx) {
+      Grid_Sweep_Block const &block = idxset[block_idx];
+
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for (int group = 0; group < num_groups; ++group) {
-      double * KRESTRICT  psi_d_g = gd_set->psi->ptr(group, d, 0);
-      double *  KRESTRICT rhs_d_g = gd_set->rhs->ptr(group, d, 0);
-      double *  KRESTRICT psi_lf_d_g = psi_lf.ptr(group, d, 0);
-      double *  KRESTRICT psi_fr_d_g = psi_fr.ptr(group, d, 0);
-      double * KRESTRICT  psi_bo_d_g = psi_bo.ptr(group, d, 0);
-      double *  KRESTRICT psi_internal_all_d_g = gd_set->psi_internal->ptr(group, d, 0);
-      double *  KRESTRICT i_plane_d_g = &i_plane(group, d, 0);
-      double *  KRESTRICT j_plane_d_g = &j_plane(group, d, 0);
-      double *  KRESTRICT k_plane_d_g = &k_plane(group, d, 0);
-      double *  KRESTRICT sigt_g = gd_set->sigt->ptr(group, 0, 0);
+      for (int group = 0; group < num_groups; ++group) {
+        double * KRESTRICT  psi_d_g = gd_set->psi->ptr(group, d, 0);
+        double *  KRESTRICT rhs_d_g = gd_set->rhs->ptr(group, d, 0);
+        double *  KRESTRICT psi_lf_d_g = psi_lf.ptr(group, d, 0);
+        double *  KRESTRICT psi_fr_d_g = psi_fr.ptr(group, d, 0);
+        double * KRESTRICT  psi_bo_d_g = psi_bo.ptr(group, d, 0);
+        double *  KRESTRICT psi_internal_all_d_g = gd_set->psi_internal->ptr(group, d, 0);
+        double *  KRESTRICT i_plane_d_g = &i_plane(group, d, 0);
+        double *  KRESTRICT j_plane_d_g = &j_plane(group, d, 0);
+        double *  KRESTRICT k_plane_d_g = &k_plane(group, d, 0);
+        double *  KRESTRICT sigt_g = gd_set->sigt->ptr(group, 0, 0);
 
-      double * KRESTRICT psi_int_lf = psi_internal_all_d_g;
-      double * KRESTRICT psi_int_fr = psi_internal_all_d_g;
-      double * KRESTRICT psi_int_bo = psi_internal_all_d_g;
+        double * KRESTRICT psi_int_lf = psi_internal_all_d_g;
+        double * KRESTRICT psi_int_fr = psi_internal_all_d_g;
+        double * KRESTRICT psi_int_bo = psi_internal_all_d_g;
 
-      /* Copy the angular fluxes incident upon this subdomain */
-      for (int k = 0; k < local_kmax; k++) {
-        for (int j = 0; j < local_jmax; j++) {
-          /* psi_lf has length (local_imax+1)*local_jmax*local_kmax */
-          psi_lf_d_g[Left_INDEX(extent.start_i + il, j, k)] =
-              i_plane_d_g[I_PLANE_INDEX(j, k)];
+        /* Copy the angular fluxes incident upon this subdomain */
+        for (int k = block.start_k; k != block.end_k; k += block.inc_k) {
+          for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
+            /* psi_lf has length (local_imax+1)*local_jmax*local_kmax */
+            psi_lf_d_g[Left_INDEX(extent.start_i + il, j, k)] =
+                i_plane_d_g[I_PLANE_INDEX(j, k)];
+          }
         }
-      }
 
-      for (int k = 0; k < local_kmax; k++) {
-        for (int i = 0; i < local_imax; i++) {
-          /* psi_fr has length local_imax*(local_jmax+1)*local_kmax */
-          psi_fr_d_g[Front_INDEX(i, extent.start_j + jf,
-              k)] = j_plane_d_g[J_PLANE_INDEX(i, k)];
+        for (int k = block.start_k; k != block.end_k; k += block.inc_k) {
+          for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
+            /* psi_fr has length local_imax*(local_jmax+1)*local_kmax */
+            psi_fr_d_g[Front_INDEX(i, extent.start_j + jf,
+                k)] = j_plane_d_g[J_PLANE_INDEX(i, k)];
+          }
         }
-      }
 
-      for (int j = 0; j < local_jmax; j++) {
-        for (int i = 0; i < local_imax; i++) {
-          /* psi_bo has length local_imax*local_jmax*(local_kmax+1) */
-          psi_bo_d_g[Bottom_INDEX(i, j, extent.start_k + kb)] =
-              k_plane_d_g[K_PLANE_INDEX(i, j)];
+        for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
+          for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
+            /* psi_bo has length local_imax*local_jmax*(local_kmax+1) */
+            psi_bo_d_g[Bottom_INDEX(i, j, extent.start_k + kb)] =
+                k_plane_d_g[K_PLANE_INDEX(i, j)];
+          }
         }
-      }
 
-      for (int block_idx = 0; block_idx < idxset.size(); ++block_idx) {
-        Grid_Sweep_Block const &block = idxset[block_idx];
+
         for (int k = block.start_k; k != block.end_k; k += block.inc_k) {
           double zcos_dzk = zcos_dzk_all[k];
           for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
@@ -333,28 +375,28 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
             }
           }
         }
-      }
 
-      /* Copy the angular fluxes exiting this subdomain */
-      for (int k = 0; k < local_kmax; k++) {
-        for (int j = 0; j < local_jmax; j++) {
-          i_plane_d_g[I_PLANE_INDEX(j, k)] =
-              psi_lf_d_g[Left_INDEX(extent.end_i+ir-extent.inc_i, j, k)];
+        /* Copy the angular fluxes exiting this subdomain */
+        for (int k = block.start_k; k != block.end_k; k += block.inc_k) {
+          for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
+            i_plane_d_g[I_PLANE_INDEX(j, k)] =
+                psi_lf_d_g[Left_INDEX(extent.end_i+ir-extent.inc_i, j, k)];
+          }
         }
-      }
-      for (int k = 0; k < local_kmax; k++) {
-        for (int i = 0; i < local_imax; i++) {
-          j_plane_d_g[J_PLANE_INDEX(i, k)] =
-              psi_fr_d_g[Front_INDEX(i, extent.end_j+jb-extent.inc_j, k)];
+        for (int k = block.start_k; k != block.end_k; k += block.inc_k) {
+          for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
+            j_plane_d_g[J_PLANE_INDEX(i, k)] =
+                psi_fr_d_g[Front_INDEX(i, extent.end_j+jb-extent.inc_j, k)];
+          }
         }
-      }
-      for (int j = 0; j < local_jmax; j++) {
-        for (int i = 0; i < local_imax; i++) {
-          k_plane_d_g[K_PLANE_INDEX(i, j)] =
-              psi_bo_d_g[Bottom_INDEX(i, j, extent.end_k+kt-extent.inc_k)];
+        for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
+          for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
+            k_plane_d_g[K_PLANE_INDEX(i, j)] =
+                psi_bo_d_g[Bottom_INDEX(i, j, extent.end_k+kt-extent.inc_k)];
+          }
         }
-      }
 
+      }
     } // group
   } // direction
 

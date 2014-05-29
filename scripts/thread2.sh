@@ -2,7 +2,7 @@
 #MSUB -V -j oe
 #MSUB -l partition=rzmerl
 #MSUB -l nodes=1
-#MSUB -l walltime=08:00:00
+#MSUB -l walltime=12:00:00
 #MSUB -A bdivp
 
 #
@@ -12,10 +12,13 @@
 # Search space looks at 128 directions and 32 groups.
 #
 
+# best on rzmerl:
+# thread2_rzmerl_1.out: DGZ, dir=4:4,  grp=32:1,   Solve=0.3119
+
 date
 
 OUTNAME=thread2_rzmerl
-NITER=10
+NITER=20
 ZONES=32,32,32
 DLIST=1:16,2:8,4:4,8:2,16:1
 GLIST=1:32,2:16,4:8,8:4,16:2,32:1

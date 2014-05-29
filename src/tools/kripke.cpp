@@ -306,9 +306,9 @@ int main(int argc, char **argv) {
   ivars.npx = nprocs[0];
   ivars.npy = nprocs[1];
   ivars.npz = nprocs[2];
-  ivars.block_size = 0;
   ivars.legendre_order = lorder + 1;
   ivars.sweep_order = SWEEP_DEFAULT;
+  ivars.block_size = 4;
   ivars.niter = niter;
   int point = 0;
   for(int d = 0;d < dir_list.size();++ d){
