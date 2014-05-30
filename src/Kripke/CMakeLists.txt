@@ -9,7 +9,6 @@ set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
   Kripke/Timing.cpp  
   Kripke/User_Data.cpp
     
-  Kripke/Kernel/Kernel_GZ_Base.cpp
   Kripke/Kernel/Kernel_3d_GDZ.cpp
   Kripke/Kernel/Kernel_3d_DGZ.cpp
   Kripke/Kernel/Kernel_3d_ZDG.cpp

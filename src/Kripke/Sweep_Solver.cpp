@@ -27,28 +27,15 @@ int SweepSolver (User_Data *user_data)
     kernel->LTimes(grid_data);
   }
 
-  // Scattering Kernel Evaluation
-  {
-    BLOCK_TIMER(user_data->timing, Scattering);
-    //kernel->scattering(grid_data);
-  }
+
+  // This is where the Scattering kernel would go!
+
+
 
   // Moments to Discrete transformation
   {
     BLOCK_TIMER(user_data->timing, LPlusTimes);
     kernel->LPlusTimes(grid_data);
-  }
-
-  /*
-   * Evaluate total cross section on the mesh
-   */
-  {
-    BLOCK_TIMER(user_data->timing, SigmaT);
-    for(int gs = 0;gs < grid_data->gd_sets.size();++ gs){
-      for(int ds = 0;ds < grid_data->gd_sets[gs].size();++ ds){
-        kernel->evalSigmaTot(user_data, &grid_data->gd_sets[gs][ds]);
-      }
-    }
   }
 
   /*
