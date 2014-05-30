@@ -22,8 +22,7 @@ Group_Dir_Set::Group_Dir_Set() :
   sigt(NULL),
   psi_lf(NULL),
   psi_fr(NULL),
-  psi_bo(NULL),
-  psi_internal(NULL)
+  psi_bo(NULL)
 {
 }
 Group_Dir_Set::~Group_Dir_Set(){
@@ -34,7 +33,6 @@ Group_Dir_Set::~Group_Dir_Set(){
   delete psi_lf;
   delete psi_fr;
   delete psi_bo;
-  delete psi_internal;
 }
 
 
@@ -69,8 +67,6 @@ void Group_Dir_Set::allocate(Grid_Data *grid_data, Nesting_Order nest){
                     local_imax*(local_jmax+1)*local_kmax);
   psi_bo = new SubTVec(nest, num_groups, num_directions,
                     local_imax*local_jmax*(local_kmax+1));
-  psi_internal = new SubTVec(nest, num_groups, num_directions,
-                      grid_data->num_zones);
 }
 
 void Group_Dir_Set::randomizeData(void){
@@ -80,7 +76,6 @@ void Group_Dir_Set::randomizeData(void){
   psi_lf->randomizeData();
   psi_fr->randomizeData();
   psi_bo->randomizeData();
-  psi_internal->randomizeData();
 }
 
 void Group_Dir_Set::copy(Group_Dir_Set const &b){
@@ -90,7 +85,6 @@ void Group_Dir_Set::copy(Group_Dir_Set const &b){
   psi_lf->copy(*b.psi_lf);
   psi_fr->copy(*b.psi_fr);
   psi_bo->copy(*b.psi_bo);
-  psi_internal->copy(*b.psi_internal);
 }
 
 bool Group_Dir_Set::compare(int gs, int ds, Group_Dir_Set const &b, double tol, bool verbose){

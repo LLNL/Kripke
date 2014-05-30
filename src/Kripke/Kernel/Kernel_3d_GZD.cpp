@@ -249,11 +249,6 @@ void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
             double * KRESTRICT  psi_bo_g_zkb = psi_bo.ptr(group, 0, Bottom_INDEX(i, j, k+kb));
             double *  KRESTRICT psi_bo_g_zkt = psi_bo.ptr(group, 0, Bottom_INDEX(i, j, k+kt));
 
-            double * KRESTRICT psi_internal_all_g_z = gd_set->psi_internal->ptr(group, 0, z);
-            double * KRESTRICT psi_int_lf = psi_internal_all_g_z;
-            double * KRESTRICT psi_int_fr = psi_internal_all_g_z;
-            double * KRESTRICT psi_int_bo = psi_internal_all_g_z;
-
             double *  KRESTRICT i_plane_g_z = i_plane.ptr(group, 0, I_PLANE_INDEX(j, k));
             double *  KRESTRICT j_plane_g_z = j_plane.ptr(group, 0, J_PLANE_INDEX(i, k));
             double *  KRESTRICT k_plane_g_z = k_plane.ptr(group, 0, K_PLANE_INDEX(i, j));
@@ -266,11 +261,6 @@ void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
               double zcos_dzk = zcos * two_dz;
               double ycos_dyj = ycos * two_dy;
               double xcos_dxi = xcos * two_dx;
-
-              /* Add internal surface source data */
-              psi_lf_g_zil[d] += psi_int_lf[d];
-              psi_fr_g_zjf[d] += psi_int_fr[d];
-              psi_bo_g_zkb[d] += psi_int_bo[d];
 
               /* Calculate new zonal flux */
               double psi_g_z_d = (rhs_g_z[d] + psi_lf_g_zil[d] * xcos_dxi
