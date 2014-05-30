@@ -91,11 +91,11 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
 
           double **ell_n = ell[n];
           for (int m = -n; m <= n; m++) {
-            double * ell_nm = ell_n[m + n];
+            double *  KRESTRICT ell_nm = ell_n[m + n];
             int nm_offset = n*n + n + m;
 
-            double *phi = grid_data->phi->ptr(group0, nm_offset, z);
-            double *psi = gd_set.psi->ptr(0, 0, z);
+            double * KRESTRICT phi = grid_data->phi->ptr(group0, nm_offset, z);
+            double * KRESTRICT psi = gd_set.psi->ptr(0, 0, z);
 
             for (int d = 0; d < num_local_directions; d++) {
 

@@ -91,19 +91,19 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
       /* 3D Cartesian Geometry */
       for (int z = 0; z < num_zones; z++) {
         for (int group = 0; group < num_local_groups; ++group) {
-          double *phi = grid_data->phi->ptr(group + group0, 0, z);
-          double *psi = gd_set.psi->ptr(group, 0, z);
+          double * KRESTRICT phi = grid_data->phi->ptr(group + group0, 0, z);
+          double * KRESTRICT psi = gd_set.psi->ptr(group, 0, z);
 
           for (int n = 0; n < num_moments; n++) {
             double **ell_n = ell[n];
 
             for (int m = -n; m <= n; m++) {
               int nm_offset = n * n + n + m;
-              double * ell_n_m = ell[n][m + n];
+              double * KRESTRICT ell_n_m = ell[n][m + n] + dir0;
 
               double phi_acc = 0.0;
               for (int d = 0; d < num_local_directions; d++) {
-                double ell_n_m_d = ell_n_m[d + dir0];
+                double ell_n_m_d = ell_n_m[d];
                 double psi_z_g_d = psi[d];
                 phi_acc += ell_n_m_d * psi_z_g_d;
               }
