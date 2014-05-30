@@ -11,7 +11,6 @@
 
 typedef std::pair<int, int> IntPair;
 
-
 std::vector<std::string> papi_names;
 
 void usage(void){
@@ -114,7 +113,6 @@ void runPoint(Input_Variables &input_variables, FILE *out_fp){
     }
     printf(line);
   }
-
 
 
   /* Cleanup */
