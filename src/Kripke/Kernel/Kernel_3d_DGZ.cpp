@@ -256,6 +256,7 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       double dzk = dz[k + 1];
       zcos_dzk_all[k] = 2.0 * zcos / dzk;
     }
+
     for (int block_idx = 0; block_idx < idxset.size(); ++block_idx) {
       Grid_Sweep_Block const &block = idxset[block_idx];
 
@@ -268,15 +269,10 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
         double *  KRESTRICT psi_lf_d_g = psi_lf.ptr(group, d, 0);
         double *  KRESTRICT psi_fr_d_g = psi_fr.ptr(group, d, 0);
         double * KRESTRICT  psi_bo_d_g = psi_bo.ptr(group, d, 0);
-        double *  KRESTRICT psi_internal_all_d_g = gd_set->psi_internal->ptr(group, d, 0);
         double *  KRESTRICT i_plane_d_g = &i_plane(group, d, 0);
         double *  KRESTRICT j_plane_d_g = &j_plane(group, d, 0);
         double *  KRESTRICT k_plane_d_g = &k_plane(group, d, 0);
         double *  KRESTRICT sigt_g = gd_set->sigt->ptr(group, 0, 0);
-
-        double * KRESTRICT psi_int_lf = psi_internal_all_d_g;
-        double * KRESTRICT psi_int_fr = psi_internal_all_d_g;
-        double * KRESTRICT psi_int_bo = psi_internal_all_d_g;
 
         /* Copy the angular fluxes incident upon this subdomain */
         for (int k = block.start_k; k != block.end_k; k += block.inc_k) {
@@ -310,14 +306,6 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
             double ycos_dyj = ycos_dyj_all[j];
             for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
               double xcos_dxi = xcos_dxi_all[i];
-
-              /* Add internal surface source data */
-              psi_lf_d_g[Left_INDEX(i+il, j, k)] +=
-                  psi_int_lf[Zonal_INDEX(i, j, k)];
-              psi_fr_d_g[Front_INDEX(i, j+jf, k)] +=
-                  psi_int_fr[Zonal_INDEX(i, j, k)];
-              psi_bo_d_g[Bottom_INDEX(i, j, k+kb)] +=
-                  psi_int_bo[Zonal_INDEX(i, j, k)];
 
               /* Calculate new zonal flux */
               double psi_d_g_z = (rhs_d_g[Zonal_INDEX(i, j, k)]

@@ -64,7 +64,6 @@ struct Group_Dir_Set {
   SubTVec *psi_lf;
   SubTVec *psi_fr;
   SubTVec *psi_bo;
-  SubTVec *psi_internal;
 };
 
 /**
