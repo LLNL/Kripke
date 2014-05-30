@@ -192,7 +192,6 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       double * psi_lf_g_d = gd_set->psi_lf->ptr(group, d, 0);
       double * psi_fr_g_d = gd_set->psi_fr->ptr(group, d, 0);
       double * psi_bo_g_d = gd_set->psi_bo->ptr(group, d, 0);
-      double * psi_internal_all_g_d = gd_set->psi_internal->ptr(group, d, 0);
       double * i_plane_g_d = i_plane.ptr(group, d, 0);
       double * j_plane_g_d = j_plane.ptr(group, d, 0);
       double * k_plane_g_d = k_plane.ptr(group, d, 0);
@@ -200,10 +199,6 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       double xcos = direction[d].xcos;
       double ycos = direction[d].ycos;
       double zcos = direction[d].zcos;
-
-      double *psi_int_lf = psi_internal_all_g_d;
-      double *psi_int_fr = psi_internal_all_g_d;
-      double *psi_int_bo = psi_internal_all_g_d;
 
       /* Copy the angular fluxes incident upon this subdomain */
       for (int k = 0; k < local_kmax; k++) {
@@ -242,14 +237,6 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
             for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
               double dxi = dx[i + 1];
               double xcos_dxi = 2.0 * xcos / dxi;
-
-              /* Add internal surface source data */
-              psi_lf_g_d[Left_INDEX(i+il, j,
-                  k)] += psi_int_lf[Zonal_INDEX(i, j, k)];
-              psi_fr_g_d[Front_INDEX(i, j+jf,
-                  k)] += psi_int_fr[Zonal_INDEX(i, j, k)];
-              psi_bo_g_d[Bottom_INDEX(i, j, k+
-                  kb)] += psi_int_bo[Zonal_INDEX(i, j, k)];
 
               /* Calculate new zonal flux */
               double psi_g_d_z = (rhs_g_d[Zonal_INDEX(i, j, k)]
