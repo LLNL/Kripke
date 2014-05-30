@@ -19,50 +19,6 @@ Nesting_Order Kernel_3d_ZGD::nestingPhi(void) const {
   return NEST_ZGD;
 }
 
-void Kernel_3d_ZGD::scattering(Grid_Data *grid_data) {
-  int num_moments = grid_data->num_moments;
-  int num_groups = grid_data->phi->groups;
-  int num_zones = grid_data->num_zones;
-
-  double sig_s = 0;
-
-  for (int zone = 0; zone < num_zones; zone++) {
-
-    // Loop over source group
-    for (int g = 0; g < num_groups; g++) {
-
-      // Loop over destination group
-      for (int gp = 0; gp < num_groups; gp++) {
-
-        double *phi = grid_data->phi->ptr(g, 0, zone);
-        double *phi_out = grid_data->phi_out->ptr(g, 0, zone);
-
-        int nm_offset = 0;
-        // Begin loop over scattering moments
-        for (int n = 0; n < num_moments; n++) {
-
-          int num_m = grid_data->ell->numM(n);
-
-          for (int m = 0; m < num_m; m++) {
-
-            // Evaluate sigs  for this (n,g,gp) triplet
-            //evalSigmaS(grid_data, n, g, gp);
-
-            // Get variables
-            //double *sig_s = &grid_data->sig_s[0];
-            phi_out[m + nm_offset] += sig_s * phi[m + nm_offset];
-
-          } //m
-
-          nm_offset += num_m;
-
-        } // n
-      } // gp
-
-    } // g
-  } // z
-}
-
 void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
   // Outer parameters
   double ***ell = grid_data->ell->data;
@@ -94,19 +50,19 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
 #endif
       for (int z = 0; z < num_zones; z++) {
         for (int group = 0; group < num_local_groups; ++group) {
-          double *phi = grid_data->phi->ptr(group + group0, 0, z);
-          double *psi = gd_set.psi->ptr(group, 0, z);
+          double * KRESTRICT phi = grid_data->phi->ptr(group + group0, 0, z);
+          double * KRESTRICT psi = gd_set.psi->ptr(group, 0, z);
 
           for (int n = 0; n < num_moments; n++) {
             double **ell_n = ell[n];
 
             for (int m = -n; m <= n; m++) {
               int nm_offset = n * n + n + m;
-              double * ell_n_m = ell[n][m + n];
+              double * KRESTRICT ell_n_m = ell[n][m + n] + dir0;
 
               double phi_acc = 0.0;
               for (int d = 0; d < num_local_directions; d++) {
-                double ell_n_m_d = ell_n_m[d + dir0];
+                double ell_n_m_d = ell_n_m[d];
                 double psi_z_g_d = psi[d];
                 phi_acc += ell_n_m_d * psi_z_g_d;
               }
@@ -153,7 +109,6 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
 #endif
       for (int z = 0; z < num_zones; z++) {
         for (int group = 0; group < num_local_groups; ++group) {
-
           double *rhs = gd_set.rhs->ptr(group, 0, z);
           double * KRESTRICT phi_out = grid_data->phi_out->ptr(group + group0,
               0, z);
@@ -304,7 +259,6 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 #pragma omp parallel for
 #endif
           for (int group = 0; group < num_groups; ++group) {
-
             double *  KRESTRICT psi_z_g = gd_set->psi->ptr(group, 0, z);
             double *  KRESTRICT rhs_z_g = gd_set->rhs->ptr(group, 0, z);
 

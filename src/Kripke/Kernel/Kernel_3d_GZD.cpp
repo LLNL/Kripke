@@ -19,44 +19,6 @@ Nesting_Order Kernel_3d_GZD::nestingPhi(void) const {
   return NEST_GZD;
 }
 
-void Kernel_3d_GZD::scattering(Grid_Data *grid_data) {
-  int num_moments = grid_data->num_moments;
-  int num_groups = grid_data->phi->groups;
-  int num_zones = grid_data->num_zones;
-
-  double sig_s = 0;
-
-  // Loop over destination group
-  for (int gp = 0; gp < num_groups; gp++) {
-    for (int g = 0; g < num_groups; g++) {
-      for (int zone = 0; zone < num_zones; zone++) {
-
-        // Begin loop over scattering moments
-        double *phi = grid_data->phi->ptr(g, 0, zone);
-        double *phi_out = grid_data->phi_out->ptr(g, 0, zone);
-        int nm_offset = 0;
-        for (int n = 0; n < num_moments; n++) {
-
-          int num_m = grid_data->ell->numM(n);
-          // Loop over source group
-
-          // Evaluate sigs  for this (n,g,gp) triplet
-          //evalSigmaS(grid_data, n, g, gp);
-
-          // Get variables
-          //double *sig_s = &grid_data->sig_s[0];
-
-          for (int m = 0; m < num_m; m++) {
-            phi_out[nm_offset + m] += sig_s * phi[nm_offset + m];
-          } //m
-
-          nm_offset += num_m;
-        } // n
-      } // z
-    } // g
-  } // gp
-}
-
 void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
   // Outer parameters
   double ***ell = grid_data->ell->data;

@@ -18,7 +18,6 @@
 /* Prototypes */
 struct User_Data;
 
-
 #define KRESTRICT __restrict__
 
 /* driver.c */

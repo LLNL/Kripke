@@ -18,12 +18,6 @@
 #include <vector>
 #include <stdio.h>
 
-
-
-
-
-
-
 /**
  *  post message receives - all receives in specific direction posted at once
  */

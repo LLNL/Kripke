@@ -59,17 +59,6 @@ void Kernel::allocateStorage(User_Data *user_data){
 }
 
 
-void Kernel::evalSigmaS(Grid_Data *grid_data, int n, int g, int gp){
-
-  int num_zones = grid_data->num_zones;
-  double *sig_s = &grid_data->sig_s[0];
-
-  for(int z = 0;z < num_zones;++ z){
-    sig_s[z] = 0.0;
-  }
-}
-
-
 // Factory to create correct kernel object
 Kernel *createKernel(Nesting_Order nest, int num_dims){
   if(num_dims == 3){

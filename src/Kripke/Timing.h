@@ -8,11 +8,9 @@
 #define KRIPKE_TIMING_H__
 
 #include<Kripke.h>
-
 #include <string>
 #include <vector>
 #include <map>
-
 
 struct Timer {
   Timer() :
@@ -26,10 +24,6 @@ struct Timer {
   double start_time;
   double total_time;
   size_t count;
-
-#if KRIPKE_USE_PAPI
-  std::vector<size_t> papi_total;
-#endif
 };
 
 class Timing {
@@ -49,10 +43,6 @@ class Timing {
   private:
     typedef std::map<std::string, Timer> TimerMap;
     TimerMap timers;
-#if KRIPKE_USE_PAPI
-    std::vector<std::string> papi_names;
-    std::vector<int> papi_event;
-#endif
 };
 
 
@@ -65,11 +55,9 @@ class BlockTimer {
       timer(timer_obj),
       name(timer_name)
   {
-    //printf("Starting Timer %s\n", name.c_str());
       timer.start(name);
   }
   inline ~BlockTimer(){
-    //printf("Stopping Timer %s\n", name.c_str());
     timer.stop(name);
   }
 
