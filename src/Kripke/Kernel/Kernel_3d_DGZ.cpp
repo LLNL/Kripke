@@ -29,8 +29,6 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
 
   grid_data->phi->clear(0.0);
 
-
-
   // Loop over Group Sets
   int num_group_sets = grid_data->gd_sets.size();
   for (int gset = 0; gset < num_group_sets; ++gset) {
@@ -49,29 +47,47 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
       int num_groups_zones = num_local_groups*num_zones;
 
       /* 3D Cartesian Geometry */
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
-      for(int idx = 0;idx < nidx;++idx){
-        int n = grid_data->nm_table[idx];
-        int m = idx - n*n - n;
+      int blk_size = 512;
 
-        double *ell_n_m = ell[n][m + n];
-        int nm_offset = n*n + n + m;
+//#ifdef KRIPKE_USE_OPENMP
+//#pragma omp parallel for
+//#endif
+
+
+      for(int gz_start = 0;gz_start < num_groups_zones;gz_start += blk_size){
 
         double *psi = gd_set.psi->ptr();
         for (int d = 0; d < num_local_directions; d++) {
 
-          double ell_n_m_d = ell_n_m[d + dir0];
-          double * KRESTRICT phi = grid_data->phi->ptr(group0, nm_offset, 0);
-          double * KRESTRICT psi_ptr = psi;
+        int gz_end = std::min(gz_start + blk_size, num_groups_zones);
 
-          for(int gz = 0;gz < num_groups_zones;++ gz){
-            phi[gz] += ell_n_m_d * psi_ptr[gz];
+        double * KRESTRICT phi = grid_data->phi->ptr(group0, 0, 0);
+
+          for(int idx = 0;idx < nidx;++idx){
+            int n = grid_data->nm_table[idx];
+            int m = idx - n*n - n;
+
+            double *ell_n_m = ell[n][m + n];
+            int nm_offset = n*n + n + m;
+
+            double ell_n_m_d = ell_n_m[d + dir0];
+
+            double * KRESTRICT psi_ptr = psi;
+
+            for(int gz = gz_start;gz < gz_end;++ gz){
+              double phi_gz = phi[gz];
+              double val = phi_gz + ell_n_m_d * psi_ptr[gz];
+              phi[gz] = val;
+              //phi[gz] += ell_n_m_d * psi_ptr[gz];
+            }
+
+            phi += num_groups_zones;
 
           }
+
           psi += num_groups_zones;
         }
+
       }
 
     } // Direction Set
