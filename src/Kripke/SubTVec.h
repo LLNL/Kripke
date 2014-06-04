@@ -6,14 +6,12 @@
 #include <vector>
 #include <stdlib.h>
 
-/* A transport vector (used for Psi and Phi, RHS, etc.)
+/**
+ *  A transport vector (used for Psi and Phi, RHS, etc.)
  *
- *It is templated to re-order the nestings
- *
- * 0: outer nesting
- * 1: middle nesting
- * 2: inner nesting
- *
+ *  This provides the inner most three strides of
+ *    Psi[GS][DS][G][D][Z]
+ *  but in whatever nesting order is specified.
  */
 struct SubTVec {
   SubTVec(Nesting_Order nesting, int ngrps, int ndir_mom, int nzones):
@@ -27,7 +25,11 @@ struct SubTVec {
   }
 
 
-  /** ALIASING version */
+  /**
+   * ALIASING version of constructor.
+   * Use this when you have a data buffer already, and don't want this class
+   * to do any memory management.
+   */
   SubTVec(Nesting_Order nesting, int ngrps, int ndir_mom, int nzones, double *ptr):
     groups(ngrps),
     directions(ndir_mom),

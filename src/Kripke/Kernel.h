@@ -12,6 +12,11 @@ struct Grid_Data;
 struct SubTVec;
 struct Group_Dir_Set;
 
+/**
+ * This is the Kernel base-class and interface definition.
+ * This abstracts the storage of Psi, Phi, L, L+ from the rest of the code,
+ * providing data-layout specific routines.
+ */
 class Kernel {
   public:
     Kernel();

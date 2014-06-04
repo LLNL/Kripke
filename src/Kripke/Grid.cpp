@@ -1,7 +1,3 @@
-/*--------------------------------------------------------------------------
- * Utility functions for the Grid_Data structure.
- *--------------------------------------------------------------------------*/
-
 #include <Kripke/Grid.h>
 #include <Kripke/SubTVec.h>
 #include <Kripke/LMat.h>
@@ -69,6 +65,9 @@ void Group_Dir_Set::allocate(Grid_Data *grid_data, Nesting_Order nest){
                     local_imax*local_jmax*(local_kmax+1));
 }
 
+/**
+ * Randomizes data for a set.
+ */
 void Group_Dir_Set::randomizeData(void){
   psi->randomizeData();
   rhs->randomizeData();
@@ -78,6 +77,9 @@ void Group_Dir_Set::randomizeData(void){
   psi_bo->randomizeData();
 }
 
+/**
+ * Copies two sets, allowing for different nestings.
+ */
 void Group_Dir_Set::copy(Group_Dir_Set const &b){
   psi->copy(*b.psi);
   rhs->copy(*b.rhs);
@@ -87,6 +89,9 @@ void Group_Dir_Set::copy(Group_Dir_Set const &b){
   psi_bo->copy(*b.psi_bo);
 }
 
+/**
+ * Compares two sets, allowing for different nestings.
+ */
 bool Group_Dir_Set::compare(int gs, int ds, Group_Dir_Set const &b, double tol, bool verbose){
   std::stringstream namess;
   namess << "gdset[" << gs << "][" << ds << "]";
@@ -104,16 +109,13 @@ bool Group_Dir_Set::compare(int gs, int ds, Group_Dir_Set const &b, double tol, 
 }
 
 
-/*--------------------------------------------------------------------------
- * GenGrid : Creates a new Grid_Data structure and allocates
- *                 memory for its data.
- *
+/**
+ * Grid_Data constructor.
  * Currently, the spatial grid is calculated so that cells are a uniform
  * length = (xmax - xmin) / nx
  * in each spatial direction.
  *
- *--------------------------------------------------------------------------*/
-
+*/
 Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
 {
   int npx = input_vars->npx;
@@ -193,6 +195,9 @@ Grid_Data::~Grid_Data(){
   delete ell_plus;
 }
 
+/**
+ * Randomizes all variables and matrices for testing suite.
+ */
 void Grid_Data::randomizeData(void){
   for(int d = 0;d < 3;++ d){
     for(int i = 0;i < deltas[d].size();++ i){
@@ -220,6 +225,10 @@ void Grid_Data::randomizeData(void){
   }
 }
 
+/**
+ * Copies all variables and matrices for testing suite.
+ * Correctly copies data from one nesting to another.
+ */
 void Grid_Data::copy(Grid_Data const &b){
   for(int d = 0;d < 3;++ d){
     deltas[d] = b.deltas[d];
@@ -239,6 +248,10 @@ void Grid_Data::copy(Grid_Data const &b){
   sig_s = b.sig_s;
 }
 
+/**
+ * Compares all variables and matrices for testing suite.
+ * Correctly compares data from one nesting to another.
+ */
 bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   bool is_diff = false;
   is_diff |= compareVector("deltas[0]", deltas[0], b.deltas[0], tol, verbose);
@@ -263,6 +276,10 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
 }
 
 
+/**
+ * Computes the current MPI task's grid given the size of the mesh, and
+ * the current tasks index in that dimension (isub_ref).
+ */
 void Grid_Data::computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax){
  /* Calculate unit roundoff and load into grid_data */
   double eps = 1e-32;
@@ -307,6 +324,11 @@ void Grid_Data::computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmi
   nzones[dim] = nx_l; 
 }
 
+/**
+ * Computes index sets for each octant, and each tile (experimental).
+ * Determines logical indices, and increments for i,j,k based on grid
+ * information and quadrature set sweeping direction.
+ */
 void Grid_Data::computeSweepIndexSets(Sweep_Order sweep_order, int block_size){
   octant_indexset.resize(8);
   octant_extent.resize(8);
@@ -368,12 +390,12 @@ void Grid_Data::computeSweepIndexSets(Sweep_Order sweep_order, int block_size){
       idxset.resize(1);
       idxset[0] = extent;
     }
+    // EXPERIMENTAL!!
     else if(sweep_order == SWEEP_TILED){
       int idx = 0;
       int tile_size = block_size;
 
       idxset.clear();
-      //printf("Setting up TILED x%d sweep order\n", tile_size);
       for(int k=kstartz; std::abs(k-kstartz)<nzones[2]; k+=tile_size*kn){
         for(int j=jstartz; std::abs(j-jstartz)<nzones[1]; j+=tile_size*jn){
           for(int i=istartz; std::abs(i-istartz)<nzones[0]; i+=tile_size*in){

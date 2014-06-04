@@ -1,7 +1,3 @@
-/*--------------------------------------------------------------------------
- * Header file for the Grid_Data data structures
- *--------------------------------------------------------------------------*/
-
 #ifndef KRIPKE_GRID_DATA_H__
 #define KRIPKE_GRID_DATA_H__
 
@@ -10,34 +6,17 @@
 #include <mpi.h>
 #include <vector>
 
-/*--------------------------------------------------------------------------
- * Define the Grid_Data structure.
- *
- * nzones         : The number of zones used in each coordinate direction
- * nprocs         : The number of processors used in each coordinate direction
- * mynbr          : MPI process id's of neighbors for each grid face
- * coord_lo       : Local x,y,z lower coordinates
- * coord_hi       : Local x,y,z upper coordinates
- * xmin           : The miniumum spatial value for the x direction
- * xmax           : The maximum spatial value for the x direction
- * ymin           : The miniumum spatial value for the y direction
- * ymax           : The maximum spatial value for the y direction
- * zmin           : The miniumum spatial value for the z direction
- * zmax           : The maximum spatial value for the z direction
- * deltas         : The delta_x, delta_y, and delta_z arrays
- * volume         : The volume of each spatial zone
- * eps            : Unit Roundoff
- * global_num_zones: The global number of spatial zones
- * num_directions : The number of directions
- * ilower         : Lower grid indices
- *--------------------------------------------------------------------------*/
-
+// Foreward Decl
 struct Input_Variables;
 struct Grid_Data;
-
 struct SubTVec;
 struct LMat;
 
+
+/**
+ * Contains parameters and variables that describe a single Group Set and
+ * Direction Set.
+ */
 struct Group_Dir_Set {
   Group_Dir_Set();
   ~Group_Dir_Set();
@@ -47,11 +26,11 @@ struct Group_Dir_Set {
   void copy(Group_Dir_Set const &b);
   bool compare(int gs, int ds, Group_Dir_Set const &b, double tol, bool verbose);
 
-  int num_groups;
-  int num_directions;
+  int num_groups;       // Number of groups in this set
+  int num_directions;   // Number of directions in this set
 
-  int group0;
-  int direction0;
+  int group0;           // Starting global group id
+  int direction0;       // Starting global direction id
 
   Directions *directions;
 
@@ -66,9 +45,12 @@ struct Group_Dir_Set {
   SubTVec *psi_bo;
 };
 
+
+
 /**
  * Provides sweep index sets for a given octant.
- * This generalizes the sweep pattern
+ * This generalizes the sweep pattern, and allows for experimenting with
+ * a tiled approach to on-node sweeps.
  */
 struct Grid_Sweep_Block {
   int start_i, start_j, start_k; // starting index
@@ -76,6 +58,11 @@ struct Grid_Sweep_Block {
   int inc_i, inc_j, inc_k; // increment
 };
 
+
+
+/**
+ * Contains all grid parameters and variables.
+ */
 struct Grid_Data {
 public:
   Grid_Data(Input_Variables *input_vars, Directions *directions);
@@ -94,7 +81,6 @@ public:
   std::vector<double> volume;       // Spatial zone volumes
 
   // Sweep index sets for each octant
-
   typedef std::vector<Grid_Sweep_Block> Grid_Sweep_IndexSet;
   std::vector<Grid_Sweep_IndexSet> octant_indexset;
   std::vector<Grid_Sweep_Block> octant_extent;

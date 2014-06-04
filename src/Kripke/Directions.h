@@ -9,6 +9,9 @@
 
 class User_Data;
 
+/**
+ * Contains information needed for one quadrature set direction.
+ */
 struct Directions{
   double xcos;              /* Absolute value of the x-direction cosine. */
   double ycos;              /* Absolute value of the y-direction cosine. */
@@ -51,7 +54,6 @@ struct Directions{
 };
 
 
-/* directions.c */
 void InitDirections(User_Data *grid_data, int num_directions_per_octant);
 
 #endif
