@@ -33,7 +33,7 @@ void usage(void){
     printf("                         Default:  --procs 1,1,1\n");
     printf("  --test                 Run Kernel Test instead of solver\n");
     printf("  --zones <x,y,z>        Number of zones in x,y,z\n");
-    printf("                         Default:  --zones 8,8,8\n");
+    printf("                         Default:  --zones 12,12,12\n");
     printf("\n");
   }
   MPI_Finalize();
@@ -104,6 +104,10 @@ void runPoint(Input_Variables &input_variables, FILE *out_fp){
     );
   if(out_fp != NULL){
     fprintf(out_fp, line);
+  }
+  int myid;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+  if(myid == 0){
     printf(line);
   }
 
@@ -138,8 +142,8 @@ int main(int argc, char **argv) {
   dir_list.push_back(IntPair(1,1));
   std::string outfile;
   int nprocs[3] = {1, 1, 1};
-  int nzones[3] = {8, 8, 8};
-  int lorder = 2;
+  int nzones[3] = {12, 12, 12};
+  int lorder = 4;
   int niter = 10;
   bool test = false;
 
