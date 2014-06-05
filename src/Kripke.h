@@ -10,7 +10,6 @@
 #include<cmath>
 #include<strings.h>
 
-<<<<<<< HEAD
 // Make sure that there's openmp support, otherwise error out
 #if KRIPKE_USE_OPENMP
 #ifndef _OPENMP
@@ -19,10 +18,7 @@
 #endif
 
 
-/* Prototypes */
-=======
 // Forward Decl
->>>>>>> bdiv-1.0
 struct User_Data;
 
 #define KRESTRICT __restrict__
