@@ -18,9 +18,72 @@
 #include <vector>
 #include <stdio.h>
 
+
 /**
- *  post message receives - all receives in specific direction posted at once
- */
+   Initializes storage for messages (and associated status arrays)
+   posted in one of the 6 signed coordinate directions.  The signed coordinate
+   directions are enumerated by a key as follows:
+
+            key      direction
+             0       positive x
+             1       negative x
+             2       positive y
+             3       negative y
+             4       positive z
+             5       negative z
+
+   The parameters ``len'' and ``nm'' are each pointers to integer arrays of
+   length 6.  For key = 0, ..., 5, len[key] is the length (number of doubles)
+   of each message to be posted in the direction associated with key, and
+   nm[key] is the number of such messages being posted in the associated
+   direction.
+*/
+Comm::Comm(int * len, int *  nm){
+  int i, j, k;
+  int size;
+
+  size = 0;
+  buf_total = 0;
+  for(i=0; i<6; i++){
+    which_len[i] = len[i];
+    which_num[i] = nm[i];
+    size += len[i] * nm[i];   /* space for which direction bufs*/
+    buf_total += nm[i];
+  }
+
+  buf_which[0] = 0;
+  for(i=1; i<6; i++){
+    buf_which[i] = buf_which[i-1] + which_num[i-1];
+  }
+
+  bptr_sv.resize(size);
+  double *bptr = &bptr_sv[0];
+
+  buf_pool.resize(buf_total);
+
+  for(i = 0; i < 6; i++){    /* for each "which" set */
+    k = which_len[i];       /* msg size in this set */
+    for(j = 0; j < which_num[i]; j++){  /* for each msg in the set */
+      buf_pool[buf_which[i] + j] = bptr;     /* ptr to next message */
+      bptr = bptr + k;    /* bump over this message */
+    }
+  }
+
+  buf_s_req.resize(buf_total);
+  buf_r_req.resize(buf_total);
+  buf_status.resize(buf_total);
+
+  buf_reset();
+}
+
+/**
+   R_recv_dir() posts receives in the signed direction ``which''.  The number
+   of receives posted is nm[which], where nm[] is the array passed to
+   the constructor of Comm.  The argument ``r_member''
+   is the r coordinate of the node from which the nm[which] messages will
+   be sent.  R_recv_dir is non-blocking, i.e., it returns after posting
+   the receives without waiting for any messages to arrive.
+*/
 void Comm::R_recv_dir(int which, int r_member){
   int i, j;
 
@@ -33,8 +96,13 @@ void Comm::R_recv_dir(int which, int r_member){
   buf_rec[which]+= 1;  /*record recv in process: += is debug error guard */
 }
 
-/** test if any message buffer is complete and ready to use
- * return 0 if not; return 1 and *msg if yes */
+/**
+   R_recv_test() checks to see if any of the posted receives in the
+   signed direction ``which'' has been satisfied (i.e, a message has
+   arrived).  If no received message is pending, the function returns 0.
+   If a message has arrived, its address is assigned to *msg and the
+   function returns 1.
+*/
 int Comm::R_recv_test(int which,  double **msg){
 
 
@@ -81,8 +149,14 @@ int Comm::R_recv_test(int which,  double **msg){
 }
 
 
-/* post non-blocking send & remember handle to check completion later */
-  /* send-handles are all mixed together in one array */
+/**
+  post non-blocking send & remember handle to check completion later
+  send-handles are all mixed together in one array
+  Called from a node (p,q,r), R_send() sends the message of ``length''
+  doubles pointed at by ``msg'' to node (p,q,r_member).  The send is
+  non-blocking, i.e., it returns immediately after submitting the message
+  to the underlying communication system.
+*/
 void Comm::R_send(double * msg, int r_member, int length){
   if(r_member >= 0){
     MPI_Isend(msg, length, MPI_DOUBLE, r_member, 0, MPI_COMM_WORLD,
@@ -92,8 +166,9 @@ void Comm::R_send(double * msg, int r_member, int length){
 }
 
 
-/* come here to check that all sends have completed so that the */
-  /* buffers are free for reuse on next iteration */
+/**
+   R_wait_send() waits for all posted sends to complete.
+*/
 void Comm::R_wait_send (){
   MPI_Waitall(send_cnt, &buf_s_req[0], &buf_status[0]);
 
@@ -101,87 +176,11 @@ void Comm::R_wait_send (){
 }
 
 
-/*========================= MISCELLANEOUS ======================*/
 
-void
-error_exit(int flag)
-{
-  fflush(NULL);
-  MPI_Abort(MPI_COMM_WORLD, flag);
-}
-
-MPI_Comm Comm::GetRGroup() {
-  return(MPI_COMM_WORLD);
-}
-
-int Comm::GetRrank() {
-  int r0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &r0);
-  return(r0);
-}
-
-/*===================INITIALIZATION AND TERMINATION =============*/
-
-void Comm::create_R_grid(int R)
-{
-  int myrank, size;
-
-  /* Gte rank */
-  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-
-  /*------------------------R Group---------------------------*/
-
-  /* Check size of PQR_group */
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  if(R != size){
-    if(myrank == 0){
-      printf("ERROR: Incorrect number of MPI tasks. Need %d MPI tasks.", R);
-    }
-    error_exit(1);
-  }
-}
-
-/* initialize storage for nm messages in 6 directions, and associated */
-  /* status information - each message is dlen long */
-Comm::Comm(int * len, int *  nm){
-  int i, j, k;
-  int size;
-
-  size = 0;
-  buf_total = 0;
-  for(i=0; i<6; i++){
-    which_len[i] = len[i];
-    which_num[i] = nm[i];
-    size += len[i] * nm[i];   /* space for which direction bufs*/
-    buf_total += nm[i];
-  }
-
-  buf_which[0] = 0;
-  for(i=1; i<6; i++){
-    buf_which[i] = buf_which[i-1] + which_num[i-1];
-  }
-
-  bptr_sv.resize(size);
-  double *bptr = &bptr_sv[0];
-
-  buf_pool.resize(buf_total);
-
-  for(i = 0; i < 6; i++){    /* for each "which" set */
-    k = which_len[i];       /* msg size in this set */
-    for(j = 0; j < which_num[i]; j++){  /* for each msg in the set */
-      buf_pool[buf_which[i] + j] = bptr;     /* ptr to next message */
-      bptr = bptr + k;    /* bump over this message */
-    }
-  }
-
-  buf_s_req.resize(buf_total);
-  buf_r_req.resize(buf_total);
-  buf_status.resize(buf_total);
-
-  buf_reset();
-}
+/**
+ * initialize all the things that change each iteration
+ */
 void Comm::buf_reset(void){
-  /* initialize all the things that change each iteration */
   send_cnt = 0;
 
   int i;
@@ -195,8 +194,16 @@ void Comm::buf_reset(void){
 }
 
 
-Comm::~Comm(){
 
 
+/*========================= MISCELLANEOUS ======================*/
+
+/**
+   error_exit() aborts the concurrent execution, passing the flag value
+   to lower-level (system-dependent) abort routines, which may ignore it.
+*/
+void error_exit(int flag)
+{
+  fflush(NULL);
+  MPI_Abort(MPI_COMM_WORLD, flag);
 }
-

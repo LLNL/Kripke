@@ -1,3 +1,6 @@
+/**
+ * This is the main header file for the Kripke Mini-App.
+ */
 #ifndef KRIPKE_H__
 #define KRIPKE_H__
 
@@ -7,6 +10,7 @@
 #include<cmath>
 #include<strings.h>
 
+<<<<<<< HEAD
 // Make sure that there's openmp support, otherwise error out
 #if KRIPKE_USE_OPENMP
 #ifndef _OPENMP
@@ -16,19 +20,25 @@
 
 
 /* Prototypes */
+=======
+// Forward Decl
+>>>>>>> bdiv-1.0
 struct User_Data;
 
 #define KRESTRICT __restrict__
 
-/* driver.c */
+
+// In Kripke/Driver.cpp
 void Driver(User_Data *user_data);
 
-/* sweep_solver.c */
+// In Kripke/Sweep_Solver.cpp
 int SweepSolver(User_Data *user_data);
 int SweepSolver_GroupSet (int group_set, User_Data *user_data);
 void CreateBufferInfo(User_Data *user_data);
 
-
+/**
+ * Tags for choosing which data nesting to be chosen
+ */
 enum Nesting_Order {
   // Nestings for Psi and Phi
   // D referes to directions OR moments, depending on context
@@ -44,6 +54,9 @@ enum Nesting_Order {
   NEST_NMD
 };
 
+/**
+ * Converts a nesting tag to a human-readable string.
+ */
 inline std::string nestingString(Nesting_Order nesting){
   switch(nesting){
     case NEST_DGZ: return("DGZ");
@@ -58,6 +71,10 @@ inline std::string nestingString(Nesting_Order nesting){
   }
   return("UNKNOWN");
 }
+
+/**
+ * Converts a string (eg. from command line) to a nesting tag.
+ */
 inline Nesting_Order nestingFromString(std::string const &str){
   for(int i = 0;i < 6;++ i){
     if(!strcasecmp(str.c_str(), nestingString((Nesting_Order)i).c_str())){
@@ -67,6 +84,9 @@ inline Nesting_Order nestingFromString(std::string const &str){
   return (Nesting_Order)-1;
 }
 
+/**
+ * Experimental feature tag to try zone tiling.
+ */
 enum Sweep_Order {
   SWEEP_DEFAULT,
   SWEEP_TILED,
@@ -74,6 +94,10 @@ enum Sweep_Order {
 };
 
 
+/**
+ * Compares two vectors for differences.
+ * Used in testing suite.
+ */
 inline bool compareVector(std::string const &name,
     std::vector<double> const &a,
     std::vector<double> const &b, double tol, bool verbose){
@@ -105,6 +129,10 @@ inline bool compareVector(std::string const &name,
   return is_diff;
 }
 
+/**
+ * Compares two scalars for differences.
+ * Used in testing suite.
+ */
 inline bool compareScalar(std::string const &name,
     double a, double b, double tol, bool verbose){
 

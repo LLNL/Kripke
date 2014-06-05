@@ -25,7 +25,17 @@ User_Data::User_Data(Input_Variables *input_vars)
 
   /* Set the processor grid dimensions */
   int R = (input_vars->npx)*(input_vars->npy)*(input_vars->npz);;
-  comm->create_R_grid(R);
+  /* Check size of PQR_group is the same as MPI_COMM_WORLD */
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if(R != size){
+    int myid;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+    if(myid == 0){
+      printf("ERROR: Incorrect number of MPI tasks. Need %d MPI tasks.", R);
+    }
+    error_exit(1);
+  }
 
   // Create the spatial grid
   grid_data = new Grid_Data(input_vars, &directions[0]);

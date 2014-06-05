@@ -107,6 +107,9 @@ struct LMat {
     delete[] data;
   }
 
+  /**
+   * Returns the number of "m" moments for a given legendre coeff n.
+   */
   inline int numM(int n) const {
     switch(num_dims){
       case 1:
@@ -119,6 +122,9 @@ struct LMat {
     return 0;
   }
 
+  /**
+   * Returns points to beginning of linear block of the matrix.
+   */
   inline double* ptr(void){
     return &data_linear[0];
   }

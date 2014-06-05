@@ -5,8 +5,37 @@
 #include <math.h>
 #include <algorithm>
 
-static void InitOmegas(std::vector<Directions> &directions);
+namespace {
+  void InitOmegas(std::vector<Directions> &directions)
+  {
+    int num_directions = directions.size();
+    int omegas_per_octant=num_directions>>3;
 
+    for(int d=0, m=0; d<num_directions; d++, m++){
+
+      int n = d/omegas_per_octant;
+
+      double omegas[3];
+      omegas[0] = n & 0x1;
+      omegas[1] = (n>>1) & 0x1;
+      omegas[2] = (n>>2) & 0x1;
+
+      directions[d].id = (omegas[0] > 0.) ? 1 : -1;
+      directions[d].jd = (omegas[1] > 0.) ? 1 : -1;
+      directions[d].kd = (omegas[2] > 0.) ? 1 : -1;
+      directions[d].xcos = fabs(omegas[0]);
+      directions[d].ycos = fabs(omegas[1]);
+      directions[d].zcos = fabs(omegas[2]);
+    }
+
+  }
+}
+
+
+/**
+ * Initializes the quadrature set information for a User_Data object.
+ * This guarantees that each <GS,DS> pair have a single originating octant.
+ */
 void InitDirections(User_Data *user_data, int num_directions_per_octant)
 {
   Grid_Data *grid_data = user_data->grid_data;
@@ -67,28 +96,6 @@ void InitDirections(User_Data *user_data, int num_directions_per_octant)
   }
 }
 
-void InitOmegas(std::vector<Directions> &directions)
-{
-  int num_directions = directions.size();
-  int omegas_per_octant=num_directions>>3;
 
-  for(int d=0, m=0; d<num_directions; d++, m++){
-
-    int n = d/omegas_per_octant;
-
-    double omegas[3];
-    omegas[0] = n & 0x1;
-    omegas[1] = (n>>1) & 0x1;
-    omegas[2] = (n>>2) & 0x1;
-
-    directions[d].id = (omegas[0] > 0.) ? 1 : -1;
-    directions[d].jd = (omegas[1] > 0.) ? 1 : -1;
-    directions[d].kd = (omegas[2] > 0.) ? 1 : -1;
-    directions[d].xcos = fabs(omegas[0]);
-    directions[d].ycos = fabs(omegas[1]);
-    directions[d].zcos = fabs(omegas[2]);
-  }
-
-}
 
 
