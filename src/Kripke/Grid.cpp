@@ -101,9 +101,9 @@ bool Group_Dir_Set::compare(int gs, int ds, Group_Dir_Set const &b, double tol, 
   is_diff |= psi->compare(name+".psi", *b.psi, tol, verbose);
   is_diff |= rhs->compare(name+".rhs", *b.rhs, tol, verbose);
   is_diff |= sigt->compare(name+".sigt", *b.sigt, tol, verbose);
-  is_diff |= psi_lf->compare(name+".psi_lf", *b.psi_lf, tol, verbose);
-  is_diff |= psi_fr->compare(name+".psi_fr", *b.psi_fr, tol, verbose);
-  is_diff |= psi_bo->compare(name+".psi_bo", *b.psi_bo, tol, verbose);
+//  is_diff |= psi_lf->compare(name+".psi_lf", *b.psi_lf, tol, verbose);
+//  is_diff |= psi_fr->compare(name+".psi_fr", *b.psi_fr, tol, verbose);
+//  is_diff |= psi_bo->compare(name+".psi_bo", *b.psi_bo, tol, verbose);
 
   return is_diff;
 }

@@ -3,6 +3,8 @@
 #include<Kripke/SubTVec.h>
 #include<Kripke/LMat.h>
 
+
+
 Kernel_3d_DGZ::Kernel_3d_DGZ() {
 
 }
@@ -125,20 +127,13 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
   } // Group Set
 }
 
+#define ZERO_COPY
+
 /* Sweep routine for Diamond-Difference */
 /* Macros for offsets with fluxes on cell faces */
-#define Left_INDEX(i, j, k) (i) + (local_imax_1)*(j) \
-  + (local_imax_1)*(local_jmax)*(k)
-#define Front_INDEX(i, j, k) (i) + (local_imax)*(j) \
-  + (local_imax)*(local_jmax_1)*(k)
-#define Bottom_INDEX(i, j, k) (i) + (local_imax)*(j) \
-  + (local_imax)*(local_jmax)*(k)
 #define I_PLANE_INDEX(j, k) (k)*(local_jmax) + (j)
 #define J_PLANE_INDEX(i, k) (k)*(local_imax) + (i)
 #define K_PLANE_INDEX(i, j) (j)*(local_imax) + (i)
-
-#define Ghost_INDEX(i, j, k) (i) + (local_imax_2)*(j) \
-  + (local_imax_2)*(local_jmax_2)*(k)
 #define Zonal_INDEX(i, j, k) (i) + (local_imax)*(j) \
   + (local_imax)*(local_jmax)*(k)
 
@@ -160,10 +155,6 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   double *dy = &grid_data->deltas[1][0];
   double * dz = &grid_data->deltas[2][0];
 
-  SubTVec &psi_lf = *gd_set->psi_lf;
-  SubTVec &psi_fr = *gd_set->psi_fr;
-  SubTVec &psi_bo = *gd_set->psi_bo;
-
   // Alias the MPI data with a SubTVec for the face data
   SubTVec i_plane_v(nestingPsi(), num_groups, num_directions,
       local_jmax * local_kmax, i_plane_ptr);
@@ -176,12 +167,6 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   // So pull that information out now
   int octant = direction[0].octant;
   Grid_Sweep_Block const &extent = grid_data->octant_extent[octant];
-  int il = (extent.inc_i > 0 ? 0 : 1);
-  int jf = (extent.inc_j > 0 ? 0 : 1);
-  int kb = (extent.inc_k > 0 ? 0 : 1);
-  int ir = !il;
-  int jb = !jf;
-  int kt = !kb;
 
   std::vector<Grid_Sweep_Block> const &idxset =
       grid_data->octant_indexset[octant];
@@ -212,38 +197,10 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     for (int group = 0; group < num_groups; ++group) {
       double * psi_d_g = gd_set->psi->ptr(group, d, 0);
       double * rhs_d_g = gd_set->rhs->ptr(group, d, 0);
-      double * psi_lf_d_g = psi_lf.ptr(group, d, 0);
-      double * psi_fr_d_g = psi_fr.ptr(group, d, 0);
-      double * psi_bo_d_g = psi_bo.ptr(group, d, 0);
       double * i_plane_d_g = &i_plane_v(group, d, 0);
       double * j_plane_d_g = &j_plane_v(group, d, 0);
       double * k_plane_d_g = &k_plane_v(group, d, 0);
       double * sigt_g = gd_set->sigt->ptr(group, 0, 0);
-
-      /* Copy the angular fluxes incident upon this subdomain */
-      for (int k = 0; k < local_kmax; k++) {
-        for (int j = 0; j < local_jmax; j++) {
-          /* psi_lf has length (local_imax+1)*local_jmax*local_kmax */
-          psi_lf_d_g[Left_INDEX(extent.start_i + il, j, k)] =
-              i_plane_d_g[I_PLANE_INDEX(j, k)];
-        }
-      }
-
-      for (int k = 0; k < local_kmax; k++) {
-        for (int i = 0; i < local_imax; i++) {
-          /* psi_fr has length local_imax*(local_jmax+1)*local_kmax */
-          psi_fr_d_g[Front_INDEX(i, extent.start_j + jf,
-              k)] = j_plane_d_g[J_PLANE_INDEX(i, k)];
-        }
-      }
-
-      for (int j = 0; j < local_jmax; j++) {
-        for (int i = 0; i < local_imax; i++) {
-          /* psi_bo has length local_imax*local_jmax*(local_kmax+1) */
-          psi_bo_d_g[Bottom_INDEX(i, j, extent.start_k + kb)] =
-              k_plane_d_g[K_PLANE_INDEX(i, j)];
-        }
-      }
 
       for (int block_idx = 0; block_idx < idxset.size(); ++block_idx) {
         Grid_Sweep_Block const &block = idxset[block_idx];
@@ -259,43 +216,23 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
 
               /* Calculate new zonal flux */
               double psi_d_g_z = (rhs_d_g[Zonal_INDEX(i, j, k)]
-                  + psi_lf_d_g[Left_INDEX(i+il, j, k )] * xcos_dxi
-                  + psi_fr_d_g[Front_INDEX(i, j+jf, k )] * ycos_dyj
-                  + psi_bo_d_g[Bottom_INDEX(i, j, k+kb )] * zcos_dzk)
+                  + i_plane_d_g[I_PLANE_INDEX(j, k)] * xcos_dxi
+                  + j_plane_d_g[J_PLANE_INDEX(i, k)] * ycos_dyj
+                  + k_plane_d_g[K_PLANE_INDEX(i, j)] * zcos_dzk)
                   / (xcos_dxi + ycos_dyj + zcos_dzk
                       + sigt_g[Zonal_INDEX(i, j, k)]);
+
               psi_d_g[Zonal_INDEX(i, j, k)] = psi_d_g_z;
               /* Apply diamond-difference relationships */
-              psi_lf_d_g[Left_INDEX(i+ir, j, k )] = 2.0 * psi_d_g_z
-                  - psi_lf_d_g[Left_INDEX(i+il, j, k)];
-              psi_fr_d_g[Front_INDEX(i, j+jb, k )] = 2.0 * psi_d_g_z
-                  - psi_fr_d_g[Front_INDEX(i, j+jf, k )];
-              psi_bo_d_g[Bottom_INDEX(i, j, k+kt )] = 2.0 * psi_d_g_z
-                  - psi_bo_d_g[Bottom_INDEX(i, j, k+kb)];
+              i_plane_d_g[I_PLANE_INDEX(j, k)] = 2.0 * psi_d_g_z
+                  - i_plane_d_g[I_PLANE_INDEX(j, k)];
+              j_plane_d_g[J_PLANE_INDEX(i, k)] = 2.0 * psi_d_g_z
+                  - j_plane_d_g[J_PLANE_INDEX(i, k)];
+              k_plane_d_g[K_PLANE_INDEX(i, j)] = 2.0 * psi_d_g_z
+                  - k_plane_d_g[K_PLANE_INDEX(i, j)];
+
             }
           }
-        }
-      }
-
-      /* Copy the angular fluxes exiting this subdomain */
-      for (int k = 0; k < local_kmax; k++) {
-        for (int j = 0; j < local_jmax; j++) {
-          i_plane_d_g[I_PLANE_INDEX(j, k)] =
-              psi_lf_d_g[Left_INDEX(extent.end_i+ir-extent.inc_i, j, k)];
-        }
-      }
-
-      for (int k = 0; k < local_kmax; k++) {
-        for (int i = 0; i < local_imax; i++) {
-          j_plane_d_g[J_PLANE_INDEX(i, k)] =
-              psi_fr_d_g[Front_INDEX(i, extent.end_j+jb-extent.inc_j, k)];
-        }
-      }
-
-      for (int j = 0; j < local_jmax; j++) {
-        for (int i = 0; i < local_imax; i++) {
-          k_plane_d_g[K_PLANE_INDEX(i, j)] =
-              psi_bo_d_g[Bottom_INDEX(i, j, extent.end_k+kt-extent.inc_k)];
         }
       }
 
@@ -303,4 +240,5 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   } // direction
 
 }
+
 
