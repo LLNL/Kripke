@@ -8,10 +8,10 @@
 #include <Kripke.h>
 #include <string>
 
-/*--------------------------------------------------------------------------
- * Define the Input_Variables structure.
+/**
+ * This structure defines the input parameters to setup a problem.
  *
- * npx                   : The number of processors in the x-direction.
+ * npx                   :
  * npy                   : The number of processors in the y-direction.
  * npz                   : The number of processors in the z-direction.
  * nx                    : Number of spatial zones in the x-direction.
@@ -19,21 +19,21 @@
  * nz                    : Number of spatial zones in the z-direction.
  * niter                 : The number of sweep iterations.
  * num_direction_per_octant : The number of directions per octant
- *--------------------------------------------------------------------------*/
+ */
 
 struct Input_Variables {
-  int npx, npy, npz;
-  int nx, ny, nz;
+  int npx, npy, npz;            // The number of processors in x,y,z
+  int nx, ny, nz;               // Number of spatial zones in x,y,z
   int num_dirsets_per_octant;
   int num_dirs_per_dirset;
   int num_groupsets;
   int num_groups_per_groupset;
-  int niter;
+  int niter;                    // number of solver iterations to run
   int legendre_order;
 
   Nesting_Order nesting;
   Sweep_Order sweep_order;
-  int block_size;
+  int block_size;               // Experimental: used for tiling spatial zones
 };
 
 #endif

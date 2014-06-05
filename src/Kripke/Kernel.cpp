@@ -20,6 +20,9 @@ Kernel::~Kernel(){
 
 }
 
+/**
+ * Allocates kernel-specific storage for the User_Data object.
+ */
 void Kernel::allocateStorage(User_Data *user_data){
   Grid_Data *grid_data = user_data->grid_data;
   Nesting_Order nest = nestingPsi();
@@ -51,7 +54,9 @@ void Kernel::allocateStorage(User_Data *user_data){
 }
 
 
-// Factory to create correct kernel object
+/**
+ * Factory to create a kernel object for the specified nesting
+ */
 Kernel *createKernel(Nesting_Order nest, int num_dims){
   if(num_dims == 3){
     switch(nest){

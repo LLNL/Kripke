@@ -37,10 +37,18 @@ endif()
 
 project(KRIPKE)
 
-
 # Re-incluing the toolchain file, which allows us to modify the compiler flags
 # since all of the flags are lost after calling project()
 include(${CMAKE_TOOLCHAIN_FILE})
+
+
+set(CPACK_PACKAGE_VERSION_MAJOR "1")
+set(CPACK_PACKAGE_VERSION_MINOR "0")
+set(CPACK_PACKAGE_VERSION_PATCH "0")
+set(CPACK_SOURCE_GENERATOR "TGZ")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+set(CPACK_SOURCE_IGNORE_FILES "kripke-tarball;.git;.cproject;.project;${CPACK_SOURCE_IGNORE_FILES}")
+include(CPack)
 
 #set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_BUILD_TYPE Release)
