@@ -169,9 +169,6 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     for (int d = 0; d < num_directions; ++d) {
       double * psi_g_d = gd_set->psi->ptr(group, d, 0);
       double * rhs_g_d = gd_set->rhs->ptr(group, d, 0);
-      double * psi_lf_g_d = gd_set->psi_lf->ptr(group, d, 0);
-      double * psi_fr_g_d = gd_set->psi_fr->ptr(group, d, 0);
-      double * psi_bo_g_d = gd_set->psi_bo->ptr(group, d, 0);
       double * i_plane_g_d = i_plane.ptr(group, d, 0);
       double * j_plane_g_d = j_plane.ptr(group, d, 0);
       double * k_plane_g_d = k_plane.ptr(group, d, 0);

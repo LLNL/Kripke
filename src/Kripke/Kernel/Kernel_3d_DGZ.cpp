@@ -148,8 +148,6 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   int local_imax = grid_data->nzones[0];
   int local_jmax = grid_data->nzones[1];
   int local_kmax = grid_data->nzones[2];
-  int local_imax_1 = local_imax + 1;
-  int local_jmax_1 = local_jmax + 1;
 
   double *dx = &grid_data->deltas[0][0];
   double *dy = &grid_data->deltas[1][0];
