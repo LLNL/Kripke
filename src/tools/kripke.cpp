@@ -108,6 +108,7 @@ void runPoint(Input_Variables &input_variables, FILE *out_fp){
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   if(myid == 0){
+    user_data->timing.print();
     printf(line);
   }
 
