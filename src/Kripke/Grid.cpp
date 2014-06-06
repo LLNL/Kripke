@@ -15,20 +15,13 @@ Group_Dir_Set::Group_Dir_Set() :
   directions(NULL),
   psi(NULL),
   rhs(NULL),
-  sigt(NULL),
-  psi_lf(NULL),
-  psi_fr(NULL),
-  psi_bo(NULL)
+  sigt(NULL)
 {
 }
 Group_Dir_Set::~Group_Dir_Set(){
   delete psi;
   delete rhs;
   delete sigt;
-
-  delete psi_lf;
-  delete psi_fr;
-  delete psi_bo;
 }
 
 
@@ -57,12 +50,6 @@ void Group_Dir_Set::allocate(Grid_Data *grid_data, Nesting_Order nest){
   int local_imax = grid_data->nzones[0];
   int local_jmax = grid_data->nzones[1];
   int local_kmax = grid_data->nzones[2];
-  psi_lf = new SubTVec(nest, num_groups, num_directions,
-                    (local_imax+1)*local_jmax*local_kmax);
-  psi_fr = new SubTVec(nest, num_groups, num_directions,
-                    local_imax*(local_jmax+1)*local_kmax);
-  psi_bo = new SubTVec(nest, num_groups, num_directions,
-                    local_imax*local_jmax*(local_kmax+1));
 }
 
 /**
@@ -72,9 +59,6 @@ void Group_Dir_Set::randomizeData(void){
   psi->randomizeData();
   rhs->randomizeData();
   sigt->randomizeData();
-  psi_lf->randomizeData();
-  psi_fr->randomizeData();
-  psi_bo->randomizeData();
 }
 
 /**
@@ -84,9 +68,6 @@ void Group_Dir_Set::copy(Group_Dir_Set const &b){
   psi->copy(*b.psi);
   rhs->copy(*b.rhs);
   sigt->copy(*b.sigt);
-  psi_lf->copy(*b.psi_lf);
-  psi_fr->copy(*b.psi_fr);
-  psi_bo->copy(*b.psi_bo);
 }
 
 /**
@@ -101,9 +82,6 @@ bool Group_Dir_Set::compare(int gs, int ds, Group_Dir_Set const &b, double tol, 
   is_diff |= psi->compare(name+".psi", *b.psi, tol, verbose);
   is_diff |= rhs->compare(name+".rhs", *b.rhs, tol, verbose);
   is_diff |= sigt->compare(name+".sigt", *b.sigt, tol, verbose);
-  is_diff |= psi_lf->compare(name+".psi_lf", *b.psi_lf, tol, verbose);
-  is_diff |= psi_fr->compare(name+".psi_fr", *b.psi_fr, tol, verbose);
-  is_diff |= psi_bo->compare(name+".psi_bo", *b.psi_bo, tol, verbose);
 
   return is_diff;
 }
