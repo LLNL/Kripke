@@ -118,6 +118,7 @@ void runPoint(int num_tasks, int num_threads, Input_Variables &input_variables, 
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   if(myid == 0){
+    user_data->timing.print();
     printf(line);
   }
 

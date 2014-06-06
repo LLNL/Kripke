@@ -24,6 +24,9 @@ struct Timer {
   double start_time;
   double total_time;
   size_t count;
+#ifdef KRIPKE_USE_PAPI
+  std::vector<size_t> papi_total;
+#endif
 };
 
 class Timing {
@@ -43,6 +46,10 @@ class Timing {
   private:
     typedef std::map<std::string, Timer> TimerMap;
     TimerMap timers;
+#ifdef KRIPKE_USE_PAPI
+  std::vector<std::string> papi_names;
+  std::vector<int> papi_event;
+#endif
 };
 
 
