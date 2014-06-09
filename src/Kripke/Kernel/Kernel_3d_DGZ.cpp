@@ -206,18 +206,20 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
           double zcos_dzk = zcos_dzk_all[k];
           for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
             double ycos_dyj = ycos_dyj_all[j];
+
+            int z_idx = Zonal_INDEX(block.start_i, j, k);
             for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
               double xcos_dxi = xcos_dxi_all[i];
 
               /* Calculate new zonal flux */
-              double psi_d_g_z = (rhs_d_g[Zonal_INDEX(i, j, k)]
+              double psi_d_g_z = (rhs_d_g[z_idx]
                   + i_plane_d_g[I_PLANE_INDEX(j, k)] * xcos_dxi
                   + j_plane_d_g[J_PLANE_INDEX(i, k)] * ycos_dyj
                   + k_plane_d_g[K_PLANE_INDEX(i, j)] * zcos_dzk)
                   / (xcos_dxi + ycos_dyj + zcos_dzk
-                      + sigt_g[Zonal_INDEX(i, j, k)]);
+                      + sigt_g[z_idx]);
 
-              psi_d_g[Zonal_INDEX(i, j, k)] = psi_d_g_z;
+              psi_d_g[z_idx] = psi_d_g_z;
               /* Apply diamond-difference relationships */
               i_plane_d_g[I_PLANE_INDEX(j, k)] = 2.0 * psi_d_g_z
                   - i_plane_d_g[I_PLANE_INDEX(j, k)];
@@ -226,6 +228,8 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
               k_plane_d_g[K_PLANE_INDEX(i, j)] = 2.0 * psi_d_g_z
                   - k_plane_d_g[K_PLANE_INDEX(i, j)];
 
+
+              z_idx += block.inc_i;
             }
           }
         }
