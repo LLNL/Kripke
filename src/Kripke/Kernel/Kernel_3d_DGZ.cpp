@@ -31,8 +31,6 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
 
   grid_data->phi->clear(0.0);
 
-
-
   // Loop over Group Sets
   int num_group_sets = grid_data->gd_sets.size();
   for (int gset = 0; gset < num_group_sets; ++gset) {
@@ -106,28 +104,25 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
       for (int d = 0; d < num_local_directions; d++) {
         double **ell_plus_d = ell_plus[d + dir0];
 
-        for (int n = 0; n < num_moments; n++) {
-          double *ell_plus_d_n = ell_plus_d[n];
+        for(int idx = 0;idx < nidx;++idx){
+          int n = grid_data->nm_table[idx];
+          int m = idx - n*n - n;
+          int nm_offset = n*n + n + m;
 
-          for (int m = -n; m <= n; m++) {
-            int nm_offset = n*n + n + m;
-            double ell_plus_d_n_m = ell_plus_d_n[n+m];
+          double ell_plus_d_n_m = ell_plus_d[n][n+m];
 
-            double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0, nm_offset, 0);
-            double * KRESTRICT rhs = gd_set.rhs->ptr(0, d, 0);
-
-            for(int gz = 0;gz < num_groups_zones;++ gz){
-              rhs[gz] += ell_plus_d_n_m * phi_out[gz];
-            }
+          double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0, nm_offset, 0);
+          double * KRESTRICT rhs = gd_set.rhs->ptr(0, d, 0);
+          for(int gz = 0;gz < num_groups_zones;++ gz){
+            rhs[gz] += ell_plus_d_n_m * phi_out[gz];
           }
+
         }
       }
 
     } // Direction Set
   } // Group Set
 }
-
-#define ZERO_COPY
 
 /* Sweep routine for Diamond-Difference */
 /* Macros for offsets with fluxes on cell faces */
@@ -199,7 +194,6 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       double * KRESTRICT j_plane_d_g = &j_plane(group, d, 0);
       double * KRESTRICT k_plane_d_g = &k_plane(group, d, 0);
       double * KRESTRICT sigt_g = gd_set->sigt->ptr(group, 0, 0);
-
 
       for (int block_idx = 0; block_idx < idxset.size(); ++block_idx) {
         Grid_Sweep_Block const &block = idxset[block_idx];
