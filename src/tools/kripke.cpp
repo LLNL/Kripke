@@ -9,6 +9,10 @@
 #include<string>
 #include<sstream>
 
+#ifdef KRIPKE_USE_PERFTOOLS
+#include<google/profiler.h>
+#endif
+
 typedef std::pair<int, int> IntPair;
 
 std::vector<std::string> papi_names;
@@ -280,6 +284,12 @@ int main(int argc, char **argv) {
   else if(myid == 0){
     outfp = stdout;
   }
+#ifdef KRIPKE_USE_PERFTOOLS
+  std::stringstream pfname;
+  pfname << "profile." << myid;
+  ProfilerStart(pfname.str().c_str());
+  ProfilerRegisterThread();
+#endif
   Input_Variables ivars;
   ivars.nx = nzones[0];
   ivars.ny = nzones[1];
@@ -333,5 +343,9 @@ int main(int argc, char **argv) {
    * Cleanup and exit
    */
   MPI_Finalize();
+#ifdef KRIPKE_USE_PERFTOOLS
+  ProfilerFlush();
+  ProfilerStop();
+#endif
   return (0);
 }
