@@ -34,6 +34,7 @@ void usage(void){
     printf("                         Default:  --nest DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
     printf("  --niter <NITER>        Number of solver iterations to run (default: 10)\n");
     printf("  --out <OUTFILE>        Optional output file (default: none)\n");
+    printf("  --gperf                Turn on Google Perftools profiling\n");
     printf("  --procs <npx,npy,npz>  MPI task spatial decomposition\n");
     printf("                         Default:  --procs 1,1,1\n");
     printf("  --test                 Run Kernel Test instead of solver\n");
@@ -155,6 +156,7 @@ int main(int argc, char **argv) {
   int lorder = 4;
   int niter = 10;
   bool test = false;
+  bool perf_tools = false;
 
   std::vector<Nesting_Order> nest_list;
   nest_list.push_back(NEST_DGZ);
@@ -228,6 +230,9 @@ int main(int argc, char **argv) {
     else if(opt == "--papi"){
       papi_names = split(cmd.pop(), ',');
     }
+    else if(opt == "--gperf"){
+      perf_tools = true;
+    }
     else{
       printf("Unknwon options %s\n", opt.c_str());
       usage();
@@ -272,6 +277,9 @@ int main(int argc, char **argv) {
     }
     printf("\n");
     printf("Search space size:     %d points\n", nsearches);
+    if(perf_tools){
+      printf("Using Google Perftools\n");
+    }
   }
 
   /*
@@ -285,10 +293,12 @@ int main(int argc, char **argv) {
     outfp = stdout;
   }
 #ifdef KRIPKE_USE_PERFTOOLS
-  std::stringstream pfname;
-  pfname << "profile." << myid;
-  ProfilerStart(pfname.str().c_str());
-  ProfilerRegisterThread();
+  if(perf_tools){
+    std::stringstream pfname;
+    pfname << "profile." << myid;
+    ProfilerStart(pfname.str().c_str());
+    ProfilerRegisterThread();
+  }
 #endif
   Input_Variables ivars;
   ivars.nx = nzones[0];
@@ -344,8 +354,10 @@ int main(int argc, char **argv) {
    */
   MPI_Finalize();
 #ifdef KRIPKE_USE_PERFTOOLS
-  ProfilerFlush();
-  ProfilerStop();
+  if(perf_tools){
+    ProfilerFlush();
+    ProfilerStop();
+  }
 #endif
   return (0);
 }
