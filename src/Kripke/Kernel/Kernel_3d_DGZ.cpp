@@ -49,13 +49,11 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
       int num_groups_zones = num_local_groups*num_zones;
 
       /* 3D Cartesian Geometry */
-      for(int idx = 0;idx < nidx;++idx){
-        int n = grid_data->nm_table[idx];
-        int m = idx - n*n - n;
+      for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+        int n = grid_data->nm_table[nm_offset];
+        int m = nm_offset - n*n - n;
 
         double *ell_n_m = ell[n][m + n];
-        int nm_offset = n*n + n + m;
-
         double *psi = gd_set.psi->ptr();
         for (int d = 0; d < num_local_directions; d++) {
           double ell_n_m_d = ell_n_m[d + dir0];
@@ -104,13 +102,11 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
       for (int d = 0; d < num_local_directions; d++) {
         double **ell_plus_d = ell_plus[d + dir0];
 
-        for(int idx = 0;idx < nidx;++idx){
-          int n = grid_data->nm_table[idx];
-          int m = idx - n*n - n;
-          int nm_offset = n*n + n + m;
+        for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+          int n = grid_data->nm_table[nm_offset];
+          int m = nm_offset - n*n - n;
 
           double ell_plus_d_n_m = ell_plus_d[n][n+m];
-
           double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0, nm_offset, 0);
           double * KRESTRICT rhs = gd_set.rhs->ptr(0, d, 0);
           for(int gz = 0;gz < num_groups_zones;++ gz){
