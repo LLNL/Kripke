@@ -230,7 +230,10 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
       }
 
       /* Use standard Diamond-Difference sweep */
-      user_data->kernel->sweep(grid_data, &dir_sets[ds], i_plane_data[ds], j_plane_data[ds], k_plane_data[ds]);
+      {
+        BLOCK_TIMER(user_data->timing, Sweep_Kernel);
+        user_data->kernel->sweep(grid_data, &dir_sets[ds], i_plane_data[ds], j_plane_data[ds], k_plane_data[ds]);
+      }
 
       Directions *directions = dir_sets[ds].directions;
       int i_dst_subd = directions[0].i_dst_subd;

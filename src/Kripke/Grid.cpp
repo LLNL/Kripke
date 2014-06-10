@@ -103,6 +103,8 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
   int ny_g = input_vars->ny;
   int nz_g = input_vars->nz;
 
+  L_block = 256;
+
   /* Compute the local coordinates in the processor decomposition */
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);

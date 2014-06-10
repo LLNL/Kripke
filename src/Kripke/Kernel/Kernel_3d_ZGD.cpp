@@ -24,6 +24,7 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
   double ***ell = grid_data->ell->data;
   int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_moments;
+  int nidx = grid_data->nm_table.size();
 
   // Clear phi
   grid_data->phi->clear(0.0);
@@ -53,23 +54,17 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
           double * KRESTRICT phi = grid_data->phi->ptr(group + group0, 0, z);
           double * KRESTRICT psi = gd_set.psi->ptr(group, 0, z);
 
-          for (int n = 0; n < num_moments; n++) {
-            double **ell_n = ell[n];
+          for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+            int n = grid_data->nm_table[nm_offset];
+            int m = nm_offset - n*n - n;
+            double * KRESTRICT ell_n_m = ell[n][m + n] + dir0;
 
-            for (int m = -n; m <= n; m++) {
-              int nm_offset = n * n + n + m;
-              double * KRESTRICT ell_n_m = ell[n][m + n] + dir0;
-
-              double phi_acc = 0.0;
-              for (int d = 0; d < num_local_directions; d++) {
-                double ell_n_m_d = ell_n_m[d];
-                double psi_z_g_d = psi[d];
-                phi_acc += ell_n_m_d * psi_z_g_d;
-              }
-
-              *phi += phi_acc;
-              phi++;
+            double phi_acc = 0.0;
+            for (int d = 0; d < num_local_directions; d++) {
+              phi_acc += ell_n_m[d] * psi[d];
             }
+
+            phi[nm_offset] += phi_acc;
           }
         }
       }
@@ -83,6 +78,7 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
   double ***ell_plus = grid_data->ell_plus->data;
   int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_moments;
+  int nidx = grid_data->nm_table.size();
 
   // Loop over Group Sets
   int num_group_sets = grid_data->gd_sets.size();
@@ -109,21 +105,18 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
 #endif
       for (int z = 0; z < num_zones; z++) {
         for (int group = 0; group < num_local_groups; ++group) {
-          double *rhs = gd_set.rhs->ptr(group, 0, z);
+          double * KRESTRICT rhs = gd_set.rhs->ptr(group, 0, z);
           double * KRESTRICT phi_out = grid_data->phi_out->ptr(group + group0,
               0, z);
 
-          for (int n = 0; n < num_moments; n++) {
-            double ** ell_plus_n = ell_plus[n];
-            int mmax = 2 * n + 1;
-            for (int m = 0; m < mmax; m++) {
-              double * KRESTRICT ell_plus_n_m = ell_plus_n[m] + dir0;
-              double phi_out_z_n_m = *phi_out;
+          for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+            int n = grid_data->nm_table[nm_offset];
+            int m = nm_offset - n*n - n;
 
-              for (int d = 0; d < num_local_directions; d++) {
-                rhs[d] += ell_plus_n_m[d] * phi_out_z_n_m;
-              }
-              ++phi_out;
+            double * KRESTRICT ell_plus_n_m = ell_plus[n][n+m] + dir0;
+            double phi_out_z_n_m = phi_out[nm_offset];
+            for (int d = 0; d < num_local_directions; d++) {
+              rhs[d] += ell_plus_n_m[d] * phi_out_z_n_m;
             }
           }
 

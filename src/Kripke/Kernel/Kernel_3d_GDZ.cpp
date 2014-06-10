@@ -24,6 +24,8 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data) {
   double ***ell = grid_data->ell->data;
   int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_moments;
+  int nidx = grid_data->nm_table.size();
+  int blk_size = grid_data->L_block;
 
   // Clear phi
   grid_data->phi->clear(0.0);
@@ -48,28 +50,26 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data) {
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-      for (int group = 0; group < num_local_groups; ++group) {
-        for (int n = 0; n < num_moments; n++) {
-          double **ell_n = ell[n];
-          for (int m = -n; m <= n; m++) {
-            int nm_offset = n*n + n + m;
-            double * ell_n_m = ell_n[m + n];
+      for(int z_start = 0;z_start < num_zones;z_start += blk_size){
+        int z_end = std::min(z_start+blk_size, num_zones);
+        for (int group = 0; group < num_local_groups; ++group) {
+          for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+            int n = grid_data->nm_table[nm_offset];
+            int m = nm_offset - n*n - n;
+            double *ell_n_m = ell[n][m + n];
 
             double * KRESTRICT phi = grid_data->phi->ptr(group0+group, nm_offset, 0);
             double * KRESTRICT psi = gd_set.psi->ptr(group, 0, 0);
-
             for (int d = 0; d < num_local_directions; d++) {
               double ell_n_m_d = ell_n_m[d + dir0];
-              for (int i = 0; i < num_zones; i++) {
-                phi[i] += ell_n_m_d * psi[i];
+              for(int z = z_start;z < z_end; ++ z){
+                phi[z] += ell_n_m_d * psi[z];
               }
               psi += num_zones;
             }
-
           }
         }
       }
-
     } // Direction Set
   } // Group Set
 }
@@ -79,6 +79,8 @@ void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data) {
   double ***ell_plus = grid_data->ell_plus->data;
   int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_moments;
+  int nidx = grid_data->nm_table.size();
+  int blk_size = grid_data->L_block;
 
   // Loop over Group Sets
   int num_group_sets = grid_data->gd_sets.size();
@@ -103,28 +105,28 @@ void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data) {
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-      for (int group = 0; group < num_local_groups; ++group) {
-        for (int d = 0; d < num_local_directions; d++) {
-          double **ell_plus_d = ell_plus[d + dir0];
+    for(int z_start = 0;z_start < num_zones;z_start += blk_size){
+        int z_end = std::min(z_start+blk_size, num_zones);
+        for (int group = 0; group < num_local_groups; ++group) {
+          for (int d = 0; d < num_local_directions; d++) {
+            double **ell_plus_d = ell_plus[d + dir0];
 
-          for (int n = 0; n < num_moments; n++) {
-            double *ell_plus_d_n = ell_plus_d[n];
-            for (int m = -n; m <= n; m++) {
-              int nm_offset = n*n + n + m;
+            for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+              int n = grid_data->nm_table[nm_offset];
+              int m = nm_offset - n*n - n;
 
-              double ell_plus_d_n_m = ell_plus_d_n[m + n];
+              double ell_plus_d_n_m = ell_plus_d[n][n+m];
 
-              double *phi_out = grid_data->phi_out->ptr(group0+group, nm_offset, 0);
-              double *rhs = gd_set.rhs->ptr(group, d, 0);
+              double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0+group, nm_offset, 0);
+              double * KRESTRICT rhs = gd_set.rhs->ptr(group, d, 0);
 
-              for (int z = 0; z < num_zones; z++) {
+              for(int z = z_start;z < z_end; ++ z){
                 rhs[z] += ell_plus_d_n_m * phi_out[z];
               }
             }
           }
         }
       }
-
     } // Direction Set
   } // Group Set
 }
@@ -176,8 +178,7 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
     std::vector<double> xcos_dxi_all(local_imax);
     std::vector<double> ycos_dyj_all(local_jmax);
     std::vector<double> zcos_dzk_all(local_kmax);
-
-    double * sigt_g = gd_set->sigt->ptr(group, 0, 0);
+    double * KRESTRICT sigt_g = gd_set->sigt->ptr(group, 0, 0);
 
     for (int d = 0; d < num_directions; ++d) {
       double * KRESTRICT psi_g_d = gd_set->psi->ptr(group, d, 0);
@@ -211,17 +212,19 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
           double zcos_dzk = zcos_dzk_all[k];
           for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
             double ycos_dyj = ycos_dyj_all[j];
+            int z_idx = Zonal_INDEX(block.start_i, j, k);
             for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
               double xcos_dxi = xcos_dxi_all[i];
 
               /* Calculate new zonal flux */
-              double psi_g_d_z = (rhs_g_d[Zonal_INDEX(i, j, k)]
+              double psi_g_d_z = (rhs_g_d[z_idx]
                   + i_plane_g_d[I_PLANE_INDEX(j, k)] * xcos_dxi
                   + j_plane_g_d[J_PLANE_INDEX(i, k)] * ycos_dyj
                   + k_plane_g_d[K_PLANE_INDEX(i, j)] * zcos_dzk)
                   / (xcos_dxi + ycos_dyj + zcos_dzk
-                      + sigt_g[Zonal_INDEX(i, j, k)]);
-              psi_g_d[Zonal_INDEX(i, j, k)] = psi_g_d_z;
+                      + sigt_g[z_idx]);
+              psi_g_d[z_idx] = psi_g_d_z;
+
               /* Apply diamond-difference relationships */
               i_plane_g_d[I_PLANE_INDEX(j, k)] = 2.0 * psi_g_d_z
                   - i_plane_g_d[I_PLANE_INDEX(j, k)];
@@ -229,6 +232,8 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
                   - j_plane_g_d[J_PLANE_INDEX(i, k)];
               k_plane_g_d[K_PLANE_INDEX(i, j)] = 2.0 * psi_g_d_z
                   - k_plane_g_d[K_PLANE_INDEX(i, j)];
+
+              z_idx += block.inc_i;
             }
           }
         }

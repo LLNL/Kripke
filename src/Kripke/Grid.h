@@ -75,6 +75,8 @@ public:
   std::vector<double> deltas[3];    // Spatial grid deltas in each dimension
   std::vector<double> volume;       // Spatial zone volumes
 
+  int L_block;                      // zonal blocking factor for L, L+ ops
+
   // Sweep index sets for each octant
   typedef std::vector<Grid_Sweep_Block> Grid_Sweep_IndexSet;
   std::vector<Grid_Sweep_IndexSet> octant_indexset;
