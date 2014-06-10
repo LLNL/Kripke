@@ -99,7 +99,7 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
       /* 3D Cartesian Geometry */
       for (int z = 0; z < num_zones; z++) {
         for (int group = 0; group < num_local_groups; ++group) {
-          double *rhs = gd_set.rhs->ptr(group, 0, z);
+          double * KRESTRICT rhs = gd_set.rhs->ptr(group, 0, z);
           double * KRESTRICT phi_out = grid_data->phi_out->ptr(group + group0,
               0, z);
 
