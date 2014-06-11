@@ -1,7 +1,6 @@
 #include<Kripke/Kernel/Kernel_3d_DZG.h>
 #include<Kripke/User_Data.h>
 #include<Kripke/SubTVec.h>
-#include<Kripke/LMat.h>
 
 Kernel_3d_DZG::Kernel_3d_DZG() {
 
@@ -21,11 +20,11 @@ Nesting_Order Kernel_3d_DZG::nestingPhi(void) const {
 
 void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
   // Outer parameters
-  double ***ell = grid_data->ell->data;
   int num_zones = grid_data->num_zones;
-  int num_moments = grid_data->num_moments;
   int nidx = grid_data->nm_table.size();
   int blk_size = grid_data->L_block;
+  int num_directions = grid_data->ell->directions;
+  int num_groups = grid_data->phi->groups;
 
   grid_data->phi->clear(0.0);
 
@@ -44,29 +43,33 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
       int group0 = gd_set.group0;
       int num_local_directions = gd_set.num_directions;
       int dir0 = gd_set.direction0;
-      //int num_groups_zones = num_local_groups*num_zones;
 
       /* 3D Cartesian Geometry */
       for(int z_start = 0;z_start < num_zones;z_start += blk_size){
         int z_end = std::min(z_start+blk_size, num_zones);
-        for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
-          int n = grid_data->nm_table[nm_offset];
-          int m = nm_offset - n*n - n;
-          double *ell_n_m = ell[n][m + n];
+        double * KRESTRICT ell = grid_data->ell->ptr(0, dir0, 0);
+        double * KRESTRICT phi_ptr = grid_data->phi->ptr(group0, 0, z_start);
 
+        for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+          double * KRESTRICT psi_ptr = gd_set.psi->ptr();
 
           for (int d = 0; d < num_local_directions; d++) {
-            double ell_n_m_d = ell_n_m[d + dir0];
+            double ell_nm_d = ell[d];
+
+            double * KRESTRICT phi = phi_ptr;
+            double * KRESTRICT psi = psi_ptr + z_start*num_local_groups;
 
             for (int z = z_start;z < z_end;++ z){
-              double * KRESTRICT phi = grid_data->phi->ptr(group0, nm_offset, z);
-              double * KRESTRICT psi = gd_set.psi->ptr(0, d, z);
-
               for(int group = 0;group < num_local_groups; ++ group){
-                phi[group] += ell_n_m_d * psi[group];
+                phi[group] += ell_nm_d * psi[group];
               }
+              psi += num_local_groups;
+              phi += num_groups;
             }
+            psi_ptr += num_zones*num_local_groups;
           }
+          ell += num_directions;
+          phi_ptr += num_groups*num_zones;
         }
       }
     } // Direction Set
@@ -75,11 +78,10 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
 
 void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
-  double ***ell_plus = grid_data->ell_plus->data;
   int num_zones = grid_data->num_zones;
-  int num_moments = grid_data->num_moments;
   int nidx = grid_data->nm_table.size();
   int blk_size = grid_data->L_block;
+  int num_groups = grid_data->phi_out->groups;
 
   // Loop over Group Sets
   int num_group_sets = grid_data->gd_sets.size();
@@ -102,30 +104,31 @@ void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
       gd_set.rhs->clear(0.0);
 
       /* 3D Cartesian Geometry */
-      for(int z_start = 0;z_start < num_groups_zones;z_start += blk_size){
+      for(int z_start = 0;z_start < num_zones;z_start += blk_size){
         int z_end = std::min(z_start+blk_size, num_zones);
+        double * KRESTRICT ell_plus = grid_data->ell_plus->ptr(0, dir0, 0);
         for (int d = 0; d < num_local_directions; d++) {
-          double **ell_plus_d = ell_plus[d + dir0];
+          double * KRESTRICT phi_out_ptr = grid_data->phi_out->ptr(group0, 0, z_start);
+          double * KRESTRICT rhs_ptr = gd_set.rhs->ptr(0, d, z_start);
 
           for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
-            int n = grid_data->nm_table[nm_offset];
-            int m = nm_offset - n*n - n;
-
-            double ell_plus_d_n_m = ell_plus_d[n][n+m];
+            double ell_plus_d_nm = ell_plus[nm_offset];
+            double * KRESTRICT rhs = rhs_ptr;
+            double * KRESTRICT phi_out = phi_out_ptr;
 
             for(int z = z_start;z < z_end;++ z){
 
-              double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0, nm_offset, z);
-              double * KRESTRICT rhs = gd_set.rhs->ptr(0, d, z);
               for(int group = 0;group < num_local_groups;++ group){
-                rhs[group] += ell_plus_d_n_m * phi_out[group];
+                rhs[group] += ell_plus_d_nm * phi_out[group];
               }
+              phi_out += num_groups;
+              rhs += num_local_groups;
             }
-
+            phi_out_ptr += num_groups*num_zones;
           }
+          ell_plus += nidx;
         }
       }
-
     } // Direction Set
   } // Group Set
 }

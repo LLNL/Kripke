@@ -2,7 +2,6 @@
 #include<Kripke/Comm.h>
 #include<Kripke/Grid.h>
 #include<Kripke/User_Data.h>
-#include<Kripke/LMat.h>
 #include<Kripke/SubTVec.h>
 
 #include<Kripke/Kernel/Kernel_3d_GDZ.h>
@@ -40,14 +39,6 @@ void Kernel::allocateStorage(User_Data *user_data){
   int num_zones = grid_data->num_zones;
   int num_groups = user_data->num_group_sets * user_data->num_groups_per_set;
 
-  grid_data->ell = new LMat(NEST_NMD, num_dims, num_moments, total_dirs);
-  if(nest == NEST_ZGD || nest == NEST_GZD){
-    grid_data->ell_plus = new LMat(NEST_NMD, num_dims, num_moments, total_dirs);
-  }
-  else{
-    grid_data->ell_plus = new LMat(NEST_DNM, num_dims, num_moments, total_dirs);
-  }
-
   // Allocate L, L+ table nm indicies which make threading easier
   grid_data->nm_table.clear();
   for (int n = 0; n < num_moments; n++) {
@@ -56,9 +47,18 @@ void Kernel::allocateStorage(User_Data *user_data){
     }
   }
 
-  int total_moments = grid_data->ell->total_moments;
+  int total_moments = grid_data->nm_table.size();
   grid_data->phi = new SubTVec(nestingPhi(), num_groups, total_moments, num_zones);
   grid_data->phi_out = new SubTVec(nestingPhi(), num_groups, total_moments, num_zones);
+
+  if(nest == NEST_GDZ || nest == NEST_DZG || nest == NEST_DGZ){
+    grid_data->ell = new SubTVec(NEST_ZGD, total_moments, total_dirs, 1);
+    grid_data->ell_plus = new SubTVec(NEST_ZDG, total_moments, total_dirs, 1);
+  }
+  else{
+    grid_data->ell = new SubTVec(NEST_ZDG, total_moments, total_dirs, 1);
+    grid_data->ell_plus = new SubTVec(NEST_ZDG, total_moments, total_dirs, 1);
+  }
 }
 
 
