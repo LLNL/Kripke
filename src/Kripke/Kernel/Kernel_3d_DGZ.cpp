@@ -1,7 +1,6 @@
 #include<Kripke/Kernel/Kernel_3d_DGZ.h>
 #include<Kripke/User_Data.h>
 #include<Kripke/SubTVec.h>
-#include<Kripke/LMat.h>
 
 
 
@@ -24,11 +23,11 @@ Nesting_Order Kernel_3d_DGZ::nestingPhi(void) const {
 
 void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
   // Outer parameters
-  double ***ell = grid_data->ell->data;
   int num_zones = grid_data->num_zones;
-  int num_moments = grid_data->num_moments;
   int nidx = grid_data->nm_table.size();
   int blk_size = grid_data->L_block;
+  int num_directions = grid_data->ell->directions;
+  int num_groups = grid_data->phi->groups;
 
   grid_data->phi->clear(0.0);
 
@@ -50,43 +49,40 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
       int num_groups_zones = num_local_groups*num_zones;
 
       /* 3D Cartesian Geometry */
+      double *psi_ptr = gd_set.psi->ptr();
+
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
       for(int gz_start = 0;gz_start < num_groups_zones;gz_start += blk_size){
         int gz_end = std::min(gz_start+blk_size, num_groups_zones);
+        double * KRESTRICT ell = grid_data->ell->ptr(0, dir0, 0);
+        double * KRESTRICT phi = grid_data->phi->ptr(group0, 0, 0);
 
         for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
-          int n = grid_data->nm_table[nm_offset];
-          int m = nm_offset - n*n - n;
-
-          double *ell_n_m = ell[n][m + n];
-          double *psi = gd_set.psi->ptr();
+          double * KRESTRICT psi = psi_ptr;
           for (int d = 0; d < num_local_directions; d++) {
-            double ell_n_m_d = ell_n_m[d + dir0];
-            double * KRESTRICT phi = grid_data->phi->ptr(group0, nm_offset, 0);
-            double * KRESTRICT psi_ptr = psi;
+            double ell_nm_d = ell[d];
+
             for(int gz = gz_start;gz < gz_end; ++ gz){
-              phi[gz] += ell_n_m_d * psi_ptr[gz];
+              phi[gz] += ell_nm_d * psi[gz];
             }
             psi += num_groups_zones;
           }
-          psi += num_groups_zones;
+          ell += num_directions;
+          phi += num_groups*num_zones;
         }
       }
-
-
     } // Direction Set
   } // Group Set
 }
 
 void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
-  double ***ell_plus = grid_data->ell_plus->data;
   int num_zones = grid_data->num_zones;
-  int num_moments = grid_data->num_moments;
   int nidx = grid_data->nm_table.size();
   int blk_size = grid_data->L_block;
+  int num_groups = grid_data->phi_out->groups;
 
   // Loop over Group Sets
   int num_group_sets = grid_data->gd_sets.size();
@@ -105,30 +101,36 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
       int dir0 = gd_set.direction0;
       int num_groups_zones = num_local_groups*num_zones;
 
+      gd_set.rhs->clear(0.0);
 
       /* 3D Cartesian Geometry */
+      double *phi_out_ptr = grid_data->phi_out->ptr(group0, 0, 0);
+
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for(int gz_start = 0;gz_start < num_groups_zones;gz_start += blk_size){
+      for(int gz_start = 0;gz_start < num_groups_zones;gz_start += blk_size){
+
         int gz_end = std::min(gz_start+blk_size, num_groups_zones);
+        double * KRESTRICT ell_plus = grid_data->ell_plus->ptr(0, dir0, 0);
+        double * KRESTRICT rhs = gd_set.rhs->ptr();
+
         for (int d = 0; d < num_local_directions; d++) {
-          double **ell_plus_d = ell_plus[d + dir0];
+          double * KRESTRICT phi_out = phi_out_ptr;
 
           for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
-            int n = grid_data->nm_table[nm_offset];
-            int m = nm_offset - n*n - n;
+            double ell_plus_d_nm = ell_plus[nm_offset];
 
-            double ell_plus_d_n_m = ell_plus_d[n][n+m];
-            double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0, nm_offset, 0);
-            double * KRESTRICT rhs = gd_set.rhs->ptr(0, d, 0);
             for(int gz = gz_start;gz < gz_end; ++ gz){
-              rhs[gz] += ell_plus_d_n_m * phi_out[gz];
+              rhs[gz] += ell_plus_d_nm * phi_out[gz];
             }
-
+            phi_out += num_groups * num_zones;
           }
+          ell_plus += nidx;
+          rhs += num_local_groups*num_zones;
         }
       }
+
     } // Direction Set
   } // Group Set
 }

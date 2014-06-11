@@ -10,7 +10,6 @@
 struct Input_Variables;
 struct Grid_Data;
 struct SubTVec;
-struct LMat;
 
 
 /**
@@ -89,8 +88,8 @@ public:
   int num_moments;
   SubTVec *phi;               // Moments of psi
   SubTVec *phi_out;           // Scattering source (moments)
-  LMat *ell;                  // L matrix
-  LMat *ell_plus;             // L+ matrix
+  SubTVec *ell;               // L matrix in nm_offset coordinates
+  SubTVec *ell_plus;          // L+ matrix in nm_offset coordinates
   std::vector<int> nm_table;  // n, m indicies for traversing ell, ell_plus
   std::vector<double> sig_s;  // Evaluation of zonal sigma S for a n,g,gp
 

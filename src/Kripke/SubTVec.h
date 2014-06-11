@@ -155,6 +155,7 @@ struct SubTVec {
       double tol, bool verbose){
 
     bool is_diff = false;
+    int num_wrong = 0;
     for(int g = 0;g < groups;++ g){
       for(int d = 0;d < directions; ++ d){
         for(int z = 0;z < zones;++ z){
@@ -165,6 +166,10 @@ struct SubTVec {
             if(verbose){
               printf("%s[g=%d, d=%d, z=%d]: |%e - %e| = %e\n",
                   name.c_str(), g,d,z, (*this)(g,d,z), b(g,d,z), err);
+              num_wrong ++;
+              if(num_wrong > 100){
+                return true;
+              }
             }
           }
         }

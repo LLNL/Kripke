@@ -1,6 +1,5 @@
 #include <Kripke/Grid.h>
 #include <Kripke/SubTVec.h>
-#include <Kripke/LMat.h>
 #include <Kripke/Comm.h>
 #include <Kripke/Input_Variables.h>
 
