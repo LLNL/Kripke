@@ -18,6 +18,10 @@
 #include<google/profiler.h>
 #endif
 
+#ifdef __bgq__
+#include </bgsys/drivers/ppcfloor/spi/include/kernel/location.h>
+#endif
+
 typedef std::pair<int, int> IntPair;
 
 std::vector<std::string> papi_names;
@@ -149,7 +153,23 @@ int main(int argc, char **argv) {
     printf("---------------------------------------------------------\n");
     printf("------------------- KRIPKE VERSION 1.0 ------------------\n");
     printf("---------------------------------------------------------\n");
+
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel
+    {
+      int tid = omp_get_thread_num();
+#ifdef __bgq__
+      int core = Kernel_ProcessorCoreID();
+#else
+      int core = sched_getcpu();
+#endif
+      printf("Thread %d: Core %d\n", tid, core);
+    }
+
+#endif
+
   }
+
 
   /*
    * Default input parameters
