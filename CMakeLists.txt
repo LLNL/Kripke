@@ -70,6 +70,7 @@ set(BDIV_LIBRARY_PATH "${KRIPKE_SOURCE_DIR}/cmake/Library")
 include(cmake/bdiv_pkg.cmake)
 
 
+bdiv_opt_pkg(BGPM 20030410 OFF)
 bdiv_opt_pkg(PAPI 4.2.0 OFF)
 bdiv_opt_pkg(perftools 1.9 OFF)
 
