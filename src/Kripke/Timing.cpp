@@ -13,6 +13,11 @@
 #include <vector>
 #include <mpi.h>
 
+#ifdef KRIPKE_USE_BGPM
+extern "C" void HPM_Start(char const *);
+extern "C" void HPM_Stop(char const *);
+#endif
+
 
 #ifdef KRIPKE_USE_PAPI
 #include <papi.h>
@@ -41,12 +46,20 @@ void Timing::start(std::string const &name){
       PAPI_read_counters(tmp, num_papi);
     }
 #endif
+
+#ifdef KRIPKE_USE_BGPM
+    HPM_Start(name.c_str());
+#endif
   }
 }
 
 void Timing::stop(std::string const &name){
   // get or create timer
   Timer &timer = timers[name];
+
+#ifdef KRIPKE_USE_BGPM
+    HPM_Stop(name.c_str());
+#endif
 
   if(timer.started){
 #ifdef KRIPKE_USE_PAPI
