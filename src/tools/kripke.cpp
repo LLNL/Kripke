@@ -106,7 +106,7 @@ void runPoint(int num_tasks, int num_threads, Input_Variables &input_variables, 
 
   char line[2048];
   double niter = (double)input_variables.niter;
-  snprintf(line, 2048, "ntasks=%d nthreads=%d nestid=%d nest=%s D=%-3d d=%-3d dirs=%d G=%-3d g=%-3d grps=%d Solve=%-8.4lf Sweep=%-8.4lf LTimes=%-8.4lf LPlusTimes=%-8.4lf\n",
+  snprintf(line, 2048, "RUN: ntasks=%d nthreads=%d nestid=%d nest=%s D=%-3d d=%-3d dirs=%d G=%-3d g=%-3d grps=%d Solve=%-8.4lf Sweep=%-8.4lf LTimes=%-8.4lf LPlusTimes=%-8.4lf\n",
       num_tasks,
       num_threads,
       (int)input_variables.nesting,
@@ -122,12 +122,13 @@ void runPoint(int num_tasks, int num_threads, Input_Variables &input_variables, 
       user_data->timing.getTotal("LTimes")/niter,
       user_data->timing.getTotal("LPlusTimes")/niter
     );
-  if(out_fp != NULL){
-    fprintf(out_fp, line);
-  }
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   if(myid == 0){
+    if(out_fp != NULL){
+      fprintf(out_fp, line);
+      fflush(out_fp);
+    }
     user_data->timing.print();
     printf(line);
   }
@@ -357,14 +358,13 @@ int main(int argc, char **argv) {
 
         if(myid == 0){
           printf("Running point %d/%d: D:d=%d:%d, G:g=%d:%d, Nest=%s\n",
-            point+1, nsearches,
-            dir_list[d].first,
-            dir_list[d].second,
-            grp_list[d].first,
-            grp_list[d].second,
-            nestingString(nest_list[n]).c_str());
+              point+1, nsearches,
+              dir_list[d].first,
+              dir_list[d].second,
+              grp_list[d].first,
+              grp_list[d].second,
+              nestingString(nest_list[n]).c_str());
         }
-
         // Setup Current Search Point
         ivars.num_dirsets_per_octant = dir_list[d].first;
         ivars.num_dirs_per_dirset = dir_list[d].second;
