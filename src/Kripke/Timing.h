@@ -12,6 +12,10 @@
 #include <vector>
 #include <map>
 
+#ifdef KRIPKE_USE_PAPI
+#include<papi.h>
+#endif
+
 struct Timer {
   Timer() :
     started(false),
@@ -25,12 +29,15 @@ struct Timer {
   double total_time;
   size_t count;
 #ifdef KRIPKE_USE_PAPI
+  std::vector<long long> papi_start_values;
   std::vector<size_t> papi_total;
 #endif
 };
 
 class Timing {
   public:
+    ~Timing();
+
     void start(std::string const &name);
     void stop(std::string const &name);
     
@@ -49,6 +56,7 @@ class Timing {
 #ifdef KRIPKE_USE_PAPI
   std::vector<std::string> papi_names;
   std::vector<int> papi_event;
+  int papi_set;
 #endif
 };
 

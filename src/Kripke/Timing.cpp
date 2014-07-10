@@ -23,6 +23,15 @@ extern "C" void HPM_Stop(char const *);
 #include <papi.h>
 #endif
 
+
+Timing::~Timing(){
+#ifdef KRIPKE_USE_PAPI
+  long long tmp[16];
+  //PAPI_stop_counters(tmp, num_papi);
+  PAPI_stop(papi_set, tmp);
+#endif
+}
+
 void Timing::start(std::string const &name){
   // get or create timer
   Timer &timer = timers[name];
@@ -35,15 +44,22 @@ void Timing::start(std::string const &name){
     int num_papi = papi_event.size();
     if(num_papi > 0){
       if(timer.papi_total.size() == 0){
+        timer.papi_start_values.resize(num_papi, 0);
         timer.papi_total.resize(num_papi, 0);
       }
 
+      /*
       // start timers
       PAPI_start_counters(&papi_event[0], num_papi);
 
       // clear timers
       long long tmp[16];
       PAPI_read_counters(tmp, num_papi);
+      */
+
+      // read initial values
+      PAPI_read(papi_set, &timer.papi_start_values[0]);
+
     }
 #endif
 
@@ -67,16 +83,14 @@ void Timing::stop(std::string const &name){
     if(num_papi > 0){
       // read timers
       long long tmp[16];
-      PAPI_stop_counters(tmp, num_papi);
+      //PAPI_stop_counters(tmp, num_papi);
+      PAPI_read(papi_set, tmp);
 
       // accumulate to all started timers (since this clears the PAPI values)
-      for(TimerMap::iterator t = timers.begin();t != timers.end();++ t){
-        if((*t).second.started){
-          for(int i = 0;i < num_papi;++ i){
-            (*t).second.papi_total[i] += tmp[i];
-          }
-        }
+      for(int i = 0;i < num_papi;++ i){
+        timer.papi_total[i] += tmp[i] - timer.papi_start_values[i];
       }
+
     }
 #endif
 
@@ -161,9 +175,22 @@ void Timing::setPapiEvents(std::vector<std::string> names){
 
   static bool papi_initialized = false;
   if(!papi_initialized){
-    PAPI_library_init(PAPI_VER_CURRENT);
+    //printf("PAPI INIT\n");
+    int retval = PAPI_library_init(PAPI_VER_CURRENT);
     papi_initialized = true;
+
+    if(retval != PAPI_VER_CURRENT){
+      printf("ERROR INITIALIZING PAPI\n");
+      exit(1);
+    }
   }
+
+  //printf("PAPI VERSION=%x\n",
+  //    PAPI_VERSION);
+
+  papi_set = PAPI_NULL;
+  PAPI_create_eventset(&papi_set);
+
 
   for(int i = 0;i < names.size();++ i){
     // Convert text string to PAPI id
@@ -177,7 +204,15 @@ void Timing::setPapiEvents(std::vector<std::string> names){
     // Add to our list of PAPI events
     papi_names.push_back(names[i]);
     papi_event.push_back(event_code);
+
+    int retval = PAPI_add_event(papi_set, event_code);
+    if(retval != PAPI_OK){
+      printf("ERROR ADDING %s, retval=%d, ID=0x%-10x\n", names[i].c_str(), retval, event_code);
+    }
+
+    //printf("EVT=%s, ID=0x%-10x\n", names[i].c_str(), event_code);
   }
+  PAPI_start(papi_set);
 #else
   if(names.size() > 0){
     printf("WARNING: PAPI NOT ENABLED, IGNORING PAPI EVENTS\n");
