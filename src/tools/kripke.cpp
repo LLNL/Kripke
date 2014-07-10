@@ -96,7 +96,7 @@ void runPoint(Input_Variables &input_variables, FILE *out_fp){
 
   char line[2048];
   double niter = (double)input_variables.niter;
-  snprintf(line, 2048, "nestid=%d nest=%s D=%-3d d=%-3d dirs=%d G=%-3d g=%-3d grps=%d Solve=%-8.4lf Sweep=%-8.4lf LTimes=%-8.4lf LPlusTimes=%-8.4lf\n",
+  snprintf(line, 2048, "RUN: nestid=%d nest=%s D=%-3d d=%-3d dirs=%d G=%-3d g=%-3d grps=%d Solve=%-8.4lf Sweep=%-8.4lf LTimes=%-8.4lf LPlusTimes=%-8.4lf\n",
       (int)input_variables.nesting,
       nesting.c_str(),
       input_variables.num_dirsets_per_octant,
@@ -110,12 +110,13 @@ void runPoint(Input_Variables &input_variables, FILE *out_fp){
       user_data->timing.getTotal("LTimes")/niter,
       user_data->timing.getTotal("LPlusTimes")/niter
     );
-  if(out_fp != NULL){
-    fprintf(out_fp, line);
-  }
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   if(myid == 0){
+    if(out_fp != NULL){
+      fprintf(out_fp, line);
+      fflush(out_fp);
+    }
     user_data->timing.print();
     printf(line);
   }
@@ -316,14 +317,15 @@ int main(int argc, char **argv) {
     for(int g = 0;g < grp_list.size();++ g){
       for(int n = 0;n < nest_list.size();++ n){
 
-        printf("Running point %d/%d: D:d=%d:%d, G:g=%d:%d, Nest=%s\n",
-            point+1, nsearches,
-            dir_list[d].first,
-            dir_list[d].second,
-            grp_list[d].first,
-            grp_list[d].second,
-            nestingString(nest_list[n]).c_str());
-
+        if(myid == 0){
+          printf("Running point %d/%d: D:d=%d:%d, G:g=%d:%d, Nest=%s\n",
+              point+1, nsearches,
+              dir_list[d].first,
+              dir_list[d].second,
+              grp_list[d].first,
+              grp_list[d].second,
+              nestingString(nest_list[n]).c_str());
+        }
         // Setup Current Search Point
         ivars.num_dirsets_per_octant = dir_list[d].first;
         ivars.num_dirs_per_dirset = dir_list[d].second;
