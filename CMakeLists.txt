@@ -71,8 +71,8 @@ include(cmake/bdiv_pkg.cmake)
 
 
 bdiv_opt_pkg(BGPM 20030410 OFF)
-#bdiv_opt_pkg(PAPI 4.2.0 OFF)
-bdiv_opt_pkg(papi 5.0.1 OFF)
+bdiv_opt_pkg(papi 4.2.0 OFF)
+#bdiv_opt_pkg(papi 5.0.1 OFF)
 bdiv_opt_pkg(perftools 1.9 OFF)
 
 
