@@ -24,6 +24,11 @@ for pair in sys.argv[1:]:
     idx = 0
     maxval = 1e100
     for line in fh:
+      if not line.startswith("RUN:"):
+        continue
+
+      line = line.lstrip("RUN:")
+
       # cleanup
       line = line.strip()
       
