@@ -172,7 +172,7 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
           double dxi = dx[i + 1];
 
           int z = Zonal_INDEX(i, j, k);
-          double * KRESTRICT sigt_z = gd_set->sigt->ptr(0, 0, z);
+          double * KRESTRICT sigt_z = grid_data->sigt->ptr(gd_set->group0, 0, z);
 
           for (int d = 0; d < num_directions; ++d) {
             double xcos = direction[d].xcos;

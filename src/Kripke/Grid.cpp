@@ -13,14 +13,12 @@ Group_Dir_Set::Group_Dir_Set() :
   direction0(0),
   directions(NULL),
   psi(NULL),
-  rhs(NULL),
-  sigt(NULL)
+  rhs(NULL)
 {
 }
 Group_Dir_Set::~Group_Dir_Set(){
   delete psi;
   delete rhs;
-  delete sigt;
 }
 
 
@@ -32,18 +30,6 @@ void Group_Dir_Set::allocate(Grid_Data *grid_data, Nesting_Order nest){
   delete rhs;
   rhs = new SubTVec(nest,
       num_groups, num_directions, grid_data->num_zones);
-
-  // allocate sigt  1xGxZ if groups come before zones
-  delete sigt;
-  if(nest == NEST_GDZ || nest ==  NEST_DGZ || nest == NEST_GZD){
-    sigt = new SubTVec(NEST_DGZ,
-      num_groups, 1, grid_data->num_zones);
-  }
-  // otherwise, 1xZxG
-  else{
-    sigt = new SubTVec(NEST_DZG,
-      num_groups, 1, grid_data->num_zones);
-  }
 
   // Allocate sweep boundary data
   int local_imax = grid_data->nzones[0];
@@ -57,7 +43,6 @@ void Group_Dir_Set::allocate(Grid_Data *grid_data, Nesting_Order nest){
 void Group_Dir_Set::randomizeData(void){
   psi->randomizeData();
   rhs->randomizeData();
-  sigt->randomizeData();
 }
 
 /**
@@ -66,7 +51,6 @@ void Group_Dir_Set::randomizeData(void){
 void Group_Dir_Set::copy(Group_Dir_Set const &b){
   psi->copy(*b.psi);
   rhs->copy(*b.rhs);
-  sigt->copy(*b.sigt);
 }
 
 /**
@@ -80,7 +64,6 @@ bool Group_Dir_Set::compare(int gs, int ds, Group_Dir_Set const &b, double tol, 
   bool is_diff = false;
   is_diff |= psi->compare(name+".psi", *b.psi, tol, verbose);
   is_diff |= rhs->compare(name+".rhs", *b.rhs, tol, verbose);
-  is_diff |= sigt->compare(name+".sigt", *b.sigt, tol, verbose);
 
   return is_diff;
 }
@@ -168,6 +151,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
 }
 
 Grid_Data::~Grid_Data(){
+  delete sigt;
   delete phi;
   delete phi_out;
   delete ell;
@@ -194,6 +178,7 @@ void Grid_Data::randomizeData(void){
     }
   }
 
+  sigt->randomizeData();
   phi->randomizeData();
   phi_out->randomizeData();
   ell->randomizeData();
@@ -219,6 +204,7 @@ void Grid_Data::copy(Grid_Data const &b){
       gd_sets[gs][ds].copy(b.gd_sets[gs][ds]);
     }
   }
+  sigt->copy(*b.sigt);
   phi->copy(*b.phi);
   phi_out->copy(*b.phi_out);
   ell->copy(*b.ell);
@@ -246,6 +232,7 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
     }
   }
 
+  is_diff |= sigt->compare("sigt", *b.sigt, tol, verbose);
   is_diff |= phi->compare("phi", *b.phi, tol, verbose);
   is_diff |= phi_out->compare("phi_out", *b.phi_out, tol, verbose);
   is_diff |= ell->compare("ell", *b.ell, tol, verbose);

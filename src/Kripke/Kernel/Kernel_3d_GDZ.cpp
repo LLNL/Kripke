@@ -177,7 +177,7 @@ void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   std::vector<double> zcos_dzk_all(local_kmax);
 
   for (int group = 0; group < num_groups; ++group) {
-    double * KRESTRICT sigt_g = gd_set->sigt->ptr(group, 0, 0);
+    double * KRESTRICT sigt_g = grid_data->sigt->ptr(group+gd_set->group0, 0, 0);
 
     for (int d = 0; d < num_directions; ++d) {
       double * KRESTRICT psi_g_d = gd_set->psi->ptr(group, d, 0);

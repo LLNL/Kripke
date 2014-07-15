@@ -9,6 +9,10 @@
 #include<string>
 #include<sstream>
 
+#ifdef KRIPKE_USE_TCMALLOC
+#include<google/heap-profiler.h>
+#endif
+
 #ifdef KRIPKE_USE_PERFTOOLS
 #include<google/profiler.h>
 #endif
@@ -344,6 +348,10 @@ int main(int argc, char **argv) {
         }
 
         point ++;
+
+#ifdef KRIPKE_USE_TCMALLOC
+        HeapProfilerDump("AfterPoint");
+#endif
       }
     }
   }

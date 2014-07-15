@@ -155,7 +155,7 @@ void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       grid_data->octant_indexset[octant];
 
   for (int group = 0; group < num_groups; ++group) {
-    double *sigt_g = gd_set->sigt->ptr(group,0 , 0);
+    double *sigt_g = grid_data->sigt->ptr(group+gd_set->group0, 0, 0);
 
     /*  Perform transport sweep of the grid 1 cell at a time.   */
     for (int block_idx = 0; block_idx < idxset.size(); ++block_idx) {
