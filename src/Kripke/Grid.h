@@ -36,7 +36,6 @@ struct Group_Dir_Set {
   // Variables
   SubTVec *psi;         // Solution
   SubTVec *rhs;         // RHS, source term
-  SubTVec *sigt;        // Zonal per-group cross-section
 };
 
 
@@ -86,6 +85,7 @@ public:
 
   // Variables:
   int num_moments;
+  SubTVec *sigt;              // Zonal per-group cross-section
   SubTVec *phi;               // Moments of psi
   SubTVec *phi_out;           // Scattering source (moments)
   SubTVec *ell;               // L matrix in nm_offset coordinates

@@ -207,7 +207,7 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       double * KRESTRICT i_plane_d_g = &i_plane(group, d, 0);
       double * KRESTRICT j_plane_d_g = &j_plane(group, d, 0);
       double * KRESTRICT k_plane_d_g = &k_plane(group, d, 0);
-      double * KRESTRICT sigt_g = gd_set->sigt->ptr(group, 0, 0);
+      double * KRESTRICT sigt_g = grid_data->sigt->ptr(group+gd_set->group0, 0, 0);
 
       for (int block_idx = 0; block_idx < idxset.size(); ++block_idx) {
         Grid_Sweep_Block const &block = idxset[block_idx];

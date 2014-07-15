@@ -51,6 +51,12 @@ Comm::Comm(int * len, int *  nm){
     buf_total += nm[i];
   }
 
+  int mpi_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  if(mpi_rank == 0){
+    printf("Comm: allocating %d buffers (%lf megabytes)\n", buf_total, (double)size/(1024.0*1024.0));
+  }
+
   buf_which[0] = 0;
   for(i=1; i<6; i++){
     buf_which[i] = buf_which[i-1] + which_num[i-1];

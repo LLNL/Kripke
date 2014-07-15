@@ -212,7 +212,7 @@ void Kernel_3d_DZG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
             double * KRESTRICT psi_fr_d_z = j_plane.ptr(0, d, J_PLANE_INDEX(i, k));
             double * KRESTRICT psi_bo_d_z = k_plane.ptr(0, d, K_PLANE_INDEX(i, j));
 
-            double * KRESTRICT sigt_z = gd_set->sigt->ptr(0, 0, z);
+            double * KRESTRICT sigt_z = grid_data->sigt->ptr(gd_set->group0, 0, z);
 
             for (int group = 0; group < num_groups; ++group) {
               /* Calculate new zonal flux */

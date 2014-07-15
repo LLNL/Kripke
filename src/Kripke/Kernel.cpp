@@ -59,6 +59,17 @@ void Kernel::allocateStorage(User_Data *user_data){
     grid_data->ell = new SubTVec(NEST_ZDG, total_moments, total_dirs, 1);
     grid_data->ell_plus = new SubTVec(NEST_ZDG, total_moments, total_dirs, 1);
   }
+
+  // allocate sigt  1xGxZ if groups come before zones
+  if(nest == NEST_GDZ || nest ==  NEST_DGZ || nest == NEST_GZD){
+    grid_data->sigt = new SubTVec(NEST_DGZ,
+      num_groups, 1, grid_data->num_zones);
+  }
+  // otherwise, 1xZxG
+  else{
+    grid_data->sigt = new SubTVec(NEST_DZG,
+      num_groups, 1, grid_data->num_zones);
+  }
 }
 
 

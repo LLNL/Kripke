@@ -186,7 +186,7 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
           double two_dx = 2.0 / dxi;
 
           int z = Zonal_INDEX(i, j, k);
-          double * sigt_z = gd_set->sigt->ptr(0, 0, z);
+          double * sigt_z = grid_data->sigt->ptr(gd_set->group0, 0, z);
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
