@@ -74,6 +74,8 @@ bdiv_opt_pkg(BGPM 20030410 OFF)
 bdiv_opt_pkg(papi 4.2.0 OFF)
 #bdiv_opt_pkg(papi 5.0.1 OFF)
 bdiv_opt_pkg(perftools 1.9 OFF)
+bdiv_opt_pkg(memP 0.0 OFF)
+bdiv_opt_pkg(tcmalloc 1.9 OFF)
 
 set(KRIPKE_BASE_LIBS kripkelib)
 set(KRIPKE_LIBS ${KRIPKE_BASE_LIBS} ${BDIV_LIBS})
