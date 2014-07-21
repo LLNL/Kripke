@@ -30,11 +30,6 @@ void Group_Dir_Set::allocate(Grid_Data *grid_data, Nesting_Order nest){
   delete rhs;
   rhs = new SubTVec(nest,
       num_groups, num_directions, grid_data->num_zones);
-
-  // Allocate sweep boundary data
-  int local_imax = grid_data->nzones[0];
-  int local_jmax = grid_data->nzones[1];
-  int local_kmax = grid_data->nzones[2];
 }
 
 /**
