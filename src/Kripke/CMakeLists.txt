@@ -1,8 +1,7 @@
 
 set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
   Kripke/Comm.cpp  
-  Kripke/Directions.cpp
-  Kripke/Driver.cpp
+  Kripke/Directions.cpp  
   Kripke/Grid.cpp  
   Kripke/Kernel.cpp  
   Kripke/Sweep_Solver.cpp  

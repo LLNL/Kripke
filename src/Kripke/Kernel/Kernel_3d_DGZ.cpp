@@ -25,7 +25,6 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
   // Outer parameters
   int num_zones = grid_data->num_zones;
   int nidx = grid_data->nm_table.size();
-  int blk_size = grid_data->L_block;
   int num_directions = grid_data->ell->directions;
   int num_groups = grid_data->phi->groups;
 
@@ -50,28 +49,24 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
 
       /* 3D Cartesian Geometry */
       double *psi_ptr = gd_set.psi->ptr();
+      double * KRESTRICT ell = grid_data->ell->ptr(0, dir0, 0);
+      double * KRESTRICT phi = grid_data->phi->ptr(group0, 0, 0);
+
+      for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+        double * KRESTRICT psi = psi_ptr;
+        for (int d = 0; d < num_local_directions; d++) {
+          double ell_nm_d = ell[d];
 
 #ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
 #endif
-      for(int gz_start = 0;gz_start < num_groups_zones;gz_start += blk_size){
-        int gz_end = std::min(gz_start+blk_size, num_groups_zones);
-        double * KRESTRICT ell = grid_data->ell->ptr(0, dir0, 0);
-        double * KRESTRICT phi = grid_data->phi->ptr(group0, 0, 0);
-
-        for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
-          double * KRESTRICT psi = psi_ptr;
-          for (int d = 0; d < num_local_directions; d++) {
-            double ell_nm_d = ell[d];
-
-            for(int gz = gz_start;gz < gz_end; ++ gz){
-              phi[gz] += ell_nm_d * psi[gz];
-            }
-            psi += num_groups_zones;
+          for(int gz = 0;gz < num_groups_zones; ++ gz){
+            phi[gz] += ell_nm_d * psi[gz];
           }
-          ell += num_directions;
-          phi += num_groups*num_zones;
+          psi += num_groups_zones;
         }
+        ell += num_directions;
+        phi += num_groups*num_zones;
       }
     } // Direction Set
   } // Group Set
@@ -81,7 +76,6 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
   int num_zones = grid_data->num_zones;
   int nidx = grid_data->nm_table.size();
-  int blk_size = grid_data->L_block;
   int num_groups = grid_data->phi_out->groups;
 
   // Loop over Group Sets
@@ -105,30 +99,25 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
 
       /* 3D Cartesian Geometry */
       double *phi_out_ptr = grid_data->phi_out->ptr(group0, 0, 0);
+      double * KRESTRICT ell_plus = grid_data->ell_plus->ptr(0, dir0, 0);
+      double * KRESTRICT rhs = gd_set.rhs->ptr();
+
+      for (int d = 0; d < num_local_directions; d++) {
+        double * KRESTRICT phi_out = phi_out_ptr;
+
+        for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+          double ell_plus_d_nm = ell_plus[nm_offset];
 
 #ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
 #endif
-      for(int gz_start = 0;gz_start < num_groups_zones;gz_start += blk_size){
-
-        int gz_end = std::min(gz_start+blk_size, num_groups_zones);
-        double * KRESTRICT ell_plus = grid_data->ell_plus->ptr(0, dir0, 0);
-        double * KRESTRICT rhs = gd_set.rhs->ptr();
-
-        for (int d = 0; d < num_local_directions; d++) {
-          double * KRESTRICT phi_out = phi_out_ptr;
-
-          for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
-            double ell_plus_d_nm = ell_plus[nm_offset];
-
-            for(int gz = gz_start;gz < gz_end; ++ gz){
-              rhs[gz] += ell_plus_d_nm * phi_out[gz];
-            }
-            phi_out += num_groups * num_zones;
+          for(int gz = 0;gz < num_groups_zones; ++ gz){
+            rhs[gz] += ell_plus_d_nm * phi_out[gz];
           }
-          ell_plus += nidx;
-          rhs += num_local_groups*num_zones;
+          phi_out += num_groups * num_zones;
         }
+        ell_plus += nidx;
+        rhs += num_local_groups*num_zones;
       }
 
     } // Direction Set
@@ -172,8 +161,6 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   int octant = direction[0].octant;
   Grid_Sweep_Block const &extent = grid_data->octant_extent[octant];
 
-  std::vector<Grid_Sweep_Block> const &idxset =
-      grid_data->octant_indexset[octant];
   std::vector<double> xcos_dxi_all(local_imax);
   std::vector<double> ycos_dyj_all(local_jmax);
   std::vector<double> zcos_dzk_all(local_kmax);
@@ -209,37 +196,34 @@ void Kernel_3d_DGZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
       double * KRESTRICT k_plane_d_g = &k_plane(group, d, 0);
       double * KRESTRICT sigt_g = grid_data->sigt->ptr(group+gd_set->group0, 0, 0);
 
-      for (int block_idx = 0; block_idx < idxset.size(); ++block_idx) {
-        Grid_Sweep_Block const &block = idxset[block_idx];
-        for (int k = block.start_k; k != block.end_k; k += block.inc_k) {
-          double zcos_dzk = zcos_dzk_all[k];
-          for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
-            double ycos_dyj = ycos_dyj_all[j];
+      for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
+        double zcos_dzk = zcos_dzk_all[k];
+        for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {
+          double ycos_dyj = ycos_dyj_all[j];
 
-            int z_idx = Zonal_INDEX(block.start_i, j, k);
-            for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
-              double xcos_dxi = xcos_dxi_all[i];
+          int z_idx = Zonal_INDEX(extent.start_i, j, k);
+          for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
+            double xcos_dxi = xcos_dxi_all[i];
 
-              /* Calculate new zonal flux */
-              double psi_d_g_z = (rhs_d_g[z_idx]
-                  + i_plane_d_g[I_PLANE_INDEX(j, k)] * xcos_dxi
-                  + j_plane_d_g[J_PLANE_INDEX(i, k)] * ycos_dyj
-                  + k_plane_d_g[K_PLANE_INDEX(i, j)] * zcos_dzk)
-                  / (xcos_dxi + ycos_dyj + zcos_dzk
-                      + sigt_g[z_idx]);
+            /* Calculate new zonal flux */
+            double psi_d_g_z = (rhs_d_g[z_idx]
+                + i_plane_d_g[I_PLANE_INDEX(j, k)] * xcos_dxi
+                + j_plane_d_g[J_PLANE_INDEX(i, k)] * ycos_dyj
+                + k_plane_d_g[K_PLANE_INDEX(i, j)] * zcos_dzk)
+                / (xcos_dxi + ycos_dyj + zcos_dzk
+                    + sigt_g[z_idx]);
 
-              psi_d_g[z_idx] = psi_d_g_z;
-              /* Apply diamond-difference relationships */
-              i_plane_d_g[I_PLANE_INDEX(j, k)] = 2.0 * psi_d_g_z
-                  - i_plane_d_g[I_PLANE_INDEX(j, k)];
-              j_plane_d_g[J_PLANE_INDEX(i, k)] = 2.0 * psi_d_g_z
-                  - j_plane_d_g[J_PLANE_INDEX(i, k)];
-              k_plane_d_g[K_PLANE_INDEX(i, j)] = 2.0 * psi_d_g_z
-                  - k_plane_d_g[K_PLANE_INDEX(i, j)];
+            psi_d_g[z_idx] = psi_d_g_z;
+            /* Apply diamond-difference relationships */
+            i_plane_d_g[I_PLANE_INDEX(j, k)] = 2.0 * psi_d_g_z
+                - i_plane_d_g[I_PLANE_INDEX(j, k)];
+            j_plane_d_g[J_PLANE_INDEX(i, k)] = 2.0 * psi_d_g_z
+                - j_plane_d_g[J_PLANE_INDEX(i, k)];
+            k_plane_d_g[K_PLANE_INDEX(i, j)] = 2.0 * psi_d_g_z
+                - k_plane_d_g[K_PLANE_INDEX(i, j)];
 
 
-              z_idx += block.inc_i;
-            }
+            z_idx += extent.inc_i;
           }
         }
       }

@@ -8,6 +8,8 @@
 #include <vector>
 #include <stdio.h>
 
+
+
 /*----------------------------------------------------------------------
  * SweepSolverSolve
  *----------------------------------------------------------------------*/
@@ -17,37 +19,42 @@ int SweepSolver (User_Data *user_data)
   Kernel *kernel = user_data->kernel;
   Grid_Data *grid_data = user_data->grid_data;
 
-  /*
-   * Compute the RHS
-   */
+  BLOCK_TIMER(user_data->timing, Solve);
 
-  // Discrete to Moments transformation
-  {
-    BLOCK_TIMER(user_data->timing, LTimes);
-    kernel->LTimes(grid_data);
-  }
+  // Loop over iterations
+  for(int iter = 0;iter < user_data->niter;++ iter){
+
+    /*
+     * Compute the RHS
+     */
+
+    // Discrete to Moments transformation
+    {
+      BLOCK_TIMER(user_data->timing, LTimes);
+      kernel->LTimes(grid_data);
+    }
 
 
-  // This is where the Scattering kernel would go!
+    // This is where the Scattering kernel would go!
 
 
 
-  // Moments to Discrete transformation
-  {
-    BLOCK_TIMER(user_data->timing, LPlusTimes);
-    kernel->LPlusTimes(grid_data);
-  }
+    // Moments to Discrete transformation
+    {
+      BLOCK_TIMER(user_data->timing, LPlusTimes);
+      kernel->LPlusTimes(grid_data);
+    }
 
-  /*
-   * Sweep each Group Set
-   */
-  {
-    BLOCK_TIMER(user_data->timing, Sweep);
-    for(int group_set = 0;group_set < user_data->num_group_sets;++ group_set){
-      SweepSolver_GroupSet(group_set, user_data);
+    /*
+     * Sweep each Group Set
+     */
+    {
+      BLOCK_TIMER(user_data->timing, Sweep);
+      for(int group_set = 0;group_set < user_data->num_group_sets;++ group_set){
+        SweepSolver_GroupSet(group_set, user_data);
+      }
     }
   }
-
   return(0);
 }
 

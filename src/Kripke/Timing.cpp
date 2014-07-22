@@ -135,7 +135,7 @@ void Timing::print(void) const {
   }
 
   // Display timers
-  printf("\nTimers:\n");
+  printf("Timers:\n");
   printf("  %-16s  %12s  %12s\n", "Timer", "Count", "Seconds");
   for(int i = 0;i < names.size();++ i){
     printf("  %-16s  %12d  %12.5lf\n", names[i].c_str(), (int)ord_timers[i]->count, ord_timers[i]->total_time);

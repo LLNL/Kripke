@@ -54,7 +54,7 @@ Comm::Comm(int * len, int *  nm){
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   if(mpi_rank == 0){
-    printf("Comm: allocating %d buffers (%lf megabytes)\n", buf_total, (double)size/(1024.0*1024.0));
+    printf("Comm: allocating %d buffers (%lf megabytes)\n", buf_total, (double)(size*sizeof(double))/(1024.0*1024.0));
   }
 
   buf_which[0] = 0;

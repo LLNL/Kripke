@@ -69,13 +69,16 @@ message(STATUS "Selected BDIV Package Path ${PKG_PATH}")
 set(BDIV_LIBRARY_PATH "${KRIPKE_SOURCE_DIR}/cmake/Library")
 include(cmake/bdiv_pkg.cmake)
 
+# Typically used (turned on by default)
+bdiv_opt_pkg(tcmalloc 0 ON)
 
-bdiv_opt_pkg(BGPM 20030410 OFF)
-bdiv_opt_pkg(papi 4.2.0 OFF)
-#bdiv_opt_pkg(papi 5.0.1 OFF)
-bdiv_opt_pkg(perftools 1.9 OFF)
+# Optional 
 bdiv_opt_pkg(memP 0.0 OFF)
-bdiv_opt_pkg(tcmalloc 1.9 OFF)
+bdiv_opt_pkg(papi 4.2.0 OFF)
+bdiv_opt_pkg(perftools 0 OFF)
+
+# BG/Q Specific
+bdiv_opt_pkg(BGPM 20030410 OFF)
 
 
 #

@@ -24,9 +24,6 @@ struct User_Data;
 #define KRESTRICT __restrict__
 
 
-// In Kripke/Driver.cpp
-void Driver(User_Data *user_data);
-
 // In Kripke/Sweep_Solver.cpp
 int SweepSolver(User_Data *user_data);
 int SweepSolver_GroupSet (int group_set, User_Data *user_data);
@@ -79,15 +76,6 @@ inline Nesting_Order nestingFromString(std::string const &str){
  }
   return (Nesting_Order)-1;
 }
-
-/**
- * Experimental feature tag to try zone tiling.
- */
-enum Sweep_Order {
-  SWEEP_DEFAULT,
-  SWEEP_TILED,
-  SWEEP_OCTREE
-};
 
 
 /**

@@ -71,13 +71,8 @@ public:
   int mynbr[3][2];                  // Neighboring MPI ranks in each dimension
 
   std::vector<double> deltas[3];    // Spatial grid deltas in each dimension
-  std::vector<double> volume;       // Spatial zone volumes
-
-  int L_block;                      // zonal blocking factor for L, L+ ops
 
   // Sweep index sets for each octant
-  typedef std::vector<Grid_Sweep_Block> Grid_Sweep_IndexSet;
-  std::vector<Grid_Sweep_IndexSet> octant_indexset;
   std::vector<Grid_Sweep_Block> octant_extent;
 
   // Group/Angle sets
@@ -91,11 +86,10 @@ public:
   SubTVec *ell;               // L matrix in nm_offset coordinates
   SubTVec *ell_plus;          // L+ matrix in nm_offset coordinates
   std::vector<int> nm_table;  // n, m indicies for traversing ell, ell_plus
-  std::vector<double> sig_s;  // Evaluation of zonal sigma S for a n,g,gp
 
 private:
   void computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax);
-  void computeSweepIndexSets(Sweep_Order sweep_order, int block_size);
+  void computeSweepIndexSets(int block_size);
 };
 
 #endif

@@ -166,57 +166,51 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
   // So pull that information out now
   int octant = direction[0].octant;
   Grid_Sweep_Block const &extent = grid_data->octant_extent[octant];
-  std::vector<Grid_Sweep_Block> const &idxset =
-      grid_data->octant_indexset[octant];
 
-  for (int block_idx = 0; block_idx < idxset.size(); ++block_idx) {
-    Grid_Sweep_Block const &block = idxset[block_idx];
+  for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
+    double dzk = dz[k + 1];
+    for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {
+      double dyj = dy[j + 1];
+      for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
+        double dxi = dx[i + 1];
 
-    for (int k = block.start_k; k != block.end_k; k += block.inc_k) {
-      double dzk = dz[k + 1];
-      for (int j = block.start_j; j != block.end_j; j += block.inc_j) {
-        double dyj = dy[j + 1];
-        for (int i = block.start_i; i != block.end_i; i += block.inc_i) {
-          double dxi = dx[i + 1];
-
-          int z = Zonal_INDEX(i, j, k);
-          double * KRESTRICT sigt_z = grid_data->sigt->ptr(gd_set->group0, 0, z);
+        int z = Zonal_INDEX(i, j, k);
+        double * KRESTRICT sigt_z = grid_data->sigt->ptr(gd_set->group0, 0, z);
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-          for (int d = 0; d < num_directions; ++d) {
-            double xcos = direction[d].xcos;
-            double ycos = direction[d].ycos;
-            double zcos = direction[d].zcos;
+        for (int d = 0; d < num_directions; ++d) {
+          double xcos = direction[d].xcos;
+          double ycos = direction[d].ycos;
+          double zcos = direction[d].zcos;
 
-            double zcos_dzk = 2.0 * zcos / dzk;
-            double ycos_dyj = 2.0 * ycos / dyj;
-            double xcos_dxi = 2.0 * xcos / dxi;
+          double zcos_dzk = 2.0 * zcos / dzk;
+          double ycos_dyj = 2.0 * ycos / dyj;
+          double xcos_dxi = 2.0 * xcos / dxi;
 
-            double * KRESTRICT psi_z_d = gd_set->psi->ptr(0, d, z);
-            double * KRESTRICT rhs_z_d = gd_set->rhs->ptr(0, d, z);
+          double * KRESTRICT psi_z_d = gd_set->psi->ptr(0, d, z);
+          double * KRESTRICT rhs_z_d = gd_set->rhs->ptr(0, d, z);
 
-            double * KRESTRICT psi_lf_z_d = i_plane.ptr(0, d, I_PLANE_INDEX(j, k));
-            double * KRESTRICT psi_fr_z_d = j_plane.ptr(0, d, J_PLANE_INDEX(i, k));
-            double * KRESTRICT psi_bo_z_d = k_plane.ptr(0, d, K_PLANE_INDEX(i, j));
+          double * KRESTRICT psi_lf_z_d = i_plane.ptr(0, d, I_PLANE_INDEX(j, k));
+          double * KRESTRICT psi_fr_z_d = j_plane.ptr(0, d, J_PLANE_INDEX(i, k));
+          double * KRESTRICT psi_bo_z_d = k_plane.ptr(0, d, K_PLANE_INDEX(i, j));
 
-            for (int group = 0; group < num_groups; ++group) {
-              /* Calculate new zonal flux */
-              double psi_z_d_g = (rhs_z_d[group]
-                  + psi_lf_z_d[group] * xcos_dxi
-                  + psi_fr_z_d[group] * ycos_dyj
-                  + psi_bo_z_d[group] * zcos_dzk)
-                  / (xcos_dxi + ycos_dyj + zcos_dzk + sigt_z[group]);
+          for (int group = 0; group < num_groups; ++group) {
+            /* Calculate new zonal flux */
+            double psi_z_d_g = (rhs_z_d[group]
+                + psi_lf_z_d[group] * xcos_dxi
+                + psi_fr_z_d[group] * ycos_dyj
+                + psi_bo_z_d[group] * zcos_dzk)
+                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt_z[group]);
 
-              psi_z_d[group] = psi_z_d_g;
+            psi_z_d[group] = psi_z_d_g;
 
-              /* Apply diamond-difference relationships */
-              psi_z_d_g *= 2.0;
-              psi_lf_z_d[group] = psi_z_d_g - psi_lf_z_d[group];
-              psi_fr_z_d[group] = psi_z_d_g - psi_fr_z_d[group];
-              psi_bo_z_d[group] = psi_z_d_g - psi_bo_z_d[group];
-            }
+            /* Apply diamond-difference relationships */
+            psi_z_d_g *= 2.0;
+            psi_lf_z_d[group] = psi_z_d_g - psi_lf_z_d[group];
+            psi_fr_z_d[group] = psi_z_d_g - psi_fr_z_d[group];
+            psi_bo_z_d[group] = psi_z_d_g - psi_bo_z_d[group];
           }
         }
       }

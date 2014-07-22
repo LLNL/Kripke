@@ -80,8 +80,6 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
   int ny_g = input_vars->ny;
   int nz_g = input_vars->nz;
 
-  L_block = 128;
-
   /* Compute the local coordinates in the processor decomposition */
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
@@ -140,9 +138,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
 
   num_moments = input_vars->legendre_order;
 
-  sig_s.resize(num_zones, 0.0);
-
-  computeSweepIndexSets(input_vars->sweep_order, input_vars->block_size);
+  computeSweepIndexSets(input_vars->block_size);
 }
 
 Grid_Data::~Grid_Data(){
@@ -163,10 +159,6 @@ void Grid_Data::randomizeData(void){
     }
   }
 
-  for(int i = 0;i < volume.size();++ i){
-    volume[i] = drand48();
-  }
-
   for(int gs = 0;gs < gd_sets.size();++ gs){
     for(int ds = 0;ds < gd_sets[gs].size();++ ds){
       gd_sets[gs][ds].randomizeData();
@@ -178,10 +170,6 @@ void Grid_Data::randomizeData(void){
   phi_out->randomizeData();
   ell->randomizeData();
   ell_plus->randomizeData();
-
-  for(int i = 0;i < sig_s.size();++ i){
-    sig_s[i] = drand48();
-  }
 }
 
 /**
@@ -192,7 +180,6 @@ void Grid_Data::copy(Grid_Data const &b){
   for(int d = 0;d < 3;++ d){
     deltas[d] = b.deltas[d];
   }
-  volume = b.volume;
 
   for(int gs = 0;gs < gd_sets.size();++ gs){
     for(int ds = 0;ds < gd_sets[gs].size();++ ds){
@@ -204,8 +191,6 @@ void Grid_Data::copy(Grid_Data const &b){
   phi_out->copy(*b.phi_out);
   ell->copy(*b.ell);
   ell_plus->copy(*b.ell_plus);
-
-  sig_s = b.sig_s;
 }
 
 /**
@@ -217,8 +202,6 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   is_diff |= compareVector("deltas[0]", deltas[0], b.deltas[0], tol, verbose);
   is_diff |= compareVector("deltas[1]", deltas[1], b.deltas[1], tol, verbose);
   is_diff |= compareVector("deltas[2]", deltas[2], b.deltas[2], tol, verbose);
-
-  is_diff |= compareVector("volume", volume, b.volume, tol, verbose);
 
   for(int gs = 0;gs < gd_sets.size();++ gs){
     for(int ds = 0;ds < gd_sets[gs].size();++ ds){
@@ -290,8 +273,7 @@ void Grid_Data::computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmi
  * Determines logical indices, and increments for i,j,k based on grid
  * information and quadrature set sweeping direction.
  */
-void Grid_Data::computeSweepIndexSets(Sweep_Order sweep_order, int block_size){
-  octant_indexset.resize(8);
+void Grid_Data::computeSweepIndexSets(int block_size){
   octant_extent.resize(8);
   for(int octant = 0;octant < 8;++ octant){
 
@@ -343,45 +325,5 @@ void Grid_Data::computeSweepIndexSets(Sweep_Order sweep_order, int block_size){
     extent.inc_i = in;
     extent.inc_j = jn;
     extent.inc_k = kn;
-
-    // Compute Pattern
-    Grid_Sweep_IndexSet &idxset = octant_indexset[octant];
-    if(sweep_order == SWEEP_DEFAULT){
-      // For blocks, we just need the extent's
-      idxset.resize(1);
-      idxset[0] = extent;
-    }
-    // EXPERIMENTAL!!
-    else if(sweep_order == SWEEP_TILED){
-      int idx = 0;
-      int tile_size = block_size;
-
-      idxset.clear();
-      for(int k=kstartz; std::abs(k-kstartz)<nzones[2]; k+=tile_size*kn){
-        for(int j=jstartz; std::abs(j-jstartz)<nzones[1]; j+=tile_size*jn){
-          for(int i=istartz; std::abs(i-istartz)<nzones[0]; i+=tile_size*in){
-
-            int num_ti = std::min(tile_size, (int)std::abs((int)(nzones[0]-std::abs(i-istartz))));
-            int num_tj = std::min(tile_size, (int)std::abs((int)(nzones[1]-std::abs(j-jstartz))));
-            int num_tk = std::min(tile_size, (int)std::abs((int)(nzones[2]-std::abs(k-kstartz))));
-
-            // Create Block
-            Grid_Sweep_Block block;
-            block.start_i = i;
-            block.start_j = j;
-            block.start_k = k;
-            block.end_i = i + num_ti*in;
-            block.end_j = j + num_tj*jn;
-            block.end_k = k + num_tk*kn;
-            block.inc_i = in;
-            block.inc_j = jn;
-            block.inc_k = kn;
-            idxset.push_back(block);
-
-          }
-        }
-      }
-    }
-
   }
 }

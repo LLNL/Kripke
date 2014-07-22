@@ -9,13 +9,12 @@
 #include<string>
 #include<sstream>
 
-
 #ifdef KRIPKE_USE_OPENMP
 #include<omp.h>
 #endif
 
 #ifdef KRIPKE_USE_TCMALLOC
-#include<google/heap-profiler.h>
+#include<gperftools/malloc_extension.h>
 #endif
 
 #ifdef KRIPKE_USE_PERFTOOLS
@@ -24,6 +23,7 @@
 
 #ifdef __bgq__
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/location.h>
+#include </bgsys/drivers/ppcfloor/spi/include/kernel/memory.h>
 #endif
 
 typedef std::pair<int, int> IntPair;
@@ -50,6 +50,7 @@ void usage(void){
     printf("  --gperf                Turn on Google Perftools profiling\n");
     printf("  --procs <npx,npy,npz>  MPI task spatial decomposition\n");
     printf("                         Default:  --procs 1,1,1\n");
+    printf("  --restart <point>      Restart at given point\n");
     printf("  --test                 Run Kernel Test instead of solver\n");
     printf("  --zones <x,y,z>        Number of zones in x,y,z\n");
     printf("                         Default:  --zones 12,12,12\n");
@@ -96,21 +97,22 @@ std::vector<std::string> split(std::string const &str, char delim){
 }
 
 
-void runPoint(int num_tasks, int num_threads, Input_Variables &input_variables, FILE *out_fp){
+void runPoint(int point, int num_tasks, int num_threads, Input_Variables &input_variables, FILE *out_fp){
 
   /* Allocate problem */
   User_Data *user_data = new User_Data(&input_variables);
 
   user_data->timing.setPapiEvents(papi_names);
 
-  /* Run the driver */
-  Driver(user_data);
+  /* Run the solver */
+  SweepSolver(user_data);
 
   std::string nesting = nestingString(input_variables.nesting);
 
   char line[2048];
   double niter = (double)input_variables.niter;
-  snprintf(line, 2048, "RUN: ntasks=%d nthreads=%d nestid=%d nest=%s D=%-3d d=%-3d dirs=%d G=%-3d g=%-3d grps=%d Solve=%-8.4lf Sweep=%-8.4lf LTimes=%-8.4lf LPlusTimes=%-8.4lf\n",
+  snprintf(line, 2048, "RUN: point=%d ntasks=%d nthreads=%d nestid=%d nest=%s D=%-3d d=%-3d dirs=%d G=%-3d g=%-3d grps=%d Solve=%-8.4lf Sweep=%-8.4lf LTimes=%-8.4lf LPlusTimes=%-8.4lf\n",
+      point,
       num_tasks,
       num_threads,
       (int)input_variables.nesting,
@@ -135,8 +137,8 @@ void runPoint(int num_tasks, int num_threads, Input_Variables &input_variables, 
     }
     user_data->timing.print();
     printf(line);
+    printf("\n\n");
   }
-
 
   /* Cleanup */
   delete user_data;
@@ -159,6 +161,9 @@ int main(int argc, char **argv) {
     printf("------------------- KRIPKE VERSION 1.0 ------------------\n");
     printf("---------------------------------------------------------\n");
 
+    /* Print out some information about how OpenMP threads are being mapped
+     * to CPU cores.
+     */
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel
     {
@@ -168,11 +173,9 @@ int main(int argc, char **argv) {
 #else
       int core = sched_getcpu();
 #endif
-      printf("Thread %d: Core %d\n", tid, core);
+      printf("Rank: %d Thread %d: Core %d\n", myid, tid, core);
     }
-
 #endif
-
   }
 
 
@@ -190,6 +193,7 @@ int main(int argc, char **argv) {
   int niter = 10;
   bool test = false;
   bool perf_tools = false;
+  int restart_point = 0;
 
   std::vector<Nesting_Order> nest_list;
   nest_list.push_back(NEST_DGZ);
@@ -266,6 +270,9 @@ int main(int argc, char **argv) {
     else if(opt == "--gperf"){
       perf_tools = true;
     }
+    else if(opt == "--restart"){
+      restart_point = std::atoi(cmd.pop().c_str());
+    }
     else{
       printf("Unknwon options %s\n", opt.c_str());
       usage();
@@ -276,7 +283,7 @@ int main(int argc, char **argv) {
    * Display Options
    */
   int nsearches = grp_list.size() * dir_list.size() * nest_list.size();
-  int num_threads;
+  int num_threads=1;
   if (myid == 0) {
     printf("Number of MPI tasks:   %d\n", num_tasks);
 #ifdef KRIPKE_USE_OPENMP
@@ -331,10 +338,12 @@ int main(int argc, char **argv) {
    */
   FILE *outfp = NULL;
   if(outfile != "" && myid == 0){
-    outfp = fopen(outfile.c_str(), "wb");
-  }
-  else if(myid == 0){
-    outfp = stdout;
+    if(restart_point == 0){
+      outfp = fopen(outfile.c_str(), "wb");
+    }
+    else{
+      outfp = fopen(outfile.c_str(), "ab");
+    }
   }
 #ifdef KRIPKE_USE_PERFTOOLS
   if(perf_tools){
@@ -352,7 +361,6 @@ int main(int argc, char **argv) {
   ivars.npy = nprocs[1];
   ivars.npz = nprocs[2];
   ivars.legendre_order = lorder + 1;
-  ivars.sweep_order = SWEEP_DEFAULT;
   ivars.block_size = 4;
   ivars.niter = niter;
   int point = 0;
@@ -360,37 +368,68 @@ int main(int argc, char **argv) {
     for(int g = 0;g < grp_list.size();++ g){
       for(int n = 0;n < nest_list.size();++ n){
 
-        if(myid == 0){
-          printf("Running point %d/%d: D:d=%d:%d, G:g=%d:%d, Nest=%s\n",
-              point+1, nsearches,
-              dir_list[d].first,
-              dir_list[d].second,
-              grp_list[d].first,
-              grp_list[d].second,
-              nestingString(nest_list[n]).c_str());
-        }
-        // Setup Current Search Point
-        ivars.num_dirsets_per_octant = dir_list[d].first;
-        ivars.num_dirs_per_dirset = dir_list[d].second;
-        ivars.num_groupsets = grp_list[g].first;
-        ivars.num_groups_per_groupset = grp_list[g].second;
-        ivars.nesting = nest_list[n];
+        if(restart_point <= point+1){
+          if(myid == 0){
+            printf("Running point %d/%d: D:d=%d:%d, G:g=%d:%d, Nest=%s\n",
+                point+1, nsearches,
+                dir_list[d].first,
+                dir_list[d].second,
+                grp_list[g].first,
+                grp_list[g].second,
+                nestingString(nest_list[n]).c_str());
+          }
+          // Setup Current Search Point
+          ivars.num_dirsets_per_octant = dir_list[d].first;
+          ivars.num_dirs_per_dirset = dir_list[d].second;
+          ivars.num_groupsets = grp_list[g].first;
+          ivars.num_groups_per_groupset = grp_list[g].second;
+          ivars.nesting = nest_list[n];
 
-        // Run the point
-        if(test){
-          // Invoke Kernel testing
-          testKernels(ivars);
-        }
-        else{
-          // Just run the "solver"
-          runPoint(num_tasks, num_threads, ivars, outfp);
-        }
+          // Run the point
+          if(test){
+            // Invoke Kernel testing
+            testKernels(ivars);
+          }
+          else{
+            // Just run the "solver"
+            runPoint(point+1, num_tasks, num_threads, ivars, outfp);
+          }
 
+
+          // Gather post-point memory info
+          double heap_mb = -1.0;
+          double hwm_mb = -1.0;
+#ifdef KRIPKE_USE_TCMALLOC
+          // If we are using tcmalloc, we need to use it's interface
+          MallocExtension *mext = MallocExtension::instance();
+          size_t bytes;
+
+          mext->GetNumericProperty("generic.current_allocated_bytes", &bytes);
+          heap_mb = ((double)bytes)/1024.0/1024.0;
+
+          mext->GetNumericProperty("generic.heap_size", &bytes);
+          hwm_mb = ((double)bytes)/1024.0/1024.0;
+#else
+#ifdef __bgq__
+          // use BG/Q specific calls (if NOT using tcmalloc)
+          uint64_t bytes;
+
+          rc = Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &bytes);
+          heap_mb = ((double)bytes)/1024.0/1024.0;
+
+          rc = Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAPMAX, &bytes);
+          hwm_mb = ((double)bytes)/1024.0/1024.0;
+#endif
+#endif
+          // Print memory info
+          if(myid == 0 && heap_mb >= 0.0){
+            printf("Bytes allocated: %lf MB\n", heap_mb);
+            printf("Heap Size      : %lf MB\n", hwm_mb);
+
+          }
+        }
         point ++;
 
-#ifdef KRIPKE_USE_TCMALLOC
-        HeapProfilerDump("AfterPoint");
-#endif
       }
     }
   }

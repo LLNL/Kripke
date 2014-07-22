@@ -1,5 +1,5 @@
 
-set(${PACKAGE}_PREFIX "${PKG_PATH}/google-perftools/${VERSION}")
+set(perftools_PREFIX "${PKG_PATH}/google-perftools/2.0.99")
 
 set(perftools_DEFAULT_INCLUDE_DIRS "${perftools_PREFIX}/include")
 

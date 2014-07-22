@@ -20,6 +20,7 @@ struct SubTVec {
     zones(nzones),
     elements(groups*directions*zones),
     data_linear(elements)
+    //data_linear(new double[elements])
   {
     setupIndices(nesting, &data_linear[0]);
   }
@@ -36,12 +37,13 @@ struct SubTVec {
     zones(nzones),
     elements(groups*directions*zones),
     data_linear(0)
+    //data_linear(NULL)
   {
     setupIndices(nesting, ptr);
   }
 
   ~SubTVec(){
-
+    //delete data_linear;
   }
 
   void setupIndices(Nesting_Order nesting, double *ptr){
@@ -118,24 +120,23 @@ struct SubTVec {
 
   inline double sum(void) const {
     double s = 0.0;
-    for(size_t i = 0;i < data_linear.size();++ i){
+    for(size_t i = 0;i < elements;++ i){
       s+= data_linear[i];
     }
     return s;
   }
 
   inline void clear(double v){
-    int num_elem = data_linear.size();
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for(int i = 0;i < num_elem;++ i){
+    for(int i = 0;i < elements;++ i){
       data_linear[i] = v;
     }
   }
 
   inline void randomizeData(void){
-    for(int i = 0;i < data_linear.size();++ i){
+    for(int i = 0;i < elements;++ i){
       data_linear[i] = drand48();
     }
   }
@@ -184,6 +185,7 @@ struct SubTVec {
   int groups, directions, zones, elements;
   double *data_pointer;
   std::vector<double> data_linear;
+  //double *data_linear;
 };
 
 

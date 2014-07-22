@@ -32,7 +32,6 @@ struct Input_Variables {
   int legendre_order;
 
   Nesting_Order nesting;
-  Sweep_Order sweep_order;
   int block_size;               // Experimental: used for tiling spatial zones
 };
 
