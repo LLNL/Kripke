@@ -1,11 +1,4 @@
 ====================
-LICENSE
-====================
-
-PLACEHOLDER
-
-
-====================
 AUTHOR
 ====================
 Adam J. Kunen <kunen1@llnl.gov>
@@ -38,15 +31,18 @@ Python 2.7 or later
 ====================
 BUILDING
 ====================
-A setup script is provided to aid in setting up a build space.
-Run the setup script, and specify your MPI C++ compiler:
+Setup uses CMake, so first create a build subdirectory inside the Kripke 
+root directory:
 
-  CXX=mpig++ ./setup.py
+	mkdir kripke-Linux
 
-This will setup a build space, for example "./kripke-Linux".
-Go into that directory and run make
+Go into that directory and run CMake:
 
   cd kripke-Linux
+	cmake ..
+
+Now make Kripke:
+
   make -j8
   
 Now you have built Kripke, try running the test harness:

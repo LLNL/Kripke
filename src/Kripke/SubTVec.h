@@ -20,7 +20,6 @@ struct SubTVec {
     zones(nzones),
     elements(groups*directions*zones),
     data_linear(elements)
-    //data_linear(new double[elements])
   {
     setupIndices(nesting, &data_linear[0]);
   }
@@ -37,13 +36,11 @@ struct SubTVec {
     zones(nzones),
     elements(groups*directions*zones),
     data_linear(0)
-    //data_linear(NULL)
   {
     setupIndices(nesting, ptr);
   }
 
   ~SubTVec(){
-    //delete data_linear;
   }
 
   void setupIndices(Nesting_Order nesting, double *ptr){
@@ -185,7 +182,6 @@ struct SubTVec {
   int groups, directions, zones, elements;
   double *data_pointer;
   std::vector<double> data_linear;
-  //double *data_linear;
 };
 
 
