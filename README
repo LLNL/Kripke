@@ -49,6 +49,26 @@ Now you have built Kripke, try running the test harness:
   
   ./src/tools/kripke --test
   
+====================
+BUILDING ON BG/Q (VULCAN)
+====================
+Setup build directory
+
+      mkdir kripke_BGQ
+
+Go into that directory and run CMake:
+
+  cd kripke_BGQ
+      /usr/local/tools/cmake-2.8.11.2/bin/cmake  .. -DENABLE_tcmalloc=OFF -DENABLE_OPENMP=OFF
+
+(This has been configured without tcmalloc and without OpenMP)
+
+Now compile:
+   make -j8
+
+The executable is:
+   src/tools/kripke
+
 
 ====================
 FURTHER RESOURCES
