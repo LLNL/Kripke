@@ -414,7 +414,7 @@ int main(int argc, char **argv) {
           // use BG/Q specific calls (if NOT using tcmalloc)
           uint64_t bytes;
 
-          rc = Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &bytes);
+          int rc = Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &bytes);
           heap_mb = ((double)bytes)/1024.0/1024.0;
 
           rc = Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAPMAX, &bytes);

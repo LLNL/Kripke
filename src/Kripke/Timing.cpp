@@ -9,6 +9,7 @@
 #include<Kripke.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <algorithm>
 #include <vector>
 #include <mpi.h>
