@@ -136,43 +136,40 @@ void Timing::print(void) const {
     ord_timers.push_back(&(*iter).second);
   }
 
-  // Display timers
+  // Display column names
   printf("Timers:\n");
-  printf("  %-16s  %12s  %12s\n", "Timer", "Count", "Seconds");
-  for(int i = 0;i < names.size();++ i){
-    printf("  %-16s  %12d  %12.5lf\n", names[i].c_str(), (int)ord_timers[i]->count, ord_timers[i]->total_time);
-  }
+  printf("  %-16s  %12s  %12s", "Timer", "Count", "Seconds");
 #ifdef KRIPKE_USE_PAPI
   int num_papi = papi_names.size();
-  if(num_papi > 0){
-    printf("\nPAPI\n");
-    printf("  %-16s", "Timer");
-    for(int i = 0;i < papi_names.size();++i){
-      printf("  %16s", papi_names[i].c_str());
-    }
-    printf("\n");
-    for(int i = 0;i < names.size();++ i){
-     printf("  %-16s", names[i].c_str());
-     for(int p = 0;p < num_papi;++ p){
-       printf("  %16ld", (long)ord_timers[i]->papi_total[p]);
-     }
-     printf("\n");
-    }
+  for(int i = 0;i < num_papi;++i){
+    printf("  %16s", papi_names[i].c_str());
   }
 #endif
+  printf("\n");
+
+  // Dislpay timer results
+  for(int i = 0;i < names.size();++ i){
+    printf("  %-16s  %12d  %12.5lf", names[i].c_str(), (int)ord_timers[i]->count, ord_timers[i]->total_time);
+#ifdef KRIPKE_USE_PAPI
+    for(int p = 0;p < num_papi;++ p){
+      printf("  %16ld", (long)ord_timers[i]->papi_total[p]);
+    }
+#endif
+    printf("\n");
+  }
 }
 
 
 namespace {
-  void printTabVector(std::vector<std::string> const &values){
+  void printTabVector(FILE *fp, std::vector<std::string> const &values){
     int len = values.size();
     for(int i = 0;i < len;++ i){
       if(i > 0){
-        printf("\t");
+        fprintf(fp, "\t");
       }
-      printf("%s", values[i].c_str());
+      fprintf(fp, "%s", values[i].c_str());
     }
-    printf("\n");
+    fprintf(fp, "\n");
   }
 
   template<typename T>
@@ -185,7 +182,8 @@ namespace {
 
 void Timing::printTabular(bool print_header,
     std::vector<std::string> const &headers0,
-    std::vector<std::string> const &values0) const {
+    std::vector<std::string> const &values0,
+    FILE *fp) const {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if(rank != 0){
@@ -219,7 +217,7 @@ void Timing::printTabular(bool print_header,
   }
 #endif
   if(print_header){
-    printTabVector(values);
+    printTabVector(fp, values);
   }
 
   // For each timer, print the values
@@ -234,7 +232,7 @@ void Timing::printTabular(bool print_header,
      }
 #endif
 
-    printTabVector(values);
+    printTabVector(fp, values);
   }
 }
 
@@ -259,7 +257,7 @@ void Timing::setPapiEvents(std::vector<std::string> names){
     papi_initialized = true;
 
     if(retval != PAPI_VER_CURRENT){
-      printf("ERROR INITIALIZING PAPI\n");
+      fprintf(stderr, "ERROR INITIALIZING PAPI\n");
       exit(1);
     }
   }
@@ -286,7 +284,7 @@ void Timing::setPapiEvents(std::vector<std::string> names){
 
     int retval = PAPI_add_event(papi_set, event_code);
     if(retval != PAPI_OK){
-      printf("ERROR ADDING %s, retval=%d, ID=0x%-10x\n", names[i].c_str(), retval, event_code);
+      fprintf(stderr, "ERROR ADDING %s, retval=%d, ID=0x%-10x\n", names[i].c_str(), retval, event_code);
     }
 
     //printf("EVT=%s, ID=0x%-10x\n", names[i].c_str(), event_code);
@@ -294,7 +292,7 @@ void Timing::setPapiEvents(std::vector<std::string> names){
   PAPI_start(papi_set);
 #else
   if(names.size() > 0){
-    printf("WARNING: PAPI NOT ENABLED, IGNORING PAPI EVENTS\n");
+    fprintf(stderr, "WARNING: PAPI NOT ENABLED, IGNORING PAPI EVENTS\n");
   }
 #endif
 }

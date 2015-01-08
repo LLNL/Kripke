@@ -97,7 +97,17 @@ std::vector<std::string> split(std::string const &str, char delim){
 }
 
 
-void runPoint(int point, int num_tasks, int num_threads, Input_Variables &input_variables, FILE *out_fp){
+namespace {
+  template<typename T>
+  std::string toString(T const &val){
+    std::stringstream ss;
+    ss << val;
+    return ss.str();
+  }
+}
+
+
+void runPoint(int point, int num_tasks, int num_threads, Input_Variables &input_variables, FILE *out_fp, std::string const &run_name){
 
   /* Allocate problem */
   User_Data *user_data = new User_Data(&input_variables);
@@ -109,34 +119,51 @@ void runPoint(int point, int num_tasks, int num_threads, Input_Variables &input_
 
   std::string nesting = nestingString(input_variables.nesting);
 
-  char line[2048];
-  double niter = (double)input_variables.niter;
-  snprintf(line, 2048, "RUN: point=%d ntasks=%d nthreads=%d nestid=%d nest=%s D=%-3d d=%-3d dirs=%d G=%-3d g=%-3d grps=%d Solve=%-8.4lf Sweep=%-8.4lf LTimes=%-8.4lf LPlusTimes=%-8.4lf\n",
-      point,
-      num_tasks,
-      num_threads,
-      (int)input_variables.nesting,
-      nesting.c_str(),
-      input_variables.num_dirsets_per_octant,
-      input_variables.num_dirs_per_dirset,
-      8*input_variables.num_dirsets_per_octant*input_variables.num_dirs_per_dirset,
-      input_variables.num_groupsets,
-      input_variables.num_groups_per_groupset,
-      input_variables.num_groupsets * input_variables.num_groups_per_groupset,
-      user_data->timing.getTotal("Solve")/niter,
-      user_data->timing.getTotal("Sweep")/niter,
-      user_data->timing.getTotal("LTimes")/niter,
-      user_data->timing.getTotal("LPlusTimes")/niter
-    );
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   if(myid == 0){
+    std::vector<std::string> headers;
+    std::vector<std::string> values;
+
+    headers.push_back("run_name");
+    values.push_back(run_name);
+
+    headers.push_back("point");
+    values.push_back(toString(point));
+
+    headers.push_back("nesting");
+    values.push_back(nesting);
+
+    headers.push_back("num_tasks");
+    values.push_back(toString(num_tasks));
+
+    headers.push_back("num_threads");
+    values.push_back(toString(num_threads));
+
+    headers.push_back("D");
+    values.push_back(toString(input_variables.num_dirsets_per_octant));
+
+    headers.push_back("d");
+    values.push_back(toString(input_variables.num_dirs_per_dirset));
+
+    headers.push_back("dirs");
+    values.push_back(toString(8*input_variables.num_dirsets_per_octant*input_variables.num_dirs_per_dirset));
+
+    headers.push_back("G");
+    values.push_back(toString(input_variables.num_groupsets));
+
+    headers.push_back("g");
+    values.push_back(toString(input_variables.num_groups_per_groupset));
+
+    headers.push_back("groups");
+    values.push_back(toString(input_variables.num_groupsets * input_variables.num_groups_per_groupset));
+
+
     if(out_fp != NULL){
-      fprintf(out_fp, line);
+      user_data->timing.printTabular(point == 1, headers, values, out_fp);
       fflush(out_fp);
     }
     user_data->timing.print();
-    printf(line);
     printf("\n\n");
   }
 
@@ -182,6 +209,7 @@ int main(int argc, char **argv) {
   /*
    * Default input parameters
    */
+  std::string run_name = "kripke";
   std::vector<IntPair> grp_list;
   grp_list.push_back(IntPair(1,1));
   std::vector<IntPair> dir_list;
@@ -211,6 +239,7 @@ int main(int argc, char **argv) {
     std::string opt = cmd.pop();
     if(opt == "-h" || opt == "--help"){usage();}
     else if(opt == "--out"){outfile = cmd.pop();}
+    else if(opt == "--name"){run_name = cmd.pop();}
     else if(opt == "--zones"){
       std::vector<std::string> nz = split(cmd.pop(), ',');
       if(nz.size() != 3) usage();
@@ -392,7 +421,7 @@ int main(int argc, char **argv) {
           }
           else{
             // Just run the "solver"
-            runPoint(point+1, num_tasks, num_threads, ivars, outfp);
+            runPoint(point+1, num_tasks, num_threads, ivars, outfp, run_name);
           }
 
 

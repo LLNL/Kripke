@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <stdio.h>
 
 #ifdef KRIPKE_USE_PAPI
 #include<papi.h>
@@ -47,7 +48,8 @@ class Timing {
     void print(void) const;
     void printTabular(bool print_header,
         std::vector<std::string> const &headers,
-        std::vector<std::string> const &values) const;
+        std::vector<std::string> const &values,
+        FILE *fp = stdout) const;
     
     double getTotal(std::string const &name) const;
 
