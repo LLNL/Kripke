@@ -17,7 +17,6 @@
 #endif
 #endif
 
-
 // Forward Decl
 struct User_Data;
 
