@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <vector>
+#include <sstream>
 #include <mpi.h>
 
 #ifdef KRIPKE_USE_BGPM
@@ -27,10 +28,10 @@ extern "C" void HPM_Stop(char const *);
 
 Timing::~Timing(){
 #ifdef KRIPKE_USE_PAPI
-  long long tmp[16];
-  //PAPI_stop_counters(tmp, num_papi);
-  PAPI_stop(papi_set, tmp);
+long long tmp[16];
+PAPI_stop(papi_set, tmp);
 #endif
+
 }
 
 void Timing::start(std::string const &name){
@@ -161,6 +162,82 @@ void Timing::print(void) const {
 #endif
 }
 
+
+namespace {
+  void printTabVector(std::vector<std::string> const &values){
+    int len = values.size();
+    for(int i = 0;i < len;++ i){
+      if(i > 0){
+        printf("\t");
+      }
+      printf("%s", values[i].c_str());
+    }
+    printf("\n");
+  }
+
+  template<typename T>
+  std::string toString(T const &val){
+    std::stringstream ss;
+    ss << val;
+    return ss.str();
+  }
+}
+
+void Timing::printTabular(bool print_header,
+    std::vector<std::string> const &headers0,
+    std::vector<std::string> const &values0) const {
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(rank != 0){
+    return;
+  }
+
+  // build a sorted list of names
+  std::vector<std::string> names;
+  for(TimerMap::const_iterator i = timers.begin();i != timers.end();++ i){
+    names.push_back((*i).first);
+
+  }
+  std::sort(names.begin(), names.end());
+
+  std::vector<Timer const *> ord_timers;
+  for(int i = 0;i < names.size();++ i){
+    std::string &name = names[i];
+    TimerMap::const_iterator iter = timers.find(name);
+    ord_timers.push_back(&(*iter).second);
+  }
+
+  // Output a header
+  std::vector<std::string> values = headers0;
+  values.push_back("timer");
+  values.push_back("count");
+  values.push_back("seconds");
+#ifdef KRIPKE_USE_PAPI
+  int num_papi = papi_names.size();
+  for(int i = 0;i < papi_names.size();++i){
+    values.push_back(papi_names[i]);
+  }
+#endif
+  if(print_header){
+    printTabVector(values);
+  }
+
+  // For each timer, print the values
+  for(int i = 0;i < names.size();++ i){
+    values = values0;
+    values.push_back(names[i]);
+    values.push_back(toString(ord_timers[i]->count));
+    values.push_back(toString(ord_timers[i]->total_time));
+#ifdef KRIPKE_USE_PAPI
+    for(int p = 0;p < num_papi;++ p){
+      values.push_back(toString(ord_timers[i]->papi_total[p]));
+     }
+#endif
+
+    printTabVector(values);
+  }
+}
+
 double Timing::getTotal(std::string const &name) const{
   TimerMap::const_iterator i = timers.find(name);
   if(i == timers.end()){
@@ -173,6 +250,7 @@ double Timing::getTotal(std::string const &name) const{
 
 void Timing::setPapiEvents(std::vector<std::string> names){
 #ifdef KRIPKE_USE_PAPI
+
 
   static bool papi_initialized = false;
   if(!papi_initialized){
