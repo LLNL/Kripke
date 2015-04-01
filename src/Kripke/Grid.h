@@ -83,8 +83,10 @@ public:
   SubTVec *sigt;              // Zonal per-group cross-section
   SubTVec *phi;               // Moments of psi
   SubTVec *phi_out;           // Scattering source (moments)
+
   SubTVec *ell;               // L matrix in nm_offset coordinates
   SubTVec *ell_plus;          // L+ matrix in nm_offset coordinates
+
   std::vector<int> nm_table;  // n, m indicies for traversing ell, ell_plus
 
 private:
