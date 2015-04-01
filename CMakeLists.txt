@@ -7,6 +7,10 @@ cmake_minimum_required(VERSION 2.8)
 
 set(SYS_TYPE $ENV{SYS_TYPE})
 
+if(NOT DEFINED SYS_TYPE)
+  set(SYS_TYPE linux)
+endif()
+
 set(CMAKE_TOOLCHAIN_PATH "./cmake/Toolchain")
 
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
@@ -70,7 +74,7 @@ set(BDIV_LIBRARY_PATH "${KRIPKE_SOURCE_DIR}/cmake/Library")
 include(cmake/bdiv_pkg.cmake)
 
 # Typically used (turned on by default)
-bdiv_opt_pkg(tcmalloc 0 ON)
+bdiv_opt_pkg(tcmalloc 0 OFF)
 
 # Optional 
 bdiv_opt_pkg(memP 0.0 OFF)
