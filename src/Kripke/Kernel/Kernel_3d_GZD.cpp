@@ -28,14 +28,14 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
   grid_data->phi->clear(0.0);
 
   // Loop over Group Sets
-  int num_group_sets = grid_data->gd_sets.size();
+  int num_group_sets = grid_data->subdomains.size();
   for (int gset = 0; gset < num_group_sets; ++gset) {
-    std::vector<Group_Dir_Set> &dir_sets = grid_data->gd_sets[gset];
+    std::vector<Subdomain> &dir_sets = grid_data->subdomains[gset];
     int num_dir_sets = dir_sets.size();
 
     // Loop over Direction Sets
     for (int dset = 0; dset < num_dir_sets; ++dset) {
-      Group_Dir_Set &gd_set = dir_sets[dset];
+      Subdomain &gd_set = dir_sets[dset];
 
       // Get dimensioning
       int num_local_groups = gd_set.num_groups;
@@ -54,10 +54,10 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
 			  double * KRESTRICT psi = gd_set.psi->ptr() + gz*num_local_directions;
         double * KRESTRICT phi = grid_data->phi->ptr(group0, 0, 0) + gz*nidx;
         double * KRESTRICT ell_d = ell_ptr;
-			
+
 				for (int d = 0; d < num_local_directions; d++) {
 					double psi_d = psi[d];
-			
+
 					for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
             phi[nm_offset] += ell_d[nm_offset] * psi_d;
           }
@@ -76,14 +76,14 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
   int nidx = grid_data->nm_table.size();
 
   // Loop over Group Sets
-  int num_group_sets = grid_data->gd_sets.size();
+  int num_group_sets = grid_data->subdomains.size();
   for (int gset = 0; gset < num_group_sets; ++gset) {
-    std::vector<Group_Dir_Set> &dir_sets = grid_data->gd_sets[gset];
+    std::vector<Subdomain> &dir_sets = grid_data->subdomains[gset];
     int num_dir_sets = dir_sets.size();
 
     // Loop over Direction Sets
     for (int dset = 0; dset < num_dir_sets; ++dset) {
-      Group_Dir_Set &gd_set = dir_sets[dset];
+      Subdomain &gd_set = dir_sets[dset];
 
       // Get dimensioning
       int num_local_groups = gd_set.num_groups;
@@ -104,9 +104,9 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
 			  double * KRESTRICT rhs = gd_set.rhs->ptr(0, 0, 0) + gz*num_local_directions;
         double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0, 0, 0) + gz*nidx;
 				double * KRESTRICT ell_plus_d = ell_plus_ptr;
-				
+
 				for (int d = 0; d < num_local_directions; d++) {
-					
+
 					for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
             rhs[d] += ell_plus_d[nm_offset] * phi_out[nm_offset];
           }
@@ -125,7 +125,7 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
 #define Zonal_INDEX(i, j, k) (i) + (local_imax)*(j) \
   + (local_imax)*(local_jmax)*(k)
 
-void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
+void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Subdomain *gd_set,
     double *i_plane_ptr, double *j_plane_ptr, double *k_plane_ptr) {
   int num_directions = gd_set->num_directions;
   int num_groups = gd_set->num_groups;

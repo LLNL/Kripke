@@ -67,7 +67,7 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
 {
   Grid_Data  *grid_data         = user_data->grid_data;
   Comm *comm = user_data->comm;
-  std::vector<Group_Dir_Set> &dir_sets = grid_data->gd_sets[group_set];
+  std::vector<Subdomain> &dir_sets = grid_data->subdomains[group_set];
 
   int num_direction_sets = user_data->num_direction_sets;
 
@@ -272,7 +272,7 @@ void CreateBufferInfo(User_Data *user_data)
 
   int *nzones          = grid_data->nzones;
   int local_imax, local_jmax, local_kmax;
-  int num_direction_sets = grid_data->gd_sets[0].size();
+  int num_direction_sets = grid_data->subdomains[0].size();
   int len[6], nm[6], length;
 
   // get group and direction dimensionality
@@ -300,7 +300,7 @@ void CreateBufferInfo(User_Data *user_data)
   }
 
   for(int ds=0; ds<num_direction_sets; ds++){
-    Directions *directions = grid_data->gd_sets[0][ds].directions;
+    Directions *directions = grid_data->subdomains[0][ds].directions;
     if(directions[0].id > 0){
       nm[0]++;
     }

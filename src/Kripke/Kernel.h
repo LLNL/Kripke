@@ -10,7 +10,7 @@
 struct User_Data;
 struct Grid_Data;
 struct SubTVec;
-struct Group_Dir_Set;
+struct Subdomain;
 
 /**
  * This is the Kernel base-class and interface definition.
@@ -31,7 +31,7 @@ class Kernel {
     // Computational Kernels
     virtual void LTimes(Grid_Data *grid_data) = 0;
     virtual void LPlusTimes(Grid_Data *grid_data) = 0;
-    virtual void sweep(Grid_Data *grid_data, Group_Dir_Set *ga_set, double *i_plane_ptr, double *j_plane_ptr, double *k_plane_ptr) = 0;
+    virtual void sweep(Grid_Data *grid_data, Subdomain *ga_set, double *i_plane_ptr, double *j_plane_ptr, double *k_plane_ptr) = 0;
 };
 
 

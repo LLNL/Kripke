@@ -16,14 +16,14 @@ struct SubTVec;
  * Contains parameters and variables that describe a single Group Set and
  * Direction Set.
  */
-struct Group_Dir_Set {
-  Group_Dir_Set();
-  ~Group_Dir_Set();
+struct Subdomain {
+  Subdomain();
+  ~Subdomain();
 
   void allocate(Grid_Data *grid_data, Nesting_Order nesting);
   void randomizeData(void);
-  void copy(Group_Dir_Set const &b);
-  bool compare(int gs, int ds, Group_Dir_Set const &b, double tol, bool verbose);
+  void copy(Subdomain const &b);
+  bool compare(int gs, int ds, Subdomain const &b, double tol, bool verbose);
 
   int num_groups;       // Number of groups in this set
   int num_directions;   // Number of directions in this set
@@ -76,7 +76,7 @@ public:
   std::vector<Grid_Sweep_Block> octant_extent;
 
   // Group/Angle sets
-  std::vector< std::vector<Group_Dir_Set> > gd_sets;
+  std::vector< std::vector<Subdomain> > subdomains;
 
   // Variables:
   int num_moments;

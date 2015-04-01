@@ -6,7 +6,7 @@
 #include <cmath>
 #include <sstream>
 
-Group_Dir_Set::Group_Dir_Set() :
+Subdomain::Subdomain() :
   num_groups(0),
   num_directions(0),
   group0(0),
@@ -16,13 +16,13 @@ Group_Dir_Set::Group_Dir_Set() :
   rhs(NULL)
 {
 }
-Group_Dir_Set::~Group_Dir_Set(){
+Subdomain::~Subdomain(){
   delete psi;
   delete rhs;
 }
 
 
-void Group_Dir_Set::allocate(Grid_Data *grid_data, Nesting_Order nest){
+void Subdomain::allocate(Grid_Data *grid_data, Nesting_Order nest){
   delete psi;
   psi = new SubTVec(nest,
       num_groups, num_directions, grid_data->num_zones);
@@ -35,7 +35,7 @@ void Group_Dir_Set::allocate(Grid_Data *grid_data, Nesting_Order nest){
 /**
  * Randomizes data for a set.
  */
-void Group_Dir_Set::randomizeData(void){
+void Subdomain::randomizeData(void){
   psi->randomizeData();
   rhs->randomizeData();
 }
@@ -43,7 +43,7 @@ void Group_Dir_Set::randomizeData(void){
 /**
  * Copies two sets, allowing for different nestings.
  */
-void Group_Dir_Set::copy(Group_Dir_Set const &b){
+void Subdomain::copy(Subdomain const &b){
   psi->copy(*b.psi);
   rhs->copy(*b.rhs);
 }
@@ -51,7 +51,7 @@ void Group_Dir_Set::copy(Group_Dir_Set const &b){
 /**
  * Compares two sets, allowing for different nestings.
  */
-bool Group_Dir_Set::compare(int gs, int ds, Group_Dir_Set const &b, double tol, bool verbose){
+bool Subdomain::compare(int gs, int ds, Subdomain const &b, double tol, bool verbose){
   std::stringstream namess;
   namess << "gdset[" << gs << "][" << ds << "]";
   std::string name = namess.str();
@@ -130,7 +130,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
   else {
     mynbr[2][1] = myid + npx * npy;
   }
-  
+
   computeGrid(0, npx, nx_g, isub_ref, 0.0, 1.0);
   computeGrid(1, npy, ny_g, jsub_ref, 0.0, 1.0);
   computeGrid(2, npz, nz_g, ksub_ref, 0.0, 1.0);
@@ -159,9 +159,9 @@ void Grid_Data::randomizeData(void){
     }
   }
 
-  for(int gs = 0;gs < gd_sets.size();++ gs){
-    for(int ds = 0;ds < gd_sets[gs].size();++ ds){
-      gd_sets[gs][ds].randomizeData();
+  for(int gs = 0;gs < subdomains.size();++ gs){
+    for(int ds = 0;ds < subdomains[gs].size();++ ds){
+      subdomains[gs][ds].randomizeData();
     }
   }
 
@@ -181,9 +181,9 @@ void Grid_Data::copy(Grid_Data const &b){
     deltas[d] = b.deltas[d];
   }
 
-  for(int gs = 0;gs < gd_sets.size();++ gs){
-    for(int ds = 0;ds < gd_sets[gs].size();++ ds){
-      gd_sets[gs][ds].copy(b.gd_sets[gs][ds]);
+  for(int gs = 0;gs < subdomains.size();++ gs){
+    for(int ds = 0;ds < subdomains[gs].size();++ ds){
+      subdomains[gs][ds].copy(b.subdomains[gs][ds]);
     }
   }
   sigt->copy(*b.sigt);
@@ -203,10 +203,10 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   is_diff |= compareVector("deltas[1]", deltas[1], b.deltas[1], tol, verbose);
   is_diff |= compareVector("deltas[2]", deltas[2], b.deltas[2], tol, verbose);
 
-  for(int gs = 0;gs < gd_sets.size();++ gs){
-    for(int ds = 0;ds < gd_sets[gs].size();++ ds){
-      is_diff |= gd_sets[gs][ds].compare(
-          gs, ds, b.gd_sets[gs][ds], tol, verbose);
+  for(int gs = 0;gs < subdomains.size();++ gs){
+    for(int ds = 0;ds < subdomains[gs].size();++ ds){
+      is_diff |= subdomains[gs][ds].compare(
+          gs, ds, b.subdomains[gs][ds], tol, verbose);
     }
   }
 
@@ -228,7 +228,7 @@ void Grid_Data::computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmi
  /* Calculate unit roundoff and load into grid_data */
   double eps = 1e-32;
   double thsnd_eps = 1000.e0*(eps);
- 
+
   // Compute subset of global zone indices
   int nx_l = nx_g / npx;
   int rem = nx_g % npx;
@@ -250,8 +250,8 @@ void Grid_Data::computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmi
 
   // allocate grid deltas
   deltas[dim].resize(nx_l+2);
-  
-  // Compute the spatial grid 
+
+  // Compute the spatial grid
   double dx = (xmax - xmin) / nx_g;
   double coord_lo = xmin + (ilower) * dx;
   double coord_hi = xmin + (iupper+1) * dx;
@@ -264,8 +264,8 @@ void Grid_Data::computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmi
   if(std::abs(coord_hi - xmax) <= thsnd_eps*std::abs(xmax)){
     deltas[dim][nx_l+1] = 0.0;
   }
-  
-  nzones[dim] = nx_l; 
+
+  nzones[dim] = nx_l;
 }
 
 /**

@@ -23,19 +23,19 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data) {
   int num_zones = grid_data->num_zones;
   int nidx = grid_data->nm_table.size();
 	int num_directions = grid_data->ell->directions;
-	
+
   // Clear phi
   grid_data->phi->clear(0.0);
 
   // Loop over Group Sets
-  int num_group_sets = grid_data->gd_sets.size();
+  int num_group_sets = grid_data->subdomains.size();
   for (int gset = 0; gset < num_group_sets; ++gset) {
-    std::vector<Group_Dir_Set> &dir_sets = grid_data->gd_sets[gset];
+    std::vector<Subdomain> &dir_sets = grid_data->subdomains[gset];
     int num_dir_sets = dir_sets.size();
 
     // Loop over Direction Sets
     for (int dset = 0; dset < num_dir_sets; ++dset) {
-      Group_Dir_Set &gd_set = dir_sets[dset];
+      Subdomain &gd_set = dir_sets[dset];
 
       // Get dimensioning
       int num_local_groups = gd_set.num_groups;
@@ -80,14 +80,14 @@ void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data) {
   int nidx = grid_data->nm_table.size();
 
   // Loop over Group Sets
-  int num_group_sets = grid_data->gd_sets.size();
+  int num_group_sets = grid_data->subdomains.size();
   for (int gset = 0; gset < num_group_sets; ++gset) {
-    std::vector<Group_Dir_Set> &dir_sets = grid_data->gd_sets[gset];
+    std::vector<Subdomain> &dir_sets = grid_data->subdomains[gset];
     int num_dir_sets = dir_sets.size();
 
     // Loop over Direction Sets
     for (int dset = 0; dset < num_dir_sets; ++dset) {
-      Group_Dir_Set &gd_set = dir_sets[dset];
+      Subdomain &gd_set = dir_sets[dset];
 
       // Get dimensioning
       int num_local_groups = gd_set.num_groups;
@@ -138,7 +138,7 @@ void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data) {
 #define Zonal_INDEX(i, j, k) (i) + (local_imax)*(j) \
   + (local_imax)*(local_jmax)*(k)
 
-void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Group_Dir_Set *gd_set,
+void Kernel_3d_GDZ::sweep(Grid_Data *grid_data, Subdomain *gd_set,
     double *i_plane_ptr, double *j_plane_ptr, double *k_plane_ptr) {
   int num_directions = gd_set->num_directions;
   int num_groups = gd_set->num_groups;

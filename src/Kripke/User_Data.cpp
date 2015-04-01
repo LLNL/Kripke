@@ -50,13 +50,13 @@ User_Data::User_Data(Input_Variables *input_vars)
   num_groups_per_set = input_vars->num_groups_per_groupset;
 
   // Initialize Group and Direction Set Structures
-  grid_data->gd_sets.resize(input_vars->num_groupsets);
+  grid_data->subdomains.resize(input_vars->num_groupsets);
   int group0 = 0;
-  for(int gs = 0;gs < grid_data->gd_sets.size();++ gs){
-    grid_data->gd_sets[gs].resize(8*input_vars->num_dirsets_per_octant);
+  for(int gs = 0;gs < grid_data->subdomains.size();++ gs){
+    grid_data->subdomains[gs].resize(8*input_vars->num_dirsets_per_octant);
     int dir0 = 0;
-    for(int ds = 0;ds < grid_data->gd_sets[gs].size();++ ds){
-      Group_Dir_Set &gdset = grid_data->gd_sets[gs][ds];
+    for(int ds = 0;ds < grid_data->subdomains[gs].size();++ ds){
+      Subdomain &gdset = grid_data->subdomains[gs][ds];
       gdset.num_groups = input_vars->num_groups_per_groupset;
       gdset.num_directions = input_vars->num_dirs_per_dirset;
 
@@ -78,8 +78,8 @@ User_Data::User_Data(Input_Variables *input_vars)
   sigma_tot.resize(num_group_sets*num_groups_per_set, 0.0);
 
   // Compute number of zones
-  global_num_zones = (size_t)input_vars->nx 
-                   * (size_t)input_vars->ny 
+  global_num_zones = (size_t)input_vars->nx
+                   * (size_t)input_vars->ny
                    * (size_t)input_vars->nz;
 
   // create the kernel object based on nesting
