@@ -67,9 +67,16 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
 {
   Grid_Data  *grid_data         = user_data->grid_data;
   Comm *comm = user_data->comm;
-  std::vector<Subdomain> &dir_sets = grid_data->subdomains[group_set];
+
 
   int num_direction_sets = user_data->num_direction_sets;
+
+  std::vector<Subdomain *> dir_sets;
+  for(int s = 0;s < grid_data->subdomains.size();++ s){
+    if(grid_data->subdomains[s].idx_group_set == group_set){
+      dir_sets.push_back(&grid_data->subdomains[s]);
+    }
+  }
 
   double *msg;
 
@@ -116,7 +123,7 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
   std::vector<int> j_which(num_direction_sets);
   std::vector<int> k_which(num_direction_sets);
   for(int ds=0; ds<num_direction_sets; ds++){
-    Directions *directions = dir_sets[ds].directions;
+    Directions *directions = dir_sets[ds]->directions;
     i_which[ds] = (directions[0].id>0) ? 0 : 1;
     j_which[ds] = (directions[0].jd>0) ? 2 : 3;
     k_which[ds] = (directions[0].kd>0) ? 4 : 5;
@@ -150,7 +157,7 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
      buffers for subdomain faces on the problem boundary */
   for(int ds=0; ds<num_direction_sets; ds++){
 
-    Directions *directions = dir_sets[ds].directions;
+    Directions *directions = dir_sets[ds]->directions;
     int i_src_subd = directions[0].i_src_subd;
     int j_src_subd = directions[0].j_src_subd;
     int k_src_subd = directions[0].k_src_subd;
@@ -239,10 +246,10 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
       /* Use standard Diamond-Difference sweep */
       {
         BLOCK_TIMER(user_data->timing, Sweep_Kernel);
-        user_data->kernel->sweep(grid_data, &dir_sets[ds], i_plane_data[ds], j_plane_data[ds], k_plane_data[ds]);
+        user_data->kernel->sweep(grid_data, dir_sets[ds], i_plane_data[ds], j_plane_data[ds], k_plane_data[ds]);
       }
 
-      Directions *directions = dir_sets[ds].directions;
+      Directions *directions = dir_sets[ds]->directions;
       int i_dst_subd = directions[0].i_dst_subd;
       int j_dst_subd = directions[0].j_dst_subd;
       int k_dst_subd = directions[0].k_dst_subd;
@@ -272,7 +279,7 @@ void CreateBufferInfo(User_Data *user_data)
 
   int *nzones          = grid_data->nzones;
   int local_imax, local_jmax, local_kmax;
-  int num_direction_sets = grid_data->subdomains[0].size();
+  int num_direction_sets = user_data->num_direction_sets;
   int len[6], nm[6], length;
 
   // get group and direction dimensionality
@@ -299,8 +306,8 @@ void CreateBufferInfo(User_Data *user_data)
     nm[i] = 0;
   }
 
-  for(int ds=0; ds<num_direction_sets; ds++){
-    Directions *directions = grid_data->subdomains[0][ds].directions;
+  for(int s = 0;s < grid_data->subdomains.size();++ s){
+    Directions *directions = grid_data->subdomains[s].directions;
     if(directions[0].id > 0){
       nm[0]++;
     }

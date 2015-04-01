@@ -25,11 +25,8 @@ Kernel::~Kernel(){
 void Kernel::allocateStorage(User_Data *user_data){
   Grid_Data *grid_data = user_data->grid_data;
   Nesting_Order nest = nestingPsi();
-  for(int gs = 0;gs < grid_data->subdomains.size();++ gs){
-    for(int ds = 0;ds < grid_data->subdomains[gs].size();++ ds){
-      Subdomain &gdset = grid_data->subdomains[gs][ds];
-      gdset.allocate(grid_data, nest);
-    }
+  for(int s = 0;s < grid_data->subdomains.size();++ s){
+    grid_data->subdomains[s].allocate(grid_data, nest);
   }
 
   // Allocate moments variables

@@ -48,23 +48,37 @@ User_Data::User_Data(Input_Variables *input_vars)
   num_directions_per_set = input_vars->num_dirs_per_dirset;
   num_group_sets = input_vars->num_groupsets;
   num_groups_per_set = input_vars->num_groups_per_groupset;
+  num_zone_sets = 1;
 
-  // Initialize Group and Direction Set Structures
-  grid_data->subdomains.resize(input_vars->num_groupsets);
+  int num_subdomains = num_direction_sets*num_group_sets*num_zone_sets;
+
+  // Initialize Subdomains
+  grid_data->subdomains.resize(num_subdomains);
   int group0 = 0;
-  for(int gs = 0;gs < grid_data->subdomains.size();++ gs){
-    grid_data->subdomains[gs].resize(8*input_vars->num_dirsets_per_octant);
+  for(int gs = 0;gs < num_group_sets;++ gs){
     int dir0 = 0;
-    for(int ds = 0;ds < grid_data->subdomains[gs].size();++ ds){
-      Subdomain &gdset = grid_data->subdomains[gs][ds];
-      gdset.num_groups = input_vars->num_groups_per_groupset;
-      gdset.num_directions = input_vars->num_dirs_per_dirset;
+    for(int ds = 0;ds < num_direction_sets;++ ds){
+      for(int zs = 0;zs < num_zone_sets;++ zs){
+        int sdom = gs*num_direction_sets*num_zone_sets +
+                   ds*num_zone_sets +
+                   zs;
 
-      gdset.group0 = group0;
+        Subdomain &gdset = grid_data->subdomains[sdom];
 
-      gdset.direction0 = dir0;
-      gdset.directions = &directions[dir0];
+        // set the set indices
+        gdset.idx_group_set = gs;
+        gdset.idx_dir_set = ds;
+        gdset.idx_zone_set = zs;
 
+        gdset.num_groups = input_vars->num_groups_per_groupset;
+        gdset.num_directions = input_vars->num_dirs_per_dirset;
+
+        gdset.group0 = group0;
+
+        gdset.direction0 = dir0;
+        gdset.directions = &directions[dir0];
+
+      }
       dir0 += input_vars->num_dirs_per_dirset;
     }
 

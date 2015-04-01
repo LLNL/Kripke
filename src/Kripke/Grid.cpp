@@ -7,6 +7,9 @@
 #include <sstream>
 
 Subdomain::Subdomain() :
+  idx_dir_set(0),
+  idx_group_set(0),
+  idx_zone_set(0),
   num_groups(0),
   num_directions(0),
   group0(0),
@@ -51,9 +54,9 @@ void Subdomain::copy(Subdomain const &b){
 /**
  * Compares two sets, allowing for different nestings.
  */
-bool Subdomain::compare(int gs, int ds, Subdomain const &b, double tol, bool verbose){
+bool Subdomain::compare(Subdomain const &b, double tol, bool verbose){
   std::stringstream namess;
-  namess << "gdset[" << gs << "][" << ds << "]";
+  namess << "gdset[gs=" << idx_group_set << ", ds=" << idx_dir_set << ", zs=" << idx_zone_set << "]";
   std::string name = namess.str();
 
   bool is_diff = false;
@@ -159,10 +162,8 @@ void Grid_Data::randomizeData(void){
     }
   }
 
-  for(int gs = 0;gs < subdomains.size();++ gs){
-    for(int ds = 0;ds < subdomains[gs].size();++ ds){
-      subdomains[gs][ds].randomizeData();
-    }
+  for(int s = 0;s < subdomains.size();++ s){
+    subdomains[s].randomizeData();
   }
 
   sigt->randomizeData();
@@ -181,10 +182,9 @@ void Grid_Data::copy(Grid_Data const &b){
     deltas[d] = b.deltas[d];
   }
 
-  for(int gs = 0;gs < subdomains.size();++ gs){
-    for(int ds = 0;ds < subdomains[gs].size();++ ds){
-      subdomains[gs][ds].copy(b.subdomains[gs][ds]);
-    }
+  subdomains.resize(b.subdomains.size());
+  for(int s = 0;s < subdomains.size();++ s){
+    subdomains[s].copy(b.subdomains[s]);
   }
   sigt->copy(*b.sigt);
   phi->copy(*b.phi);
@@ -203,11 +203,10 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   is_diff |= compareVector("deltas[1]", deltas[1], b.deltas[1], tol, verbose);
   is_diff |= compareVector("deltas[2]", deltas[2], b.deltas[2], tol, verbose);
 
-  for(int gs = 0;gs < subdomains.size();++ gs){
-    for(int ds = 0;ds < subdomains[gs].size();++ ds){
-      is_diff |= subdomains[gs][ds].compare(
-          gs, ds, b.subdomains[gs][ds], tol, verbose);
-    }
+  for(int s = 0;s < subdomains.size();++ s){
+    is_diff |= subdomains[s].compare(
+        b.subdomains[s], tol, verbose);
+
   }
 
   is_diff |= sigt->compare("sigt", *b.sigt, tol, verbose);

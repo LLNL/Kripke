@@ -23,7 +23,11 @@ struct Subdomain {
   void allocate(Grid_Data *grid_data, Nesting_Order nesting);
   void randomizeData(void);
   void copy(Subdomain const &b);
-  bool compare(int gs, int ds, Subdomain const &b, double tol, bool verbose);
+  bool compare(Subdomain const &b, double tol, bool verbose);
+
+  int idx_group_set;
+  int idx_dir_set;
+  int idx_zone_set;
 
   int num_groups;       // Number of groups in this set
   int num_directions;   // Number of directions in this set
@@ -75,8 +79,8 @@ public:
   // Sweep index sets for each octant
   std::vector<Grid_Sweep_Block> octant_extent;
 
-  // Group/Angle sets
-  std::vector< std::vector<Subdomain> > subdomains;
+  // Group/Angle/Zone sets
+  std::vector<Subdomain> subdomains;
 
   // Variables:
   int num_moments;

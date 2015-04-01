@@ -28,50 +28,44 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
   // Clear phi
   grid_data->phi->clear(0.0);
 
-  // Loop over Group Sets
-  int num_group_sets = grid_data->subdomains.size();
-  for (int gset = 0; gset < num_group_sets; ++gset) {
-    std::vector<Subdomain> &dir_sets = grid_data->subdomains[gset];
-    int num_dir_sets = dir_sets.size();
+  // Loop over Subdomains
+  int num_subdomains = grid_data->subdomains.size();
+  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
 
-    // Loop over Direction Sets
-    for (int dset = 0; dset < num_dir_sets; ++dset) {
-      Subdomain &gd_set = dir_sets[dset];
+    // Get dimensioning
+    int num_local_groups = sdom.num_groups;
+    int group0 = sdom.group0;
+    int num_local_directions = sdom.num_directions;
+    int dir0 = sdom.direction0;
 
-      // Get dimensioning
-      int num_local_groups = gd_set.num_groups;
-      int group0 = gd_set.group0;
-      int num_local_directions = gd_set.num_directions;
-      int dir0 = gd_set.direction0;
-
-      /* 3D Cartesian Geometry */
-      double * KRESTRICT ell_ptr = grid_data->ell->ptr(0, dir0, 0);
+    /* 3D Cartesian Geometry */
+    double * KRESTRICT ell_ptr = grid_data->ell->ptr(0, dir0, 0);
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-      for(int z = 0;z < num_zones;++ z){
-        double * KRESTRICT psi = gd_set.psi->ptr(0, 0, z);
-        double * KRESTRICT phi = grid_data->phi->ptr(group0, 0, z);
-        for(int group = 0;group < num_local_groups;++ group){
-          double * KRESTRICT ell_d = ell_ptr;
+    for(int z = 0;z < num_zones;++ z){
+      double * KRESTRICT psi = sdom.psi->ptr(0, 0, z);
+      double * KRESTRICT phi = grid_data->phi->ptr(group0, 0, z);
+      for(int group = 0;group < num_local_groups;++ group){
+        double * KRESTRICT ell_d = ell_ptr;
 
-          for (int d = 0; d < num_local_directions; d++) {
-            double psi_d = psi[d];
+        for (int d = 0; d < num_local_directions; d++) {
+          double psi_d = psi[d];
 
-            for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
-              phi[nm_offset] += ell_d[nm_offset] * psi_d;
-            }
-            ell_d += nidx;
+          for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+            phi[nm_offset] += ell_d[nm_offset] * psi_d;
           }
-
-          psi += num_local_directions;
-          phi += nidx;
+          ell_d += nidx;
         }
-      }
 
-    } // Direction Set
-  } // Group Set
+        psi += num_local_directions;
+        phi += nidx;
+      }
+    }
+
+  } // Subdomain
 }
 
 void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
@@ -81,55 +75,50 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
   int nidx = grid_data->nm_table.size();
   int num_directions = grid_data->ell_plus->directions;
 
-  // Loop over Group Sets
-  int num_group_sets = grid_data->subdomains.size();
-  for (int gset = 0; gset < num_group_sets; ++gset) {
-    std::vector<Subdomain> &dir_sets = grid_data->subdomains[gset];
-    int num_dir_sets = dir_sets.size();
+  // Loop over Subdomains
+  int num_subdomains = grid_data->subdomains.size();
+  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
 
-    // Loop over Direction Sets
-    for (int dset = 0; dset < num_dir_sets; ++dset) {
-      Subdomain &gd_set = dir_sets[dset];
 
-      // Get dimensioning
-      int num_local_groups = gd_set.num_groups;
-      int group0 = gd_set.group0;
-      int num_local_directions = gd_set.num_directions;
-      int dir0 = gd_set.direction0;
+    // Get dimensioning
+    int num_local_groups = sdom.num_groups;
+    int group0 = sdom.group0;
+    int num_local_directions = sdom.num_directions;
+    int dir0 = sdom.direction0;
 
-      // Get Variables
-      gd_set.rhs->clear(0.0);
+    // Get Variables
+    sdom.rhs->clear(0.0);
 
-      /* 3D Cartesian Geometry */
-      double * KRESTRICT ell_plus_ptr = grid_data->ell_plus->ptr(0, dir0, 0);
+    /* 3D Cartesian Geometry */
+    double * KRESTRICT ell_plus_ptr = grid_data->ell_plus->ptr(0, dir0, 0);
 
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-      for(int z = 0;z < num_zones;++ z){
-        double * KRESTRICT rhs = gd_set.rhs->ptr(0, 0, z);
-        double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0,0, z);
-        for(int group = 0;group < num_local_groups;++ group){
-          double * KRESTRICT ell_plus_d = ell_plus_ptr;
+    for(int z = 0;z < num_zones;++ z){
+      double * KRESTRICT rhs = sdom.rhs->ptr(0, 0, z);
+      double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0,0, z);
+      for(int group = 0;group < num_local_groups;++ group){
+        double * KRESTRICT ell_plus_d = ell_plus_ptr;
 
-          for (int d = 0; d < num_local_directions; d++) {
-            double rhs_acc = 0.0;
+        for (int d = 0; d < num_local_directions; d++) {
+          double rhs_acc = 0.0;
 
-            for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
-               rhs_acc += ell_plus_d[nm_offset] * phi_out[nm_offset];
-            }
-            rhs[d] += rhs_acc;
-
-            ell_plus_d += nidx;
+          for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+             rhs_acc += ell_plus_d[nm_offset] * phi_out[nm_offset];
           }
-          rhs += num_local_directions;
-          phi_out += nidx;
-        }
-      }
+          rhs[d] += rhs_acc;
 
-    } // Direction Set
-  } // Group Set
+          ell_plus_d += nidx;
+        }
+        rhs += num_local_directions;
+        phi_out += nidx;
+      }
+    }
+
+  } // Subdomain
 }
 
 /* Sweep routine for Diamond-Difference */
@@ -140,13 +129,13 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
 #define Zonal_INDEX(i, j, k) (i) + (local_imax)*(j) \
   + (local_imax)*(local_jmax)*(k)
 
-void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Subdomain *gd_set,
+void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Subdomain *sdom,
     double *i_plane_ptr, double *j_plane_ptr, double *k_plane_ptr) {
-  int num_directions = gd_set->num_directions;
-  int num_groups = gd_set->num_groups;
+  int num_directions = sdom->num_directions;
+  int num_groups = sdom->num_groups;
   int num_zones = grid_data->num_zones;
 
-  Directions *direction = gd_set->directions;
+  Directions *direction = sdom->directions;
 
   int local_imax = grid_data->nzones[0];
   int local_jmax = grid_data->nzones[1];
@@ -182,13 +171,13 @@ void Kernel_3d_ZGD::sweep(Grid_Data *grid_data, Subdomain *gd_set,
         double two_dx = 2.0 / dxi;
 
         int z = Zonal_INDEX(i, j, k);
-        double * sigt_z = grid_data->sigt->ptr(gd_set->group0, 0, z);
+        double * sigt_z = grid_data->sigt->ptr(sdom->group0, 0, z);
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
         for (int group = 0; group < num_groups; ++group) {
-          double * KRESTRICT psi_z_g = gd_set->psi->ptr(group, 0, z);
-          double * KRESTRICT rhs_z_g = gd_set->rhs->ptr(group, 0, z);
+          double * KRESTRICT psi_z_g = sdom->psi->ptr(group, 0, z);
+          double * KRESTRICT rhs_z_g = sdom->rhs->ptr(group, 0, z);
 
           double * KRESTRICT psi_lf_z_g = i_plane.ptr(group, 0, I_PLANE_INDEX(j, k));
           double * KRESTRICT psi_fr_z_g = j_plane.ptr(group, 0, J_PLANE_INDEX(i, k));
