@@ -24,9 +24,6 @@ class Kernel {
     virtual Nesting_Order nestingPsi(void) const = 0;
     virtual Nesting_Order nestingPhi(void) const = 0;
 
-    // Variable Creation
-    void allocateStorage(Grid_Data *grid_data);
-
     // Computational Kernels
     virtual void LTimes(Grid_Data *grid_data) = 0;
     virtual void LPlusTimes(Grid_Data *grid_data) = 0;

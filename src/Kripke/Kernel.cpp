@@ -18,43 +18,6 @@ Kernel::~Kernel(){
 
 }
 
-/**
- * Allocates kernel-specific storage for the User_Data object.
- */
-void Kernel::allocateStorage(Grid_Data *grid_data){
-  Nesting_Order nest = nestingPsi();
-  // Allocate moments variables
-  int num_moments = grid_data->num_legendre;
-  int num_dims = 3;
-  int total_dirs = grid_data->directions.size();
-  int num_zones = grid_data->num_zones;
-  int num_groups = grid_data->num_group_sets * grid_data->num_groups_per_set;
-
-  int total_moments = grid_data->total_num_moments;
-  grid_data->phi = new SubTVec(nestingPhi(), num_groups, total_moments, num_zones);
-  grid_data->phi_out = new SubTVec(nestingPhi(), num_groups, total_moments, num_zones);
-
-  if(nest == NEST_GDZ || nest == NEST_DZG || nest == NEST_DGZ){
-    grid_data->ell = new SubTVec(NEST_ZGD, total_moments, total_dirs, 1);
-    grid_data->ell_plus = new SubTVec(NEST_ZDG, total_moments, total_dirs, 1);
-  }
-  else{
-    grid_data->ell = new SubTVec(NEST_ZDG, total_moments, total_dirs, 1);
-    grid_data->ell_plus = new SubTVec(NEST_ZDG, total_moments, total_dirs, 1);
-  }
-
-  // allocate sigt  1xGxZ if groups come before zones
-  if(nest == NEST_GDZ || nest ==  NEST_DGZ || nest == NEST_GZD){
-    grid_data->sigt = new SubTVec(NEST_DGZ,
-      num_groups, 1, grid_data->num_zones);
-  }
-  // otherwise, 1xZxG
-  else{
-    grid_data->sigt = new SubTVec(NEST_DZG,
-      num_groups, 1, grid_data->num_zones);
-  }
-}
-
 
 /**
  * Factory to create a kernel object for the specified nesting

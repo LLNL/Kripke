@@ -135,6 +135,8 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
   int num_subdomains = num_direction_sets*num_group_sets*num_zone_sets;
 
+  Nesting_Order nest = input_vars->nesting;
+
   // Initialize Subdomains
   subdomains.resize(num_subdomains);
   int group0 = 0;
@@ -163,7 +165,6 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
         sdom.num_zones = num_zones;
 
         // allocate the storage for solution and source terms
-        Nesting_Order nest = kernel->nestingPsi();
         sdom.psi = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.num_zones);
         sdom.rhs = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.num_zones);
 
@@ -180,7 +181,30 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   // setup cross-sections
   sigma_tot.resize(num_group_sets*num_groups_per_set, 0.0);
 
-  kernel->allocateStorage(this);
+  // Allocate moments variables
+  int total_dirs = num_directions_per_set * num_direction_sets;
+  int num_groups = num_groups_per_set * num_group_sets;
+
+  phi = new SubTVec(nest, num_groups, total_num_moments, num_zones);
+  phi_out = new SubTVec(nest, num_groups, total_num_moments, num_zones);
+
+  if(nest == NEST_GDZ || nest == NEST_DZG || nest == NEST_DGZ){
+    ell = new SubTVec(NEST_ZGD, total_num_moments, total_dirs, 1);
+    ell_plus = new SubTVec(NEST_ZDG, total_num_moments, total_dirs, 1);
+  }
+  else{
+    ell = new SubTVec(NEST_ZDG, total_num_moments, total_dirs, 1);
+    ell_plus = new SubTVec(NEST_ZDG, total_num_moments, total_dirs, 1);
+  }
+
+  // allocate sigt  1xGxZ if groups come before zones
+  if(nest == NEST_GDZ || nest ==  NEST_DGZ || nest == NEST_GZD){
+    sigt = new SubTVec(NEST_DGZ, num_groups, 1, num_zones);
+  }
+  // otherwise, 1xZxG
+  else{
+    sigt = new SubTVec(NEST_DZG, num_groups, 1, num_zones);
+  }
 
   /* Create buffer info for sweeping if using Diamond-Difference */
   CreateBufferInfo(this);
