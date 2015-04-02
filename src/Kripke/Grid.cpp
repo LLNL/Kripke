@@ -92,6 +92,48 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   int jsub_ref = ((myid - isub_ref) / npx) % npy;
   int ksub_ref = (myid - isub_ref - npx*jsub_ref) / (npx * npy);
 
+/* Compute the processor neighbor array assuming a lexigraphic ordering */
+  if(isub_ref == 0){
+    mynbr[0][0] = -1;
+  }
+  else {
+    mynbr[0][0] = myid - 1;
+  }
+
+  if(isub_ref == npx-1){
+    mynbr[0][1] = -1;
+  }
+  else {
+    mynbr[0][1] = myid + 1;
+  }
+
+  if(jsub_ref == 0){
+    mynbr[1][0] = -1;
+  }
+  else {
+    mynbr[1][0] = myid - npx;
+  }
+
+  if(jsub_ref == npy-1){
+    mynbr[1][1] = -1;
+  }
+  else {
+    mynbr[1][1] = myid + npx;
+  }
+
+  if(ksub_ref == 0){
+    mynbr[2][0] = -1;
+  }
+  else {
+    mynbr[2][0] = myid - npx * npy;
+  }
+
+  if(ksub_ref == npz-1){
+    mynbr[2][1] = -1;
+  }
+  else {
+    mynbr[2][1] = myid + npx * npy;
+  }
 
   // create the kernel object based on nesting
   kernel = createKernel(input_vars->nesting, 3);
@@ -179,48 +221,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
 
 
-  /* Compute the processor neighbor array assuming a lexigraphic ordering */
-  if(isub_ref == 0){
-    mynbr[0][0] = -1;
-  }
-  else {
-    mynbr[0][0] = myid - 1;
-  }
 
-  if(isub_ref == npx-1){
-    mynbr[0][1] = -1;
-  }
-  else {
-    mynbr[0][1] = myid + 1;
-  }
-
-  if(jsub_ref == 0){
-    mynbr[1][0] = -1;
-  }
-  else {
-    mynbr[1][0] = myid - npx;
-  }
-
-  if(jsub_ref == npy-1){
-    mynbr[1][1] = -1;
-  }
-  else {
-    mynbr[1][1] = myid + npx;
-  }
-
-  if(ksub_ref == 0){
-    mynbr[2][0] = -1;
-  }
-  else {
-    mynbr[2][0] = myid - npx * npy;
-  }
-
-  if(ksub_ref == npz-1){
-    mynbr[2][1] = -1;
-  }
-  else {
-    mynbr[2][1] = myid + npx * npy;
-  }
 
 
 
