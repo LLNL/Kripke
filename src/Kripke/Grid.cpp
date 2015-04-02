@@ -67,7 +67,8 @@ bool Subdomain::compare(Subdomain const &b, double tol, bool verbose){
 Grid_Data::Grid_Data(Input_Variables *input_vars)
 {
   /* Set the processor grid dimensions */
-  int R = (input_vars->npx)*(input_vars->npy)*(input_vars->npz);;
+  int R = (input_vars->npx)*(input_vars->npy)*(input_vars->npz);
+
   /* Check size of PQR_group is the same as MPI_COMM_WORLD */
   int size;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -80,60 +81,27 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
     error_exit(1);
   }
 
-  /* Compute the local coordinates in the processor decomposition */
+
   int npx = input_vars->npx;
   int npy = input_vars->npy;
   int npz = input_vars->npz;
 
+  /* Compute the local coordinates in the processor decomposition */
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-
   int isub_ref = myid % npx;
   int jsub_ref = ((myid - isub_ref) / npx) % npy;
   int ksub_ref = (myid - isub_ref - npx*jsub_ref) / (npx * npy);
 
-/* Compute the processor neighbor array assuming a lexigraphic ordering */
-  if(isub_ref == 0){
-    mynbr[0][0] = -1;
-  }
-  else {
-    mynbr[0][0] = myid - 1;
-  }
+  /* Compute the processor neighbor array given the above ordering */
+  // -1 is used to denote a boundary
+  mynbr[0][0] = (isub_ref == 0)     ? -1 : myid-1;
+  mynbr[0][1] = (isub_ref == npx-1) ? -1 : myid+1;
+  mynbr[1][0] = (jsub_ref == 0)     ? -1 : myid-npx;
+  mynbr[1][1] = (jsub_ref == npy-1) ? -1 : myid+npx;
+  mynbr[2][0] = (ksub_ref == 0)     ? -1 : myid-npx*npy;
+  mynbr[2][1] = (ksub_ref == npz-1) ? -1 : myid+npx*npy;
 
-  if(isub_ref == npx-1){
-    mynbr[0][1] = -1;
-  }
-  else {
-    mynbr[0][1] = myid + 1;
-  }
-
-  if(jsub_ref == 0){
-    mynbr[1][0] = -1;
-  }
-  else {
-    mynbr[1][0] = myid - npx;
-  }
-
-  if(jsub_ref == npy-1){
-    mynbr[1][1] = -1;
-  }
-  else {
-    mynbr[1][1] = myid + npx;
-  }
-
-  if(ksub_ref == 0){
-    mynbr[2][0] = -1;
-  }
-  else {
-    mynbr[2][0] = myid - npx * npy;
-  }
-
-  if(ksub_ref == npz-1){
-    mynbr[2][1] = -1;
-  }
-  else {
-    mynbr[2][1] = myid + npx * npy;
-  }
 
   // create the kernel object based on nesting
   kernel = createKernel(input_vars->nesting, 3);
@@ -216,16 +184,6 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
   /* Create buffer info for sweeping if using Diamond-Difference */
   CreateBufferInfo(this);
-
-
-
-
-
-
-
-
-
-
 
   computeSweepIndexSets(input_vars->block_size);
 }

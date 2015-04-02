@@ -66,7 +66,6 @@ int SweepSolver_GroupSet (int group_set, Grid_Data *grid_data)
 {
   Comm *comm = grid_data->comm;
 
-
   int num_direction_sets = grid_data->num_direction_sets;
 
   std::vector<Subdomain *> dir_sets;
