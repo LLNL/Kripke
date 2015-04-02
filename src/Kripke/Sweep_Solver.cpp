@@ -4,7 +4,7 @@
 
 #include <Kripke.h>
 #include <Kripke/Comm.h>
-#include <Kripke/User_Data.h>
+#include <Kripke/Grid.h>
 #include <vector>
 #include <stdio.h>
 
@@ -14,15 +14,14 @@
  * SweepSolverSolve
  *----------------------------------------------------------------------*/
 
-int SweepSolver (User_Data *user_data)
+int SweepSolver (Grid_Data *grid_data)
 {
-  Kernel *kernel = user_data->kernel;
-  Grid_Data *grid_data = user_data->grid_data;
+  Kernel *kernel = grid_data->kernel;
 
-  BLOCK_TIMER(user_data->timing, Solve);
+  BLOCK_TIMER(grid_data->timing, Solve);
 
   // Loop over iterations
-  for(int iter = 0;iter < user_data->niter;++ iter){
+  for(int iter = 0;iter < grid_data->niter;++ iter){
 
     /*
      * Compute the RHS
@@ -30,7 +29,7 @@ int SweepSolver (User_Data *user_data)
 
     // Discrete to Moments transformation
     {
-      BLOCK_TIMER(user_data->timing, LTimes);
+      BLOCK_TIMER(grid_data->timing, LTimes);
       kernel->LTimes(grid_data);
     }
 
@@ -41,7 +40,7 @@ int SweepSolver (User_Data *user_data)
 
     // Moments to Discrete transformation
     {
-      BLOCK_TIMER(user_data->timing, LPlusTimes);
+      BLOCK_TIMER(grid_data->timing, LPlusTimes);
       kernel->LPlusTimes(grid_data);
     }
 
@@ -49,9 +48,9 @@ int SweepSolver (User_Data *user_data)
      * Sweep each Group Set
      */
     {
-      BLOCK_TIMER(user_data->timing, Sweep);
-      for(int group_set = 0;group_set < user_data->num_group_sets;++ group_set){
-        SweepSolver_GroupSet(group_set, user_data);
+      BLOCK_TIMER(grid_data->timing, Sweep);
+      for(int group_set = 0;group_set < grid_data->num_group_sets;++ group_set){
+        SweepSolver_GroupSet(group_set, grid_data);
       }
     }
   }
@@ -63,13 +62,12 @@ int SweepSolver (User_Data *user_data)
  * SweepSolverSolveDD
  *----------------------------------------------------------------------*/
 
-int SweepSolver_GroupSet (int group_set, User_Data *user_data)
+int SweepSolver_GroupSet (int group_set, Grid_Data *grid_data)
 {
-  Grid_Data  *grid_data         = user_data->grid_data;
-  Comm *comm = user_data->comm;
+  Comm *comm = grid_data->comm;
 
 
-  int num_direction_sets = user_data->num_direction_sets;
+  int num_direction_sets = grid_data->num_direction_sets;
 
   std::vector<Subdomain *> dir_sets;
   for(int s = 0;s < grid_data->subdomains.size();++ s){
@@ -83,18 +81,6 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 
-
-
-  /*spectral reflection rules relating eminating and iminating fluxes
-    for each of the 8 octant for the planes: i,j,k*/
-  int r_rules[8][3] = {{1, 3, 4},
-                       {0, 2, 5},
-                       {3, 1, 6},
-                       {2, 0, 7},
-                       {5, 7, 0},
-                       {4, 6, 1},
-                       {7, 5, 2},
-                       {6, 4, 3}, };
   int ref_d, octant, ref_octant, fundamental_d;
   int emminating_directions_left;
 
@@ -106,8 +92,8 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
   int kn = grid_data->mynbr[2][0];
   int kp = grid_data->mynbr[2][1];
 
-  int groups_dirs = user_data->num_groups_per_set
-      * user_data->num_directions_per_set;
+  int groups_dirs = grid_data->num_groups_per_set
+      * grid_data->num_directions_per_set;
   int local_imax = grid_data->nzones[0];
   int local_jmax = grid_data->nzones[1];
   int local_kmax = grid_data->nzones[2];
@@ -205,9 +191,9 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
     }
   }
 
+  /* Loop until we have finished all of our work */
   int directions_left = num_direction_sets;
   std::vector<int> swept(num_direction_sets, 0.0);
-
   while(directions_left){
 
     /* Check for a message from the 6 neighboring subdomains. */
@@ -245,8 +231,8 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
 
       /* Use standard Diamond-Difference sweep */
       {
-        BLOCK_TIMER(user_data->timing, Sweep_Kernel);
-        user_data->kernel->sweep(grid_data, dir_sets[ds], i_plane_data[ds], j_plane_data[ds], k_plane_data[ds]);
+        BLOCK_TIMER(grid_data->timing, Sweep_Kernel);
+        grid_data->kernel->sweep(grid_data, dir_sets[ds], i_plane_data[ds], j_plane_data[ds], k_plane_data[ds]);
       }
 
       Directions *directions = dir_sets[ds]->directions;
@@ -273,18 +259,16 @@ int SweepSolver_GroupSet (int group_set, User_Data *user_data)
  * CreateBufferInfo
  *----------------------------------------------------------------------*/
 
-void CreateBufferInfo(User_Data *user_data)
+void CreateBufferInfo(Grid_Data *grid_data)
 {
-  Grid_Data  *grid_data  = user_data->grid_data;
-
   int *nzones          = grid_data->nzones;
   int local_imax, local_jmax, local_kmax;
-  int num_direction_sets = user_data->num_direction_sets;
+  int num_direction_sets = grid_data->num_direction_sets;
   int len[6], nm[6], length;
 
   // get group and direction dimensionality
-  int dirs_groups = user_data->num_directions_per_set
-                  * user_data->num_groups_per_set;
+  int dirs_groups = grid_data->num_directions_per_set
+                  * grid_data->num_groups_per_set;
 
   local_imax = nzones[0];
   local_jmax = nzones[1];
@@ -322,5 +306,5 @@ void CreateBufferInfo(User_Data *user_data)
     else {nm[5]++; }
   }
 
-  user_data->comm = new Comm( len, nm );
+  grid_data->comm = new Comm( len, nm );
 }

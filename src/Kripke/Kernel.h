@@ -7,7 +7,6 @@
 
 #include <Kripke.h>
 
-struct User_Data;
 struct Grid_Data;
 struct SubTVec;
 struct Subdomain;
@@ -26,7 +25,7 @@ class Kernel {
     virtual Nesting_Order nestingPhi(void) const = 0;
 
     // Variable Creation
-    void allocateStorage(User_Data *user_data);
+    void allocateStorage(Grid_Data *grid_data);
 
     // Computational Kernels
     virtual void LTimes(Grid_Data *grid_data) = 0;

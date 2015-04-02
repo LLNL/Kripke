@@ -1,5 +1,5 @@
 #include<Kripke/Kernel/Kernel_3d_GDZ.h>
-#include<Kripke/User_Data.h>
+#include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 
 Kernel_3d_GDZ::Kernel_3d_GDZ() {
@@ -21,7 +21,7 @@ Nesting_Order Kernel_3d_GDZ::nestingPhi(void) const {
 void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data) {
   // Outer parameters
   int num_zones = grid_data->num_zones;
-  int nidx = grid_data->nm_table.size();
+  int nidx = grid_data->total_num_moments;
 	int num_directions = grid_data->ell->directions;
 
   // Clear phi
@@ -71,7 +71,7 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data) {
 void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
   int num_zones = grid_data->num_zones;
-  int nidx = grid_data->nm_table.size();
+  int nidx = grid_data->total_num_moments;
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();

@@ -25,16 +25,6 @@ Subdomain::~Subdomain(){
 }
 
 
-void Subdomain::allocate(Grid_Data *grid_data, Nesting_Order nest){
-  delete psi;
-  psi = new SubTVec(nest,
-      num_groups, num_directions, grid_data->num_zones);
-
-  delete rhs;
-  rhs = new SubTVec(nest,
-      num_groups, num_directions, grid_data->num_zones);
-}
-
 /**
  * Randomizes data for a set.
  */
@@ -74,22 +64,120 @@ bool Subdomain::compare(Subdomain const &b, double tol, bool verbose){
  * in each spatial direction.
  *
 */
-Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
+Grid_Data::Grid_Data(Input_Variables *input_vars)
 {
+  /* Set the processor grid dimensions */
+  int R = (input_vars->npx)*(input_vars->npy)*(input_vars->npz);;
+  /* Check size of PQR_group is the same as MPI_COMM_WORLD */
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if(R != size){
+    int myid;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+    if(myid == 0){
+      printf("ERROR: Incorrect number of MPI tasks. Need %d MPI tasks.", R);
+    }
+    error_exit(1);
+  }
+
+  /* Compute the local coordinates in the processor decomposition */
   int npx = input_vars->npx;
   int npy = input_vars->npy;
   int npz = input_vars->npz;
-  int nx_g = input_vars->nx;
-  int ny_g = input_vars->ny;
-  int nz_g = input_vars->nz;
 
-  /* Compute the local coordinates in the processor decomposition */
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 
   int isub_ref = myid % npx;
   int jsub_ref = ((myid - isub_ref) / npx) % npy;
   int ksub_ref = (myid - isub_ref - npx*jsub_ref) / (npx * npy);
+
+
+  // create the kernel object based on nesting
+  kernel = createKernel(input_vars->nesting, 3);
+
+  // Create base quadrature set
+  InitDirections(this, input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset);
+
+  num_direction_sets = 8*input_vars->num_dirsets_per_octant;
+  num_directions_per_set = input_vars->num_dirs_per_dirset;
+  num_group_sets = input_vars->num_groupsets;
+  num_groups_per_set = input_vars->num_groups_per_groupset;
+  num_zone_sets = 1;
+
+
+
+  int nx_g = input_vars->nx;
+  int ny_g = input_vars->ny;
+  int nz_g = input_vars->nz;
+
+  computeGrid(0, npx, nx_g, isub_ref, 0.0, 1.0);
+  computeGrid(1, npy, ny_g, jsub_ref, 0.0, 1.0);
+  computeGrid(2, npz, nz_g, ksub_ref, 0.0, 1.0);
+
+  nzones[0] = deltas[0].size()-2;
+  nzones[1] = deltas[1].size()-2;
+  nzones[2] = deltas[2].size()-2;
+  num_zones= nzones[0] * nzones[1] * nzones[2];
+
+  num_legendre = input_vars->legendre_order;
+  total_num_moments = (num_legendre+1)*(num_legendre+1);
+
+  int num_subdomains = num_direction_sets*num_group_sets*num_zone_sets;
+
+  // Initialize Subdomains
+  subdomains.resize(num_subdomains);
+  int group0 = 0;
+  for(int gs = 0;gs < num_group_sets;++ gs){
+    int dir0 = 0;
+    for(int ds = 0;ds < num_direction_sets;++ ds){
+      for(int zs = 0;zs < num_zone_sets;++ zs){
+        int sdom_id = gs*num_direction_sets*num_zone_sets +
+                   ds*num_zone_sets +
+                   zs;
+
+        Subdomain &sdom = subdomains[sdom_id];
+
+        // set the set indices
+        sdom.idx_group_set = gs;
+        sdom.idx_dir_set = ds;
+        sdom.idx_zone_set = zs;
+
+        sdom.num_groups = input_vars->num_groups_per_groupset;
+        sdom.group0 = group0;
+
+        sdom.num_directions = input_vars->num_dirs_per_dirset;
+        sdom.direction0 = dir0;
+        sdom.directions = &directions[dir0];
+
+        sdom.num_zones = num_zones;
+
+        // allocate the storage for solution and source terms
+        Nesting_Order nest = kernel->nestingPsi();
+        sdom.psi = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.num_zones);
+        sdom.rhs = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.num_zones);
+
+      }
+      dir0 += input_vars->num_dirs_per_dirset;
+    }
+
+    group0 += input_vars->num_groups_per_groupset;
+  }
+
+  /* Set ncalls */
+  niter = input_vars->niter;
+
+  // setup cross-sections
+  sigma_tot.resize(num_group_sets*num_groups_per_set, 0.0);
+
+  kernel->allocateStorage(this);
+
+  /* Create buffer info for sweeping if using Diamond-Difference */
+  CreateBufferInfo(this);
+
+
+
+
 
   /* Compute the processor neighbor array assuming a lexigraphic ordering */
   if(isub_ref == 0){
@@ -134,17 +222,16 @@ Grid_Data::Grid_Data(Input_Variables *input_vars, Directions *directions)
     mynbr[2][1] = myid + npx * npy;
   }
 
-  computeGrid(0, npx, nx_g, isub_ref, 0.0, 1.0);
-  computeGrid(1, npy, ny_g, jsub_ref, 0.0, 1.0);
-  computeGrid(2, npz, nz_g, ksub_ref, 0.0, 1.0);
-  num_zones = nzones[0]*nzones[1]*nzones[2];
 
-  num_moments = input_vars->legendre_order;
+
+
 
   computeSweepIndexSets(input_vars->block_size);
 }
 
 Grid_Data::~Grid_Data(){
+  delete comm;
+  delete kernel;
   delete sigt;
   delete phi;
   delete phi_out;
@@ -156,6 +243,16 @@ Grid_Data::~Grid_Data(){
  * Randomizes all variables and matrices for testing suite.
  */
 void Grid_Data::randomizeData(void){
+  for(int i = 0;i < sigma_tot.size();++i){
+    sigma_tot[i] = drand48();
+  }
+
+  for(int i = 0;i < directions.size();++i){
+    directions[i].xcos = drand48();
+    directions[i].ycos = drand48();
+    directions[i].zcos = drand48();
+  }
+
   for(int d = 0;d < 3;++ d){
     for(int i = 0;i < deltas[d].size();++ i){
       deltas[d][i] = drand48();
@@ -178,6 +275,9 @@ void Grid_Data::randomizeData(void){
  * Correctly copies data from one nesting to another.
  */
 void Grid_Data::copy(Grid_Data const &b){
+  sigma_tot = b.sigma_tot;
+  directions = b.directions;
+
   for(int d = 0;d < 3;++ d){
     deltas[d] = b.deltas[d];
   }
@@ -199,6 +299,24 @@ void Grid_Data::copy(Grid_Data const &b){
  */
 bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   bool is_diff = false;
+
+
+  is_diff |= compareVector("sigma_tot", sigma_tot, b.sigma_tot, tol, verbose);
+
+  for(int i = 0;i < directions.size();++i){
+    std::stringstream dirname;
+    dirname << "directions[" << i << "]";
+
+    is_diff |= compareScalar(dirname.str()+".xcos",
+        directions[i].xcos, b.directions[i].xcos, tol, verbose);
+
+    is_diff |= compareScalar(dirname.str()+".ycos",
+        directions[i].ycos, b.directions[i].ycos, tol, verbose);
+
+    is_diff |= compareScalar(dirname.str()+".zcos",
+        directions[i].zcos, b.directions[i].zcos, tol, verbose);
+  }
+
   is_diff |= compareVector("deltas[0]", deltas[0], b.deltas[0], tol, verbose);
   is_diff |= compareVector("deltas[1]", deltas[1], b.deltas[1], tol, verbose);
   is_diff |= compareVector("deltas[2]", deltas[2], b.deltas[2], tol, verbose);

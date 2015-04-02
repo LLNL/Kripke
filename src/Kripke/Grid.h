@@ -3,6 +3,8 @@
 
 #include <Kripke/Directions.h>
 #include <Kripke/Kernel.h>
+#include <Kripke/Comm.h>
+#include <Kripke/Timing.h>
 #include <mpi.h>
 #include <vector>
 
@@ -20,7 +22,6 @@ struct Subdomain {
   Subdomain();
   ~Subdomain();
 
-  void allocate(Grid_Data *grid_data, Nesting_Order nesting);
   void randomizeData(void);
   void copy(Subdomain const &b);
   bool compare(Subdomain const &b, double tol, bool verbose);
@@ -31,6 +32,7 @@ struct Subdomain {
 
   int num_groups;       // Number of groups in this set
   int num_directions;   // Number of directions in this set
+  int num_zones;        // Number of zones in this set
 
   int group0;           // Starting global group id
   int direction0;       // Starting global direction id
@@ -62,18 +64,38 @@ struct Grid_Sweep_Block {
  */
 struct Grid_Data {
 public:
-  Grid_Data(Input_Variables *input_vars, Directions *directions);
+  explicit Grid_Data(Input_Variables *input_vars);
   ~Grid_Data();
 
   void randomizeData(void);
   void copy(Grid_Data const &b);
   bool compare(Grid_Data const &b, double tol, bool verbose);
 
-  int num_zones;                    // Total Number of zones in this grid
-  int nzones[3];                    // Number of zones in each dimension
+  Timing timing;
+
+  int niter;
+
+  double source_value;
+
+  std::vector<double> sigma_tot;            // Cross section data
+
+  int num_group_sets;                       // Number of group-sets
+  int num_groups_per_set;                   // How many groups in each set
+  int num_direction_sets;                   // Number of direction-sets
+  int num_directions_per_set;               // Number of directions per dir set
+  int num_zone_sets;
+
+  std::vector<Directions> directions;       // Direction data
+
+  Kernel *kernel;
+  Comm *comm;
+
+
 
   int mynbr[3][2];                  // Neighboring MPI ranks in each dimension
 
+  int num_zones;
+  int nzones[3];                    // Number of zones in each dimension
   std::vector<double> deltas[3];    // Spatial grid deltas in each dimension
 
   // Sweep index sets for each octant
@@ -83,15 +105,14 @@ public:
   std::vector<Subdomain> subdomains;
 
   // Variables:
-  int num_moments;
+  int num_legendre;
+  int total_num_moments;
   SubTVec *sigt;              // Zonal per-group cross-section
   SubTVec *phi;               // Moments of psi
   SubTVec *phi_out;           // Scattering source (moments)
 
   SubTVec *ell;               // L matrix in nm_offset coordinates
   SubTVec *ell_plus;          // L+ matrix in nm_offset coordinates
-
-  std::vector<int> nm_table;  // n, m indicies for traversing ell, ell_plus
 
 private:
   void computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax);

@@ -1,5 +1,5 @@
 #include <Kripke/Directions.h>
-#include <Kripke/User_Data.h>
+#include <Kripke/Grid.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -33,13 +33,12 @@ namespace {
 
 
 /**
- * Initializes the quadrature set information for a User_Data object.
+ * Initializes the quadrature set information for a Grid_Data object.
  * This guarantees that each <GS,DS> pair have a single originating octant.
  */
-void InitDirections(User_Data *user_data, int num_directions_per_octant)
+void InitDirections(Grid_Data *grid_data, int num_directions_per_octant)
 {
-  Grid_Data *grid_data = user_data->grid_data;
-  std::vector<Directions> &directions = user_data->directions;
+  std::vector<Directions> &directions = grid_data->directions;
   int d, id, jd, kd, num_directions,
       direction_concurrency, full_moments;
   int in, ip, jn, jp, kn, kp;

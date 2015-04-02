@@ -7,7 +7,7 @@
 
 #include <vector>
 
-class User_Data;
+class Grid_Data;
 
 /**
  * Contains information needed for one quadrature set direction.
@@ -51,6 +51,6 @@ struct Directions{
 };
 
 
-void InitDirections(User_Data *grid_data, int num_directions_per_octant);
+void InitDirections(Grid_Data *grid_data, int num_directions_per_octant);
 
 #endif

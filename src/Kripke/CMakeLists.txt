@@ -6,7 +6,6 @@ set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
   Kripke/Kernel.cpp  
   Kripke/Sweep_Solver.cpp  
   Kripke/Timing.cpp  
-  Kripke/User_Data.cpp
     
   Kripke/Kernel/Kernel_3d_GDZ.cpp
   Kripke/Kernel/Kernel_3d_DGZ.cpp

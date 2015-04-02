@@ -1,5 +1,5 @@
 #include<Kripke/Kernel/Kernel_3d_ZDG.h>
-#include<Kripke/User_Data.h>
+#include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 
 Kernel_3d_ZDG::Kernel_3d_ZDG() {
@@ -21,8 +21,8 @@ Nesting_Order Kernel_3d_ZDG::nestingPhi(void) const {
 void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
   // Outer parameters
   int num_zones = grid_data->num_zones;
-  int num_moments = grid_data->num_moments;
-  int nidx = grid_data->nm_table.size();
+  int num_moments = grid_data->num_legendre;
+  int nidx = grid_data->total_num_moments;
   int num_groups = grid_data->phi->groups;
 
   // Clear phi
@@ -71,8 +71,8 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
 void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
   int num_zones = grid_data->num_zones;
-  int num_moments = grid_data->num_moments;
-  int nidx = grid_data->nm_table.size();
+  int num_moments = grid_data->num_legendre;
+  int nidx = grid_data->total_num_moments;
   int num_groups = grid_data->phi_out->groups;
 
   // Loop over Subdomains

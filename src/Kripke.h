@@ -18,15 +18,15 @@
 #endif
 
 // Forward Decl
-struct User_Data;
+struct Grid_Data;
 
 #define KRESTRICT __restrict__
 
 
 // In Kripke/Sweep_Solver.cpp
-int SweepSolver(User_Data *user_data);
-int SweepSolver_GroupSet (int group_set, User_Data *user_data);
-void CreateBufferInfo(User_Data *user_data);
+int SweepSolver(Grid_Data *grid_data);
+int SweepSolver_GroupSet (int group_set, Grid_Data *grid_data);
+void CreateBufferInfo(Grid_Data *grid_data);
 
 /**
  * Tags for choosing which data nesting to be chosen

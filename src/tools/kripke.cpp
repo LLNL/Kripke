@@ -1,6 +1,6 @@
 #include<Kripke.h>
 #include<Kripke/Input_Variables.h>
-#include<Kripke/User_Data.h>
+#include<Kripke/Grid.h>
 #include"testKernels.h"
 #include<stdio.h>
 #include<string.h>
@@ -110,12 +110,12 @@ namespace {
 void runPoint(int point, int num_tasks, int num_threads, Input_Variables &input_variables, FILE *out_fp, std::string const &run_name){
 
   /* Allocate problem */
-  User_Data *user_data = new User_Data(&input_variables);
+  Grid_Data *grid_data = new Grid_Data(&input_variables);
 
-  user_data->timing.setPapiEvents(papi_names);
+  grid_data->timing.setPapiEvents(papi_names);
 
   /* Run the solver */
-  SweepSolver(user_data);
+  SweepSolver(grid_data);
 
   std::string nesting = nestingString(input_variables.nesting);
 
@@ -160,15 +160,15 @@ void runPoint(int point, int num_tasks, int num_threads, Input_Variables &input_
 
 
     if(out_fp != NULL){
-      user_data->timing.printTabular(point == 1, headers, values, out_fp);
+      grid_data->timing.printTabular(point == 1, headers, values, out_fp);
       fflush(out_fp);
     }
-    user_data->timing.print();
+    grid_data->timing.print();
     printf("\n\n");
   }
 
   /* Cleanup */
-  delete user_data;
+  delete grid_data;
 }
 
 int main(int argc, char **argv) {

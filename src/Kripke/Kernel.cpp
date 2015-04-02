@@ -1,7 +1,6 @@
 #include<Kripke/Kernel.h>
 #include<Kripke/Comm.h>
 #include<Kripke/Grid.h>
-#include<Kripke/User_Data.h>
 #include<Kripke/SubTVec.h>
 
 #include<Kripke/Kernel/Kernel_3d_GDZ.h>
@@ -22,29 +21,16 @@ Kernel::~Kernel(){
 /**
  * Allocates kernel-specific storage for the User_Data object.
  */
-void Kernel::allocateStorage(User_Data *user_data){
-  Grid_Data *grid_data = user_data->grid_data;
+void Kernel::allocateStorage(Grid_Data *grid_data){
   Nesting_Order nest = nestingPsi();
-  for(int s = 0;s < grid_data->subdomains.size();++ s){
-    grid_data->subdomains[s].allocate(grid_data, nest);
-  }
-
   // Allocate moments variables
-  int num_moments = grid_data->num_moments;
+  int num_moments = grid_data->num_legendre;
   int num_dims = 3;
-  int total_dirs = user_data->directions.size();
+  int total_dirs = grid_data->directions.size();
   int num_zones = grid_data->num_zones;
-  int num_groups = user_data->num_group_sets * user_data->num_groups_per_set;
+  int num_groups = grid_data->num_group_sets * grid_data->num_groups_per_set;
 
-  // Allocate L, L+ table nm indicies which make threading easier
-  grid_data->nm_table.clear();
-  for (int n = 0; n < num_moments; n++) {
-    for (int m = -n; m <= n; m++) {
-      grid_data->nm_table.push_back(n);
-    }
-  }
-
-  int total_moments = grid_data->nm_table.size();
+  int total_moments = grid_data->total_num_moments;
   grid_data->phi = new SubTVec(nestingPhi(), num_groups, total_moments, num_zones);
   grid_data->phi_out = new SubTVec(nestingPhi(), num_groups, total_moments, num_zones);
 
