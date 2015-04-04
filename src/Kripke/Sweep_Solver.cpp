@@ -8,10 +8,10 @@
 #include <vector>
 #include <stdio.h>
 
-/*----------------------------------------------------------------------
- * SweepSolverSolve
- *----------------------------------------------------------------------*/
 
+/**
+  Run solver iterations.
+*/
 int SweepSolver (Grid_Data *grid_data)
 {
   Kernel *kernel = grid_data->kernel;
@@ -47,8 +47,30 @@ int SweepSolver (Grid_Data *grid_data)
      */
     {
       BLOCK_TIMER(grid_data->timing, Sweep);
-      for(int group_set = 0;group_set < grid_data->num_group_sets;++ group_set){
-        SweepSolver_GroupSet(group_set, grid_data);
+
+      if(true){
+        // Create a list of all groups
+        std::vector<int> sdom_list(grid_data->subdomains.size());
+        for(int i = 0;i < grid_data->subdomains.size();++ i){
+          sdom_list[i] = i;
+        }
+
+        // Sweep everything
+        SweepSubdomains(sdom_list, grid_data);
+      }
+      else{
+        for(int group_set = 0;group_set < grid_data->num_group_sets;++ group_set){
+          std::vector<int> sdom_list;
+          // Add all subdomains for this groupset
+          for(int s = 0;s < grid_data->subdomains.size();++ s){
+            if(grid_data->subdomains[s].idx_group_set == group_set){
+              sdom_list.push_back(s);
+            }
+          }
+
+          // Sweep the groupset
+          SweepSubdomains(sdom_list, grid_data);
+        }
       }
     }
   }
@@ -56,20 +78,19 @@ int SweepSolver (Grid_Data *grid_data)
 }
 
 
-/*----------------------------------------------------------------------
- * SweepSolverSolveDD
- *----------------------------------------------------------------------*/
 
-int SweepSolver_GroupSet (int group_set, Grid_Data *grid_data)
+/**
+  Perform full parallel sweep algorithm on subset of subdomains.
+*/
+int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
 {
   // Create a new sweep communicator object
   SweepComm sweep_comm;
 
-  // Add all subdomains for this groupset
-  for(int s = 0;s < grid_data->subdomains.size();++ s){
-    if(grid_data->subdomains[s].idx_group_set == group_set){
-      sweep_comm.addSubdomain(s, grid_data->subdomains[s]);
-    }
+  // Add all subdomains in our list
+  for(int i = 0;i < subdomain_list.size();++ i){
+    int sdom_id = subdomain_list[i];
+    sweep_comm.addSubdomain(sdom_id, grid_data->subdomains[sdom_id]);
   }
 
   /* Loop until we have finished all of our work */
@@ -96,4 +117,5 @@ int SweepSolver_GroupSet (int group_set, Grid_Data *grid_data)
 
   return(0);
 }
+
 

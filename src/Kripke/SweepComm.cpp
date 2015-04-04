@@ -1,16 +1,3 @@
-/*
-
-   This is the header file containing the function prototypes
-   for the communication layer implemented atop MPI.  This header
-   needs to be included in any file containing functions that call
-   functions in the communication layer.  In effect, the function
-   prototypes in {\bf comm.h} define the communication layer.  That
-   is, if the layer needs to be ported to a new machine or
-   communication system, all of the functions declared in this
-   prototype must be implemented.
-
-*/
-
 #include <Kripke/SweepComm.h>
 #include <Kripke/SubTVec.h>
 #include <Kripke/Grid.h>

@@ -36,9 +36,11 @@ struct runSweep {
   std::string name(void) const { return "Sweep"; }
 
   void operator ()(Grid_Data *grid_data) const {
-    for(int group_set = 0;group_set < grid_data->num_group_sets;++ group_set){
-      SweepSolver_GroupSet(group_set, grid_data);
+    std::vector<int> sdom_list(grid_data->subdomains.size());
+    for(int i = 0;i < grid_data->subdomains.size();++ i){
+      sdom_list[i] = i;
     }
+    SweepSubdomains(sdom_list, grid_data);
   }
 };
 
