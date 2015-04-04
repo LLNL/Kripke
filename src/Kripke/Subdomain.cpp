@@ -18,11 +18,17 @@ Subdomain::Subdomain() :
   rhs(NULL),
   sigt(NULL)
 {
+  plane_data[0] = NULL;
+  plane_data[1] = NULL;
+  plane_data[2] = NULL;
 }
 Subdomain::~Subdomain(){
   delete psi;
   delete rhs;
   delete sigt;
+  delete plane_data[0];
+  delete plane_data[1];
+  delete plane_data[2];
 }
 
 

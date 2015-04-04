@@ -86,7 +86,7 @@ int SweepSolver_GroupSet (int group_set, Grid_Data *grid_data)
         BLOCK_TIMER(grid_data->timing, Sweep_Kernel);
 
         Subdomain &sdom = grid_data->subdomains[sdom_id];
-        grid_data->kernel->sweep(grid_data, &sdom, &sdom.plane_data[0][0], &sdom.plane_data[1][0], &sdom.plane_data[2][0]);
+        grid_data->kernel->sweep(&sdom);
       }
 
       // Mark as complete (and do any communication)

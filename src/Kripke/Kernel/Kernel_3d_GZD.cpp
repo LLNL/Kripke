@@ -125,8 +125,7 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
 #define Zonal_INDEX(i, j, k) (i) + (local_imax)*(j) \
   + (local_imax)*(local_jmax)*(k)
 
-void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Subdomain *sdom,
-    double *i_plane_ptr, double *j_plane_ptr, double *k_plane_ptr) {
+void Kernel_3d_GZD::sweep(Subdomain *sdom) {
   int num_directions = sdom->num_directions;
   int num_groups = sdom->num_groups;
   int num_zones = sdom->num_zones;
@@ -141,13 +140,10 @@ void Kernel_3d_GZD::sweep(Grid_Data *grid_data, Subdomain *sdom,
   double *dy = &sdom->deltas[1][0];
   double *dz = &sdom->deltas[2][0];
 
-  // Alias the MPI data with a SubTVec for the face data
-  SubTVec i_plane(nestingPsi(), num_groups, num_directions,
-      local_jmax * local_kmax, i_plane_ptr);
-  SubTVec j_plane(nestingPsi(), num_groups, num_directions,
-      local_imax * local_kmax, j_plane_ptr);
-  SubTVec k_plane(nestingPsi(), num_groups, num_directions,
-      local_imax * local_jmax, k_plane_ptr);
+  // Upwind/Downwind face flux data
+  SubTVec &i_plane = *sdom->plane_data[0];
+  SubTVec &j_plane = *sdom->plane_data[1];
+  SubTVec &k_plane = *sdom->plane_data[2];
 
   // All directions have same id,jd,kd, since these are all one Direction Set
   // So pull that information out now

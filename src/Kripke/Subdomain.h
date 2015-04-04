@@ -19,9 +19,12 @@ struct Grid_Sweep_Block {
   int inc_i, inc_j, inc_k; // increment
 };
 
+/**
+  Describes a neighboring Subdomain using both mpi-rank and subdomin id
+*/
 struct Neighbor{
-  int mpi_rank;
-  int subdomain_id;
+  int mpi_rank;     // Neighbors MPI rank, or -1 for boundary condition
+  int subdomain_id; // Subdomain ID of neighbor
 };
 
 /**
@@ -55,11 +58,11 @@ struct Subdomain {
   Grid_Sweep_Block sweep_block;
 
   // Neighbors
-  Neighbor upwind[3];
-  Neighbor downwind[3];
+  Neighbor upwind[3];   // Upwind dependencies in x,y,z
+  Neighbor downwind[3]; // Downwind neighbors in x,y,z
 
   // Sweep boundary data
-  std::vector<double> plane_data[3];
+  SubTVec *plane_data[3];
 
   // Variables
   SubTVec *psi;         // Solution

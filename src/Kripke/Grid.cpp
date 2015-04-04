@@ -113,9 +113,9 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
         sdom.num_zones = sdom.nzones[0] * sdom.nzones[1] * sdom.nzones[2];
 
         // allocate storage for the sweep boundary data
-        sdom.plane_data[0].resize(sdom.nzones[1] * sdom.nzones[2] * sdom.num_directions * sdom.num_groups);
-        sdom.plane_data[1].resize(sdom.nzones[0] * sdom.nzones[2] * sdom.num_directions * sdom.num_groups);
-        sdom.plane_data[2].resize(sdom.nzones[0] * sdom.nzones[1] * sdom.num_directions * sdom.num_groups);
+        sdom.plane_data[0] = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.nzones[1] * sdom.nzones[2]);
+        sdom.plane_data[1] = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.nzones[0] * sdom.nzones[2]);
+        sdom.plane_data[2] = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.nzones[0] * sdom.nzones[1]);
 
         // allocate the storage for solution and source terms
         sdom.psi = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.num_zones);

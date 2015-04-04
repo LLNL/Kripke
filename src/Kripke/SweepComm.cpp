@@ -12,6 +12,7 @@
 */
 
 #include <Kripke/SweepComm.h>
+#include <Kripke/SubTVec.h>
 #include <Kripke/Grid.h>
 
 #include <fcntl.h>
@@ -53,7 +54,7 @@ void SweepComm::addSubdomain(int sdom_id, Subdomain &sdom){
     int tag = mpi_rank + mpi_size*sdom_id;
 
     // Post the recieve
-    MPI_Irecv(&sdom.plane_data[dim][0], sdom.plane_data[dim].size(), MPI_DOUBLE, sdom.upwind[dim].mpi_rank,
+    MPI_Irecv(sdom.plane_data[dim]->ptr(), sdom.plane_data[dim]->elements, MPI_DOUBLE, sdom.upwind[dim].mpi_rank,
       tag, MPI_COMM_WORLD, &recv_requests[recv_requests.size()-1]);
 
     // increment number of dependencies
@@ -188,7 +189,7 @@ void SweepComm::markComplete(int sdom_id){
     int tag = sdom->downwind[dim].mpi_rank + mpi_size*sdom->downwind[dim].subdomain_id;
 
     // Post the send
-    MPI_Isend(&sdom->plane_data[dim][0], sdom->plane_data[dim].size(), MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
+    MPI_Isend(sdom->plane_data[dim]->ptr(), sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
       tag, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
   }
 }
