@@ -11,7 +11,7 @@
 
 */
 
-#include <Kripke/Comm.h>
+#include <Kripke/SweepComm.h>
 #include <Kripke/Grid.h>
 
 #include <fcntl.h>
@@ -21,7 +21,10 @@
 #include <stdio.h>
 
 
-// Adds a subdomain to the work queue
+/**
+  Adds a subdomain to the work queue.
+  Determines if upwind dependencies require communication, and posts appropirate Irecv's.
+*/
 void SweepComm::addSubdomain(int sdom_id, Subdomain &sdom){
   int mpi_rank, mpi_size;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -50,7 +53,7 @@ void SweepComm::addSubdomain(int sdom_id, Subdomain &sdom){
     int tag = mpi_rank + mpi_size*sdom_id;
 
     // Post the recieve
-    MPI_Irecv(&sdom.plane_data[dim], sdom.plane_data[dim].size(), MPI_DOUBLE, sdom.upwind[dim].mpi_rank,
+    MPI_Irecv(&sdom.plane_data[dim][0], sdom.plane_data[dim].size(), MPI_DOUBLE, sdom.upwind[dim].mpi_rank,
       tag, MPI_COMM_WORLD, &recv_requests[recv_requests.size()-1]);
 
     // increment number of dependencies
@@ -82,42 +85,45 @@ bool SweepComm::workRemaining(void){
   return false;
 }
 
-// Returns a vector of ready subdomains, and clears them from the ready queue
+/**
+  Checks for incomming messages, and returns a list of ready subdomain id's
+*/
 std::vector<int> SweepComm::readySubdomains(void){
   // Check for any recv requests that have completed
   int num_requests = recv_requests.size();
-  if(num_requests > 0){
-    bool done = false;
-    while(!done){
-      // Create array of status variables
-      std::vector<MPI_Status> recv_status(num_requests);
+  bool done = false;
+  while(!done && num_requests > 0){
+    // Create array of status variables
+    std::vector<MPI_Status> recv_status(num_requests);
 
-      // Ask if either one or none of the recvs have completed?
-      int index; // this will be the index of request that completed
-      int complete_flag; // this is set to TRUE if somthing completed
-      MPI_Testany(num_requests, &recv_requests[0], &index, &complete_flag, &recv_status[0]);
+    // Ask if either one or none of the recvs have completed?
+    int index; // this will be the index of request that completed
+    int complete_flag; // this is set to TRUE if somthing completed
+    MPI_Testany(num_requests, &recv_requests[0], &index, &complete_flag, &recv_status[0]);
 
-      if(complete_flag != 0){
-        // get subdomain that this completed for
-        int sdom_id = recv_subdomains[index];
+    if(complete_flag != 0){
 
-        // remove the request from the list
-        recv_requests.erase(recv_requests.begin()+index);
-        recv_subdomains.erase(recv_subdomains.begin()+index);
+      // get subdomain that this completed for
+      int sdom_id = recv_subdomains[index];
 
-        // decrement the dependency count for that subdomain
-        for(int i = 0;i < queue_sdom_ids.size();++ i){
-          if(queue_sdom_ids[i] == sdom_id){
-            queue_depends[i] --;
-            break;
-          }
+      // remove the request from the list
+      recv_requests.erase(recv_requests.begin()+index);
+      recv_subdomains.erase(recv_subdomains.begin()+index);
+      num_requests --;
+
+      // decrement the dependency count for that subdomain
+      for(int i = 0;i < queue_sdom_ids.size();++ i){
+        if(queue_sdom_ids[i] == sdom_id){
+          queue_depends[i] --;
+          break;
         }
       }
-      else{
-        done = true;
-      }
+    }
+    else{
+      done = true;
     }
   }
+
 
   // build up a list of ready subdomains
   std::vector<int> ready;
@@ -129,7 +135,9 @@ std::vector<int> SweepComm::readySubdomains(void){
   return ready;
 }
 
-// Marks subdomains as complete, and performs downwind communication
+/**
+  Marks subdomains as complete, and performs downwind communication
+*/
 void SweepComm::markComplete(int sdom_id){
   // find subdomain in queue
   int index;
@@ -140,7 +148,7 @@ void SweepComm::markComplete(int sdom_id){
   }
   if(index == queue_sdom_ids.size()){
     printf("Cannot find subdomain id %d in work queue\n", sdom_id);
-    error_exit(1);
+    MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
   Subdomain *sdom = queue_subdomains[index];
@@ -180,21 +188,8 @@ void SweepComm::markComplete(int sdom_id){
     int tag = sdom->downwind[dim].mpi_rank + mpi_size*sdom->downwind[dim].subdomain_id;
 
     // Post the send
-    MPI_Isend(&sdom->plane_data[dim], sdom->plane_data[dim].size(), MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
+    MPI_Isend(&sdom->plane_data[dim][0], sdom->plane_data[dim].size(), MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
       tag, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
   }
 }
 
-
-
-/*========================= MISCELLANEOUS ======================*/
-
-/**
-   error_exit() aborts the concurrent execution, passing the flag value
-   to lower-level (system-dependent) abort routines, which may ignore it.
-*/
-void error_exit(int flag)
-{
-  fflush(NULL);
-  MPI_Abort(MPI_COMM_WORLD, flag);
-}

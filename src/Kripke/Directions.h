@@ -23,31 +23,6 @@ struct Directions{
                             cosine is positive; = -1 if not). */
   int kd;                   /* direction flag (= 1 if z-direction
                             cosine is positive; = -1 if not). */
-  int i_src_subd;           /* Index of the neighboring spatial
-                            subdomain in the negative
-                            x-direction if id = 1 or positive
-                            x-direction if id = -1. */
-  int j_src_subd;           /* Index of the neighboring spatial
-                            subdomain in the negative
-                            y-direction if jd = 1 or positive
-                            y-direction if jd = -1. */
-  int k_src_subd;           /* Index of the neighboring spatial
-                            subdomain in the negative
-                            z-direction if kd = 1 or positive
-                            z-direction if kd = -1. */
-  int i_dst_subd;           /* Index of the neighboring spatial
-                            subdomain in the positive
-                            x-direction if id = 1 or negative
-                            x-direction if id = -1. */
-  int j_dst_subd;           /* Index of the neighboring spatial
-                            subdomain in the positive
-                            y-direction if jd = 1 or negative
-                            y-direction if jd = -1. */
-  int k_dst_subd;           /* Index of the neighboring spatial
-                            subdomain in the positive
-                            z-direction if kd = 1 or negative
-                            z-direction if kd = -1. */
-  int octant;
 };
 
 

@@ -25,7 +25,6 @@ class SweepComm {
   private:
     // These vectors contian the recieve requests
     std::vector<MPI_Request> recv_requests;
-    std::vector<double*> recv_buffers;
     std::vector<int> recv_subdomains;
 
     // These vectors have the subdomains, and the remaining dependencies
@@ -37,7 +36,6 @@ class SweepComm {
     std::vector<MPI_Request> send_requests;
 };
 
-void error_exit( int flag );
 
 
 #endif

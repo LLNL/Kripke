@@ -1,6 +1,6 @@
 
 set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
-  Kripke/Comm.cpp  
+  Kripke/SweepComm.cpp  
   Kripke/Directions.cpp  
   Kripke/Grid.cpp  
   Kripke/Kernel.cpp  

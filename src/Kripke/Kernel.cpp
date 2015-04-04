@@ -1,5 +1,4 @@
 #include<Kripke/Kernel.h>
-#include<Kripke/Comm.h>
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 
@@ -40,7 +39,6 @@ Kernel *createKernel(Nesting_Order nest, int num_dims){
     }
   }
 
-  error_exit(1);
-  return NULL;
+  MPI_Abort(MPI_COMM_WORLD, 1);
 }
 

@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
   int nprocs[3] = {1, 1, 1};
   int nzones[3] = {12, 12, 12};
   int lorder = 4;
-  int niter = 10;
+  int niter = 1; //10;
   bool test = false;
   bool perf_tools = false;
   int restart_point = 0;

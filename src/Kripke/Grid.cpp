@@ -1,6 +1,5 @@
 #include <Kripke/Grid.h>
 #include <Kripke/SubTVec.h>
-#include <Kripke/Comm.h>
 #include <Kripke/Input_Variables.h>
 
 #include <cmath>
@@ -81,22 +80,7 @@ bool Subdomain::compare(Subdomain const &b, double tol, bool verbose){
  * information and quadrature set sweeping direction.
  */
 void Subdomain::computeSweepIndexSet(void){
-
-  int octant = directions[0].octant;
-
-  int id, jd, kd;
-  switch(octant){
-    case 0: id = 1; jd = 1; kd = 1; break;
-    case 1: id = -1; jd = 1; kd = 1; break;
-    case 2: id = -1; jd = -1; kd = 1; break;
-    case 3: id = 1; jd = -1; kd = 1; break;
-    case 4: id = 1; jd = 1; kd = -1; break;
-    case 5: id = -1; jd = 1; kd = -1; break;
-    case 6: id = -1; jd = -1; kd = -1; break;
-    case 7: id = 1; jd = -1; kd = -1; break;
-  }
-
-  if(id > 0){
+  if(directions[0].id > 0){
     sweep_block.start_i = 0;
     sweep_block.end_i = nzones[0]-1;
     sweep_block.inc_i = 1;
@@ -107,7 +91,7 @@ void Subdomain::computeSweepIndexSet(void){
     sweep_block.inc_i = -1;
   }
 
-  if(jd > 0){
+  if(directions[0].jd > 0){
     sweep_block.start_j = 0;
     sweep_block.end_j = nzones[1]-1;
     sweep_block.inc_j = 1;
@@ -118,7 +102,7 @@ void Subdomain::computeSweepIndexSet(void){
     sweep_block.inc_j = -1;
   }
 
-  if(kd > 0){
+  if(directions[0].kd > 0){
     sweep_block.start_k = 0;
     sweep_block.end_k = nzones[2]-1;
     sweep_block.inc_k =  1;
@@ -152,7 +136,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
     if(myid == 0){
       printf("ERROR: Incorrect number of MPI tasks. Need %d MPI tasks.", R);
     }
-    error_exit(1);
+    MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
 
@@ -248,6 +232,23 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
         sdom.sigt = new SubTVec(kernel->nestingSigt(), sdom.num_groups, 1, sdom.num_zones);
 
         sdom.computeSweepIndexSet();
+
+        // Setup neighbor data
+        int dirs[3] = { sdom.directions[0].id, sdom.directions[0].jd, sdom.directions[0].kd};
+        for(int dim = 0;dim < 3;++ dim){
+          if(dirs[dim] > 0){
+            sdom.downwind[dim].mpi_rank = mynbr[dim][1];
+            sdom.downwind[dim].subdomain_id = sdom_id;
+            sdom.upwind[dim].mpi_rank = mynbr[dim][0];
+            sdom.upwind[dim].subdomain_id = sdom_id;
+          }
+          else{
+            sdom.downwind[dim].mpi_rank = mynbr[dim][0];
+            sdom.downwind[dim].subdomain_id = sdom_id;
+            sdom.upwind[dim].mpi_rank = mynbr[dim][1];
+            sdom.upwind[dim].subdomain_id = sdom_id;
+          }
+        }
 
       }
       dir0 += input_vars->num_dirs_per_dirset;

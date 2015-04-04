@@ -3,7 +3,6 @@
 
 #include <Kripke/Directions.h>
 #include <Kripke/Kernel.h>
-#include <Kripke/Comm.h>
 #include <Kripke/Timing.h>
 #include <mpi.h>
 #include <vector>

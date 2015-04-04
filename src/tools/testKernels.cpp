@@ -5,7 +5,6 @@
 
 #include <Kripke.h>
 #include <Kripke/Grid.h>
-#include <Kripke/Comm.h>
 #include <Kripke/Input_Variables.h>
 
 /**
@@ -86,7 +85,7 @@ void testKernel(Input_Variables &input_variables){
   bool is_diff = ref_data->compare(*grid_data, 1e-12, true);
   if(is_diff){
     if(myid == 0)printf("Differences found, bailing out\n");
-    error_exit(1);
+    MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
   // Cleanup

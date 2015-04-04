@@ -3,12 +3,10 @@
  *--------------------------------------------------------------------------*/
 
 #include <Kripke.h>
-#include <Kripke/Comm.h>
+#include <Kripke/SweepComm.h>
 #include <Kripke/Grid.h>
 #include <vector>
 #include <stdio.h>
-
-
 
 /*----------------------------------------------------------------------
  * SweepSolverSolve
@@ -64,6 +62,7 @@ int SweepSolver (Grid_Data *grid_data)
 
 int SweepSolver_GroupSet (int group_set, Grid_Data *grid_data)
 {
+  // Create a new sweep communicator object
   SweepComm sweep_comm;
 
   // Add all subdomains for this groupset
@@ -76,6 +75,7 @@ int SweepSolver_GroupSet (int group_set, Grid_Data *grid_data)
   /* Loop until we have finished all of our work */
   while(sweep_comm.workRemaining()){
 
+    // Get a list of subdomains that have met dependencies
     std::vector<int> sdom_ready = sweep_comm.readySubdomains();
 
     for(int idx = 0;idx < sdom_ready.size();++ idx){
