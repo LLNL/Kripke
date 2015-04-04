@@ -12,6 +12,8 @@
 */
 
 #include <Kripke/Comm.h>
+#include <Kripke/Grid.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <mpi.h>
@@ -19,186 +21,169 @@
 #include <stdio.h>
 
 
-/**
-   Initializes storage for messages (and associated status arrays)
-   posted in one of the 6 signed coordinate directions.  The signed coordinate
-   directions are enumerated by a key as follows:
-
-            key      direction
-             0       positive x
-             1       negative x
-             2       positive y
-             3       negative y
-             4       positive z
-             5       negative z
-
-   The parameters ``len'' and ``nm'' are each pointers to integer arrays of
-   length 6.  For key = 0, ..., 5, len[key] is the length (number of doubles)
-   of each message to be posted in the direction associated with key, and
-   nm[key] is the number of such messages being posted in the associated
-   direction.
-*/
-Comm::Comm(int * len, int *  nm){
-  int i, j, k;
-  int size;
-
-  size = 0;
-  buf_total = 0;
-  for(i=0; i<6; i++){
-    which_len[i] = len[i];
-    which_num[i] = nm[i];
-    size += len[i] * nm[i];   /* space for which direction bufs*/
-    buf_total += nm[i];
-  }
-
-  int mpi_rank;
+// Adds a subdomain to the work queue
+void SweepComm::addSubdomain(int sdom_id, Subdomain &sdom){
+  int mpi_rank, mpi_size;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-  if(mpi_rank == 0){
-    printf("Comm: allocating %d buffers (%lf megabytes)\n", buf_total, (double)(size*sizeof(double))/(1024.0*1024.0));
-  }
+  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 
-  buf_which[0] = 0;
-  for(i=1; i<6; i++){
-    buf_which[i] = buf_which[i-1] + which_num[i-1];
-  }
-
-  bptr_sv.resize(size);
-  double *bptr = &bptr_sv[0];
-
-  buf_pool.resize(buf_total);
-
-  for(i = 0; i < 6; i++){    /* for each "which" set */
-    k = which_len[i];       /* msg size in this set */
-    for(j = 0; j < which_num[i]; j++){  /* for each msg in the set */
-      buf_pool[buf_which[i] + j] = bptr;     /* ptr to next message */
-      bptr = bptr + k;    /* bump over this message */
+  // go thru each dimensions upwind neighbors, and add the dependencies
+  int num_depends = 0;
+  for(int dim = 0;dim < 3;++ dim){
+    // If it's a boundary condition, skip it
+    if(sdom.upwind[dim].mpi_rank < 0){
+      continue;
     }
+
+    // If it's an on-rank communication (from another subdomain)
+    if(sdom.upwind[dim].mpi_rank == mpi_rank){
+      // skip it, but track the dependency
+      num_depends ++;
+      continue;
+    }
+
+    // Add request to pending list
+    recv_requests.push_back(MPI_Request());
+    recv_subdomains.push_back(sdom_id);
+
+    // compute the tag id of THIS subdomain (tags are always based on destination)
+    int tag = mpi_rank + mpi_size*sdom_id;
+
+    // Post the recieve
+    MPI_Irecv(&sdom.plane_data[dim], sdom.plane_data[dim].size(), MPI_DOUBLE, sdom.upwind[dim].mpi_rank,
+      tag, MPI_COMM_WORLD, &recv_requests[recv_requests.size()-1]);
+
+    // increment number of dependencies
+    num_depends ++;
   }
 
-  buf_s_req.resize(buf_total);
-  buf_r_req.resize(buf_total);
-  buf_status.resize(buf_total);
-
-  buf_reset();
+  // add subdomain to queue
+  queue_sdom_ids.push_back(sdom_id);
+  queue_subdomains.push_back(&sdom);
+  queue_depends.push_back(num_depends);
 }
 
-/**
-   R_recv_dir() posts receives in the signed direction ``which''.  The number
-   of receives posted is nm[which], where nm[] is the array passed to
-   the constructor of Comm.  The argument ``r_member''
-   is the r coordinate of the node from which the nm[which] messages will
-   be sent.  R_recv_dir is non-blocking, i.e., it returns after posting
-   the receives without waiting for any messages to arrive.
-*/
-void Comm::R_recv_dir(int which, int r_member){
-  int i, j;
-
-  i = buf_which[which];     /* get to right buffer pool */
-  for(j = 0; j < which_num[which]; j++){
-    MPI_Irecv(buf_pool[i+j], which_len[which], MPI_DOUBLE, r_member,
-              0, MPI_COMM_WORLD, &buf_r_req[i+j]);
+// Checks if there are any outstanding subdomains to complete
+// false indicates all work is done, and all sends have completed
+bool SweepComm::workRemaining(void){
+  // If there are outstanding subdomains to process, return true
+  if(recv_requests.size() > 0 || queue_subdomains.size() > 0){
+    return true;
   }
 
-  buf_rec[which]+= 1;  /*record recv in process: += is debug error guard */
+  // Wait for all remaining sends to complete, then return false
+  int num_sends = send_requests.size();
+  if(num_sends > 0){
+    std::vector<MPI_Status> status(num_sends);
+    MPI_Waitall(num_sends, &send_requests[0], &status[0]);
+    send_requests.clear();
+  }
+
+  return false;
 }
 
-/**
-   R_recv_test() checks to see if any of the posted receives in the
-   signed direction ``which'' has been satisfied (i.e, a message has
-   arrived).  If no received message is pending, the function returns 0.
-   If a message has arrived, its address is assigned to *msg and the
-   function returns 1.
-*/
-int Comm::R_recv_test(int which,  double **msg){
+// Returns a vector of ready subdomains, and clears them from the ready queue
+std::vector<int> SweepComm::readySubdomains(void){
+  // Check for any recv requests that have completed
+  int num_requests = recv_requests.size();
+  if(num_requests > 0){
+    bool done = false;
+    while(!done){
+      // Create array of status variables
+      std::vector<MPI_Status> recv_status(num_requests);
 
+      // Ask if either one or none of the recvs have completed?
+      int index; // this will be the index of request that completed
+      int complete_flag; // this is set to TRUE if somthing completed
+      MPI_Testany(num_requests, &recv_requests[0], &index, &complete_flag, &recv_status[0]);
 
-  int i, j;
-  int done;      /* index of which finished, if any */
-  int flag;      /* 0 if none - 1 if someone finished */
-  MPI_Status status;    /* status of one that finished, if any */
+      if(complete_flag != 0){
+        // get subdomain that this completed for
+        int sdom_id = recv_subdomains[index];
 
-  i = buf_which[which];
-  j = buf_rec[which];
+        // remove the request from the list
+        recv_requests.erase(recv_requests.begin()+index);
+        recv_subdomains.erase(recv_subdomains.begin()+index);
 
-  if(j > 0){     /* non-blocking rcvS posted in this direction - any done?*/
-    int k, reqs_remain=0;
-
-    /* the following loop tests to see if there are any pending requests
-       before calling MPI_Testany.  The 1.2a version of the Edinburgh
-       T3D MPI port of MPI_Testany returned a true flag with a -1
-       index value if a list of null requests was passed to it
-       (ie. a bug)
-       */
-    for(k=0; k<which_num[which]; k++){
-      if(buf_r_req[i+k] != MPI_REQUEST_NULL){
-        reqs_remain++;
+        // decrement the dependency count for that subdomain
+        for(int i = 0;i < queue_sdom_ids.size();++ i){
+          if(queue_sdom_ids[i] == sdom_id){
+            queue_depends[i] --;
+            break;
+          }
+        }
+      }
+      else{
+        done = true;
       }
     }
+  }
 
-    if(reqs_remain > 0){
-      MPI_Testany(which_num[which], &buf_r_req[i], &done, &flag,
-                  &status);
+  // build up a list of ready subdomains
+  std::vector<int> ready;
+  for(int i = 0;i < queue_depends.size();++ i){
+    if(queue_depends[i] == 0){
+      ready.push_back(queue_sdom_ids[i]);
     }
-    else {
-      flag = 0;
+  }
+  return ready;
+}
+
+// Marks subdomains as complete, and performs downwind communication
+void SweepComm::markComplete(int sdom_id){
+  // find subdomain in queue
+  int index;
+  for(index = 0;index < queue_sdom_ids.size();++ index){
+    if(queue_sdom_ids[index] == sdom_id){
+      break;
+    }
+  }
+  if(index == queue_sdom_ids.size()){
+    printf("Cannot find subdomain id %d in work queue\n", sdom_id);
+    error_exit(1);
+  }
+
+  Subdomain *sdom = queue_subdomains[index];
+
+  // remove subdomain from queue
+  queue_sdom_ids.erase(queue_sdom_ids.begin()+index);
+  queue_subdomains.erase(queue_subdomains.begin()+index);
+  queue_depends.erase(queue_depends.begin()+index);
+
+  // post sends for downwind dependencies
+  int mpi_rank, mpi_size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+  for(int dim = 0;dim < 3;++ dim){
+    // If it's a boundary condition, skip it
+    if(sdom->downwind[dim].mpi_rank < 0){
+      continue;
     }
 
-    if(flag > 0){
-      *msg = buf_pool[i + done];
+    // If it's an on-rank communication (to another subdomain)
+    if(sdom->downwind[dim].mpi_rank == mpi_rank){
+      // find the local subdomain in the queue, and decrement the counter
+      for(int i = 0;i < queue_sdom_ids.size();++ i){
+        if(queue_sdom_ids[i] == sdom->downwind[dim].subdomain_id){
+          queue_depends[i] --;
+          break;
+        }
+      }
+      continue;
     }
-    return( flag);      /*  note - msg is returned only with flag = 1 */
-  }
-  /* this direction is boundary - get  next empty buffer  == new*/
-  *msg = buf_pool[i-j];        /* remember j is <=0 , so this is an add */
-  buf_rec[which] -= 1;         /* bump to bigger negative for next call */
-  return( 1);
-}
 
+    // At this point, we know that we have to send an MPI message
+    // Add request to send queue
+    send_requests.push_back(MPI_Request());
 
-/**
-  post non-blocking send & remember handle to check completion later
-  send-handles are all mixed together in one array
-  Called from a node (p,q,r), R_send() sends the message of ``length''
-  doubles pointed at by ``msg'' to node (p,q,r_member).  The send is
-  non-blocking, i.e., it returns immediately after submitting the message
-  to the underlying communication system.
-*/
-void Comm::R_send(double * msg, int r_member, int length){
-  if(r_member >= 0){
-    MPI_Isend(msg, length, MPI_DOUBLE, r_member, 0, MPI_COMM_WORLD,
-              &buf_s_req[send_cnt]);
-    send_cnt++; /* bump for next send */
+    // compute the tag id of TARGET subdomain (tags are always based on destination)
+    int tag = sdom->downwind[dim].mpi_rank + mpi_size*sdom->downwind[dim].subdomain_id;
+
+    // Post the send
+    MPI_Isend(&sdom->plane_data[dim], sdom->plane_data[dim].size(), MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
+      tag, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
   }
 }
-
-
-/**
-   R_wait_send() waits for all posted sends to complete.
-*/
-void Comm::R_wait_send (){
-  MPI_Waitall(send_cnt, &buf_s_req[0], &buf_status[0]);
-
-  buf_reset();    /* all done - reset all the buffer info */
-}
-
-
-
-/**
- * initialize all the things that change each iteration
- */
-void Comm::buf_reset(void){
-  send_cnt = 0;
-
-  int i;
-  for(i = 0; i < 6; i++){
-    buf_rec[i] = 0;
-  }
-  for(i = 0; i < buf_total; i++){
-    buf_r_req[i] = MPI_REQUEST_NULL;
-    buf_s_req[i] = MPI_REQUEST_NULL;
-  }
-}
-
 
 
 

@@ -16,12 +16,14 @@ Subdomain::Subdomain() :
   direction0(0),
   directions(NULL),
   psi(NULL),
-  rhs(NULL)
+  rhs(NULL),
+  sigt(NULL)
 {
 }
 Subdomain::~Subdomain(){
   delete psi;
   delete rhs;
+  delete sigt;
 }
 
 
@@ -31,6 +33,13 @@ Subdomain::~Subdomain(){
 void Subdomain::randomizeData(void){
   psi->randomizeData();
   rhs->randomizeData();
+  sigt->randomizeData();
+
+  for(int d = 0;d < 3;++ d){
+    for(int i = 0;i < deltas[d].size();++ i){
+      deltas[d][i] = drand48();
+    }
+  }
 }
 
 /**
@@ -39,6 +48,11 @@ void Subdomain::randomizeData(void){
 void Subdomain::copy(Subdomain const &b){
   psi->copy(*b.psi);
   rhs->copy(*b.rhs);
+  sigt->copy(*b.sigt);
+
+  for(int d = 0;d < 3;++ d){
+    deltas[d] = b.deltas[d];
+  }
 }
 
 /**
@@ -52,8 +66,68 @@ bool Subdomain::compare(Subdomain const &b, double tol, bool verbose){
   bool is_diff = false;
   is_diff |= psi->compare(name+".psi", *b.psi, tol, verbose);
   is_diff |= rhs->compare(name+".rhs", *b.rhs, tol, verbose);
+  is_diff |= sigt->compare(name+".sigt", *b.sigt, tol, verbose);
+
+  is_diff |= compareVector(name+".deltas[0]", deltas[0], b.deltas[0], tol, verbose);
+  is_diff |= compareVector(name+".deltas[1]", deltas[1], b.deltas[1], tol, verbose);
+  is_diff |= compareVector(name+".deltas[2]", deltas[2], b.deltas[2], tol, verbose);
 
   return is_diff;
+}
+
+/**
+ * Computes index sets for each octant, and each tile (experimental).
+ * Determines logical indices, and increments for i,j,k based on grid
+ * information and quadrature set sweeping direction.
+ */
+void Subdomain::computeSweepIndexSet(void){
+
+  int octant = directions[0].octant;
+
+  int id, jd, kd;
+  switch(octant){
+    case 0: id = 1; jd = 1; kd = 1; break;
+    case 1: id = -1; jd = 1; kd = 1; break;
+    case 2: id = -1; jd = -1; kd = 1; break;
+    case 3: id = 1; jd = -1; kd = 1; break;
+    case 4: id = 1; jd = 1; kd = -1; break;
+    case 5: id = -1; jd = 1; kd = -1; break;
+    case 6: id = -1; jd = -1; kd = -1; break;
+    case 7: id = 1; jd = -1; kd = -1; break;
+  }
+
+  if(id > 0){
+    sweep_block.start_i = 0;
+    sweep_block.end_i = nzones[0]-1;
+    sweep_block.inc_i = 1;
+  }
+  else {
+    sweep_block.start_i = nzones[0]-1;
+    sweep_block.end_i = 0;
+    sweep_block.inc_i = -1;
+  }
+
+  if(jd > 0){
+    sweep_block.start_j = 0;
+    sweep_block.end_j = nzones[1]-1;
+    sweep_block.inc_j = 1;
+  }
+  else {
+    sweep_block.start_j = nzones[1]-1;
+    sweep_block.end_j = 0;
+    sweep_block.inc_j = -1;
+  }
+
+  if(kd > 0){
+    sweep_block.start_k = 0;
+    sweep_block.end_k = nzones[2]-1;
+    sweep_block.inc_k =  1;
+  }
+  else {
+    sweep_block.start_k = nzones[2]-1;
+    sweep_block.end_k = 0;
+    sweep_block.inc_k = -1;
+  }
 }
 
 
@@ -121,14 +195,6 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   int ny_g = input_vars->ny;
   int nz_g = input_vars->nz;
 
-  computeGrid(0, npx, nx_g, isub_ref, 0.0, 1.0);
-  computeGrid(1, npy, ny_g, jsub_ref, 0.0, 1.0);
-  computeGrid(2, npz, nz_g, ksub_ref, 0.0, 1.0);
-
-  nzones[0] = deltas[0].size()-2;
-  nzones[1] = deltas[1].size()-2;
-  nzones[2] = deltas[2].size()-2;
-  num_zones= nzones[0] * nzones[1] * nzones[2];
 
   num_legendre = input_vars->legendre_order;
   total_num_moments = (num_legendre+1)*(num_legendre+1);
@@ -162,11 +228,26 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
         sdom.direction0 = dir0;
         sdom.directions = &directions[dir0];
 
-        sdom.num_zones = num_zones;
+        sdom.deltas[0] = computeGrid(0, npx, nx_g, isub_ref, 0.0, 1.0);
+        sdom.deltas[1] = computeGrid(1, npy, ny_g, jsub_ref, 0.0, 1.0);
+        sdom.deltas[2] = computeGrid(2, npz, nz_g, ksub_ref, 0.0, 1.0);
+
+        sdom.nzones[0] = sdom.deltas[0].size()-2;
+        sdom.nzones[1] = sdom.deltas[1].size()-2;
+        sdom.nzones[2] = sdom.deltas[2].size()-2;
+        sdom.num_zones = sdom.nzones[0] * sdom.nzones[1] * sdom.nzones[2];
+
+        // allocate storage for the sweep boundary data
+        sdom.plane_data[0].resize(sdom.nzones[1] * sdom.nzones[2] * sdom.num_directions * sdom.num_groups);
+        sdom.plane_data[1].resize(sdom.nzones[0] * sdom.nzones[2] * sdom.num_directions * sdom.num_groups);
+        sdom.plane_data[2].resize(sdom.nzones[0] * sdom.nzones[1] * sdom.num_directions * sdom.num_groups);
 
         // allocate the storage for solution and source terms
         sdom.psi = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.num_zones);
         sdom.rhs = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.num_zones);
+        sdom.sigt = new SubTVec(kernel->nestingSigt(), sdom.num_groups, 1, sdom.num_zones);
+
+        sdom.computeSweepIndexSet();
 
       }
       dir0 += input_vars->num_dirs_per_dirset;
@@ -185,37 +266,16 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   int total_dirs = num_directions_per_set * num_direction_sets;
   int num_groups = num_groups_per_set * num_group_sets;
 
-  phi = new SubTVec(nest, num_groups, total_num_moments, num_zones);
-  phi_out = new SubTVec(nest, num_groups, total_num_moments, num_zones);
+  phi = new SubTVec(nest, num_groups, total_num_moments, subdomains[0].num_zones);
+  phi_out = new SubTVec(nest, num_groups, total_num_moments, subdomains[0].num_zones);
 
-  if(nest == NEST_GDZ || nest == NEST_DZG || nest == NEST_DGZ){
-    ell = new SubTVec(NEST_ZGD, total_num_moments, total_dirs, 1);
-    ell_plus = new SubTVec(NEST_ZDG, total_num_moments, total_dirs, 1);
-  }
-  else{
-    ell = new SubTVec(NEST_ZDG, total_num_moments, total_dirs, 1);
-    ell_plus = new SubTVec(NEST_ZDG, total_num_moments, total_dirs, 1);
-  }
+  ell = new SubTVec(kernel->nestingEll(), total_num_moments, total_dirs, 1);
+  ell_plus = new SubTVec(kernel->nestingEllPlus(), total_num_moments, total_dirs, 1);
 
-  // allocate sigt  1xGxZ if groups come before zones
-  if(nest == NEST_GDZ || nest ==  NEST_DGZ || nest == NEST_GZD){
-    sigt = new SubTVec(NEST_DGZ, num_groups, 1, num_zones);
-  }
-  // otherwise, 1xZxG
-  else{
-    sigt = new SubTVec(NEST_DZG, num_groups, 1, num_zones);
-  }
-
-  /* Create buffer info for sweeping if using Diamond-Difference */
-  CreateBufferInfo(this);
-
-  computeSweepIndexSets(input_vars->block_size);
 }
 
 Grid_Data::~Grid_Data(){
-  delete comm;
   delete kernel;
-  delete sigt;
   delete phi;
   delete phi_out;
   delete ell;
@@ -236,17 +296,11 @@ void Grid_Data::randomizeData(void){
     directions[i].zcos = drand48();
   }
 
-  for(int d = 0;d < 3;++ d){
-    for(int i = 0;i < deltas[d].size();++ i){
-      deltas[d][i] = drand48();
-    }
-  }
 
   for(int s = 0;s < subdomains.size();++ s){
     subdomains[s].randomizeData();
   }
 
-  sigt->randomizeData();
   phi->randomizeData();
   phi_out->randomizeData();
   ell->randomizeData();
@@ -261,15 +315,10 @@ void Grid_Data::copy(Grid_Data const &b){
   sigma_tot = b.sigma_tot;
   directions = b.directions;
 
-  for(int d = 0;d < 3;++ d){
-    deltas[d] = b.deltas[d];
-  }
-
   subdomains.resize(b.subdomains.size());
   for(int s = 0;s < subdomains.size();++ s){
     subdomains[s].copy(b.subdomains[s]);
   }
-  sigt->copy(*b.sigt);
   phi->copy(*b.phi);
   phi_out->copy(*b.phi_out);
   ell->copy(*b.ell);
@@ -284,7 +333,7 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   bool is_diff = false;
 
 
-  is_diff |= compareVector("sigma_tot", sigma_tot, b.sigma_tot, tol, verbose);
+
 
   for(int i = 0;i < directions.size();++i){
     std::stringstream dirname;
@@ -300,17 +349,12 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
         directions[i].zcos, b.directions[i].zcos, tol, verbose);
   }
 
-  is_diff |= compareVector("deltas[0]", deltas[0], b.deltas[0], tol, verbose);
-  is_diff |= compareVector("deltas[1]", deltas[1], b.deltas[1], tol, verbose);
-  is_diff |= compareVector("deltas[2]", deltas[2], b.deltas[2], tol, verbose);
-
   for(int s = 0;s < subdomains.size();++ s){
     is_diff |= subdomains[s].compare(
         b.subdomains[s], tol, verbose);
 
   }
-
-  is_diff |= sigt->compare("sigt", *b.sigt, tol, verbose);
+  is_diff |= compareVector("sigma_tot", sigma_tot, b.sigma_tot, tol, verbose);
   is_diff |= phi->compare("phi", *b.phi, tol, verbose);
   is_diff |= phi_out->compare("phi_out", *b.phi_out, tol, verbose);
   is_diff |= ell->compare("ell", *b.ell, tol, verbose);
@@ -324,7 +368,7 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
  * Computes the current MPI task's grid given the size of the mesh, and
  * the current tasks index in that dimension (isub_ref).
  */
-void Grid_Data::computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax){
+std::vector<double> Grid_Data::computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax){
  /* Calculate unit roundoff and load into grid_data */
   double eps = 1e-32;
   double thsnd_eps = 1000.e0*(eps);
@@ -349,81 +393,23 @@ void Grid_Data::computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmi
   iupper = ilower + nx_l - 1;
 
   // allocate grid deltas
-  deltas[dim].resize(nx_l+2);
+  std::vector<double> deltas(nx_l+2);
 
   // Compute the spatial grid
   double dx = (xmax - xmin) / nx_g;
   double coord_lo = xmin + (ilower) * dx;
   double coord_hi = xmin + (iupper+1) * dx;
   for(int i = 0; i < nx_l+2; i++){
-    deltas[dim][i] = dx;
+    deltas[i] = dx;
   }
   if(std::abs(coord_lo - xmin) <= thsnd_eps*std::abs(xmin)){
-    deltas[dim][0] = 0.0;
+    deltas[0] = 0.0;
   }
   if(std::abs(coord_hi - xmax) <= thsnd_eps*std::abs(xmax)){
-    deltas[dim][nx_l+1] = 0.0;
+    deltas[nx_l+1] = 0.0;
   }
 
-  nzones[dim] = nx_l;
+  return deltas;
 }
 
-/**
- * Computes index sets for each octant, and each tile (experimental).
- * Determines logical indices, and increments for i,j,k based on grid
- * information and quadrature set sweeping direction.
- */
-void Grid_Data::computeSweepIndexSets(int block_size){
-  octant_extent.resize(8);
-  for(int octant = 0;octant < 8;++ octant){
 
-    int id, jd, kd;
-    switch(octant){
-      case 0: id = 1; jd = 1; kd = 1; break;
-      case 1: id = -1; jd = 1; kd = 1; break;
-      case 2: id = -1; jd = -1; kd = 1; break;
-      case 3: id = 1; jd = -1; kd = 1; break;
-      case 4: id = 1; jd = 1; kd = -1; break;
-      case 5: id = -1; jd = 1; kd = -1; break;
-      case 6: id = -1; jd = -1; kd = -1; break;
-      case 7: id = 1; jd = -1; kd = -1; break;
-    }
-
-    int istartz, istopz, in, il, ir;
-
-    if(id > 0){
-      istartz = 0; istopz = nzones[0]-1; in = 1; il = 0; ir = 1;
-    }
-    else {
-      istartz = nzones[0]-1; istopz = 0; in = -1; il = 1; ir = 0;
-    }
-
-    int jstartz, jstopz, jn, jf, jb;
-    if(jd > 0){
-      jstartz = 0; jstopz = nzones[1]-1; jn = 1; jf = 0; jb = 1;
-    }
-    else {
-      jstartz = nzones[1]-1; jstopz = 0; jn = -1; jf = 1; jb = 0;
-    }
-
-    int kstartz, kstopz, kn, kb, kt;
-    if(kd > 0){
-      kstartz = 0; kstopz = nzones[2]-1; kn =  1; kb = 0; kt = 1;
-    }
-    else {
-      kstartz = nzones[2]-1; kstopz = 0; kn = -1; kb = 1; kt = 0;
-    }
-
-    // Define extent block and pattern
-    Grid_Sweep_Block &extent = octant_extent[octant];
-    extent.start_i = istartz;
-    extent.start_j = jstartz;
-    extent.start_k = kstartz;
-    extent.end_i = istopz + in;
-    extent.end_j = jstopz + jn;
-    extent.end_k = kstopz + kn;
-    extent.inc_i = in;
-    extent.inc_j = jn;
-    extent.inc_k = kn;
-  }
-}

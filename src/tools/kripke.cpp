@@ -390,7 +390,6 @@ int main(int argc, char **argv) {
   ivars.npy = nprocs[1];
   ivars.npz = nprocs[2];
   ivars.legendre_order = lorder + 1;
-  ivars.block_size = 4;
   ivars.niter = niter;
   int point = 0;
   for(int d = 0;d < dir_list.size();++ d){

@@ -26,7 +26,6 @@ struct Grid_Data;
 // In Kripke/Sweep_Solver.cpp
 int SweepSolver(Grid_Data *grid_data);
 int SweepSolver_GroupSet (int group_set, Grid_Data *grid_data);
-void CreateBufferInfo(Grid_Data *grid_data);
 
 /**
  * Tags for choosing which data nesting to be chosen
@@ -39,11 +38,7 @@ enum Nesting_Order {
   NEST_GDZ,
   NEST_GZD,
   NEST_ZDG,
-  NEST_ZGD,
-
-  // Nestings for L and L+ matrices
-  NEST_DNM,
-  NEST_NMD
+  NEST_ZGD
 };
 
 /**
@@ -57,9 +52,6 @@ inline std::string nestingString(Nesting_Order nesting){
     case NEST_GZD: return("GZD");
     case NEST_ZDG: return("ZDG");
     case NEST_ZGD: return("ZGD");
-
-    case NEST_DNM: return("DNM");
-    case NEST_NMD: return("NMD");
   }
   return("UNKNOWN");
 }

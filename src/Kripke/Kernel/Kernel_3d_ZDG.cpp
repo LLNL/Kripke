@@ -18,9 +18,20 @@ Nesting_Order Kernel_3d_ZDG::nestingPhi(void) const {
   return NEST_ZDG;
 }
 
+Nesting_Order Kernel_3d_ZDG::nestingSigt(void) const {
+  return NEST_DZG;
+}
+
+Nesting_Order Kernel_3d_ZDG::nestingEll(void) const {
+  return NEST_ZDG;
+}
+
+Nesting_Order Kernel_3d_ZDG::nestingEllPlus(void) const {
+  return NEST_ZDG;
+}
+
 void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
   // Outer parameters
-  int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_legendre;
   int nidx = grid_data->total_num_moments;
   int num_groups = grid_data->phi->groups;
@@ -34,6 +45,7 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
     Subdomain &sdom = grid_data->subdomains[sdom_id];
 
     // Get dimensioning
+    int num_zones = sdom.num_zones;
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
@@ -70,7 +82,6 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
 
 void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
-  int num_zones = grid_data->num_zones;
   int num_moments = grid_data->num_legendre;
   int nidx = grid_data->total_num_moments;
   int num_groups = grid_data->phi_out->groups;
@@ -80,8 +91,8 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
   for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
     Subdomain &sdom = grid_data->subdomains[sdom_id];
 
-
     // Get dimensioning
+    int num_zones = sdom.num_zones;
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
@@ -131,17 +142,17 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Subdomain *sdom,
     double *i_plane_ptr, double *j_plane_ptr, double *k_plane_ptr) {
   int num_directions = sdom->num_directions;
   int num_groups = sdom->num_groups;
-  int num_zones = grid_data->num_zones;
+  int num_zones = sdom->num_zones;
 
   Directions *direction = sdom->directions;
 
-  int local_imax = grid_data->nzones[0];
-  int local_jmax = grid_data->nzones[1];
-  int local_kmax = grid_data->nzones[2];
+  int local_imax = sdom->nzones[0];
+  int local_jmax = sdom->nzones[1];
+  int local_kmax = sdom->nzones[2];
 
-  double * dx = &grid_data->deltas[0][0];
-  double * dy = &grid_data->deltas[1][0];
-  double * dz = &grid_data->deltas[2][0];
+  double * dx = &sdom->deltas[0][0];
+  double * dy = &sdom->deltas[1][0];
+  double * dz = &sdom->deltas[2][0];
 
   // Alias the MPI data with a SubTVec for the face data
   SubTVec i_plane(nestingPsi(), num_groups, num_directions,
@@ -153,8 +164,7 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Subdomain *sdom,
 
   // All directions have same id,jd,kd, since these are all one Direction Set
   // So pull that information out now
-  int octant = direction[0].octant;
-  Grid_Sweep_Block const &extent = grid_data->octant_extent[octant];
+  Grid_Sweep_Block const &extent = sdom->sweep_block;
 
   for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
     double dzk = dz[k + 1];
@@ -164,7 +174,7 @@ void Kernel_3d_ZDG::sweep(Grid_Data *grid_data, Subdomain *sdom,
         double dxi = dx[i + 1];
 
         int z = Zonal_INDEX(i, j, k);
-        double * KRESTRICT sigt_z = grid_data->sigt->ptr(sdom->group0, 0, z);
+        double * KRESTRICT sigt_z = sdom->sigt->ptr(0, 0, z);
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
