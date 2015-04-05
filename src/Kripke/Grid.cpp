@@ -91,55 +91,11 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
         Subdomain &sdom = subdomains[sdom_id];
 
-        // set the set indices
-        sdom.idx_group_set = gs;
-        sdom.idx_dir_set = ds;
-        sdom.idx_zone_set = zs;
-
-        sdom.num_groups = input_vars->num_groups_per_groupset;
-        sdom.group0 = group0;
-
-        sdom.num_directions = input_vars->num_dirs_per_dirset;
-        sdom.direction0 = dir0;
-        sdom.directions = &directions[dir0];
-
         sdom.deltas[0] = computeGrid(0, npx, nx_g, isub_ref, 0.0, 1.0);
         sdom.deltas[1] = computeGrid(1, npy, ny_g, jsub_ref, 0.0, 1.0);
         sdom.deltas[2] = computeGrid(2, npz, nz_g, ksub_ref, 0.0, 1.0);
 
-        sdom.nzones[0] = sdom.deltas[0].size()-2;
-        sdom.nzones[1] = sdom.deltas[1].size()-2;
-        sdom.nzones[2] = sdom.deltas[2].size()-2;
-        sdom.num_zones = sdom.nzones[0] * sdom.nzones[1] * sdom.nzones[2];
-
-        // allocate storage for the sweep boundary data
-        sdom.plane_data[0] = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.nzones[1] * sdom.nzones[2]);
-        sdom.plane_data[1] = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.nzones[0] * sdom.nzones[2]);
-        sdom.plane_data[2] = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.nzones[0] * sdom.nzones[1]);
-
-        // allocate the storage for solution and source terms
-        sdom.psi = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.num_zones);
-        sdom.rhs = new SubTVec(nest, sdom.num_groups, sdom.num_directions, sdom.num_zones);
-        sdom.sigt = new SubTVec(kernel->nestingSigt(), sdom.num_groups, 1, sdom.num_zones);
-
-        sdom.computeSweepIndexSet();
-
-        // Setup neighbor data
-        int dirs[3] = { sdom.directions[0].id, sdom.directions[0].jd, sdom.directions[0].kd};
-        for(int dim = 0;dim < 3;++ dim){
-          if(dirs[dim] > 0){
-            sdom.downwind[dim].mpi_rank = mynbr[dim][1];
-            sdom.downwind[dim].subdomain_id = sdom_id;
-            sdom.upwind[dim].mpi_rank = mynbr[dim][0];
-            sdom.upwind[dim].subdomain_id = sdom_id;
-          }
-          else{
-            sdom.downwind[dim].mpi_rank = mynbr[dim][0];
-            sdom.downwind[dim].subdomain_id = sdom_id;
-            sdom.upwind[dim].mpi_rank = mynbr[dim][1];
-            sdom.upwind[dim].subdomain_id = sdom_id;
-          }
-        }
+        sdom.setup(sdom_id, input_vars, gs, ds, zs, directions, kernel, mynbr);
 
       }
       dir0 += input_vars->num_dirs_per_dirset;

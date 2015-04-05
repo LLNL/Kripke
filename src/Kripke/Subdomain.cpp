@@ -33,6 +33,59 @@ Subdomain::~Subdomain(){
 
 
 /**
+  Setup subdomain and allocate data
+*/
+void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, int zs, std::vector<Directions> &direction_list, Kernel *kernel, int mynbr[3][2]){
+  // set the set indices
+  idx_group_set = gs;
+  idx_dir_set = ds;
+  idx_zone_set = zs;
+
+  num_groups = input_vars->num_groups_per_groupset;
+  group0 = gs * input_vars->num_groups_per_groupset;
+
+  num_directions = input_vars->num_dirs_per_dirset;
+  direction0 = ds * input_vars->num_dirs_per_dirset;
+  directions = &direction_list[direction0];
+
+  nzones[0] = deltas[0].size()-2;
+  nzones[1] = deltas[1].size()-2;
+  nzones[2] = deltas[2].size()-2;
+  num_zones = nzones[0] * nzones[1] * nzones[2];
+
+  // allocate storage for the sweep boundary data
+  plane_data[0] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[1] * nzones[2]);
+  plane_data[1] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[2]);
+  plane_data[2] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[1]);
+
+  // allocate the storage for solution and source terms
+  psi = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, num_zones);
+  rhs = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, num_zones);
+  sigt = new SubTVec(kernel->nestingSigt(), num_groups, 1, num_zones);
+
+  computeSweepIndexSet();
+
+  // Setup neighbor data
+  int dirs[3] = { directions[0].id, directions[0].jd, directions[0].kd};
+  for(int dim = 0;dim < 3;++ dim){
+    if(dirs[dim] > 0){
+      downwind[dim].mpi_rank = mynbr[dim][1];
+      downwind[dim].subdomain_id = sdom_id;
+      upwind[dim].mpi_rank = mynbr[dim][0];
+      upwind[dim].subdomain_id = sdom_id;
+    }
+    else{
+      downwind[dim].mpi_rank = mynbr[dim][0];
+      downwind[dim].subdomain_id = sdom_id;
+      upwind[dim].mpi_rank = mynbr[dim][1];
+      upwind[dim].subdomain_id = sdom_id;
+    }
+  }
+}
+
+
+
+/**
  * Randomizes data for a set.
  */
 void Subdomain::randomizeData(void){
@@ -81,7 +134,7 @@ bool Subdomain::compare(Subdomain const &b, double tol, bool verbose){
 }
 
 /**
- * Computes index sets for each octant, and each tile (experimental).
+ * Compute sweep index sets.
  * Determines logical indices, and increments for i,j,k based on grid
  * information and quadrature set sweeping direction.
  */

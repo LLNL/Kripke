@@ -6,7 +6,8 @@
 // Foreward Decl
 struct Directions;
 struct SubTVec;
-
+struct Input_Variables;
+class Kernel;
 
 /**
  * Provides sweep index sets for a given octant.
@@ -34,6 +35,9 @@ struct Neighbor{
 struct Subdomain {
   Subdomain();
   ~Subdomain();
+
+  void setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, int zs,
+    std::vector<Directions> &direction_list, Kernel *kernel, int mynbr[3][2]);
 
   void randomizeData(void);
   void copy(Subdomain const &b);
