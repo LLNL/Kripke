@@ -30,7 +30,7 @@ class Layout {
     virtual void subdomainIdToSetId(int sdom_id, int &gs, int &ds, int &zs) const;
     virtual Neighbor getNeighbor(int our_sdom_id, int dim, int dir) const = 0;
     virtual std::pair<double, double> getSpatialExtents(int sdom_id, int dim) const = 0;
-    virtual int getNumZones(int sdom_id, int dim) const = 0;
+    virtual int getNumZones(int sdom_id, int dim) const;
 
   protected:
     int num_group_sets;      // Number of group sets
@@ -52,7 +52,15 @@ class BlockLayout : public Layout {
 
     virtual Neighbor getNeighbor(int our_sdom_id, int dim, int dir) const;
     virtual std::pair<double, double> getSpatialExtents(int sdom_id, int dim) const;
-    virtual int getNumZones(int sdom_id, int dim) const;
+};
+
+class ScatterLayout : public Layout {
+  public:
+    explicit ScatterLayout(Input_Variables *input_vars);
+    virtual ~ScatterLayout();
+
+    virtual Neighbor getNeighbor(int our_sdom_id, int dim, int dir) const;
+    virtual std::pair<double, double> getSpatialExtents(int sdom_id, int dim) const;
 };
 
 

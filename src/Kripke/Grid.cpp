@@ -16,40 +16,14 @@
 */
 Grid_Data::Grid_Data(Input_Variables *input_vars)
 {
+  // Create object to describe processor and subdomain layout in space
+  // and their adjacencies
   Layout *layout = createLayout(input_vars);
-
-  /* Set the processor grid dimensions */
-  int R = (input_vars->npx)*(input_vars->npy)*(input_vars->npz);
-
-  /* Check size of PQR_group is the same as MPI_COMM_WORLD */
-  int size;
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  if(R != size){
-    int myid;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-    if(myid == 0){
-      printf("ERROR: Incorrect number of MPI tasks. Need %d MPI tasks.", R);
-    }
-    MPI_Abort(MPI_COMM_WORLD, 1);
-  }
-
-
-  int npx = input_vars->npx;
-  int npy = input_vars->npy;
-  int npz = input_vars->npz;
-
-  /* Compute the local coordinates in the processor decomposition */
-  int myid;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  int isub_ref = myid % npx;
-  int jsub_ref = ((myid - isub_ref) / npx) % npy;
-  int ksub_ref = (myid - isub_ref - npx*jsub_ref) / (npx * npy);
-
 
   // create the kernel object based on nesting
   kernel = createKernel(input_vars->nesting, 3);
 
-  // Create base quadrature set
+  // Create quadrature set (for all directions)
   InitDirections(this, input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset);
 
   num_direction_sets = 8*input_vars->num_dirsets_per_octant;
@@ -57,13 +31,9 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   num_group_sets = input_vars->num_groupsets;
   num_groups_per_set = input_vars->num_groups_per_groupset;
   num_zone_sets = 1;
-
-
-
-  int nx_g = input_vars->nx;
-  int ny_g = input_vars->ny;
-  int nz_g = input_vars->nz;
-
+  for(int dim = 0;dim < 3;++ dim){
+    num_zone_sets *= input_vars->num_zonesets_dim[dim];
+  }
 
   num_legendre = input_vars->legendre_order;
   total_num_moments = (num_legendre+1)*(num_legendre+1);

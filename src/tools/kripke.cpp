@@ -52,6 +52,8 @@ void usage(void){
     printf("                         Default:  --procs 1,1,1\n");
     printf("  --restart <point>      Restart at given point\n");
     printf("  --test                 Run Kernel Test instead of solver\n");
+    printf("  --zst [x:y:z, ...]     Number of zonesets in x:y:z\n");
+    printf("                         Default:  --zst 1:1:1\n");
     printf("  --zones <x,y,z>        Number of zones in x,y,z\n");
     printf("                         Default:  --zones 12,12,12\n");
     printf("\n");
@@ -216,9 +218,10 @@ int main(int argc, char **argv) {
   dir_list.push_back(IntPair(1,1));
   std::string outfile;
   int nprocs[3] = {1, 1, 1};
+  int zset[3] = {1,1,1};
   int nzones[3] = {12, 12, 12};
   int lorder = 4;
-  int niter = 1; //10;
+  int niter = 10;
   bool test = false;
   bool perf_tools = false;
   int restart_point = 0;
@@ -240,6 +243,13 @@ int main(int argc, char **argv) {
     if(opt == "-h" || opt == "--help"){usage();}
     else if(opt == "--out"){outfile = cmd.pop();}
     else if(opt == "--name"){run_name = cmd.pop();}
+    else if(opt == "--zset"){
+      std::vector<std::string> nz = split(cmd.pop(), ':');
+      if(nz.size() != 3) usage();
+      zset[0] = std::atoi(nz[0].c_str());
+      zset[1] = std::atoi(nz[1].c_str());
+      zset[2] = std::atoi(nz[2].c_str());
+    }
     else if(opt == "--zones"){
       std::vector<std::string> nz = split(cmd.pop(), ',');
       if(nz.size() != 3) usage();
@@ -351,6 +361,9 @@ int main(int argc, char **argv) {
     }
     printf("\n");
 
+    printf("Zone Sets:             ");
+    printf("%d:%d:%d\n", zset[0], zset[1], zset[2]);
+
     printf("Nestings:              ");
     for(int i = 0;i < nest_list.size();++ i){
       printf("%s%s", (i==0 ? "" : ", "), nestingString(nest_list[i]).c_str());
@@ -391,6 +404,9 @@ int main(int argc, char **argv) {
   ivars.npz = nprocs[2];
   ivars.legendre_order = lorder + 1;
   ivars.niter = niter;
+  ivars.num_zonesets_dim[0] = zset[0];
+  ivars.num_zonesets_dim[1] = zset[1];
+  ivars.num_zonesets_dim[2] = zset[2];
   int point = 0;
   for(int d = 0;d < dir_list.size();++ d){
     for(int g = 0;g < grp_list.size();++ g){

@@ -78,8 +78,8 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   // Setup neighbor data
   int dirs[3] = { directions[0].id, directions[0].jd, directions[0].kd};
   for(int dim = 0;dim < 3;++ dim){
-    downwind[dim] = layout->getNeighbor(sdom_id, dim, dirs[dim] > 0 ? 1 : 0);
-    upwind[dim] = layout->getNeighbor(sdom_id, dim, dirs[dim] > 0 ? 0 : 1);
+    downwind[dim] = layout->getNeighbor(sdom_id, dim, dirs[dim]);
+    upwind[dim] = layout->getNeighbor(sdom_id, dim, -1 * dirs[dim]);
   }
 }
 
