@@ -2,6 +2,7 @@
 #define KRIPKE_SUBDOMAIN_H__
 
 #include <vector>
+#include <Kripke/Layout.h>
 
 // Foreward Decl
 struct Directions;
@@ -20,13 +21,7 @@ struct Grid_Sweep_Block {
   int inc_i, inc_j, inc_k; // increment
 };
 
-/**
-  Describes a neighboring Subdomain using both mpi-rank and subdomin id
-*/
-struct Neighbor{
-  int mpi_rank;     // Neighbors MPI rank, or -1 for boundary condition
-  int subdomain_id; // Subdomain ID of neighbor
-};
+
 
 /**
  * Contains parameters and variables that describe a single Group Set and
@@ -37,7 +32,7 @@ struct Subdomain {
   ~Subdomain();
 
   void setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, int zs,
-    std::vector<Directions> &direction_list, Kernel *kernel, int mynbr[3][2]);
+    std::vector<Directions> &direction_list, Kernel *kernel, Layout *layout);
 
   void randomizeData(void);
   void copy(Subdomain const &b);

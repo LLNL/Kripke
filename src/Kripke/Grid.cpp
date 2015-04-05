@@ -1,7 +1,8 @@
 #include <Kripke/Grid.h>
-#include <Kripke/SubTVec.h>
-#include <Kripke/Input_Variables.h>
 
+#include <Kripke/Input_Variables.h>
+#include <Kripke/Layout.h>
+#include <Kripke/SubTVec.h>
 #include <cmath>
 #include <sstream>
 
@@ -15,6 +16,8 @@
 */
 Grid_Data::Grid_Data(Input_Variables *input_vars)
 {
+  Layout *layout = createLayout(input_vars);
+
   /* Set the processor grid dimensions */
   int R = (input_vars->npx)*(input_vars->npy)*(input_vars->npz);
 
@@ -41,15 +44,6 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   int isub_ref = myid % npx;
   int jsub_ref = ((myid - isub_ref) / npx) % npy;
   int ksub_ref = (myid - isub_ref - npx*jsub_ref) / (npx * npy);
-
-  /* Compute the processor neighbor array given the above ordering */
-  // -1 is used to denote a boundary
-  mynbr[0][0] = (isub_ref == 0)     ? -1 : myid-1;
-  mynbr[0][1] = (isub_ref == npx-1) ? -1 : myid+1;
-  mynbr[1][0] = (jsub_ref == 0)     ? -1 : myid-npx;
-  mynbr[1][1] = (jsub_ref == npy-1) ? -1 : myid+npx;
-  mynbr[2][0] = (ksub_ref == 0)     ? -1 : myid-npx*npy;
-  mynbr[2][1] = (ksub_ref == npz-1) ? -1 : myid+npx*npy;
 
 
   // create the kernel object based on nesting
@@ -80,28 +74,17 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
   // Initialize Subdomains
   subdomains.resize(num_subdomains);
-  int group0 = 0;
   for(int gs = 0;gs < num_group_sets;++ gs){
-    int dir0 = 0;
     for(int ds = 0;ds < num_direction_sets;++ ds){
       for(int zs = 0;zs < num_zone_sets;++ zs){
-        int sdom_id = gs*num_direction_sets*num_zone_sets +
-                   ds*num_zone_sets +
-                   zs;
+        // Compupte subdomain id
+        int sdom_id = layout->setIdToSubdomainId(gs, ds, zs);
 
+        // Setup the subdomain
         Subdomain &sdom = subdomains[sdom_id];
-
-        sdom.deltas[0] = computeGrid(0, npx, nx_g, isub_ref, 0.0, 1.0);
-        sdom.deltas[1] = computeGrid(1, npy, ny_g, jsub_ref, 0.0, 1.0);
-        sdom.deltas[2] = computeGrid(2, npz, nz_g, ksub_ref, 0.0, 1.0);
-
-        sdom.setup(sdom_id, input_vars, gs, ds, zs, directions, kernel, mynbr);
-
+        sdom.setup(sdom_id, input_vars, gs, ds, zs, directions, kernel, layout);
       }
-      dir0 += input_vars->num_dirs_per_dirset;
     }
-
-    group0 += input_vars->num_groups_per_groupset;
   }
 
   /* Set ncalls */
@@ -120,6 +103,8 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   ell = new SubTVec(kernel->nestingEll(), total_num_moments, total_dirs, 1);
   ell_plus = new SubTVec(kernel->nestingEllPlus(), total_num_moments, total_dirs, 1);
 
+
+  delete layout;
 }
 
 Grid_Data::~Grid_Data(){
@@ -209,55 +194,6 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   is_diff |= ell_plus->compare("ell_plus", *b.ell_plus, tol, verbose);
 
   return is_diff;
-}
-
-
-/**
- * Computes the current MPI task's grid given the size of the mesh, and
- * the current tasks index in that dimension (isub_ref).
- */
-std::vector<double> Grid_Data::computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax){
- /* Calculate unit roundoff and load into grid_data */
-  double eps = 1e-32;
-  double thsnd_eps = 1000.e0*(eps);
-
-  // Compute subset of global zone indices
-  int nx_l = nx_g / npx;
-  int rem = nx_g % npx;
-  int ilower, iupper;
-  if(rem != 0){
-    if(isub_ref < rem){
-      nx_l++;
-      ilower = isub_ref * nx_l;
-    }
-    else {
-      ilower = rem + isub_ref * nx_l;
-    }
-  }
-  else {
-    ilower = isub_ref * nx_l;
-  }
-
-  iupper = ilower + nx_l - 1;
-
-  // allocate grid deltas
-  std::vector<double> deltas(nx_l+2);
-
-  // Compute the spatial grid
-  double dx = (xmax - xmin) / nx_g;
-  double coord_lo = xmin + (ilower) * dx;
-  double coord_hi = xmin + (iupper+1) * dx;
-  for(int i = 0; i < nx_l+2; i++){
-    deltas[i] = dx;
-  }
-  if(std::abs(coord_lo - xmin) <= thsnd_eps*std::abs(xmin)){
-    deltas[0] = 0.0;
-  }
-  if(std::abs(coord_hi - xmax) <= thsnd_eps*std::abs(xmax)){
-    deltas[nx_l+1] = 0.0;
-  }
-
-  return deltas;
 }
 
 

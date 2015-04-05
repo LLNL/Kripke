@@ -35,7 +35,7 @@ Subdomain::~Subdomain(){
 /**
   Setup subdomain and allocate data
 */
-void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, int zs, std::vector<Directions> &direction_list, Kernel *kernel, int mynbr[3][2]){
+void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, int zs, std::vector<Directions> &direction_list, Kernel *kernel, Layout *layout){
   // set the set indices
   idx_group_set = gs;
   idx_dir_set = ds;
@@ -48,10 +48,20 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   direction0 = ds * input_vars->num_dirs_per_dirset;
   directions = &direction_list[direction0];
 
-  nzones[0] = deltas[0].size()-2;
-  nzones[1] = deltas[1].size()-2;
-  nzones[2] = deltas[2].size()-2;
-  num_zones = nzones[0] * nzones[1] * nzones[2];
+  num_zones = 1;
+  for(int dim = 0;dim < 3;++ dim){
+    // Compute number of zones in this dimension
+    nzones[dim] = layout->getNumZones(sdom_id, dim);
+    num_zones *= nzones[dim];
+
+    // Compute grid deltas in this dimension (including ghost zone deltas)
+    std::pair<double, double> dim_extent = layout->getSpatialExtents(sdom_id, dim);
+    double dx = dim_extent.second-dim_extent.first;
+    deltas[dim].resize(nzones[dim]+2);
+    for(int z = 0;z < nzones[dim]+2;++ z){
+      deltas[dim][z] = dx;
+    }
+  }
 
   // allocate storage for the sweep boundary data
   plane_data[0] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[1] * nzones[2]);
@@ -68,18 +78,8 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   // Setup neighbor data
   int dirs[3] = { directions[0].id, directions[0].jd, directions[0].kd};
   for(int dim = 0;dim < 3;++ dim){
-    if(dirs[dim] > 0){
-      downwind[dim].mpi_rank = mynbr[dim][1];
-      downwind[dim].subdomain_id = sdom_id;
-      upwind[dim].mpi_rank = mynbr[dim][0];
-      upwind[dim].subdomain_id = sdom_id;
-    }
-    else{
-      downwind[dim].mpi_rank = mynbr[dim][0];
-      downwind[dim].subdomain_id = sdom_id;
-      upwind[dim].mpi_rank = mynbr[dim][1];
-      upwind[dim].subdomain_id = sdom_id;
-    }
+    downwind[dim] = layout->getNeighbor(sdom_id, dim, dirs[dim] > 0 ? 1 : 0);
+    upwind[dim] = layout->getNeighbor(sdom_id, dim, dirs[dim] > 0 ? 0 : 1);
   }
 }
 

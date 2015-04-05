@@ -4,6 +4,7 @@ set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
   Kripke/Directions.cpp  
   Kripke/Grid.cpp  
   Kripke/Kernel.cpp  
+  Kripke/Layout.cpp
   Kripke/Subdomain.cpp  
   Kripke/Sweep_Solver.cpp  
   Kripke/Timing.cpp  

@@ -44,9 +44,6 @@ public:
 
   Kernel *kernel;
 
-  int mynbr[3][2];                  // Neighboring MPI ranks in each dimension
-
-
   // Group/Angle/Zone sets
   std::vector<Subdomain> subdomains;
 
@@ -59,9 +56,6 @@ public:
 
   SubTVec *ell;               // L matrix in nm_offset coordinates
   SubTVec *ell_plus;          // L+ matrix in nm_offset coordinates
-
-private:
-  std::vector<double> computeGrid(int dim, int npx, int nx_g, int isub_ref, double xmin, double xmax);
 };
 
 #endif
