@@ -87,6 +87,28 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   }
 
   delete layout;
+
+  // Now compute number of elements allocated globally
+  long long vec_size[4] = {0,0,0,0};
+  for(int sdom_id = 0;sdom_id < subdomains.size();++sdom_id){
+    Subdomain &sdom = subdomains[sdom_id];
+    vec_size[0] += sdom.psi->elements;
+    vec_size[1] += sdom.psi->elements;
+  }
+  for(int zs = 0;zs < num_zone_sets;++ zs){
+    vec_size[2] += phi[zs]->elements;
+    vec_size[3] += phi_out[zs]->elements;
+  }
+
+  long long vec_global[4];
+  MPI_Reduce(vec_size, vec_global, 4, MPI_LONG_LONG_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+  int mpi_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  if(mpi_rank == 0){
+    printf("Unknown counts: psi=%ld, rhs=%ld, phi=%ld, phi_out=%ld\n",
+      (long)vec_global[0], (long)vec_global[1], (long)vec_global[2], (long)vec_global[3]);
+  }
 }
 
 Grid_Data::~Grid_Data(){
