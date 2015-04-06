@@ -5,6 +5,23 @@
 #include <cmath>
 #include <sstream>
 
+
+namespace {
+  /**
+    This function defined the material distribution in space.
+  */
+  inline int queryMaterial(double x, double y, double z){
+
+    // Right now this is just an axis aligned and centered unit cube
+    if(std::abs(x) < 0.5 && std::abs(y) < 0.5 && std::abs(z) < 0.5){
+      return 0;
+    }
+    return 1;
+  }
+}
+
+
+
 Subdomain::Subdomain() :
   idx_dir_set(0),
   idx_group_set(0),
@@ -60,6 +77,7 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
 
     // Compute grid deltas in this dimension (including ghost zone deltas)
     std::pair<double, double> dim_extent = layout->getSpatialExtents(sdom_id, dim);
+    zeros[dim] = dim_extent.first;
     double dx = dim_extent.second-dim_extent.first;
     deltas[dim].resize(nzones[dim]+2);
     for(int z = 0;z < nzones[dim]+2;++ z){
@@ -84,6 +102,61 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   for(int dim = 0;dim < 3;++ dim){
     downwind[dim] = layout->getNeighbor(sdom_id, dim, dirs[dim]);
     upwind[dim] = layout->getNeighbor(sdom_id, dim, -1 * dirs[dim]);
+  }
+
+  // paint the mesh
+  int num_subsamples = 2; // number of subsamples per spatial dimension
+  double sample_vol_frac = 1.0 / (double)(num_subsamples*num_subsamples*num_subsamples);
+  int zone_id = 0;
+  double pz = zeros[2];
+
+  for (int k = 0; k < nzones[2]; k++) {
+    double sdz = deltas[2][k+1] / (double)(num_subsamples+1);
+    double py = zeros[1];
+
+    for (int j = 0; j != nzones[1]; j ++) {
+      double sdy = deltas[1][j+1] / (double)(num_subsamples+1);
+      double px = zeros[0];
+
+      for (int i = 0; i != nzones[0]; i ++) {
+        double sdx = deltas[0][i+1] / (double)(num_subsamples+1);
+
+        // subsample probe the geometry to get our materials
+        double frac[2] = {0.0, 0.0}; // fraction of both materials
+        double spz = pz + sdz;
+
+        for(int sk = 0;sk < num_subsamples;++ sk){
+          double spy = py + sdy;
+          for(int sj = 0;sj < num_subsamples;++ sj){
+            double spx = px + sdx;
+            for(int si = 0;si < num_subsamples;++ si){
+
+              int mat = queryMaterial(spx, spy, spz);
+              frac[mat] += sample_vol_frac;
+
+              spx += sdx;
+            }
+            spy += sdy;
+          }
+          spz += sdz;
+        }
+
+        // Add material to zone
+        for(int mat = 0;mat < 2;++ mat){
+          if(frac[mat] > 0.0){
+            mixed_to_zones.push_back(zone_id);
+            mixed_material.push_back(mat);
+            mixed_fraction.push_back(frac[mat]);
+          }
+        }
+
+        // increment zone
+        px += deltas[0][i+1];
+        zone_id ++;
+      }
+      py += deltas[1][j+1];
+    }
+    pz += deltas[2][k+1];
   }
 }
 
