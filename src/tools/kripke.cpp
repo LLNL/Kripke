@@ -41,6 +41,10 @@ void usage(void){
     printf("                         Example:  --dir 1:4,2:2,4:1\n");
     printf("  --grp [G:g,G:g,...]    List of grpsets and groups/set pairs\n");
     printf("                         Default:  --grp 1:1\n");
+    printf("  --layout <lout>        Layout of spatial subdomains and mpi ranks\n");
+    printf("                         0: Blocked layout, subdomains on local rank are adjacent");
+    printf("                         1: Scattered layout, ranks with same subdomain are adjacent");
+    printf("                         Default: --layout 0");
     printf("  --legendre <lorder>    Scattering Legendre Expansion Order (0, 1, ...)\n");
     printf("                         Default:  --legendre 2\n");
     printf("  --nest [n,n,...]       List of data nestings\n");
@@ -52,7 +56,7 @@ void usage(void){
     printf("                         Default:  --procs 1,1,1\n");
     printf("  --restart <point>      Restart at given point\n");
     printf("  --test                 Run Kernel Test instead of solver\n");
-    printf("  --zst [x:y:z, ...]     Number of zonesets in x:y:z\n");
+    printf("  --zset [x:y:z, ...]    Number of zonesets in x:y:z\n");
     printf("                         Default:  --zst 1:1:1\n");
     printf("  --zones <x,y,z>        Number of zones in x,y,z\n");
     printf("                         Default:  --zones 12,12,12\n");
@@ -219,12 +223,14 @@ int main(int argc, char **argv) {
   std::string outfile;
   int nprocs[3] = {1, 1, 1};
   int zset[3] = {1,1,1};
+  int layout = 0;
   int nzones[3] = {12, 12, 12};
   int lorder = 4;
   int niter = 10;
   bool test = false;
   bool perf_tools = false;
   int restart_point = 0;
+
 
   std::vector<Nesting_Order> nest_list;
   nest_list.push_back(NEST_DGZ);
@@ -249,6 +255,11 @@ int main(int argc, char **argv) {
       zset[0] = std::atoi(nz[0].c_str());
       zset[1] = std::atoi(nz[1].c_str());
       zset[2] = std::atoi(nz[2].c_str());
+      if(zset[0] <= 0 || zset[1] <= 0 || zset[2] <= 0){usage();}
+    }
+    else if(opt == "--layout"){
+      layout = std::atoi(cmd.pop().c_str());
+      if(layout < 0 || layout > 1){usage();}
     }
     else if(opt == "--zones"){
       std::vector<std::string> nz = split(cmd.pop(), ',');
@@ -407,6 +418,7 @@ int main(int argc, char **argv) {
   ivars.num_zonesets_dim[0] = zset[0];
   ivars.num_zonesets_dim[1] = zset[1];
   ivars.num_zonesets_dim[2] = zset[2];
+  ivars.layout_pattern = layout;
   int point = 0;
   for(int d = 0;d < dir_list.size();++ d){
     for(int g = 0;g < grp_list.size();++ g){

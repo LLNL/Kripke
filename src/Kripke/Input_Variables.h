@@ -21,6 +21,7 @@ struct Input_Variables {
   int num_zonesets_dim[3];      // number of zoneset in x, y, z
   int niter;                    // number of solver iterations to run
   int legendre_order;           // Scattering order (number Legendre coeff's - 1)
+  int layout_pattern;           // Which subdomain/task layout to use
 
   Nesting_Order nesting;        // Data layout and loop ordering (of Psi)
 };

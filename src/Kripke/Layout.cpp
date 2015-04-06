@@ -74,18 +74,6 @@ Layout::Layout(Input_Variables *input_vars){
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   rankToIndices(mpi_rank, our_rank, num_procs);
-
-  /* Compute the processor neighbor array given the above ordering */
-  // mynbr[dimension][direction] = mpi rank of neighbor
-  // dimension: 0=x, 1=y, 2=z
-  // direction: 0=positive, 1=negative
-  // a rank of -1 is used to denote a boundary contition
-  mynbr[0][0] = (our_rank[0] == 0)              ? -1 : mpi_rank-num_procs[1]*num_procs[2];
-  mynbr[0][1] = (our_rank[0] == num_procs[0]-1) ? -1 : mpi_rank+num_procs[1]*num_procs[2];
-  mynbr[1][0] = (our_rank[1] == 0)              ? -1 : mpi_rank-num_procs[2];
-  mynbr[1][1] = (our_rank[1] == num_procs[1]-1) ? -1 : mpi_rank+num_procs[2];
-  mynbr[2][0] = (our_rank[2] == 0)              ? -1 : mpi_rank-1;
-  mynbr[2][1] = (our_rank[2] == num_procs[2]-1) ? -1 : mpi_rank+1;
 }
 Layout::~Layout(){
 
@@ -168,9 +156,8 @@ BlockLayout::~BlockLayout(){
 Neighbor BlockLayout::getNeighbor(int our_sdom_id, int dim, int dir) const{
   Neighbor n;
 
-  // Initialize neighbors MPI rank to our own
-  // This is for the case that the neighbor is local
-  MPI_Comm_rank(MPI_COMM_WORLD, &n.mpi_rank);
+  // get our processor indices, so we can find neighbors
+  int proc[3] = {our_rank[0], our_rank[1], our_rank[2]};
 
   int gs, ds, zs;
   subdomainIdToSetId(our_sdom_id, gs, ds, zs);
@@ -184,19 +171,30 @@ Neighbor BlockLayout::getNeighbor(int our_sdom_id, int dim, int dir) const{
   // Offest along dir,dim to get neighboring indices
   zs_dim[dim] += dir;
 
-  // Check if the neighbor is remote
+  // Check if the neighbor is remote, and wrap zoneset indices
   if(zs_dim[dim] >= num_zone_sets_dim[dim]){
     zs_dim[dim] = 0;
-    n.mpi_rank = mynbr[dim][1]; // next rank in pos dir
+    proc[dim] += dir;
   }
   else if(zs_dim[dim] < 0){
     zs_dim[dim] = num_zone_sets_dim[dim]-1;
-    n.mpi_rank = mynbr[dim][0]; // next rank in neg dir
+    proc[dim] += dir;
   }
 
-  // Compute neighboring subdomain id
-  zs = indicesToRank(zs_dim, num_zone_sets_dim);
-  n.subdomain_id = setIdToSubdomainId(gs, ds, zs);
+  // Compute the mpi rank of the neighbor
+  if(proc[dim] < 0 || proc[dim] >= num_procs[dim]){
+    // we hit a boundary condition
+    n.mpi_rank = -1;
+    n.subdomain_id = -1;
+  }
+  else{
+    // There is a neighbor, so compute its rank
+    n.mpi_rank = indicesToRank(proc, num_procs);
+
+    // Compute neighboring subdomain id
+    zs = indicesToRank(zs_dim, num_zone_sets_dim);
+    n.subdomain_id = setIdToSubdomainId(gs, ds, zs);
+  }
 
   return n;
 }
@@ -243,35 +241,47 @@ ScatterLayout::~ScatterLayout(){
 Neighbor ScatterLayout::getNeighbor(int our_sdom_id, int dim, int dir) const{
   Neighbor n;
 
-  // Initialize neighbors MPI rank to our own
-  // This is for the case that the neighbor is local
-  MPI_Comm_rank(MPI_COMM_WORLD, &n.mpi_rank);
+  // get our processor indices, so we can find neighbors
+  int proc[3] = {our_rank[0], our_rank[1], our_rank[2]};
 
   int gs, ds, zs;
   subdomainIdToSetId(our_sdom_id, gs, ds, zs);
 
-  // Compute out spatial subdomain indices
+  // Compute our spatial subdomain indices
   int zs_dim[3];
   for(int d = 0;d < 3;++ d){
     zs_dim[d] = subdomainIdToZoneSetDim(our_sdom_id, d);
   }
 
-  // Offest along dir,dim to get neighboring indices
-  zs_dim[dim] += dir;
+  // Offest along dir,dim to get neighboring subdomain indices
+  proc[dim] += dir;
 
-  // Check if the neighbor is remote
-  if(zs_dim[dim] >= num_zone_sets_dim[dim]){
-    zs_dim[dim] = 0;
-    n.mpi_rank = mynbr[dim][1]; // next rank in pos dir
+  // Check if we wrapped mpi ranks, and should bump zoneset indices
+  if(proc[dim] >= num_procs[dim]){
+    proc[dim] = 0;
+    zs_dim[dim] += dir;
   }
-  else if(zs_dim[dim] < 0){
-    zs_dim[dim] = num_zone_sets_dim[dim]-1;
-    n.mpi_rank = mynbr[dim][0]; // next rank in neg dir
+  else if(proc[dim] < 0){
+    proc[dim] = num_procs[dim]-1;
+    zs_dim[dim] += dir;
   }
 
-  // Compute neighboring subdomain id
-  zs = indicesToRank(zs_dim, num_zone_sets_dim);
-  n.subdomain_id = setIdToSubdomainId(gs, ds, zs);
+  // Compute zone set indices, and detect boundary condition
+  if(zs_dim[dim] < 0 || zs_dim[dim] >= num_zone_sets_dim[dim]){
+    // we hit a boundary condition
+    n.mpi_rank = -1;
+    n.subdomain_id = -1;
+
+  }
+  else{
+    // There is a neighbor, so compute its rank
+    n.mpi_rank = indicesToRank(proc, num_procs);
+
+    // Compute neighboring subdomain id
+    zs = indicesToRank(zs_dim, num_zone_sets_dim);
+    n.subdomain_id = setIdToSubdomainId(gs, ds, zs);
+  }
+
 
   return n;
 }
@@ -310,5 +320,12 @@ std::pair<double, double> ScatterLayout::getSpatialExtents(int sdom_id, int dim)
   Factory to create Layout object based on user defined inputs
 */
 Layout *createLayout(Input_Variables *input_vars){
-  return new BlockLayout(input_vars);
+  switch(input_vars->layout_pattern){
+    case 0:
+      return new BlockLayout(input_vars);
+    case 1:
+      return new ScatterLayout(input_vars);
+  }
+  printf("Unknown Layout patter\n");
+  MPI_Abort(MPI_COMM_WORLD, 1);
 }

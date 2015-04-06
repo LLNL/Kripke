@@ -42,7 +42,6 @@ class Layout {
 
     int num_procs[3];        // Number of MPI ranks in each dimensions
     int our_rank[3];         // Our mpi indices in xyz
-    int mynbr[3][2];         // Neighboring MPI ranks in each dimension
 };
 
 class BlockLayout : public Layout {
