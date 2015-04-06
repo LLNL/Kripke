@@ -36,9 +36,11 @@ Nesting_Order Kernel_3d_DGZ::nestingEllPlus(void) const {
 void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
   // Outer parameters
   int nidx = grid_data->total_num_moments;
-  int num_groups = grid_data->phi->groups;
 
-  grid_data->phi->clear(0.0);
+
+  for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
+    grid_data->phi[ds]->clear(0.0);
+  }
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
@@ -48,6 +50,7 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
     // Get dimensioning
     int num_zones = sdom.num_zones;
     int num_local_groups = sdom.num_groups;
+    int num_groups = sdom.phi->groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
     int num_groups_zones = num_local_groups*num_zones;
@@ -55,7 +58,7 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
     /* 3D Cartesian Geometry */
     double *psi_ptr = sdom.psi->ptr();
     double * KRESTRICT ell = sdom.ell->ptr();
-    double * KRESTRICT phi = grid_data->phi->ptr(group0, 0, 0);
+    double * KRESTRICT phi = sdom.phi->ptr(group0, 0, 0);
 
     for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
       double * KRESTRICT psi = psi_ptr;
@@ -79,7 +82,6 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
 void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
   int nidx = grid_data->total_num_moments;
-  int num_groups = grid_data->phi_out->groups;
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
@@ -89,6 +91,7 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
     // Get dimensioning
     int num_zones = sdom.num_zones;
     int num_local_groups = sdom.num_groups;
+    int num_groups = sdom.phi_out->groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
     int num_groups_zones = num_local_groups*num_zones;
@@ -96,7 +99,7 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
     sdom.rhs->clear(0.0);
 
     /* 3D Cartesian Geometry */
-    double *phi_out_ptr = grid_data->phi_out->ptr(group0, 0, 0);
+    double *phi_out_ptr = sdom.phi_out->ptr(group0, 0, 0);
     double * KRESTRICT ell_plus = sdom.ell_plus->ptr();
     double * KRESTRICT rhs = sdom.rhs->ptr();
 

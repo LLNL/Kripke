@@ -12,7 +12,6 @@
  * Currently, the spatial grid is calculated so that cells are a uniform
  * length = (xmax - xmin) / nx
  * in each spatial direction.
- *
 */
 Grid_Data::Grid_Data(Input_Variables *input_vars)
 {
@@ -51,14 +50,11 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   // Allocate moments variables
   int total_num_groups = num_groups_per_set * num_group_sets;
 
-
-
-  ell.resize(num_direction_sets);
-  ell_plus.resize(num_direction_sets);
-  for(int ds = 0;ds < num_direction_sets;++ ds){
-    ell[ds] = new SubTVec(kernel->nestingEll(), total_num_moments, num_directions_per_set, 1);
-    ell_plus[ds] = new SubTVec(kernel->nestingEllPlus(), total_num_moments, num_directions_per_set, 1);
-  }
+  // just allocate pointer vectors, we will allocate them below
+  ell.resize(num_direction_sets, NULL);
+  ell_plus.resize(num_direction_sets, NULL);
+  phi.resize(num_zone_sets, NULL);
+  phi_out.resize(num_zone_sets, NULL);
 
   // Initialize Subdomains
   subdomains.resize(num_subdomains);
@@ -70,22 +66,36 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
         // Setup the subdomain
         Subdomain &sdom = subdomains[sdom_id];
-        sdom.setup(sdom_id, input_vars, gs, ds, zs, directions, kernel, layout, ell[ds], ell_plus[ds]);
+        sdom.setup(sdom_id, input_vars, gs, ds, zs, directions, kernel, layout);
+
+        // Create ell and ell_plus, if this is the first of this ds
+        if(ell[ds] == NULL){
+          ell[ds] = new SubTVec(kernel->nestingEll(), total_num_moments, sdom.num_directions, 1);
+          ell_plus[ds] = new SubTVec(kernel->nestingEllPlus(), total_num_moments, sdom.num_directions, 1);
+        }
+
+        // Create phi and phi_out, if this is the first of this zs
+        if(phi[zs] == NULL){
+          phi[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
+          phi_out[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
+        }
+
+        // Set the variables for this subdomain
+        sdom.setVars(ell[ds], ell_plus[ds], phi[zs], phi_out[zs]);
       }
     }
   }
-
-  phi = new SubTVec(nest, total_num_groups, total_num_moments, subdomains[0].num_zones);
-  phi_out = new SubTVec(nest, total_num_groups, total_num_moments, subdomains[0].num_zones);
 
   delete layout;
 }
 
 Grid_Data::~Grid_Data(){
   delete kernel;
-  delete phi;
-  delete phi_out;
-  for(int ds = 0;ds < ell.size();++ ds){
+  for(int zs = 0;zs < num_zone_sets;++ zs){
+    delete phi[zs];
+    delete phi_out[zs];
+  }
+  for(int ds = 0;ds < num_direction_sets;++ ds){
     delete ell[ds];
     delete ell_plus[ds];
   }
@@ -110,10 +120,12 @@ void Grid_Data::randomizeData(void){
     subdomains[s].randomizeData();
   }
 
-  phi->randomizeData();
-  phi_out->randomizeData();
+  for(int zs = 0;zs < num_zone_sets;++ zs){
+    phi[zs]->randomizeData();
+    phi_out[zs]->randomizeData();
+  }
 
-  for(int ds = 0;ds < ell.size();++ ds){
+  for(int ds = 0;ds < num_direction_sets;++ ds){
     ell[ds]->randomizeData();
     ell_plus[ds]->randomizeData();
   }
@@ -131,8 +143,11 @@ void Grid_Data::copy(Grid_Data const &b){
   for(int s = 0;s < subdomains.size();++ s){
     subdomains[s].copy(b.subdomains[s]);
   }
-  phi->copy(*b.phi);
-  phi_out->copy(*b.phi_out);
+
+  for(int zs = 0;zs < num_zone_sets;++ zs){
+    phi[zs]->copy(*b.phi[zs]);
+    phi_out[zs]->copy(*b.phi_out[zs]);
+  }
 
   for(int ds = 0;ds < ell.size();++ ds){
     ell[ds]->copy(*b.ell[ds]);
@@ -170,8 +185,12 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
 
   }
   is_diff |= compareVector("sigma_tot", sigma_tot, b.sigma_tot, tol, verbose);
-  is_diff |= phi->compare("phi", *b.phi, tol, verbose);
-  is_diff |= phi_out->compare("phi_out", *b.phi_out, tol, verbose);
+
+  for(int zs = 0;zs < num_zone_sets;++ zs){
+    is_diff |= phi[zs]->compare("phi", *b.phi[zs], tol, verbose);
+    is_diff |= phi_out[zs]->compare("phi_out", *b.phi_out[zs], tol, verbose);
+  }
+
   for(int ds = 0;ds < ell.size();++ ds){
     is_diff |= ell[ds]->compare("ell", *b.ell[ds], tol, verbose);
     is_diff |= ell_plus[ds]->compare("ell_plus", *b.ell_plus[ds], tol, verbose);

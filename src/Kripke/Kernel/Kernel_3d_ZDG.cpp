@@ -34,10 +34,11 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
   // Outer parameters
   int num_moments = grid_data->num_legendre;
   int nidx = grid_data->total_num_moments;
-  int num_groups = grid_data->phi->groups;
 
   // Clear phi
-  grid_data->phi->clear(0.0);
+  for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
+    grid_data->phi[ds]->clear(0.0);
+  }
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
@@ -45,6 +46,7 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
     Subdomain &sdom = grid_data->subdomains[sdom_id];
 
     // Get dimensioning
+    int num_groups = sdom.phi->groups;
     int num_zones = sdom.num_zones;
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
@@ -61,7 +63,7 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
       double * KRESTRICT ell_d = ell_d_ptr;
 
       for (int d = 0; d < num_local_directions; d++) {
-        double * KRESTRICT phi = grid_data->phi->ptr(group0, 0, z);
+        double * KRESTRICT phi = sdom.phi->ptr(group0, 0, z);
 
         for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
           double ell_d_nm = ell_d[nm_offset];
@@ -83,7 +85,6 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
   int num_moments = grid_data->num_legendre;
   int nidx = grid_data->total_num_moments;
-  int num_groups = grid_data->phi_out->groups;
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
@@ -92,6 +93,7 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
 
     // Get dimensioning
     int num_zones = sdom.num_zones;
+    int num_groups = sdom.phi_out->groups;
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
@@ -111,7 +113,7 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
       double * ell_plus_d = ell_plus_ptr;
       for (int d = 0; d < num_local_directions; d++) {
 
-        double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0, 0, z);
+        double * KRESTRICT phi_out = sdom.phi_out->ptr(group0, 0, z);
 
         for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
           double ell_plus_d_n_m = ell_plus_d[nm_offset];

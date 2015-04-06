@@ -33,9 +33,10 @@ Nesting_Order Kernel_3d_DZG::nestingEllPlus(void) const {
 void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
   // Outer parameters
   int nidx = grid_data->total_num_moments;
-  int num_groups = grid_data->phi->groups;
 
-  grid_data->phi->clear(0.0);
+  for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
+    grid_data->phi[ds]->clear(0.0);
+  }
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
@@ -44,13 +45,14 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
 
     // Get dimensioning
     int num_zones = sdom.num_zones;
+    int num_groups = sdom.phi->groups;
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
 
     /* 3D Cartesian Geometry */
     double * KRESTRICT ell = sdom.ell->ptr();
-    double * KRESTRICT phi_ptr = grid_data->phi->ptr(group0, 0, 0);
+    double * KRESTRICT phi_ptr = sdom.phi->ptr(group0, 0, 0);
     for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
       double * KRESTRICT psi_ptr = sdom.psi->ptr();
 
@@ -82,16 +84,15 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
 void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
   int nidx = grid_data->total_num_moments;
-  int num_groups = grid_data->phi_out->groups;
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
   for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
     Subdomain &sdom = grid_data->subdomains[sdom_id];
 
-
     // Get dimensioning
     int num_zones = sdom.num_zones;
+    int num_groups = sdom.phi_out->groups;
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
@@ -104,7 +105,7 @@ void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
     double * KRESTRICT ell_plus = sdom.ell_plus->ptr();
 
     for (int d = 0; d < num_local_directions; d++) {
-      double * KRESTRICT phi_out_ptr = grid_data->phi_out->ptr(group0, 0, 0);
+      double * KRESTRICT phi_out_ptr = sdom.phi_out->ptr(group0, 0, 0);
       double * KRESTRICT rhs_ptr = sdom.rhs->ptr(0, d, 0);
 
       for(int nm_offset = 0;nm_offset < nidx;++nm_offset){

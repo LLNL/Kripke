@@ -36,8 +36,9 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
   int nidx = grid_data->total_num_moments;
 
   // Clear phi
-  grid_data->phi->clear(0.0);
-
+  for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
+    grid_data->phi[ds]->clear(0.0);
+  }
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
   for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
@@ -57,7 +58,7 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
 #endif
     for(int z = 0;z < num_zones;++ z){
       double * KRESTRICT psi = sdom.psi->ptr(0, 0, z);
-      double * KRESTRICT phi = grid_data->phi->ptr(group0, 0, z);
+      double * KRESTRICT phi = sdom.phi->ptr(group0, 0, z);
       for(int group = 0;group < num_local_groups;++ group){
         double * KRESTRICT ell_d = ell_ptr;
 
@@ -106,7 +107,7 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
 #endif
     for(int z = 0;z < num_zones;++ z){
       double * KRESTRICT rhs = sdom.rhs->ptr(0, 0, z);
-      double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0,0, z);
+      double * KRESTRICT phi_out = sdom.phi_out->ptr(group0,0, z);
       for(int group = 0;group < num_local_groups;++ group){
         double * KRESTRICT ell_plus_d = ell_plus_ptr;
 

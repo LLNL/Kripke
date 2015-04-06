@@ -38,8 +38,7 @@ Subdomain::~Subdomain(){
   Setup subdomain and allocate data
 */
 void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, int zs,
-    std::vector<Directions> &direction_list, Kernel *kernel, Layout *layout,
-    SubTVec *ell_ptr, SubTVec *ell_plus_ptr)
+    std::vector<Directions> &direction_list, Kernel *kernel, Layout *layout)
 {
   // set the set indices
   idx_group_set = gs;
@@ -52,8 +51,6 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   num_directions = input_vars->num_dirs_per_dirset;
   direction0 = ds * input_vars->num_dirs_per_dirset;
   directions = &direction_list[direction0];
-  ell = ell_ptr;
-  ell_plus = ell_plus_ptr;
 
   num_zones = 1;
   for(int dim = 0;dim < 3;++ dim){
@@ -90,6 +87,14 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   }
 }
 
+void Subdomain::setVars(SubTVec *ell_ptr, SubTVec *ell_plus_ptr,
+    SubTVec *phi_ptr, SubTVec *phi_out_ptr){
+
+  ell = ell_ptr;
+  ell_plus = ell_plus_ptr;
+  phi = phi_ptr;
+  phi_out = phi_out_ptr;
+}
 
 
 /**

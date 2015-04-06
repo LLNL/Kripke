@@ -32,8 +32,10 @@ struct Subdomain {
   ~Subdomain();
 
   void setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, int zs,
-    std::vector<Directions> &direction_list, Kernel *kernel, Layout *layout,
-    SubTVec *ell_plus, SubTVec *ell_plus_ptr);
+    std::vector<Directions> &direction_list, Kernel *kernel, Layout *layout);
+
+  void setVars(SubTVec *ell_ptr, SubTVec *ell_plus_ptr,
+    SubTVec *phi_ptr, SubTVec *phi_out_ptr);
 
   void randomizeData(void);
   void copy(Subdomain const &b);
@@ -72,6 +74,8 @@ struct Subdomain {
   Directions *directions;
   SubTVec *ell;
   SubTVec *ell_plus;
+  SubTVec *phi;
+  SubTVec *phi_out;
 };
 
 #endif
