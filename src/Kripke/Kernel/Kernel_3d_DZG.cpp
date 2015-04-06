@@ -30,6 +30,11 @@ Nesting_Order Kernel_3d_DZG::nestingEllPlus(void) const {
   return NEST_ZDG;
 }
 
+Nesting_Order Kernel_3d_DZG::nestingSigs(void) const {
+  return NEST_ZDG;
+}
+
+
 void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
   // Outer parameters
   int nidx = grid_data->total_num_moments;

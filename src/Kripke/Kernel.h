@@ -26,6 +26,7 @@ class Kernel {
     virtual Nesting_Order nestingSigt(void) const = 0;
     virtual Nesting_Order nestingEll(void) const = 0;
     virtual Nesting_Order nestingEllPlus(void) const = 0;
+    virtual Nesting_Order nestingSigs(void) const = 0;
 
     // Computational Kernels
     virtual void LTimes(Grid_Data *grid_data) = 0;

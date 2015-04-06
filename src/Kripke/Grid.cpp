@@ -23,7 +23,8 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   kernel = createKernel(input_vars->nesting, 3);
 
   // Create quadrature set (for all directions)
-  InitDirections(this, input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset);
+  int total_num_directions = input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset;
+  InitDirections(this, total_num_directions);
 
   num_direction_sets = 8*input_vars->num_dirsets_per_octant;
   num_directions_per_set = input_vars->num_dirs_per_dirset;
@@ -34,8 +35,8 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
     num_zone_sets *= input_vars->num_zonesets_dim[dim];
   }
 
-  num_legendre = input_vars->legendre_order;
-  total_num_moments = (num_legendre+1)*(num_legendre+1);
+  legendre_order = input_vars->legendre_order;
+  total_num_moments = (legendre_order+1)*(legendre_order+1);
 
   int num_subdomains = num_direction_sets*num_group_sets*num_zone_sets;
 
@@ -45,10 +46,23 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   niter = input_vars->niter;
 
   // setup cross-sections
-  sigma_tot.resize(num_group_sets*num_groups_per_set, 0.0);
+  int total_num_groups = num_group_sets*num_groups_per_set;
+  sigma_tot.resize(total_num_groups, 0.0);
 
-  // Allocate moments variables
-  int total_num_groups = num_groups_per_set * num_group_sets;
+  // Setup scattering transfer matrix for 2 materials
+  sigs.resize(2);
+  for(int mat = 0;mat < 2;++ mat){
+    // allocate transfer matrix
+    sigs[mat] = new SubTVec(kernel->nestingSigs(), total_num_groups, legendre_order+1, total_num_groups);
+
+    // Set to identity for all moments
+    sigs[mat]->clear(0.0);
+    for(int l = 0;l < legendre_order+1;++ l){
+      for(int g = 0;g < total_num_groups;++ g){
+        (*sigs[mat])(g, l, g) = 1.0;
+      }
+    }
+  }
 
   // just allocate pointer vectors, we will allocate them below
   ell.resize(num_direction_sets, NULL);

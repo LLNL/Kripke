@@ -38,18 +38,17 @@ public:
   int num_groups_per_set;                   // How many groups in each set
   int num_direction_sets;                   // Number of direction-sets
   int num_directions_per_set;               // Number of directions per dir set
-  int num_zone_sets;
+  int num_zone_sets;                        // Number of zone sets
+  int legendre_order;                       // Legendra expansion order ( >= 0 )
+  int total_num_moments;                    // Number of spherical harmonic moments
 
-  std::vector<Directions> directions;       // Direction data
+  std::vector<Directions> directions;       // Quadrature point data, for all directions
+  Kernel *kernel;                           // Layout-specific math kernels
 
-  Kernel *kernel;
-
-  // Group/Angle/Zone sets
-  std::vector<Subdomain> subdomains;
+  std::vector<Subdomain> subdomains;        // Group/Angle/Zone set data
 
   // Variables:
-  int num_legendre;
-  int total_num_moments;
+  std::vector<SubTVec *> sigs;              // scattering lookup table for each material
 
   // Per directionset ell and ell_plus matrices (Subdomain point into these arrays)
   std::vector<SubTVec *> ell;               // L matrix in nm_offset coordinates

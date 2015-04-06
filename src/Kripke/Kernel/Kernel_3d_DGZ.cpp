@@ -32,6 +32,10 @@ Nesting_Order Kernel_3d_DGZ::nestingEllPlus(void) const {
   return NEST_ZDG;
 }
 
+Nesting_Order Kernel_3d_DGZ::nestingSigs(void) const {
+  return NEST_ZDG;
+}
+
 
 void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
   // Outer parameters

@@ -30,9 +30,13 @@ Nesting_Order Kernel_3d_ZDG::nestingEllPlus(void) const {
   return NEST_ZDG;
 }
 
+Nesting_Order Kernel_3d_ZDG::nestingSigs(void) const {
+  return NEST_ZDG;
+}
+
+
 void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
   // Outer parameters
-  int num_moments = grid_data->num_legendre;
   int nidx = grid_data->total_num_moments;
 
   // Clear phi
@@ -83,7 +87,6 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
 
 void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
-  int num_moments = grid_data->num_legendre;
   int nidx = grid_data->total_num_moments;
 
   // Loop over Subdomains
