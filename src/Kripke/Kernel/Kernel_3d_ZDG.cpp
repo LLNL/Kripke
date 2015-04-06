@@ -49,10 +49,9 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int dir0 = sdom.direction0;
 
     /* 3D Cartesian Geometry */
-    double * KRESTRICT ell_d_ptr = grid_data->ell->ptr(0, dir0, 0);
+    double * KRESTRICT ell_d_ptr = sdom.ell->ptr();
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
@@ -96,13 +95,12 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int dir0 = sdom.direction0;
 
     // Get Variables
     sdom.rhs->clear(0.0);
 
     /* 3D Cartesian Geometry */
-    double * KRESTRICT ell_plus_ptr = grid_data->ell_plus->ptr(0, dir0, 0);
+    double * KRESTRICT ell_plus_ptr = sdom.ell_plus->ptr();
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for

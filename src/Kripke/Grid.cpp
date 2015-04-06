@@ -42,6 +42,24 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
   Nesting_Order nest = input_vars->nesting;
 
+  /* Set ncalls */
+  niter = input_vars->niter;
+
+  // setup cross-sections
+  sigma_tot.resize(num_group_sets*num_groups_per_set, 0.0);
+
+  // Allocate moments variables
+  int total_num_groups = num_groups_per_set * num_group_sets;
+
+
+
+  ell.resize(num_direction_sets);
+  ell_plus.resize(num_direction_sets);
+  for(int ds = 0;ds < num_direction_sets;++ ds){
+    ell[ds] = new SubTVec(kernel->nestingEll(), total_num_moments, num_directions_per_set, 1);
+    ell_plus[ds] = new SubTVec(kernel->nestingEllPlus(), total_num_moments, num_directions_per_set, 1);
+  }
+
   // Initialize Subdomains
   subdomains.resize(num_subdomains);
   for(int gs = 0;gs < num_group_sets;++ gs){
@@ -52,27 +70,13 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
         // Setup the subdomain
         Subdomain &sdom = subdomains[sdom_id];
-        sdom.setup(sdom_id, input_vars, gs, ds, zs, directions, kernel, layout);
+        sdom.setup(sdom_id, input_vars, gs, ds, zs, directions, kernel, layout, ell[ds], ell_plus[ds]);
       }
     }
   }
 
-  /* Set ncalls */
-  niter = input_vars->niter;
-
-  // setup cross-sections
-  sigma_tot.resize(num_group_sets*num_groups_per_set, 0.0);
-
-  // Allocate moments variables
-  int total_dirs = num_directions_per_set * num_direction_sets;
-  int num_groups = num_groups_per_set * num_group_sets;
-
-  phi = new SubTVec(nest, num_groups, total_num_moments, subdomains[0].num_zones);
-  phi_out = new SubTVec(nest, num_groups, total_num_moments, subdomains[0].num_zones);
-
-  ell = new SubTVec(kernel->nestingEll(), total_num_moments, total_dirs, 1);
-  ell_plus = new SubTVec(kernel->nestingEllPlus(), total_num_moments, total_dirs, 1);
-
+  phi = new SubTVec(nest, total_num_groups, total_num_moments, subdomains[0].num_zones);
+  phi_out = new SubTVec(nest, total_num_groups, total_num_moments, subdomains[0].num_zones);
 
   delete layout;
 }
@@ -81,8 +85,10 @@ Grid_Data::~Grid_Data(){
   delete kernel;
   delete phi;
   delete phi_out;
-  delete ell;
-  delete ell_plus;
+  for(int ds = 0;ds < ell.size();++ ds){
+    delete ell[ds];
+    delete ell_plus[ds];
+  }
 }
 
 /**
@@ -106,8 +112,11 @@ void Grid_Data::randomizeData(void){
 
   phi->randomizeData();
   phi_out->randomizeData();
-  ell->randomizeData();
-  ell_plus->randomizeData();
+
+  for(int ds = 0;ds < ell.size();++ ds){
+    ell[ds]->randomizeData();
+    ell_plus[ds]->randomizeData();
+  }
 }
 
 /**
@@ -124,8 +133,11 @@ void Grid_Data::copy(Grid_Data const &b){
   }
   phi->copy(*b.phi);
   phi_out->copy(*b.phi_out);
-  ell->copy(*b.ell);
-  ell_plus->copy(*b.ell_plus);
+
+  for(int ds = 0;ds < ell.size();++ ds){
+    ell[ds]->copy(*b.ell[ds]);
+    ell_plus[ds]->copy(*b.ell_plus[ds]);
+  }
 }
 
 /**
@@ -160,8 +172,10 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   is_diff |= compareVector("sigma_tot", sigma_tot, b.sigma_tot, tol, verbose);
   is_diff |= phi->compare("phi", *b.phi, tol, verbose);
   is_diff |= phi_out->compare("phi_out", *b.phi_out, tol, verbose);
-  is_diff |= ell->compare("ell", *b.ell, tol, verbose);
-  is_diff |= ell_plus->compare("ell_plus", *b.ell_plus, tol, verbose);
+  for(int ds = 0;ds < ell.size();++ ds){
+    is_diff |= ell[ds]->compare("ell", *b.ell[ds], tol, verbose);
+    is_diff |= ell_plus[ds]->compare("ell_plus", *b.ell_plus[ds], tol, verbose);
+  }
 
   return is_diff;
 }

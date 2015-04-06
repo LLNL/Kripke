@@ -33,7 +33,6 @@ Nesting_Order Kernel_3d_GZD::nestingEllPlus(void) const {
 void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
   // Outer parameters
   int nidx = grid_data->total_num_moments;
-  int num_directions = grid_data->ell->directions;
 
   // Clear phi
   grid_data->phi->clear(0.0);
@@ -48,11 +47,10 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int dir0 = sdom.direction0;
     int num_groups_zones = num_local_groups*num_zones;
 
     /* 3D Cartesian Geometry */
-    double * ell_ptr = grid_data->ell->ptr(0, dir0, 0);
+    double *ell_ptr = sdom.ell->ptr();
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
@@ -90,13 +88,12 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int dir0 = sdom.direction0;
     int num_groups_zones = num_local_groups*num_zones;
 
     sdom.rhs->clear(0.0);
 
     /* 3D Cartesian Geometry */
-    double * KRESTRICT ell_plus_ptr = grid_data->ell_plus->ptr(0, dir0, 0);
+    double * KRESTRICT ell_plus_ptr = sdom.ell_plus->ptr();
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for

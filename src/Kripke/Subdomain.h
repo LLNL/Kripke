@@ -32,7 +32,8 @@ struct Subdomain {
   ~Subdomain();
 
   void setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, int zs,
-    std::vector<Directions> &direction_list, Kernel *kernel, Layout *layout);
+    std::vector<Directions> &direction_list, Kernel *kernel, Layout *layout,
+    SubTVec *ell_plus, SubTVec *ell_plus_ptr);
 
   void randomizeData(void);
   void copy(Subdomain const &b);
@@ -53,7 +54,6 @@ struct Subdomain {
   int group0;           // Starting global group id
   int direction0;       // Starting global direction id
 
-  Directions *directions;
   Grid_Sweep_Block sweep_block;
 
   // Neighbors
@@ -68,6 +68,10 @@ struct Subdomain {
   SubTVec *rhs;         // RHS, source term
   SubTVec *sigt;        // Zonal per-group cross-section
 
+  // Pointers into directions and directionset data from Grid_Data
+  Directions *directions;
+  SubTVec *ell;
+  SubTVec *ell_plus;
 };
 
 #endif

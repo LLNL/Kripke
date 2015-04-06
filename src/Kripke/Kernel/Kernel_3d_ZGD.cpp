@@ -34,7 +34,6 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
   // Outer parameters
   int num_moments = grid_data->num_legendre;
   int nidx = grid_data->total_num_moments;
-  int num_directions = grid_data->ell->directions;
 
   // Clear phi
   grid_data->phi->clear(0.0);
@@ -49,10 +48,9 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int dir0 = sdom.direction0;
 
     /* 3D Cartesian Geometry */
-    double * KRESTRICT ell_ptr = grid_data->ell->ptr(0, dir0, 0);
+    double * KRESTRICT ell_ptr = sdom.ell->ptr();
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
@@ -84,7 +82,6 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
   int num_moments = grid_data->num_legendre;
   int nidx = grid_data->total_num_moments;
-  int num_directions = grid_data->ell_plus->directions;
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
@@ -96,13 +93,12 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int dir0 = sdom.direction0;
 
     // Get Variables
     sdom.rhs->clear(0.0);
 
     /* 3D Cartesian Geometry */
-    double * KRESTRICT ell_plus_ptr = grid_data->ell_plus->ptr(0, dir0, 0);
+    double * KRESTRICT ell_plus_ptr = sdom.ell_plus->ptr();
 
 
 #ifdef KRIPKE_USE_OPENMP

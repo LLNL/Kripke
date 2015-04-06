@@ -58,6 +58,7 @@ int SweepSolver (Grid_Data *grid_data)
         // Sweep everything
         SweepSubdomains(sdom_list, grid_data);
       }
+      // This is the ARDRA version, doing each groupset sweep independently
       else{
         for(int group_set = 0;group_set < grid_data->num_group_sets;++ group_set){
           std::vector<int> sdom_list;

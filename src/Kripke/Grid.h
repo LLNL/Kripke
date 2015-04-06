@@ -54,8 +54,9 @@ public:
   SubTVec *phi;               // Moments of psi
   SubTVec *phi_out;           // Scattering source (moments)
 
-  SubTVec *ell;               // L matrix in nm_offset coordinates
-  SubTVec *ell_plus;          // L+ matrix in nm_offset coordinates
+  // Per directionset ell and ell_plus matrices (Subdomain's point into these arrays)
+  std::vector<SubTVec *> ell;               // L matrix in nm_offset coordinates
+  std::vector<SubTVec *> ell_plus;          // L+ matrix in nm_offset coordinates
 };
 
 #endif

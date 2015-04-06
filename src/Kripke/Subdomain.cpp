@@ -13,10 +13,12 @@ Subdomain::Subdomain() :
   num_directions(0),
   group0(0),
   direction0(0),
-  directions(NULL),
   psi(NULL),
   rhs(NULL),
-  sigt(NULL)
+  sigt(NULL),
+  directions(NULL),
+  ell(NULL),
+  ell_plus(NULL)
 {
   plane_data[0] = NULL;
   plane_data[1] = NULL;
@@ -35,7 +37,10 @@ Subdomain::~Subdomain(){
 /**
   Setup subdomain and allocate data
 */
-void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, int zs, std::vector<Directions> &direction_list, Kernel *kernel, Layout *layout){
+void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, int zs,
+    std::vector<Directions> &direction_list, Kernel *kernel, Layout *layout,
+    SubTVec *ell_ptr, SubTVec *ell_plus_ptr)
+{
   // set the set indices
   idx_group_set = gs;
   idx_dir_set = ds;
@@ -47,6 +52,8 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   num_directions = input_vars->num_dirs_per_dirset;
   direction0 = ds * input_vars->num_dirs_per_dirset;
   directions = &direction_list[direction0];
+  ell = ell_ptr;
+  ell_plus = ell_plus_ptr;
 
   num_zones = 1;
   for(int dim = 0;dim < 3;++ dim){
@@ -63,7 +70,7 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
     }
   }
 
-  // allocate storage for the sweep boundary data
+  // allocate storage for the sweep boundary data (upwind and downwind share same buffer)
   plane_data[0] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[1] * nzones[2]);
   plane_data[1] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[2]);
   plane_data[2] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[1]);

@@ -33,7 +33,6 @@ Nesting_Order Kernel_3d_DZG::nestingEllPlus(void) const {
 void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
   // Outer parameters
   int nidx = grid_data->total_num_moments;
-  int num_directions = grid_data->ell->directions;
   int num_groups = grid_data->phi->groups;
 
   grid_data->phi->clear(0.0);
@@ -48,10 +47,9 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int dir0 = sdom.direction0;
 
     /* 3D Cartesian Geometry */
-    double * KRESTRICT ell = grid_data->ell->ptr(0, dir0, 0);
+    double * KRESTRICT ell = sdom.ell->ptr();
     double * KRESTRICT phi_ptr = grid_data->phi->ptr(group0, 0, 0);
     for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
       double * KRESTRICT psi_ptr = sdom.psi->ptr();
@@ -74,7 +72,7 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
         }
         psi_ptr += num_zones*num_local_groups;
       }
-      ell += num_directions;
+      ell += num_local_directions;
       phi_ptr += num_groups*num_zones;
     }
 
@@ -97,14 +95,13 @@ void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int dir0 = sdom.direction0;
     int num_groups_zones = num_local_groups*num_zones;
 
     // Get Variables
     sdom.rhs->clear(0.0);
 
     /* 3D Cartesian Geometry */
-    double * KRESTRICT ell_plus = grid_data->ell_plus->ptr(0, dir0, 0);
+    double * KRESTRICT ell_plus = sdom.ell_plus->ptr();
 
     for (int d = 0; d < num_local_directions; d++) {
       double * KRESTRICT phi_out_ptr = grid_data->phi_out->ptr(group0, 0, 0);
