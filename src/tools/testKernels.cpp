@@ -29,6 +29,18 @@ struct runLPlusTimes {
   }
 };
 
+
+/**
+ * Functional object to run the scattering kernel.
+ */
+struct runScattering {
+  std::string name(void) const { return "scattering"; }
+
+  void operator ()(Grid_Data *grid_data) const {
+    grid_data->kernel->scattering(grid_data);
+  }
+};
+
 /**
  * Functional object to run the MPI sweep and sweep kernels
  */
@@ -106,6 +118,9 @@ void testKernels(Input_Variables &input_variables){
 
   // Run LPlusTimes
   testKernel<runLPlusTimes>(input_variables);
+
+  // Run Scattering
+  testKernel<runScattering>(input_variables);
 
   // Run Sweep
   testKernel<runSweep>(input_variables);
