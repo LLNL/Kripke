@@ -116,6 +116,14 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
   } // Subdomain
 }
 
+
+/**
+  Compute scattering source term phi_out from flux moments in phi.
+*/
+void Kernel_3d_GZD::scattering(Grid_Data *grid_data){
+
+}
+
 /* Sweep routine for Diamond-Difference */
 /* Macros for offsets with fluxes on cell faces */
 #define I_PLANE_INDEX(j, k) (k)*(local_jmax) + (j)

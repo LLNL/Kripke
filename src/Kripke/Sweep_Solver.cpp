@@ -32,8 +32,11 @@ int SweepSolver (Grid_Data *grid_data)
     }
 
 
-    // This is where the Scattering kernel would go!
-
+    // Compute Scattering Source Term
+    {
+      BLOCK_TIMER(grid_data->timing, Scattering);
+      kernel->scattering(grid_data);
+    }
 
 
     // Moments to Discrete transformation
