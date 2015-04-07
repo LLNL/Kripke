@@ -80,7 +80,7 @@ struct Subdomain {
 
   // Materials on the mesh, used for scattering lookup
   std::vector<int> mixed_to_zones;     // mapping from mixed slot to zones
-  std::vector<double> mixed_material;  // material number for each mixed slot
+  std::vector<int> mixed_material;  // material number for each mixed slot
   std::vector<double> mixed_fraction;  // volume fraction * density for each mixed slot
 };
 

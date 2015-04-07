@@ -31,7 +31,7 @@ Nesting_Order Kernel_3d_GZD::nestingEllPlus(void) const {
 }
 
 Nesting_Order Kernel_3d_GZD::nestingSigs(void) const {
-  return NEST_ZDG;
+  return NEST_GZD;
 }
 
 
@@ -123,9 +123,72 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
 
 /**
   Compute scattering source term phi_out from flux moments in phi.
+  phi_out(gp,z,nm) = sum_g { sigs(g, n, gp) * phi(g,z,nm) }
+
+  we are mapping sigs(g,d,z) to mean:
+    g=source group
+    d=legendre coeff
+    z=destination group
 */
 void Kernel_3d_GZD::scattering(Grid_Data *grid_data){
+  // Loop over zoneset subdomains
+  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
+    // get the phi and phi out references
+    SubTVec &phi = *grid_data->phi[zs];
+    SubTVec &phi_out = *grid_data->phi_out[zs];
+    SubTVec &sigs0 = *grid_data->sigs[0];
+    SubTVec &sigs1 = *grid_data->sigs[1];
 
+    // get material mix information
+    int sdom_id = grid_data->zs_to_sdomid[zs];
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
+    int const * KRESTRICT mixed_to_zones = &sdom.mixed_to_zones[0];
+    int const * KRESTRICT mixed_material = &sdom.mixed_material[0];
+    double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
+
+    // Zero out source terms
+    phi_out.clear(0.0);
+
+    // grab dimensions
+    int num_mixed = sdom.mixed_to_zones.size();
+    int num_zones = sdom.num_zones;
+    int num_groups = phi.groups;
+    int num_coeff = grid_data->legendre_order+1;
+    int num_moments = grid_data->total_num_moments;
+    int const * KRESTRICT moment_to_coeff = &grid_data->moment_to_coeff[0];
+
+    double *phi_g = phi.ptr();
+    double *sigs0_g_gp = sigs0.ptr();
+    double *sigs1_g_gp = sigs1.ptr();
+    for(int g = 0;g < num_groups;++ g){
+
+      double *phi_out_gp = phi_out.ptr();
+      for(int gp = 0;gp < num_groups;++ gp){
+
+
+        for(int mix = 0;mix < num_mixed;++ mix){
+          int zone = mixed_to_zones[mix];
+          int material = mixed_material[mix];
+          double fraction = mixed_fraction[mix];
+          double *sigs_g_gp = material ? sigs1_g_gp : sigs0_g_gp;
+
+          double *phi_g_z = phi_g + zone*num_moments;
+          double *phi_out_gp_z = phi_out_gp + zone*num_moments;
+
+          for(int nm = 0;nm < num_moments;++ nm){
+            // map nm to n
+            int n = moment_to_coeff[nm];
+
+            phi_out_gp_z[nm] += sigs_g_gp[n] * phi_g_z[nm] * fraction;
+          }
+        }
+        sigs0_g_gp += num_coeff;
+        sigs1_g_gp += num_coeff;
+        phi_out_gp += num_zones*num_moments;
+      }
+      phi_g += num_zones*num_moments;
+    }
+  }
 }
 
 /* Sweep routine for Diamond-Difference */
@@ -213,4 +276,5 @@ void Kernel_3d_GZD::sweep(Subdomain *sdom) {
     }
   } // group
 }
+
 

@@ -45,6 +45,16 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   /* Set ncalls */
   niter = input_vars->niter;
 
+  // setup mapping of moments to legendre coefficients
+  moment_to_coeff.resize(total_num_moments);
+  int nm = 0;
+  for(int n = 0;n < legendre_order+1;++ n){
+    for(int m = -n;m <= n; ++ m){
+      moment_to_coeff[nm] = n;
+      ++ nm;
+    }
+  }
+
   // setup cross-sections
   int total_num_groups = num_group_sets*num_groups_per_set;
   sigma_tot.resize(total_num_groups, 0.0);
@@ -60,6 +70,9 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
     for(int l = 0;l < legendre_order+1;++ l){
       for(int g = 0;g < total_num_groups;++ g){
         (*sigs[mat])(g, l, g) = 1.0;
+        for(int gp = 0;gp < total_num_groups;++ gp){
+          (*sigs[mat])(g, l, gp) = drand48();
+        }
       }
     }
   }
@@ -71,6 +84,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   phi_out.resize(num_zone_sets, NULL);
 
   // Initialize Subdomains
+  zs_to_sdomid.resize(num_zone_sets);
   subdomains.resize(num_subdomains);
   for(int gs = 0;gs < num_group_sets;++ gs){
     for(int ds = 0;ds < num_direction_sets;++ ds){
@@ -90,6 +104,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
         // Create phi and phi_out, if this is the first of this zs
         if(phi[zs] == NULL){
+          zs_to_sdomid[zs] = sdom_id;
           phi[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
           phi_out[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
         }
@@ -165,6 +180,10 @@ void Grid_Data::randomizeData(void){
     ell[ds]->randomizeData();
     ell_plus[ds]->randomizeData();
   }
+
+  for(int mat = 0;mat < 2;++ mat){
+    sigs[mat]->randomizeData();
+  }
 }
 
 /**
@@ -189,6 +208,10 @@ void Grid_Data::copy(Grid_Data const &b){
     ell[ds]->copy(*b.ell[ds]);
     ell_plus[ds]->copy(*b.ell_plus[ds]);
   }
+
+  for(int mat = 0;mat < 2;++ mat){
+    sigs[mat]->copy(*b.sigs[mat]);
+  }
 }
 
 /**
@@ -197,9 +220,6 @@ void Grid_Data::copy(Grid_Data const &b){
  */
 bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   bool is_diff = false;
-
-
-
 
   for(int i = 0;i < directions.size();++i){
     std::stringstream dirname;

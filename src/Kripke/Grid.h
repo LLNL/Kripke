@@ -42,10 +42,13 @@ public:
   int legendre_order;                       // Legendra expansion order ( >= 0 )
   int total_num_moments;                    // Number of spherical harmonic moments
 
+  std::vector<int> moment_to_coeff;         // Map from harmonic moments to legendre coefficients
+
   std::vector<Directions> directions;       // Quadrature point data, for all directions
   Kernel *kernel;                           // Layout-specific math kernels
 
   std::vector<Subdomain> subdomains;        // Group/Angle/Zone set data
+  std::vector<int> zs_to_sdomid;            // map of zonesets to subdomains with ds=gs=0
 
   // Variables:
   std::vector<SubTVec *> sigs;              // scattering lookup table for each material
