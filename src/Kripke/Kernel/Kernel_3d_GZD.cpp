@@ -138,6 +138,7 @@ void Kernel_3d_GZD::scattering(Grid_Data *grid_data){
     SubTVec &phi_out = *grid_data->phi_out[zs];
     SubTVec &sigs0 = *grid_data->sigs[0];
     SubTVec &sigs1 = *grid_data->sigs[1];
+    SubTVec &sigs2 = *grid_data->sigs[2];
 
     // get material mix information
     int sdom_id = grid_data->zs_to_sdomid[zs];
@@ -160,18 +161,23 @@ void Kernel_3d_GZD::scattering(Grid_Data *grid_data){
     double *phi_g = phi.ptr();
     double *sigs0_g_gp = sigs0.ptr();
     double *sigs1_g_gp = sigs1.ptr();
+    double *sigs2_g_gp = sigs2.ptr();
     for(int g = 0;g < num_groups;++ g){
 
       double *phi_out_gp = phi_out.ptr();
       for(int gp = 0;gp < num_groups;++ gp){
 
+        double *sigs_g_gp[3] = {
+          sigs0_g_gp,
+          sigs1_g_gp,
+          sigs2_g_gp
+        };
 
         for(int mix = 0;mix < num_mixed;++ mix){
           int zone = mixed_to_zones[mix];
           int material = mixed_material[mix];
           double fraction = mixed_fraction[mix];
-          double *sigs_g_gp = material ? sigs1_g_gp : sigs0_g_gp;
-
+          double *sigs_g_gp_mat = sigs_g_gp[material];
           double *phi_g_z = phi_g + zone*num_moments;
           double *phi_out_gp_z = phi_out_gp + zone*num_moments;
 
@@ -179,11 +185,12 @@ void Kernel_3d_GZD::scattering(Grid_Data *grid_data){
             // map nm to n
             int n = moment_to_coeff[nm];
 
-            phi_out_gp_z[nm] += sigs_g_gp[n] * phi_g_z[nm] * fraction;
+            phi_out_gp_z[nm] += sigs_g_gp_mat[n] * phi_g_z[nm] * fraction;
           }
         }
         sigs0_g_gp += num_coeff;
         sigs1_g_gp += num_coeff;
+        sigs2_g_gp += num_coeff;
         phi_out_gp += num_zones*num_moments;
       }
       phi_g += num_zones*num_moments;

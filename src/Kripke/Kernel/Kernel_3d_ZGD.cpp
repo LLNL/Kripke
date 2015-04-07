@@ -149,6 +149,7 @@ void Kernel_3d_ZGD::scattering(Grid_Data *grid_data){
     SubTVec &phi_out = *grid_data->phi_out[zs];
     SubTVec &sigs0 = *grid_data->sigs[0];
     SubTVec &sigs1 = *grid_data->sigs[1];
+    SubTVec &sigs2 = *grid_data->sigs[2];
 
     // get material mix information
     int sdom_id = grid_data->zs_to_sdomid[zs];
@@ -168,11 +169,17 @@ void Kernel_3d_ZGD::scattering(Grid_Data *grid_data){
     int num_moments = grid_data->total_num_moments;
     int const * KRESTRICT moment_to_coeff = &grid_data->moment_to_coeff[0];
 
+    double *sigs[3] = {
+        sigs0.ptr(),
+        sigs1.ptr(),
+        sigs2.ptr()
+    };
+
     for(int mix = 0;mix < num_mixed;++ mix){
       int zone = mixed_to_zones[mix];
       int material = mixed_material[mix];
       double fraction = mixed_fraction[mix];
-      double *sigs_g_gp = material ? sigs1.ptr() : sigs0.ptr();
+      double *sigs_g_gp = sigs[material];
       double *phi_z_g = phi.ptr() + zone*num_groups*num_moments;
 
       for(int g = 0;g < num_groups;++ g){

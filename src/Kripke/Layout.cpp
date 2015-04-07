@@ -205,7 +205,11 @@ Neighbor BlockLayout::getNeighbor(int our_sdom_id, int dim, int dir) const{
 std::pair<double, double> BlockLayout::getSpatialExtents(int sdom_id, int dim) const{
 
   // Start with global problem dimensions
-  std::pair<double, double> ext_global(-1.0, 1.0);
+  std::pair<double, double> ext_global(-60.0, 60.0);
+  if(dim == 1){
+    ext_global.first = -100.0;
+    ext_global.first = 100.0;
+  }
 
   // Subdivide by number of processors in specified dimension
   double dx = (ext_global.second - ext_global.first) / (double)num_procs[dim];
@@ -292,7 +296,11 @@ Neighbor ScatterLayout::getNeighbor(int our_sdom_id, int dim, int dir) const{
 std::pair<double, double> ScatterLayout::getSpatialExtents(int sdom_id, int dim) const{
 
   // Start with global problem dimensions
-  std::pair<double, double> ext_global(-1.0, 1.0);
+  std::pair<double, double> ext_global(-60.0, 60.0);
+  if(dim == 1){
+    ext_global.first = -100.0;
+    ext_global.first = 100.0;
+  }
 
   // get the zoneset index along the specified dimension
   int zs_dim = subdomainIdToZoneSetDim(sdom_id, dim);

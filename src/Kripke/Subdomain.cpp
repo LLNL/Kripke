@@ -9,14 +9,43 @@
 namespace {
   /**
     This function defined the material distribution in space.
+    This defines Problem 3 from Kobayashi
+    Where Region 1 is material 0, 2 is 1 and 3 is 2.
   */
   inline int queryMaterial(double x, double y, double z){
+    // Problem is defined for one octant, with reflecting boundaries
+    // We "unreflect" it here by taking abs values
+    x = std::abs(x);
+    y = std::abs(y);
+    z = std::abs(z);
 
-    // Right now this is just an axis aligned and centered unit cube
-    if(std::abs(x) < 0.5 && std::abs(y) < 0.5 && std::abs(z) < 0.5){
+    // Central 20x20x20 box is Region 1
+    if(x <= 10.0 && y <= 10.0 && z <= 10.0){
       return 0;
     }
-    return 1;
+
+    // Leg 1 of Region 2
+    if(x <= 10.0 && y <= 60.0 && z <= 10.0){
+      return 1;
+    }
+
+    // Leg 2 of Region 2
+    if(x <= 40.0 && y >= 50.0 && y <= 60.0 && z <= 10.0){
+      return 1;
+    }
+
+    // Leg 3 of Region 2
+    if(x >= 30.0 && x <= 40.0 && y >= 50.0 && y <= 60.0 && z <= 40.0){
+      return 1;
+    }
+
+    // Leg 4 of Region 2
+    if(x >= 30.0 && x <= 40.0 && y >= 50.0 && z >= 30.0 && z <= 40.0){
+      return 1;
+    }
+
+    // Rest is filled with region 3
+    return 2;
   }
 }
 
@@ -28,6 +57,7 @@ Subdomain::Subdomain() :
   idx_zone_set(0),
   num_groups(0),
   num_directions(0),
+  num_zones(0),
   group0(0),
   direction0(0),
   psi(NULL),
@@ -35,7 +65,9 @@ Subdomain::Subdomain() :
   sigt(NULL),
   directions(NULL),
   ell(NULL),
-  ell_plus(NULL)
+  ell_plus(NULL),
+  phi(NULL),
+  phi_out(NULL)
 {
   plane_data[0] = NULL;
   plane_data[1] = NULL;
@@ -122,7 +154,7 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
         double sdx = deltas[0][i+1] / (double)(num_subsamples+1);
 
         // subsample probe the geometry to get our materials
-        double frac[2] = {0.0, 0.0}; // fraction of both materials
+        double frac[3] = {0.0, 0.0, 0.0}; // fraction of both materials
         double spz = pz + sdz;
 
         for(int sk = 0;sk < num_subsamples;++ sk){
@@ -142,7 +174,7 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
         }
 
         // Add material to zone
-        for(int mat = 0;mat < 2;++ mat){
+        for(int mat = 0;mat < 3;++ mat){
           if(frac[mat] > 0.0){
             mixed_to_zones.push_back(zone_id);
             mixed_material.push_back(mat);
