@@ -18,6 +18,7 @@ class Kernel_3d_DGZ : public Kernel {
     virtual void LTimes(Grid_Data *grid_data);
     virtual void LPlusTimes(Grid_Data *grid_data);
     virtual void scattering(Grid_Data *grid_data);
+    virtual void source(Grid_Data *grid_data);
     virtual void sweep(Subdomain *ga_set);
 };
 

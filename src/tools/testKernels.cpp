@@ -41,6 +41,18 @@ struct runScattering {
   }
 };
 
+
+/**
+ * Functional object to run the source kernel.
+ */
+struct runSource {
+  std::string name(void) const { return "source"; }
+
+  void operator ()(Grid_Data *grid_data) const {
+    grid_data->kernel->source(grid_data);
+  }
+};
+
 /**
  * Functional object to run the MPI sweep and sweep kernels
  */
@@ -121,6 +133,9 @@ void testKernels(Input_Variables &input_variables){
 
   // Run Scattering
   testKernel<runScattering>(input_variables);
+
+  // Run Source
+  testKernel<runSource>(input_variables);
 
   // Run Sweep
   testKernel<runSweep>(input_variables);

@@ -38,6 +38,11 @@ int SweepSolver (Grid_Data *grid_data)
       kernel->scattering(grid_data);
     }
 
+    // Compute External Source Term
+    {
+      BLOCK_TIMER(grid_data->timing, Source);
+      kernel->source(grid_data);
+    }
 
     // Moments to Discrete transformation
     {
