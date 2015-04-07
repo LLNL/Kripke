@@ -80,6 +80,7 @@ bdiv_opt_pkg(tcmalloc 0 OFF)
 bdiv_opt_pkg(memP 0.0 OFF)
 bdiv_opt_pkg(papi 4.2.0 OFF)
 bdiv_opt_pkg(perftools 0 OFF)
+bdiv_opt_pkg(SILO 4.9 OFF)
 
 # BG/Q Specific
 bdiv_opt_pkg(BGPM 20030410 OFF)
