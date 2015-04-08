@@ -14,10 +14,7 @@
 #endif
 
 /**
- * Grid_Data constructor.
- * Currently, the spatial grid is calculated so that cells are a uniform
- * length = (xmax - xmin) / nx
- * in each spatial direction.
+ * Grid_Data constructor
 */
 Grid_Data::Grid_Data(Input_Variables *input_vars)
 {
@@ -155,6 +152,9 @@ Grid_Data::~Grid_Data(){
   for(int ds = 0;ds < num_direction_sets;++ ds){
     delete ell[ds];
     delete ell_plus[ds];
+  }
+  for(int mat = 0;mat < 3;++ mat){
+    delete sigs[mat];
   }
 }
 
