@@ -2,6 +2,19 @@
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 
+
+#ifdef KRIPKE_USE_ESSL
+extern "C"
+{
+void dgemm_ (const char& trans,   const char& transb,
+                         const int& m1,       const int& n,
+                         const int& k,        const double& alpha,
+                         const double* a,     const int& lda,
+                         const double* b,     const int& ldb,
+                         const double& beta,  double* c, const int& ldc);
+}
+#endif
+
 Kernel_3d_GZD::Kernel_3d_GZD() {
 
 }
@@ -58,6 +71,29 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
 
     /* 3D Cartesian Geometry */
     double *ell_ptr = sdom.ell->ptr();
+    
+#if 1
+
+      double * KRESTRICT psi = gd_set.psi->ptr();
+      double * KRESTRICT phi = grid_data->phi->ptr(group0, 0, 0);
+      double * KRESTRICT ell_d = ell_ptr;
+
+  #ifdef KRIPKE_USE_ESSL
+        double ONE = 1.0;
+        double *ell_dgemm = &ell_ptr[0];
+        double *psi_ptr_dgemm = &psi[0];
+        double *phi_dgemm = &phi[0];
+        dgemm_ ('N','N', nidx, num_groups_zones, num_local_directions, ONE, ell_dgemm, nidx, psi_ptr_dgemm,num_local_directions, ONE, phi_dgemm, nidx);
+
+  #else
+
+      for (int i = 0; i < num_groups_zones; ++i)
+        for (int j = 0; j < num_local_directions; ++j)
+          for (int k = 0; k < nidx; ++k)
+            phi[i*nidx + k] += ell_d[j*nidx + k] * psi[i*num_local_directions + j];
+  #endif
+ 
+#else    
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
@@ -75,6 +111,7 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
         }
         ell_d += nidx;
       }
+#endif
 
     }
   } // Subdomain
@@ -100,6 +137,29 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
 
     /* 3D Cartesian Geometry */
     double * KRESTRICT ell_plus_ptr = sdom.ell_plus->ptr();
+    
+    
+#if 1
+
+      double * KRESTRICT rhs = gd_set.rhs->ptr(0, 0, 0);
+      double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0, 0, 0);
+      double * KRESTRICT ell_plus_d = ell_plus_ptr;
+
+  #ifdef KRIPKE_USE_ESSL
+        double ONE = 1.0;
+        double *ell_plus_dgemm = &ell_plus_ptr[0];
+        double *rhs_dgemm = &rhs[0];
+        double *phi_out_dgemm = &phi_out[0];
+        dgemm_ ('T','N',num_local_directions, num_groups_zones, nidx,  ONE, ell_plus_dgemm,nidx, phi_out_dgemm, nidx,  ONE, rhs_dgemm, num_local_directions);
+  #else
+      for (int i = 0; i < num_groups_zones; ++i)
+        for (int j = 0; j < num_local_directions; ++j)
+          for (int k = 0; k < nidx; ++k)
+            rhs[i*num_local_directions + j] += ell_plus_d[j*nidx + k] * phi_out[i*nidx + k];
+  #endif
+
+#else
+    
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
@@ -117,6 +177,8 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
         ell_plus_d += nidx;
       }
     }
+#endif    
+    
   } // Subdomain
 }
 

@@ -1,14 +1,14 @@
 
 set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
-  Kripke/SweepComm.cpp  
+  Kripke/Comm.cpp  
   Kripke/Directions.cpp  
   Kripke/Grid.cpp  
   Kripke/Kernel.cpp  
   Kripke/Layout.cpp
-  Kripke/Subdomain.cpp  
+  Kripke/Subdomain.cpp
   Kripke/Sweep_Solver.cpp  
   Kripke/Timing.cpp  
-    
+ 
   Kripke/Kernel/Kernel_3d_GDZ.cpp
   Kripke/Kernel/Kernel_3d_DGZ.cpp
   Kripke/Kernel/Kernel_3d_ZDG.cpp
@@ -17,4 +17,18 @@ set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
   Kripke/Kernel/Kernel_3d_GZD.cpp
 )
                                                                                                           
-set(KRIPKE_SOURCE ${KRIPKE_SOURCE} PARENT_SCOPE) 
+set(KRIPKE_SOURCE ${KRIPKE_SOURCE} PARENT_SCOPE)
+
+
+
+set(CUDA_KRIPKE_SOURCE ${CUDA_KRIPKE_SOURCE}
+  Kripke/cu_utils.cu
+  Kripke/sweep_ZGD.cu
+  Kripke/sweep_ZDG.cu 
+)
+
+set(CUDA_KRIPKE_SOURCE ${CUDA_KRIPKE_SOURCE} PARENT_SCOPE)
+
+
+
+ 

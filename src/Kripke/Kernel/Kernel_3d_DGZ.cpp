@@ -3,6 +3,22 @@
 #include<Kripke/SubTVec.h>
 
 
+#define LG_PRINT_INFO__
+#define KRIPKE_USE_ZONE_SLICES
+
+#ifdef KRIPKE_USE_ESSL
+extern "C"
+{
+void dgemm_ (const char& trans,   const char& transb,
+                         const int& m1,       const int& n,
+                         const int& k,        const double& alpha,
+                         const double* a,     const int& lda,
+                         const double* b,     const int& ldb,
+                         const double& beta,  double* c, const int& ldc);
+}
+#endif
+
+
 
 Kernel_3d_DGZ::Kernel_3d_DGZ() {
 
@@ -63,6 +79,36 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
     double *psi_ptr = sdom.psi->ptr();
     double * KRESTRICT ell = sdom.ell->ptr();
     double * KRESTRICT phi = sdom.phi->ptr(group0, 0, 0);
+    
+#if 1
+     double * KRESTRICT psi = psi_ptr;
+
+     #ifdef KRIPKE_USE_ESSL
+
+     double ONE = 1.0;
+     double *ell_dgemm = &ell[0];
+     double *psi_ptr_dgemm = &psi_ptr[0];
+     double *phi_dgemm = &phi[0];
+     //double timestart = MPI_Wtime();
+     dgemm_ ('N','N',num_groups_zones, nidx, num_local_directions,ONE, psi_ptr_dgemm,num_groups_zones,ell_dgemm, num_directions,ONE, phi_dgemm, num_zones*num_groups);
+     //double dgemmtime = MPI_Wtime() - timestart;
+
+//      #ifdef LG_PRINT_INFO
+//	printf("DGZ:  dgemm:  M= %d N= %d K= %d,  time: %g\n",num_groups_zones, nidx, num_local_directions,dgemmtime);
+//     #endif
+
+
+     #else
+
+     for (int i=0; i < nidx; ++i)
+       for (int j=0; j < num_local_directions; ++j)
+         for (int k = 0; k < num_groups_zones; ++k)
+           phi[num_zones*num_groups*i + k] += ell[num_directions*i + j] * psi[num_groups_zones*j + k];
+
+     #endif
+
+   
+#else
 
     for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
       double * KRESTRICT psi = psi_ptr;
@@ -80,6 +126,7 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
       ell += num_local_directions;
       phi += num_groups*num_zones;
     }
+#endif    
   } // Subdomain
 }
 
@@ -107,6 +154,38 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
     double * KRESTRICT ell_plus = sdom.ell_plus->ptr();
     double * KRESTRICT rhs = sdom.rhs->ptr();
 
+   //assume column-major storage
+//  for (i=0; i < num_local_directions; ++i)
+//   for (j=0; j < nidx; ++j) 
+//     for (k = 0; k < num_groups_zones; ++k)
+//       RHS[k][i * num_local_groups*num_zones] += ELL_PLUS[j][i] * PHI[k][j * num_groups * num_zones];
+
+
+#if 1
+   #ifdef KRIPKE_USE_ESSL
+        double *phi_out_dgemm = phi_out_ptr;
+        double *rhs_dgemm = rhs;
+        double *ell_plus_dgemm = ell_plus;
+        double ONE = 1.0; 
+        //double timestart = MPI_Wtime();
+        dgemm_ ('N','N',num_groups_zones, num_local_directions, nidx,ONE, 
+             phi_out_dgemm, num_groups*num_zones, 
+             ell_plus_dgemm, nidx, ONE, 
+             rhs_dgemm, num_local_groups*num_zones);
+        //double dgemmtime = MPI_Wtime() - timestart;
+        //printf("DGZ+:  dgemm:  M= %d N= %d K= %d,  time: %g\n",num_groups_zones, num_local_directions,nidx,dgemmtime);
+
+          
+   #else  
+        double * KRESTRICT phi_out = phi_out_ptr;
+        for (int i=0; i < num_local_directions; ++i){
+          for (int j=0; j < nidx; ++j) 
+            for (int k = 0; k < num_groups_zones; ++k)
+              rhs[i*num_local_groups*num_zones + k] += ell_plus[i*nidx + j] * phi_out[j*num_groups *num_zones + k];
+        } 
+   #endif
+
+#else
     for (int d = 0; d < num_local_directions; d++) {
       double * KRESTRICT phi_out = phi_out_ptr;
 
@@ -124,6 +203,7 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
       ell_plus += nidx;
       rhs += num_local_groups*num_zones;
     }
+#endif
 
   } // Subdomains
 }
@@ -280,6 +360,78 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
   std::vector<double> ycos_dyj_all(local_jmax);
   std::vector<double> zcos_dzk_all(local_kmax);
 
+  int *ii_jj_kk_z_idx = extent.ii_jj_kk_z_idx;
+  int *offset         = extent.offset;
+  int Nslices         = extent.Nhyperplanes;
+
+#ifdef KRIPKE_USE_ZONE_SLICES__
+      int N = 11;  // need to parametrize 
+      int i_inc = extent.inc_i;
+      int j_inc = extent.inc_j;
+      int k_inc = extent.inc_k;
+      int i_min, i_max, j_min, j_max, k_min, k_max;
+      int counter = 0;
+
+      if ( i_inc == 1){
+        i_min = extent.start_i;
+        i_max = extent.end_i-1;
+      }
+      else{
+        i_min = extent.end_i + 1;
+        i_max = extent.start_i;
+      }
+      if ( j_inc == 1){
+        j_min = extent.start_j;
+        j_max = extent.end_j-1;
+      }
+      else{
+        j_min = extent.end_j + 1;
+        j_max = extent.start_j;
+      }
+      if ( k_inc == 1){
+        k_min = extent.start_k;
+        k_max = extent.end_k-1;
+      }
+      else{
+        k_min = extent.end_k + 1;
+        k_max = extent.start_k;
+      }
+      int ii_tmp = (1 - i_inc)/2*i_max;
+      int jj_tmp = (1 - j_inc)/2*j_max;
+      int kk_tmp = (1 - k_inc)/2*k_max;
+
+      int ii_jj_kk_z_idx[num_zones*4];
+
+
+      for (int C = 0; C <=(3*N); ++C){   //for each C we can touch zone["i","j","k"]  as well as "d" and "group"    in parallel
+       for (int i = 0; i <= C; ++i){
+         for (int j = 0; j <= C; ++j){
+            int k = C - i - j; // surface equation i+j+j=C
+            //flip if needed
+
+            int ii = ii_tmp + i*i_inc;
+            int jj = jj_tmp + j*j_inc;
+            int kk = kk_tmp + k*k_inc;
+
+            if (ii <= i_max && jj <= j_max && kk <= k_max && ii >= i_min && jj >= j_min && kk >= k_min){
+              ii_jj_kk_z_idx[counter*4] = ii;
+              ii_jj_kk_z_idx[counter*4+1] = jj;
+              ii_jj_kk_z_idx[counter*4+2] = kk;
+              ii_jj_kk_z_idx[counter*4+3] = Zonal_INDEX(ii, jj, kk);
+              counter++;
+           }
+         }
+       }
+     }
+
+
+
+#endif  
+
+
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
   for (int d = 0; d < num_directions; ++d) {
     double xcos = direction[d].xcos;
     double ycos = direction[d].ycos;
@@ -299,10 +451,11 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
       double dzk = dz[k + 1];
       zcos_dzk_all[k] = 2.0 * zcos / dzk;
     }
-
+  }
 #ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
+#pragma omp parallel for collapse(2)
 #endif
+  for (int d = 0; d < num_directions; ++d) {
     for (int group = 0; group < num_groups; ++group) {
       double * KRESTRICT psi_d_g = sdom->psi->ptr(group, d, 0);
       double * KRESTRICT rhs_d_g = sdom->rhs->ptr(group, d, 0);
@@ -311,6 +464,44 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
       double * KRESTRICT k_plane_d_g = &k_plane(group, d, 0);
       double * KRESTRICT sigt_g = sdom->sigt->ptr(group, 0, 0);
 
+      //printf("ijk_inc= [%d %d %d]; ijk_start= [%d %d %d]; ijk_end= [%d %d %d];\n",extent.inc_i,extent.inc_j,extent.inc_k,
+      // 									extent.start_i,extent.start_j,extent.start_k,
+      //									extent.end_i,extent.end_j,extent.end_k);
+#ifdef KRIPKE_USE_ZONE_SLICES
+//we may loop over slices and in each slice have parallel execution for a number of elements
+//will need to synchronize after each slice
+
+      for (int element = 0; element < num_zones; element++){
+         int ii    = ii_jj_kk_z_idx[element*4];
+         int jj    = ii_jj_kk_z_idx[element*4+1];
+         int kk    = ii_jj_kk_z_idx[element*4+2];
+         int z_idx = ii_jj_kk_z_idx[element*4+3];
+
+          //printf("C = %d  [ii  jj kk] = %d %d %d z_idx = %d\n",C, ii,jj,kk,z_idx);
+
+          double zcos_dzk = zcos_dzk_all[d][kk];
+          double ycos_dyj = ycos_dyj_all[d][jj];
+          double xcos_dxi = xcos_dxi_all[d][ii];
+          int I_P_I = I_PLANE_INDEX(jj, kk); 
+          int J_P_I = J_PLANE_INDEX(ii, kk);
+          int K_P_I = K_PLANE_INDEX(ii, jj);
+
+           /* Calculate new zonal flux */
+            double psi_d_g_z = (rhs_d_g[z_idx]
+                + i_plane_d_g[I_P_I] * xcos_dxi
+                + j_plane_d_g[J_P_I] * ycos_dyj
+                + k_plane_d_g[K_P_I] * zcos_dzk)
+                / (xcos_dxi + ycos_dyj + zcos_dzk  + sigt_g[z_idx]);
+
+            psi_d_g[z_idx] = psi_d_g_z;
+            /* Apply diamond-difference relationships */
+            i_plane_d_g[I_P_I] = 2.0 * psi_d_g_z  - i_plane_d_g[I_P_I];
+            j_plane_d_g[J_P_I] = 2.0 * psi_d_g_z  - j_plane_d_g[J_P_I];
+            k_plane_d_g[K_P_I] = 2.0 * psi_d_g_z  - k_plane_d_g[K_P_I];
+
+       }
+
+#else
       for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
         double zcos_dzk = zcos_dzk_all[k];
         for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {
@@ -341,6 +532,7 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
           }
         }
       }
+#endif      
     } // group
   } // direction
 

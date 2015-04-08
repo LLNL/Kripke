@@ -52,7 +52,10 @@ macro (bdiv_opt_pkg PACKAGE VERSION ENABLE_DEFAULT)
     
     
     # Libraries
+    message(WARNING "PL= ${${PACKAGE}_LIBS}")
+
     if(NOT DEFINED ${PACKAGE}_LIBS)
+      message(WARNING "${PACKAGE}_LIBS not defined")
       if(DEFINED ${PACKAGE}_DEFAULT_LIBS)
         set(${PACKAGE}_LIBS ${${PACKAGE}_DEFAULT_LIBS})
       endif()
@@ -60,7 +63,7 @@ macro (bdiv_opt_pkg PACKAGE VERSION ENABLE_DEFAULT)
 
     find_library(${PACKAGE}_LIBS NAMES ${${PACKAGE}_LIBS} PATHS ${${PACKAGE}_LIB_DIR} NO_DEFAULT_PATH)
     if(NOT ${PACKAGE}_LIBS)
-      message(WARNING "${PACKAGE} libs not found, disabling")
+      message(WARNING "${PACKAGE} libs not found, disabling: PL= ${${PACKAGE}_LIBS} .")
       set(ENABLE_${PACKAGE} OFF)
     endif()
     

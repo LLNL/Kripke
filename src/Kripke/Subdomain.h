@@ -4,6 +4,8 @@
 #include <vector>
 #include <Kripke/Layout.h>
 
+#include <Kripke/cu_utils.h>
+
 // Foreward Decl
 struct Directions;
 struct SubTVec;
@@ -19,6 +21,11 @@ struct Grid_Sweep_Block {
   int start_i, start_j, start_k; // starting index
   int end_i, end_j, end_k; // termination conditon (one past)
   int inc_i, inc_j, inc_k; // increment
+//LG
+  int *ii_jj_kk_z_idx;
+  int *offset;
+  int *d_ii_jj_kk_z_idx;
+  int *d_offset;
 };
 
 
@@ -53,6 +60,8 @@ struct Subdomain {
   int zeros[3];                     // origin of local mesh
   int nzones[3];                    // Number of zones in each dimension
   std::vector<double> deltas[3];    // Spatial grid deltas in each dimension (including ghost zones)
+//LG
+  double *d_delta_x, *d_delta_y, *d_delta_z; // Spatial grid deltas in each dimension, stored as 1D array on GPU
 
   int group0;           // Starting global group id
   int direction0;       // Starting global direction id
@@ -69,10 +78,17 @@ struct Subdomain {
   // Variables
   SubTVec *psi;         // Solution
   SubTVec *rhs;         // RHS, source term
+//LG
+  double *d_rhs;        // RHS, on GPU
   SubTVec *sigt;        // Zonal per-group cross-section
+
+//LG
+  double *d_sigt;       // ZOnal per-group cross-sectio, stored on GPU
 
   // Pointers into directions and directionset data from Grid_Data
   Directions *directions;
+//LG
+  Directions *d_directions; // direction data on GPU
   SubTVec *ell;
   SubTVec *ell_plus;
   SubTVec *phi;

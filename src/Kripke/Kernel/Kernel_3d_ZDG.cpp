@@ -2,6 +2,20 @@
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 
+#include <sys/time.h>  
+#include <stdio.h> 
+
+#include "Kripke/cu_utils.h"
+
+
+#define KRIPKE_USE_ZONE_SLICES
+
+#define USE_GPU_SWEEP_ZDG
+
+
+//#define CPU_TIMER
+
+
 Kernel_3d_ZDG::Kernel_3d_ZDG() {
 
 }
@@ -55,6 +69,8 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
+    
+    // printf("  LTimes:  gset= %d dset=%d group0= %d dir0= %d\n",gset,dset,group0,dir0);
 
     /* 3D Cartesian Geometry */
     double * KRESTRICT ell_d_ptr = sdom.ell->ptr();
@@ -100,6 +116,8 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
+    
+    //printf("  LPlusTimes:  gset= %d dset=%d group0= %d dir0= %d\n",gset,dset,group0,dir0);
 
     // Get Variables
     sdom.rhs->clear(0.0);
@@ -253,6 +271,14 @@ void Kernel_3d_ZDG::source(Grid_Data *grid_data){
 #define Zonal_INDEX(i, j, k) (i) + (local_imax)*(j) \
   + (local_imax)*(local_jmax)*(k)
 
+
+int cuda_sweep_ZDG( double *rhs, double *phi,
+                    double *psi, double *sigt,  Directions *direction,
+                    double *i_plane, double *j_plane, double *k_plane,
+                    int *ii_jj_kk_z_idx, int *h_offset, int *d_offset, double *dx, double *dy, double *dz,
+                    int num_zones, int num_directions, int num_groups,
+                    int local_imax, int local_jmax, int local_kmax, int Nslices);
+
 void Kernel_3d_ZDG::sweep(Subdomain *sdom) {
   int num_directions = sdom->num_directions;
   int num_groups = sdom->num_groups;
@@ -276,55 +302,145 @@ void Kernel_3d_ZDG::sweep(Subdomain *sdom) {
   // All directions have same id,jd,kd, since these are all one Direction Set
   // So pull that information out now
   Grid_Sweep_Block const &extent = sdom->sweep_block;
+  
+#ifdef KRIPKE_USE_ZONE_SLICES
+  int *ii_jj_kk_z_idx = extent.ii_jj_kk_z_idx;
+  int *offset         = extent.offset;
+  int Nslices         = extent.Nhyperplanes;
+#endif
 
-  for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
-    double dzk = dz[k + 1];
-    for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {
-      double dyj = dy[j + 1];
-      for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
-        double dxi = dx[i + 1];
 
-        int z = Zonal_INDEX(i, j, k);
-        double * KRESTRICT sigt_z = sdom->sigt->ptr(0, 0, z);
+#ifdef USE_GPU_SWEEP_ZDG
+
+
+//LG allocate deltas on GPU
+   if (grid_data->d_delta_x == NULL){
+     grid_data->d_delta_x = (double*) get_cudaMalloc(size_t   (local_imax+2) * sizeof(double)   );
+     do_cudaMemcpyH2D( (void *) (grid_data->d_delta_x), (void *) dx, (size_t) (local_imax+2) * sizeof(double));
+   }
+   if (grid_data->d_delta_y == NULL){
+     grid_data->d_delta_y = (double*) get_cudaMalloc(size_t   (local_jmax+2) * sizeof(double)   );
+     do_cudaMemcpyH2D( (void *) (grid_data->d_delta_y), (void *) dy, (size_t) (local_jmax+2) * sizeof(double));
+   }
+   if (grid_data->d_delta_z == NULL){
+     grid_data->d_delta_z = (double*) get_cudaMalloc(size_t   (local_kmax+2) * sizeof(double)   );
+     do_cudaMemcpyH2D( (void *) (grid_data->d_delta_z), (void *) dz, (size_t) (local_kmax+2) * sizeof(double));
+   }
+
+
+//LG allocate directions on GPU
+   if ( gd_set->d_directions == NULL){
+       gd_set->d_directions = (Directions*) get_cudaMalloc((size_t)  num_directions * sizeof(Directions) );
+       do_cudaMemcpyH2D( (void*) gd_set->d_directions , (void *)  gd_set->directions,  (size_t)   num_directions * sizeof(Directions) ); 
+   }
+   if ( grid_data->d_sigt == NULL){
+      grid_data->d_sigt = (double *) get_cudaMalloc((size_t) (num_zones*num_groups) * sizeof(double));
+      do_cudaMemcpyH2D( (void*) grid_data->d_sigt,  (void *)  grid_data->sigt->ptr(gd_set->group0, 0, 0), (size_t) (num_zones*num_groups) * sizeof(double)); 
+   }
+
+   cuda_sweep_ZDG( gd_set->d_rhs, grid_data->phi->ptr(0, 0, 0),
+                   gd_set->psi->ptr(0, 0, 0), grid_data->d_sigt,  gd_set->d_directions,
+                   i_plane.ptr(0, 0, 0),j_plane.ptr(0, 0, 0),k_plane.ptr(0, 0, 0),
+                   extent.d_ii_jj_kk_z_idx, offset, extent.d_offset, 
+                   grid_data->d_delta_x, grid_data->d_delta_y, grid_data->d_delta_z,
+                   num_zones, num_directions, num_groups,
+                   local_imax,local_jmax, local_kmax,
+                   Nslices);
+ 
+#else  
+
+
+
 
 #ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
+    #pragma omp parallel
+    {
 #endif
-        for (int d = 0; d < num_directions; ++d) {
+  for (int slice = 0; slice < Nslices; slice++){
+  struct timeval tim;
+  double t1,t2;
+
+#ifdef CPU_TIMER
+#pragma omp master
+    {
+    gettimeofday(&tim, NULL);  
+    t1=tim.tv_sec+(tim.tv_usec/1000000.0); 
+    }
+#endif
+
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp for
+#endif
+    for (int element = offset[slice]; element < offset[slice+1]; ++element){  //for (element = blockId.x + offset[slice]; element < offset[slice+1]; ++element){ 
+      int i    = ii_jj_kk_z_idx[element*4];
+      int j    = ii_jj_kk_z_idx[element*4+1];
+      int k    = ii_jj_kk_z_idx[element*4+2];
+      int z    = ii_jj_kk_z_idx[element*4+3];
+      int I_P_I = I_PLANE_INDEX(j, k);
+      int J_P_I = J_PLANE_INDEX(i, k);
+      int K_P_I = K_PLANE_INDEX(i, j);
+      double two_inv_dzk = 2.0/dz[k + 1];
+      double two_inv_dyj = 2.0/dy[j + 1];
+      double two_inv_dxi = 2.0/dx[i + 1];
+      double * KRESTRICT sigt_z = grid_data->sigt->ptr(gd_set->group0, 0, z);
+
+      // LG get pointer to data corresponding to d=0;
+      // LG assume stride of "num_groups" between directions 
+      double * KRESTRICT psi_lf_z_d = i_plane.ptr(0, 0, I_P_I);
+      double * KRESTRICT psi_fr_z_d = j_plane.ptr(0, 0, J_P_I);
+      double * KRESTRICT psi_bo_z_d = k_plane.ptr(0, 0, K_P_I);
+
+      double * KRESTRICT psi_z_d = gd_set->psi->ptr(0, 0, z);
+      double * KRESTRICT rhs_z_d = gd_set->rhs->ptr(0, 0, z);
+
+
+      for (int d = 0; d < num_directions; ++d) {    // for (d = threadidx.y; d < num_directions; d += blockDim.y){
           double xcos = direction[d].xcos;
           double ycos = direction[d].ycos;
           double zcos = direction[d].zcos;
 
-          double zcos_dzk = 2.0 * zcos / dzk;
-          double ycos_dyj = 2.0 * ycos / dyj;
-          double xcos_dxi = 2.0 * xcos / dxi;
+          double zcos_dzk = zcos * two_inv_dzk;
+          double ycos_dyj = ycos * two_inv_dyj;
+          double xcos_dxi = xcos * two_inv_dxi;
 
-          double * KRESTRICT psi_z_d = sdom->psi->ptr(0, d, z);
-          double * KRESTRICT rhs_z_d = sdom->rhs->ptr(0, d, z);
+          for (int group = 0; group < num_groups; ++group) {  //for (group = threadidx.y; group < num_groups; group += blockDim.x)
+            int gd = group + d*num_groups;
+            double psi_lf_z_d_group = psi_lf_z_d[gd];
+            double psi_fr_z_d_group = psi_fr_z_d[gd];
+            double psi_bo_z_d_group = psi_bo_z_d[gd];
 
-          double * KRESTRICT psi_lf_z_d = i_plane.ptr(0, d, I_PLANE_INDEX(j, k));
-          double * KRESTRICT psi_fr_z_d = j_plane.ptr(0, d, J_PLANE_INDEX(i, k));
-          double * KRESTRICT psi_bo_z_d = k_plane.ptr(0, d, K_PLANE_INDEX(i, j));
-
-          for (int group = 0; group < num_groups; ++group) {
             /* Calculate new zonal flux */
-            double psi_z_d_g = (rhs_z_d[group]
-                + psi_lf_z_d[group] * xcos_dxi
-                + psi_fr_z_d[group] * ycos_dyj
-                + psi_bo_z_d[group] * zcos_dzk)
+            double psi_z_d_g = (rhs_z_d[gd]  
+                + psi_lf_z_d_group * xcos_dxi
+                + psi_fr_z_d_group * ycos_dyj
+                + psi_bo_z_d_group * zcos_dzk)
                 / (xcos_dxi + ycos_dyj + zcos_dzk + sigt_z[group]);
 
-            psi_z_d[group] = psi_z_d_g;
+            psi_z_d[gd] = psi_z_d_g;
+            //psi_z_d[group] = psi_z_d_g;
 
             /* Apply diamond-difference relationships */
-            psi_z_d_g *= 2.0;
-            psi_lf_z_d[group] = psi_z_d_g - psi_lf_z_d[group];
-            psi_fr_z_d[group] = psi_z_d_g - psi_fr_z_d[group];
-            psi_bo_z_d[group] = psi_z_d_g - psi_bo_z_d[group];
+            psi_lf_z_d[gd] = 2.0 * psi_z_d_g - psi_lf_z_d_group;
+            psi_fr_z_d[gd] = 2.0 * psi_z_d_g - psi_fr_z_d_group;
+            psi_bo_z_d[gd] = 2.0 * psi_z_d_g - psi_bo_z_d_group;
           }
-        }
       }
     }
+
+#ifdef CPU_TIMER
+    #pragma omp master
+    {
+      gettimeofday(&tim, NULL);  
+      t2=tim.tv_sec+(tim.tv_usec/1000000.0);  
+      printf("Sweep CPU: Nzones = %d,   %g seconds \n", offset[slice+1] - offset[slice],t2-t1);  
+    }
+#endif
+
+  }//end of "for (slice"
+  #ifdef KRIPKE_USE_OPENMP
   }
+  #endif
+
+#endif
 }
 

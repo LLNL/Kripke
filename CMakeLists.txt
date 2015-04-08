@@ -1,4 +1,10 @@
+project(KRIPKE)
+
 cmake_minimum_required(VERSION 2.8)
+find_package(CUDA QUIET REQUIRED)
+
+
+#project(KRIPKE)
 
 #
 # Figure out toolchain files to use in this build
@@ -7,11 +13,11 @@ cmake_minimum_required(VERSION 2.8)
 
 set(SYS_TYPE $ENV{SYS_TYPE})
 
-if(NOT DEFINED SYS_TYPE)
-  set(SYS_TYPE linux)
-endif()
-
 set(CMAKE_TOOLCHAIN_PATH "./cmake/Toolchain")
+
+set(CMAKE_C_FLAGS -O3)
+set(CMAKE_CXX_FLAGS -O3)
+
 
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
 
@@ -22,6 +28,9 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     elseif(SYS_TYPE MATCHES chaos_5_x86_64_ib)
       set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/chaos_5_x86_64_ib-ic14.cmake")
       include("${CMAKE_TOOLCHAIN_PATH}/chaos_5_x86_64_ib-ic14.cmake")
+    elseif(SYS_TYPE MATCHES ppc64el)
+      set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/ppc64el-xlc.cmake")
+      include("${CMAKE_TOOLCHAIN_PATH}/ppc64el-xlc.cmake")
     endif()
     
   # If the user selected a toolchain (ex. ic14, gcc) then prepend the systype
@@ -33,13 +42,10 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
 endif()
 
 
-
-
 #
 # Invoke the project, choose language, display some debug info
 #
 
-project(KRIPKE)
 
 # Re-incluing the toolchain file, which allows us to modify the compiler flags
 # since all of the flags are lost after calling project()
@@ -56,11 +62,14 @@ include(CPack)
 #set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_BUILD_TYPE Release)
 
-enable_language(CXX)
+#enable_language(CXX)
+
 
 message(STATUS "Selected Build Type ${CMAKE_BUILD_TYPE}")
 message(STATUS "Selected C++ Compiler ${CMAKE_CXX_COMPILER}")
 message(STATUS "Selected C++ Flags: ${CMAKE_CXX_FLAGS}")
+message(STATUS "Selected NVCC Compiler ${CUDA_NVCC_EXECUTABLE}")
+message(STATUS "Selected CUDA NVCC Flags: ${CMAKE_NVCC_FLAGS}")
 message(STATUS "Selected BDIV Package Path ${PKG_PATH}")
 
 
@@ -83,8 +92,17 @@ bdiv_opt_pkg(perftools 0 OFF)
 bdiv_opt_pkg(SILO 4.9 OFF)
 bdiv_opt_pkg(HDF5 gnu-serial-1.8.8 OFF)
 
+
 # BG/Q Specific
 bdiv_opt_pkg(BGPM 20030410 OFF)
+
+# BLAS 
+bdiv_opt_pkg(esslblas 0 ON)
+
+# CUDA
+bdiv_opt_pkg(cuda 0 ON)
+
+
 
 
 #
@@ -104,4 +122,3 @@ set(KRIPKE_LIBS ${KRIPKE_LIBS} ${KRIPKE_LIBS})
 
 
 add_subdirectory(src)
-

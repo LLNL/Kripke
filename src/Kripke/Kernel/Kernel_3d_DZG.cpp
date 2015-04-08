@@ -2,6 +2,21 @@
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 
+#define LG_PRINT_INFO__
+
+#ifdef KRIPKE_USE_ESSL
+extern "C"
+{
+void dgemm_ (const char& trans,   const char& transb,
+                         const int& m1,       const int& n,
+                         const int& k,        const double& alpha,
+                         const double* a,     const int& lda,
+                         const double* b,     const int& ldb,
+                         const double& beta,  double* c, const int& ldc);
+}
+#endif
+
+
 Kernel_3d_DZG::Kernel_3d_DZG() {
 
 }
@@ -61,8 +76,15 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
     for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
       double * KRESTRICT psi_ptr = sdom.psi->ptr();
 
+
+	//consider unrolling "d" loop [on power 9]
+
       for (int d = 0; d < num_local_directions; d++) {
         double ell_nm_d = ell[d];
+
+
+	  //scale matrix PSI by a constant and add to PHI
+	  //PHI += ell_nm_d[d] * PSI[d] 
 
 
 #ifdef KRIPKE_USE_OPENMP

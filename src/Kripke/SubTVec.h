@@ -1,10 +1,16 @@
 #ifndef KRIPKE_SUBTVEC_H__
 #define KRIPKE_SUBTVEC_H__
 
+#define USE_PINNED_MEMORY
+
 #include <Kripke/Kernel.h>
 #include <algorithm>
 #include <vector>
 #include <stdlib.h>
+
+#ifdef USE_PINNED_MEMORY
+#include "Kripke/cu_utils.h"
+#endif
 
 /**
  *  A transport vector (used for Psi and Phi, RHS, etc.)
@@ -19,8 +25,16 @@ struct SubTVec {
     directions(ndir_mom),
     zones(nzones),
     elements(groups*directions*zones),
+#ifdef USE_PINNED_MEMORY
+    hp_data_linear(0)
+#else
     data_linear(elements)
+#endif
   {
+#ifdef USE_PINNED_MEMORY
+    hp_data_linear = (double *)  get_cudaMallocHost ((size_t) elements*sizeof(double));
+    data_linear = hp_data_linear;
+#endif
     setupIndices(nesting, &data_linear[0]);
   }
 
@@ -35,8 +49,15 @@ struct SubTVec {
     directions(ndir_mom),
     zones(nzones),
     elements(groups*directions*zones),
+#ifdef USE_PINNED_MEMORY
+    hp_data_linear(0)
+#else
     data_linear(0)
+#endif
   {
+#ifdef USE_PINNED_MEMORY
+    hp_data_linear = NULL;
+#endif
     setupIndices(nesting, ptr);
   }
 
@@ -181,7 +202,14 @@ struct SubTVec {
 
   int groups, directions, zones, elements;
   double *data_pointer;
+//LG
+
+#ifdef USE_PINNED_MEMORY 
+  double *hp_data_linear;
+  double *data_linear;
+#else
   std::vector<double> data_linear;
+#endif
 };
 
 
