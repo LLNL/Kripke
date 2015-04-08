@@ -5,7 +5,13 @@
 #include <Kripke/SubTVec.h>
 #include <cmath>
 #include <sstream>
+#include <mpi.h>
 
+#ifdef KRIPKE_USE_SILO
+#include <sys/stat.h>
+#include <silo.h>
+#include <string.h>
+#endif
 
 /**
  * Grid_Data constructor.
@@ -258,5 +264,166 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
 
   return is_diff;
 }
+
+
+#ifdef KRIPKE_USE_SILO
+void Grid_Data::writeSilo(std::string const &fname_base){
+  int mpi_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  int mpi_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+
+  int num_subdomains = subdomains.size();
+
+  if(mpi_rank == 0){
+    // Create a root file
+    std::string fname_root = fname_base + ".silo";
+    DBfile *root = DBCreate(fname_root.c_str(),
+        DB_CLOBBER, DB_LOCAL, NULL, DB_HDF5);
+
+    // Write out multimesh for spatial mesh
+    {
+      // setup mesh names and types
+      std::vector<char *> mesh_names(mpi_size*num_zone_sets);
+      int mesh_idx = 0;
+      for(int rank = 0;rank < mpi_size;++ rank){
+        for(int idx = 0;idx < num_zone_sets;++ idx){
+          int sdom_id = zs_to_sdomid[idx];
+          std::stringstream name;
+
+          name << fname_base << "/rank_" << rank << ".silo:/sdom" << sdom_id << "/mesh";
+          mesh_names[mesh_idx] = strdup(name.str().c_str());
+
+          mesh_idx ++;
+        }
+      }
+      std::vector<int> mesh_types(mpi_size*num_zone_sets, DB_QUAD_RECT);
+
+      DBPutMultimesh(root, "mesh", mpi_size*num_zone_sets,
+          &mesh_names[0], &mesh_types[0], NULL);
+
+      // cleanup
+      for(int i = 0;i < mpi_size*num_zone_sets; ++i){
+        free(mesh_names[i]);
+      }
+    }
+
+    // Write out multimat for materials
+    {
+      // setup mesh names and types
+      std::vector<char *> mat_names(mpi_size*num_zone_sets);
+      int mesh_idx = 0;
+      for(int rank = 0;rank < mpi_size;++ rank){
+        for(int idx = 0;idx < num_zone_sets;++ idx){
+          int sdom_id = zs_to_sdomid[idx];
+          std::stringstream name;
+
+          name << fname_base << "/rank_" << rank << ".silo:/sdom" << sdom_id << "/material";
+          mat_names[mesh_idx] = strdup(name.str().c_str());
+
+          mesh_idx ++;
+        }
+      }
+
+      DBPutMultimat(root, "material", mpi_size*num_zone_sets,
+          &mat_names[0],  NULL);
+
+      // cleanup
+      for(int i = 0;i < mpi_size*num_zone_sets; ++i){
+        free(mat_names[i]);
+      }
+    }
+
+    // Root file
+    DBClose(root);
+
+    // Create a subdirectory to hold processor info
+    mkdir(fname_base.c_str(), 0750);
+  }
+
+  // Sync up, so everyone sees the subdirectory
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  // Create our processor file
+  std::stringstream ss_proc;
+  ss_proc << fname_base << "/rank_" << mpi_rank << ".silo";
+  DBfile *proc = DBCreate(ss_proc.str().c_str(),
+      DB_CLOBBER, DB_LOCAL, NULL, DB_HDF5);
+
+  // Write out data for each subdomain
+  for(int sdom_id = 0;sdom_id < num_subdomains;++ sdom_id){
+    Subdomain &sdom = subdomains[sdom_id];
+
+    // Create a directory for the subdomain
+    std::stringstream dirname;
+    dirname << "/sdom" << sdom_id;
+    DBMkDir(proc, dirname.str().c_str());
+
+    // Set working directory
+    DBSetDir(proc, dirname.str().c_str());
+
+    // Write the mesh
+    {
+      char *coordnames[3] = {"X", "Y", "Z"};
+      double *coords[3];
+      for(int dim = 0;dim < 3;++ dim){
+        coords[dim] = new double[sdom.nzones[dim]+1];
+        coords[dim][0] = sdom.zeros[dim];
+        for(int z = 0;z < sdom.nzones[dim];++ z){
+          coords[dim][1+z] = coords[dim][z] + sdom.deltas[dim][z+1];
+        }
+      }
+      int nnodes[3] = {
+          sdom.nzones[0]+1,
+          sdom.nzones[1]+1,
+          sdom.nzones[2]+1
+      };
+
+      DBPutQuadmesh(proc, "mesh", coordnames, coords, nnodes, 3, DB_DOUBLE,
+          DB_COLLINEAR, NULL);
+
+      // cleanup
+      delete[] coords[0];
+      delete[] coords[1];
+      delete[] coords[2];
+    }
+
+    // Write the material
+    {
+      int num_zones = sdom.num_zones;
+      int num_mixed = sdom.mixed_material.size();
+      int matnos[3] = {1, 2, 3};
+      std::vector<int> matlist(num_zones, 0);
+      std::vector<int> mix_next(num_mixed, 0);
+      std::vector<int> mix_mat(num_mixed, 0);
+
+      // setup matlist and mix_next arrays
+      int last_z = -1;
+      for(int m = 0;m < num_mixed;++ m){
+        mix_mat[m] = sdom.mixed_material[m] + 1;
+        int z = sdom.mixed_to_zones[m];
+        if(matlist[z] == 0){
+            matlist[z] = -(1+m);
+        }
+        // if we are still on the same zone, make sure the last mix points
+        // here
+        if(z == last_z){
+          mix_next[m-1] = m+1;
+        }
+        last_z = z;
+      }
+
+
+      DBPutMaterial(proc, "material", "mesh", 3, matnos,
+          &matlist[0], sdom.nzones, 3,
+          &mix_next[0], &mix_mat[0], &sdom.mixed_to_zones[0], &sdom.mixed_fraction[0], num_mixed,
+          DB_DOUBLE, NULL);
+    }
+  }
+
+  // Close processor file
+  DBClose(proc);
+}
+#endif
 
 

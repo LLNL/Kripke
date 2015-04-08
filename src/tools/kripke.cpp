@@ -55,6 +55,9 @@ void usage(void){
     printf("  --procs <npx,npy,npz>  MPI task spatial decomposition\n");
     printf("                         Default:  --procs 1,1,1\n");
     printf("  --restart <point>      Restart at given point\n");
+#ifdef KRIPKE_USE_SILO
+    printf("  --silo <BASENAME>      Create SILO output files\n");
+#endif
     printf("  --test                 Run Kernel Test instead of solver\n");
     printf("  --zset [x:y:z, ...]    Number of zonesets in x:y:z\n");
     printf("                         Default:  --zst 1:1:1\n");
@@ -122,6 +125,14 @@ void runPoint(int point, int num_tasks, int num_threads, Input_Variables &input_
 
   /* Run the solver */
   SweepSolver(grid_data);
+
+#ifdef KRIPKE_USE_SILO
+  /* output silo data, if requested */
+  if(input_variables.silo_basename != ""){
+    std::string silo_name = input_variables.silo_basename + toString(point);
+    grid_data->writeSilo(silo_name);
+  }
+#endif
 
   std::string nesting = nestingString(input_variables.nesting);
 
@@ -230,6 +241,9 @@ int main(int argc, char **argv) {
   bool test = false;
   bool perf_tools = false;
   int restart_point = 0;
+#ifdef KRIPKE_USE_SILO
+  std::string silo_basename = "";
+#endif
 
 
   std::vector<Nesting_Order> nest_list;
@@ -311,6 +325,11 @@ int main(int argc, char **argv) {
         nest_list.push_back(n);
       }
     }
+#ifdef KRIPKE_USE_SILO
+    else if(opt == "--silo"){
+      silo_basename = cmd.pop();
+    }
+#endif
     else if(opt == "--test"){
       test = true;
     }
@@ -419,6 +438,9 @@ int main(int argc, char **argv) {
   ivars.num_zonesets_dim[1] = zset[1];
   ivars.num_zonesets_dim[2] = zset[2];
   ivars.layout_pattern = layout;
+#ifdef KRIPKE_USE_SILO
+  ivars.silo_basename = silo_basename;
+#endif
   int point = 0;
   for(int d = 0;d < dir_list.size();++ d){
     for(int g = 0;g < grp_list.size();++ g){

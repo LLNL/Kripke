@@ -208,7 +208,7 @@ std::pair<double, double> BlockLayout::getSpatialExtents(int sdom_id, int dim) c
   std::pair<double, double> ext_global(-60.0, 60.0);
   if(dim == 1){
     ext_global.first = -100.0;
-    ext_global.first = 100.0;
+    ext_global.second = 100.0;
   }
 
   // Subdivide by number of processors in specified dimension
@@ -299,7 +299,7 @@ std::pair<double, double> ScatterLayout::getSpatialExtents(int sdom_id, int dim)
   std::pair<double, double> ext_global(-60.0, 60.0);
   if(dim == 1){
     ext_global.first = -100.0;
-    ext_global.first = 100.0;
+    ext_global.second = 100.0;
   }
 
   // get the zoneset index along the specified dimension

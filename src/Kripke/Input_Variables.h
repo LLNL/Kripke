@@ -22,6 +22,9 @@ struct Input_Variables {
   int niter;                    // number of solver iterations to run
   int legendre_order;           // Scattering order (number Legendre coeff's - 1)
   int layout_pattern;           // Which subdomain/task layout to use
+#ifdef KRIPKE_USE_SILO
+  std::string silo_basename;    // name prefix for silo output files
+#endif
 
   Nesting_Order nesting;        // Data layout and loop ordering (of Psi)
 };

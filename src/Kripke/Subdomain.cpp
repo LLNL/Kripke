@@ -110,7 +110,7 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
     // Compute grid deltas in this dimension (including ghost zone deltas)
     std::pair<double, double> dim_extent = layout->getSpatialExtents(sdom_id, dim);
     zeros[dim] = dim_extent.first;
-    double dx = dim_extent.second-dim_extent.first;
+    double dx = (dim_extent.second-dim_extent.first)/(double)nzones[dim];
     deltas[dim].resize(nzones[dim]+2);
     for(int z = 0;z < nzones[dim]+2;++ z){
       deltas[dim][z] = dx;
@@ -137,7 +137,7 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   }
 
   // paint the mesh
-  int num_subsamples = 2; // number of subsamples per spatial dimension
+  int num_subsamples = 4; // number of subsamples per spatial dimension
   double sample_vol_frac = 1.0 / (double)(num_subsamples*num_subsamples*num_subsamples);
   int zone_id = 0;
   double pz = zeros[2];
