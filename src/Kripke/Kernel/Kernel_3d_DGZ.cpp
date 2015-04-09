@@ -103,7 +103,7 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
      for (int i=0; i < nidx; ++i)
        for (int j=0; j < num_local_directions; ++j)
          for (int k = 0; k < num_groups_zones; ++k)
-           phi[num_zones*num_groups*i + k] += ell[num_directions*i + j] * psi[num_groups_zones*j + k];
+           phi[num_zones*num_groups*i + k] += ell[num_local_directions*i + j] * psi[num_groups_zones*j + k];
 
      #endif
 
@@ -356,9 +356,9 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
   // So pull that information out now
   Grid_Sweep_Block const &extent = sdom->sweep_block;
 
-  std::vector<double> xcos_dxi_all(local_imax);
-  std::vector<double> ycos_dyj_all(local_jmax);
-  std::vector<double> zcos_dzk_all(local_kmax);
+  double xcos_dxi_all[num_directions][local_imax];
+  double ycos_dyj_all[num_directions][local_jmax];
+  double zcos_dzk_all[num_directions][local_kmax];
 
   int *ii_jj_kk_z_idx = extent.ii_jj_kk_z_idx;
   int *offset         = extent.offset;
@@ -433,24 +433,19 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
 #pragma omp parallel for
 #endif
   for (int d = 0; d < num_directions; ++d) {
-    double xcos = direction[d].xcos;
-    double ycos = direction[d].ycos;
-    double zcos = direction[d].zcos;
+    double two_xcos = 2.0 * direction[d].xcos;
+    double two_ycos = 2.0 * direction[d].ycos;
+    double two_zcos = 2.0 * direction[d].zcos;
 
-    for (int i = 0; i < local_imax; ++i) {
-      double dxi = dx[i + 1];
-      xcos_dxi_all[i] = 2.0 * xcos / dxi;
-    }
+    for (int i = 0; i < local_imax; ++i)
+      xcos_dxi_all[d][i] = two_xcos / dx[i+1];
 
-    for (int j = 0; j < local_jmax; ++j) {
-      double dyj = dy[j + 1];
-      ycos_dyj_all[j] = 2.0 * ycos / dyj;
-    }
+    for (int j = 0; j < local_jmax; ++j)
+      ycos_dyj_all[d][j] = two_ycos / dy[j+1];
 
-    for (int k = 0; k < local_kmax; ++k) {
-      double dzk = dz[k + 1];
-      zcos_dzk_all[k] = 2.0 * zcos / dzk;
-    }
+    for (int k = 0; k < local_kmax; ++k)
+      zcos_dzk_all[d][k] = two_zcos / dz[k+1];
+
   }
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for collapse(2)

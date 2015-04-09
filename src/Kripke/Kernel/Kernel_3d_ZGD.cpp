@@ -302,43 +302,43 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
 
 
 //LG allocate deltas on GPU
-   if (grid_data->d_delta_x == NULL){
-     grid_data->d_delta_x = (double*) get_cudaMalloc(size_t   (local_imax+2) * sizeof(double)   );
-     do_cudaMemcpyH2D( (void *) (grid_data->d_delta_x), (void *) dx, (size_t) (local_imax+2) * sizeof(double));
+   if (sdom->d_delta_x == NULL){
+     sdom->d_delta_x = (double*) get_cudaMalloc(size_t   (local_imax+2) * sizeof(double)   );
+     do_cudaMemcpyH2D( (void *) (sdom->d_delta_x), (void *) dx, (size_t) (local_imax+2) * sizeof(double));
    }
-   if (grid_data->d_delta_y == NULL){
-     grid_data->d_delta_y = (double*) get_cudaMalloc(size_t   (local_jmax+2) * sizeof(double)   );
-     do_cudaMemcpyH2D( (void *) (grid_data->d_delta_y), (void *) dy, (size_t) (local_jmax+2) * sizeof(double));
+   if (sdom->d_delta_y == NULL){
+     sdom->d_delta_y = (double*) get_cudaMalloc(size_t   (local_jmax+2) * sizeof(double)   );
+     do_cudaMemcpyH2D( (void *) (sdom->d_delta_y), (void *) dy, (size_t) (local_jmax+2) * sizeof(double));
    }
-   if (grid_data->d_delta_z == NULL){
-     grid_data->d_delta_z = (double*) get_cudaMalloc(size_t   (local_kmax+2) * sizeof(double)   );
-     do_cudaMemcpyH2D( (void *) (grid_data->d_delta_z), (void *) dz, (size_t) (local_kmax+2) * sizeof(double));
+   if (sdom->d_delta_z == NULL){
+     sdom->d_delta_z = (double*) get_cudaMalloc(size_t   (local_kmax+2) * sizeof(double)   );
+     do_cudaMemcpyH2D( (void *) (sdom->d_delta_z), (void *) dz, (size_t) (local_kmax+2) * sizeof(double));
    }
 
 
 //LG allocate directions on GPU
-   if ( gd_set->d_directions == NULL){
-       gd_set->d_directions = (Directions*) get_cudaMalloc((size_t)  num_directions * sizeof(Directions) );
-       do_cudaMemcpyH2D( (void*) gd_set->d_directions , (void *)  gd_set->directions,  (size_t)   num_directions * sizeof(Directions) );
+   if ( sdom->d_directions == NULL){
+       sdom->d_directions = (Directions*) get_cudaMalloc((size_t)  num_directions * sizeof(Directions) );
+       do_cudaMemcpyH2D( (void*) sdom->d_directions , (void *)  sdom->directions,  (size_t)   num_directions * sizeof(Directions) );
    }
-   if ( grid_data->d_sigt == NULL){
-      grid_data->d_sigt = (double *) get_cudaMalloc((size_t) (num_zones*num_groups) * sizeof(double));
-      do_cudaMemcpyH2D( (void*) grid_data->d_sigt,  (void *)  grid_data->sigt->ptr(gd_set->group0, 0, 0), (size_t) (num_zones*num_groups) * sizeof(double));
+   if ( sdom->d_sigt == NULL){
+      sdom->d_sigt = (double *) get_cudaMalloc((size_t) (num_zones*num_groups) * sizeof(double));
+      do_cudaMemcpyH2D( (void*) sdom->d_sigt,  (void *)  sdom->sigt->ptr(), (size_t) (num_zones*num_groups) * sizeof(double));
    }
 
-   cuda_sweep_ZGD( gd_set->d_rhs, grid_data->phi->ptr(0, 0, 0),
-                   gd_set->psi->ptr(0, 0, 0), grid_data->d_sigt,  gd_set->d_directions,
-                   i_plane.ptr(0, 0, 0),j_plane.ptr(0, 0, 0),k_plane.ptr(0, 0, 0),
+   cuda_sweep_ZGD( sdom->d_rhs, sdom->phi->ptr(),
+                   sdom->psi->ptr(), sdom->d_sigt,  sdom->d_directions,
+                   i_plane.ptr(),j_plane.ptr(),k_plane.ptr(),
                    extent.d_ii_jj_kk_z_idx, offset, extent.d_offset,
-                   grid_data->d_delta_x, grid_data->d_delta_y, grid_data->d_delta_z,
+                   sdom->d_delta_x, sdom->d_delta_y, sdom->d_delta_z,
                    num_zones, num_directions, num_groups,
                    local_imax,local_jmax, local_kmax,
                    Nslices);
 
 
 
-//   cuda_sweep_ZGD( gd_set->rhs->ptr(0, 0, 0), grid_data->phi->ptr(0, 0, 0),
-//                   gd_set->psi->ptr(0, 0, 0), grid_data->sigt->ptr(gd_set->group0, 0, 0),  direction,
+//   cuda_sweep_ZGD( sdom->rhs->ptr(0, 0, 0), grid_data->phi->ptr(0, 0, 0),
+//                   sdom->psi->ptr(0, 0, 0), grid_data->sigt->ptr(sdom->group0, 0, 0),  direction,
 //                   i_plane.ptr(0, 0, 0),j_plane.ptr(0, 0, 0),k_plane.ptr(0, 0, 0),
 //                  ii_jj_kk_z_idx, offset,
 //                   dx, dy, dz,
@@ -373,11 +373,11 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
       double two_dy = 2.0 / dyj;
       double two_dz = 2.0 / dzk;
     
-      double * sigt_z = grid_data->sigt->ptr(gd_set->group0, 0, z);
+      double * sigt_z = grid_data->sigt->ptr(sdom->group0, 0, z);
 
       for (int group = 0; group < num_groups; ++group) {
-            double * KRESTRICT psi_z_g = gd_set->psi->ptr(group, 0, z);
-            double * KRESTRICT rhs_z_g = gd_set->rhs->ptr(group, 0, z);
+            double * KRESTRICT psi_z_g = sdom->psi->ptr(group, 0, z);
+            double * KRESTRICT rhs_z_g = sdom->rhs->ptr(group, 0, z);
             double * KRESTRICT psi_lf_z_g = i_plane.ptr(group, 0, I_PLANE_INDEX(j, k));
             double * KRESTRICT psi_fr_z_g = j_plane.ptr(group, 0, J_PLANE_INDEX(i, k));
             double * KRESTRICT psi_bo_z_g = k_plane.ptr(group, 0, K_PLANE_INDEX(i, j));

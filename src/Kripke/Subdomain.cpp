@@ -378,7 +378,6 @@ void Subdomain::computeSweepIndexSet(void){
 
    }
   }
-}
 
 
 

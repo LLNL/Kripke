@@ -110,7 +110,7 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data) {
 #pragma omp parallel for
 #endif
             for (int k = 0; k < num_zones; ++k)
-              phi[num_zones*i + k] += ell_nm[num_directions*i + j] * psi_ptr[num_zones*j + k];
+              phi[num_zones*i + k] += ell_nm[num_local_directions*i + j] * psi_ptr[num_zones*j + k];
 
           }
 
@@ -410,7 +410,7 @@ void Kernel_3d_GDZ::sweep(Subdomain *sdom) {
     for (int d = 0; d < num_directions; ++d) {
     
     
-      double * KRESTRICT sigt_g = sdom->sigt->ptr(group+sdom.group0, 0, 0);
+      double * KRESTRICT sigt_g = sdom->sigt->ptr(group, 0, 0);
       double * KRESTRICT psi_g_d = sdom->psi->ptr(group, d, 0);
       double * KRESTRICT rhs_g_d = sdom->rhs->ptr(group, d, 0);
       double * KRESTRICT i_plane_g_d = i_plane.ptr(group, d, 0);
@@ -419,24 +419,22 @@ void Kernel_3d_GDZ::sweep(Subdomain *sdom) {
 
 
       /*  Perform transport sweep of the grid 1 cell at a time.   */
-      for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
-        double zcos_dzk = zcos_dzk_all[k];
+     for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
+        double zcos_dzk = zcos_dzk_all[d][k];
         for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {    // 1 IOP
-          double ycos_dyj = ycos_dyj_all[j];
-          int z_idx = Zonal_INDEX(extent.start_i, j, k);
-          for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {    // 1 IOP
           double ycos_dyj = ycos_dyj_all[d][j];
 
           int z_idx = Zonal_INDEX(extent.start_i, j, k);                        // 5 IOP 
           int I_P_I = I_PLANE_INDEX(j, k);                                      // 2 IOP 
-   
+
 
           for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {  // 1 IOP
             double xcos_dxi = xcos_dxi_all[d][i];
             int J_P_I = J_PLANE_INDEX(i, k);                                    // 2 IOP
             int K_P_I = K_PLANE_INDEX(i, j);                                    // 2 IOP 
 
-            /* Calculate new zonal flux */                                      
+            
+/* Calculate new zonal flux */                                      
 
             double psi_g_d_z = (rhs_g_d[z_idx]                                  // 
                 + i_plane_g_d[I_P_I] * xcos_dxi
@@ -457,6 +455,6 @@ void Kernel_3d_GDZ::sweep(Subdomain *sdom) {
       }
     }
   }
-
+ 
 }
 

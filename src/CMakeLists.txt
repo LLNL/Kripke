@@ -10,5 +10,6 @@ add_library(kripkelib STATIC ${KRIPKE_SOURCE})
 #cuda_add_library(cukripkelib STATIC Kripke/test.cu)
 cuda_add_library(cukripkelib STATIC ${CUDA_KRIPKE_SOURCE})
 
+set(KRIPKE_LIBS ${KRIPKE_LIBS} cukripkelib)
 
 add_subdirectory(tools)

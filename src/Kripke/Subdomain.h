@@ -22,6 +22,7 @@ struct Grid_Sweep_Block {
   int end_i, end_j, end_k; // termination conditon (one past)
   int inc_i, inc_j, inc_k; // increment
 //LG
+  int Nhyperplanes;
   int *ii_jj_kk_z_idx;
   int *offset;
   int *d_ii_jj_kk_z_idx;

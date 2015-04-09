@@ -65,7 +65,6 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
     // Get dimensioning
     int num_zones = sdom.num_zones;
     int num_local_groups = sdom.num_groups;
-    int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
     int num_groups_zones = num_local_groups*num_zones;
 
@@ -74,8 +73,8 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
     
 #if 1
 
-      double * KRESTRICT psi = gd_set.psi->ptr();
-      double * KRESTRICT phi = grid_data->phi->ptr(group0, 0, 0);
+      double * KRESTRICT psi = sdom.psi->ptr();
+      double * KRESTRICT phi = sdom.phi->ptr();
       double * KRESTRICT ell_d = ell_ptr;
 
   #ifdef KRIPKE_USE_ESSL
@@ -100,7 +99,7 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
 #endif
     for(int gz = 0;gz < num_groups_zones; ++ gz){
       double * KRESTRICT psi = sdom.psi->ptr() + gz*num_local_directions;
-      double * KRESTRICT phi = sdom.phi->ptr(group0, 0, 0) + gz*nidx;
+      double * KRESTRICT phi = sdom.phi->ptr() + gz*nidx;
       double * KRESTRICT ell_d = ell_ptr;
 
       for (int d = 0; d < num_local_directions; d++) {
@@ -111,9 +110,8 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
         }
         ell_d += nidx;
       }
-#endif
-
     }
+#endif
   } // Subdomain
 }
 
@@ -129,7 +127,6 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
     // Get dimensioning
     int num_zones = sdom.num_zones;
     int num_local_groups = sdom.num_groups;
-    int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
     int num_groups_zones = num_local_groups*num_zones;
 
@@ -141,8 +138,8 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
     
 #if 1
 
-      double * KRESTRICT rhs = gd_set.rhs->ptr(0, 0, 0);
-      double * KRESTRICT phi_out = grid_data->phi_out->ptr(group0, 0, 0);
+      double * KRESTRICT rhs = sdom.rhs->ptr(0, 0, 0);
+      double * KRESTRICT phi_out = sdom.phi_out->ptr();
       double * KRESTRICT ell_plus_d = ell_plus_ptr;
 
   #ifdef KRIPKE_USE_ESSL
@@ -165,8 +162,8 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
 #pragma omp parallel for
 #endif
     for(int gz = 0;gz < num_groups_zones; ++ gz){
-      double * KRESTRICT rhs = sdom.rhs->ptr(0, 0, 0) + gz*num_local_directions;
-      double * KRESTRICT phi_out = sdom.phi_out->ptr(group0, 0, 0) + gz*nidx;
+      double * KRESTRICT rhs = sdom.rhs->ptr() + gz*num_local_directions;
+      double * KRESTRICT phi_out = sdom.phi_out->ptr() + gz*nidx;
       double * KRESTRICT ell_plus_d = ell_plus_ptr;
 
       for (int d = 0; d < num_local_directions; d++) {
