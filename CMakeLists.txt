@@ -99,10 +99,6 @@ bdiv_opt_pkg(BGPM 20030410 OFF)
 # BLAS 
 bdiv_opt_pkg(esslblas 0 OFF)
 
-# CUDA
-#bdiv_opt_pkg(cuda 0 ON)
-
-
 
 
 #
