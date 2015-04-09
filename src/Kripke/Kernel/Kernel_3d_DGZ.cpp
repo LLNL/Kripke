@@ -364,70 +364,6 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
   int *offset         = extent.offset;
   int Nslices         = extent.Nhyperplanes;
 
-#ifdef KRIPKE_USE_ZONE_SLICES__
-      int N = 11;  // need to parametrize 
-      int i_inc = extent.inc_i;
-      int j_inc = extent.inc_j;
-      int k_inc = extent.inc_k;
-      int i_min, i_max, j_min, j_max, k_min, k_max;
-      int counter = 0;
-
-      if ( i_inc == 1){
-        i_min = extent.start_i;
-        i_max = extent.end_i-1;
-      }
-      else{
-        i_min = extent.end_i + 1;
-        i_max = extent.start_i;
-      }
-      if ( j_inc == 1){
-        j_min = extent.start_j;
-        j_max = extent.end_j-1;
-      }
-      else{
-        j_min = extent.end_j + 1;
-        j_max = extent.start_j;
-      }
-      if ( k_inc == 1){
-        k_min = extent.start_k;
-        k_max = extent.end_k-1;
-      }
-      else{
-        k_min = extent.end_k + 1;
-        k_max = extent.start_k;
-      }
-      int ii_tmp = (1 - i_inc)/2*i_max;
-      int jj_tmp = (1 - j_inc)/2*j_max;
-      int kk_tmp = (1 - k_inc)/2*k_max;
-
-      int ii_jj_kk_z_idx[num_zones*4];
-
-
-      for (int C = 0; C <=(3*N); ++C){   //for each C we can touch zone["i","j","k"]  as well as "d" and "group"    in parallel
-       for (int i = 0; i <= C; ++i){
-         for (int j = 0; j <= C; ++j){
-            int k = C - i - j; // surface equation i+j+j=C
-            //flip if needed
-
-            int ii = ii_tmp + i*i_inc;
-            int jj = jj_tmp + j*j_inc;
-            int kk = kk_tmp + k*k_inc;
-
-            if (ii <= i_max && jj <= j_max && kk <= k_max && ii >= i_min && jj >= j_min && kk >= k_min){
-              ii_jj_kk_z_idx[counter*4] = ii;
-              ii_jj_kk_z_idx[counter*4+1] = jj;
-              ii_jj_kk_z_idx[counter*4+2] = kk;
-              ii_jj_kk_z_idx[counter*4+3] = Zonal_INDEX(ii, jj, kk);
-              counter++;
-           }
-         }
-       }
-     }
-
-
-
-#endif  
-
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
@@ -447,6 +383,8 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
       zcos_dzk_all[d][k] = two_zcos / dz[k+1];
 
   }
+
+  if(sweep_mode == SWEEP_HYPERPLANE){
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for collapse(2)
 #endif
@@ -462,7 +400,6 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
       //printf("ijk_inc= [%d %d %d]; ijk_start= [%d %d %d]; ijk_end= [%d %d %d];\n",extent.inc_i,extent.inc_j,extent.inc_k,
       // 									extent.start_i,extent.start_j,extent.start_k,
       //									extent.end_i,extent.end_j,extent.end_k);
-#ifdef KRIPKE_USE_ZONE_SLICES
 //we may loop over slices and in each slice have parallel execution for a number of elements
 //will need to synchronize after each slice
 
@@ -495,15 +432,36 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
             k_plane_d_g[K_P_I] = 2.0 * psi_d_g_z  - k_plane_d_g[K_P_I];
 
        }
+    } // group
+  } // direction
 
-#else
+  // say what we really did
+  sweep_mode = SWEEP_HYPERPLANE;
+  return;
+  }
+
+
+
+  // do serial sweep
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for collapse(2)
+#endif
+  for (int d = 0; d < num_directions; ++d) {
+    for (int group = 0; group < num_groups; ++group) {
+      double * KRESTRICT psi_d_g = sdom->psi->ptr(group, d, 0);
+      double * KRESTRICT rhs_d_g = sdom->rhs->ptr(group, d, 0);
+      double * KRESTRICT i_plane_d_g = &i_plane(group, d, 0);
+      double * KRESTRICT j_plane_d_g = &j_plane(group, d, 0);
+      double * KRESTRICT k_plane_d_g = &k_plane(group, d, 0);
+      double * KRESTRICT sigt_g = sdom->sigt->ptr(group, 0, 0);
+
       for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
-        double zcos_dzk = zcos_dzk_all[k];
+        double zcos_dzk = zcos_dzk_all[d][k];
         for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {
-          double ycos_dyj = ycos_dyj_all[j];
+          double ycos_dyj = ycos_dyj_all[d][j];
           int z_idx = Zonal_INDEX(extent.start_i, j, k);
           for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
-            double xcos_dxi = xcos_dxi_all[i];
+            double xcos_dxi = xcos_dxi_all[d][i];
 
             /* Calculate new zonal flux */
             double psi_d_g_z = (rhs_d_g[z_idx]
@@ -527,10 +485,11 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
           }
         }
       }
-#endif      
     } // group
   } // direction
 
+  // say what we really did
+  sweep_mode = SWEEP_SERIAL;
 }
 
 

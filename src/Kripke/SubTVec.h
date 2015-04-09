@@ -1,7 +1,9 @@
 #ifndef KRIPKE_SUBTVEC_H__
 #define KRIPKE_SUBTVEC_H__
 
+#ifdef KRIPKE_USE_CUDA
 #define USE_PINNED_MEMORY
+#endif
 
 #include <Kripke/Kernel.h>
 #include <algorithm>

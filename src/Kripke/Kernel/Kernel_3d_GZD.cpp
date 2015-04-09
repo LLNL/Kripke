@@ -67,14 +67,14 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int num_local_directions = sdom.num_directions;
     int num_groups_zones = num_local_groups*num_zones;
+    int group0 = sdom.group0;
 
     /* 3D Cartesian Geometry */
     double *ell_ptr = sdom.ell->ptr();
     
-#if 1
 
       double * KRESTRICT psi = sdom.psi->ptr();
-      double * KRESTRICT phi = sdom.phi->ptr();
+      double * KRESTRICT phi = sdom.phi->ptr(group0, 0, 0);
       double * KRESTRICT ell_d = ell_ptr;
 
   #ifdef KRIPKE_USE_ESSL
@@ -86,20 +86,23 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
 
   #else
 
-      for (int i = 0; i < num_groups_zones; ++i)
+#if 1
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
+        for (int i = 0; i < num_groups_zones; ++i)
         for (int j = 0; j < num_local_directions; ++j)
           for (int k = 0; k < nidx; ++k)
             phi[i*nidx + k] += ell_d[j*nidx + k] * psi[i*num_local_directions + j];
-  #endif
- 
-#else    
+#else
+
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
     for(int gz = 0;gz < num_groups_zones; ++ gz){
       double * KRESTRICT psi = sdom.psi->ptr() + gz*num_local_directions;
-      double * KRESTRICT phi = sdom.phi->ptr() + gz*nidx;
+      double * KRESTRICT phi = sdom.phi->ptr(group0, 0, 0);
       double * KRESTRICT ell_d = ell_ptr;
 
       for (int d = 0; d < num_local_directions; d++) {
@@ -112,6 +115,8 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
       }
     }
 #endif
+
+#endif // essl
   } // Subdomain
 }
 
@@ -129,6 +134,7 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int num_local_directions = sdom.num_directions;
     int num_groups_zones = num_local_groups*num_zones;
+    int group0 = sdom.group0;
 
     sdom.rhs->clear(0.0);
 
@@ -139,7 +145,7 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
 #if 1
 
       double * KRESTRICT rhs = sdom.rhs->ptr(0, 0, 0);
-      double * KRESTRICT phi_out = sdom.phi_out->ptr();
+      double * KRESTRICT phi_out = sdom.phi_out->ptr(group0, 0, 0);
       double * KRESTRICT ell_plus_d = ell_plus_ptr;
 
   #ifdef KRIPKE_USE_ESSL
@@ -163,7 +169,7 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
 #endif
     for(int gz = 0;gz < num_groups_zones; ++ gz){
       double * KRESTRICT rhs = sdom.rhs->ptr() + gz*num_local_directions;
-      double * KRESTRICT phi_out = sdom.phi_out->ptr() + gz*nidx;
+      double * KRESTRICT phi_out = sdom.phi_out->ptr(group0, 0, 0) + gz*nidx;
       double * KRESTRICT ell_plus_d = ell_plus_ptr;
 
       for (int d = 0; d < num_local_directions; d++) {
@@ -383,6 +389,9 @@ void Kernel_3d_GZD::sweep(Subdomain *sdom) {
       }
     }
   } // group
+
+  // say what we really did
+  sweep_mode = SWEEP_SERIAL;
 }
 
 

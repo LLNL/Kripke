@@ -58,12 +58,18 @@ Subdomain::Subdomain() :
   num_groups(0),
   num_directions(0),
   num_zones(0),
+  d_delta_x(NULL),
+  d_delta_y(NULL),
+  d_delta_z(NULL),
   group0(0),
   direction0(0),
   psi(NULL),
   rhs(NULL),
+  d_rhs(NULL),
   sigt(NULL),
+  d_sigt(NULL),
   directions(NULL),
+  d_directions(NULL),
   ell(NULL),
   ell_plus(NULL),
   phi(NULL),
@@ -338,7 +344,9 @@ void Subdomain::computeSweepIndexSet(void){
 
 
       sweep_block.ii_jj_kk_z_idx = new int[nzones[0]*nzones[1]*nzones[2]*4];
+#ifdef KRIPKE_USE_CUDA
       sweep_block.d_ii_jj_kk_z_idx = (int*) get_cudaMalloc(size_t   (nzones[0]*nzones[1]*nzones[2]*4) * sizeof(int)   );
+#endif
 
       int *ii_jj_kk_z_idx = sweep_block.ii_jj_kk_z_idx;
 
@@ -371,10 +379,11 @@ void Subdomain::computeSweepIndexSet(void){
     sweep_block.Nhyperplanes = Nslices;
     sweep_block.offset = new int[Nslices+1];
     for (int ii = 0; ii <= Nslices; ++ii) sweep_block.offset[ii] = offset[ii];
-
+#ifdef KRIPKE_USE_CUDA
     do_cudaMemcpyH2D( (void *) (sweep_block.d_ii_jj_kk_z_idx), (void *) ii_jj_kk_z_idx, (size_t) (nzones[0]*nzones[1]*nzones[2]*4) * sizeof(int));
     sweep_block.d_offset = (int*) get_cudaMalloc(size_t (Nslices+1) * sizeof(int));
     do_cudaMemcpyH2D( (void *) (sweep_block.d_offset), (void *) offset, size_t (Nslices+1)  * sizeof(int));
+#endif
 
    }
   }

@@ -20,14 +20,15 @@ set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
 set(KRIPKE_SOURCE ${KRIPKE_SOURCE} PARENT_SCOPE)
 
 
+if(ENABLE_CUDA)
+	set(CUDA_KRIPKE_SOURCE ${CUDA_KRIPKE_SOURCE}
+	  Kripke/cu_utils.cu
+	  Kripke/sweep_ZGD.cu
+	  Kripke/sweep_ZDG.cu 
+	)
 
-set(CUDA_KRIPKE_SOURCE ${CUDA_KRIPKE_SOURCE}
-  Kripke/cu_utils.cu
-  Kripke/sweep_ZGD.cu
-  Kripke/sweep_ZDG.cu 
-)
-
-set(CUDA_KRIPKE_SOURCE ${CUDA_KRIPKE_SOURCE} PARENT_SCOPE)
+	set(CUDA_KRIPKE_SOURCE ${CUDA_KRIPKE_SOURCE} PARENT_SCOPE)
+endif()
 
 
 

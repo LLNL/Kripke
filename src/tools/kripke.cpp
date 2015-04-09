@@ -58,6 +58,9 @@ void usage(void){
 #ifdef KRIPKE_USE_SILO
     printf("  --silo <BASENAME>      Create SILO output files\n");
 #endif
+    printf("  --sweep <MODE>         Which sweep implementation to use\n");
+    printf("                         Serial, Hyperplane, GPU\n");
+    printf("                         Default:  --sweep serial");
     printf("  --test                 Run Kernel Test instead of solver\n");
     printf("  --zset [x:y:z, ...]    Number of zonesets in x:y:z\n");
     printf("                         Default:  --zst 1:1:1\n");
@@ -139,6 +142,13 @@ void runPoint(int point, int num_tasks, int num_threads, Input_Variables &input_
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   if(myid == 0){
+    printf("Sweep implementation used: ");
+    switch(grid_data->kernel->sweep_mode){
+      case SWEEP_SERIAL: printf("SERIAL\n"); break;
+      case SWEEP_HYPERPLANE: printf("HYPERPLANE\n"); break;
+      case SWEEP_GPU: printf("GPU\n"); break;
+    }
+
     std::vector<std::string> headers;
     std::vector<std::string> values;
 
@@ -241,6 +251,7 @@ int main(int argc, char **argv) {
   bool test = false;
   bool perf_tools = false;
   int restart_point = 0;
+  SweepMode sweep_mode = SWEEP_SERIAL;
 #ifdef KRIPKE_USE_SILO
   std::string silo_basename = "";
 #endif
@@ -342,6 +353,26 @@ int main(int argc, char **argv) {
     else if(opt == "--restart"){
       restart_point = std::atoi(cmd.pop().c_str());
     }
+    else if(opt == "--sweep"){
+      std::string mode = cmd.pop();
+      if(!strcasecmp(mode.c_str(), "serial")){
+        sweep_mode = SWEEP_SERIAL;
+      }
+      else if(!strcasecmp(mode.c_str(), "hp")){
+        sweep_mode = SWEEP_HYPERPLANE;
+      }
+      else if(!strcasecmp(mode.c_str(), "gpu")){
+        sweep_mode = SWEEP_GPU;
+#ifndef KRIPKE_USE_CUDA
+        printf("GPU Sweeps unavaiable, recompile Kripke with CUDA\n");
+        usage();
+#endif
+      }
+      else {
+        printf("Unknown sweep mode %s\n", mode.c_str());
+        usage();
+      }
+    }
     else{
       printf("Unknwon options %s\n", opt.c_str());
       usage();
@@ -441,6 +472,7 @@ int main(int argc, char **argv) {
 #ifdef KRIPKE_USE_SILO
   ivars.silo_basename = silo_basename;
 #endif
+  ivars.sweep_mode = sweep_mode;
   int point = 0;
   for(int d = 0;d < dir_list.size();++ d){
     for(int g = 0;g < grp_list.size();++ g){

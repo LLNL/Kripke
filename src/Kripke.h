@@ -42,6 +42,15 @@ enum Nesting_Order {
 };
 
 /**
+ * What sweep implementation to use
+ */
+enum SweepMode {
+  SWEEP_SERIAL,
+  SWEEP_HYPERPLANE,
+  SWEEP_GPU
+};
+
+/**
  * Converts a nesting tag to a human-readable string.
  */
 inline std::string nestingString(Nesting_Order nesting){

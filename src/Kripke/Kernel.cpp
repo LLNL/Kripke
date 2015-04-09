@@ -9,12 +9,16 @@
 #include<Kripke/Kernel/Kernel_3d_ZGD.h>
 #include<Kripke/Kernel/Kernel_3d_GZD.h>
 
-Kernel::Kernel(){
+Kernel::Kernel() : sweep_mode(SWEEP_SERIAL){
 
 }
 
 Kernel::~Kernel(){
 
+}
+
+void Kernel::setSweepMode(SweepMode mode){
+  sweep_mode = mode;
 }
 
 

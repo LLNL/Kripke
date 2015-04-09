@@ -24,6 +24,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
   // create the kernel object based on nesting
   kernel = createKernel(input_vars->nesting, 3);
+  kernel->setSweepMode(input_vars->sweep_mode);
 
   // Create quadrature set (for all directions)
   int total_num_directions = input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset;

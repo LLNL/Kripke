@@ -352,5 +352,7 @@ void Kernel_3d_DZG::sweep(Subdomain *sdom) {
       }
     }
   }
+  // say what we really did
+  sweep_mode = SWEEP_SERIAL;
 }
 

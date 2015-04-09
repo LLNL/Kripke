@@ -1,7 +1,6 @@
 project(KRIPKE)
 
 cmake_minimum_required(VERSION 2.8)
-find_package(CUDA QUIET REQUIRED)
 
 
 #project(KRIPKE)
@@ -108,6 +107,8 @@ bdiv_opt_pkg(esslblas 0 OFF)
 # OpenMP build option
 include(cmake/OpenMP.cmake)
 
+# CUDA build option
+include(cmake/CUDA.cmake)
 
 #
 # Process build files for Kripke

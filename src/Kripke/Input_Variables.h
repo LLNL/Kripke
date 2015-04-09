@@ -27,6 +27,8 @@ struct Input_Variables {
 #endif
 
   Nesting_Order nesting;        // Data layout and loop ordering (of Psi)
+
+  SweepMode sweep_mode;
 };
 
 #endif
