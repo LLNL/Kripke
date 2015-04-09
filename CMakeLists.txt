@@ -9,6 +9,9 @@ cmake_minimum_required(VERSION 2.8)
 # Figure out toolchain files to use in this build
 #
 
+# CUDA build option
+include(cmake/CUDA.cmake)
+
 
 set(SYS_TYPE $ENV{SYS_TYPE})
 
@@ -107,8 +110,6 @@ bdiv_opt_pkg(esslblas 0 OFF)
 # OpenMP build option
 include(cmake/OpenMP.cmake)
 
-# CUDA build option
-include(cmake/CUDA.cmake)
 
 #
 # Process build files for Kripke

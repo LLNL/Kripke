@@ -5,7 +5,7 @@ option(ENABLE_CUDA "Turn on compiler support for CUDA" OFF)
 message(STATUS "CUDA Support is ${ENABLE_CUDA}")
 
 if(${ENABLE_CUDA})
-  find_package(CUDA)
+  find_package(CUDA QUIET REQUIRED)
   if (CUDA_FOUND)
       set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CUDA_C_FLAGS}")
       set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CUDA_CXX_FLAGS}")
