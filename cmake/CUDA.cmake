@@ -1,7 +1,7 @@
 #
 # Cuda
 # 
-option(ENABLE_CUDA "Turn on compiler support for CUDA" ON)
+option(ENABLE_CUDA "Turn on compiler support for CUDA" OFF)
 message(STATUS "CUDA Support is ${ENABLE_CUDA}")
 
 if(${ENABLE_CUDA})
