@@ -9,6 +9,11 @@
 #include <stdio.h>
 
 
+SweepComm::SweepComm(Grid_Data *data) : grid_data(data)
+{
+
+}
+
 /**
   Adds a subdomain to the work queue.
   Determines if upwind dependencies require communication, and posts appropirate Irecv's.
@@ -165,6 +170,11 @@ void SweepComm::markComplete(int sdom_id){
           break;
         }
       }
+
+      // copy the boundary condition data into the downwinds plane data
+      Subdomain &sdom_downwind = grid_data->subdomains[sdom->downwind[dim].subdomain_id];
+      sdom_downwind.plane_data[dim]->copy(*sdom->plane_data[dim]);
+
       continue;
     }
 

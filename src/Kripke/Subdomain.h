@@ -41,6 +41,7 @@ struct Subdomain {
   void copy(Subdomain const &b);
   bool compare(Subdomain const &b, double tol, bool verbose);
   void computeSweepIndexSet(void);
+  void computeLLPlus(void);
 
   int idx_group_set;
   int idx_dir_set;
@@ -81,7 +82,8 @@ struct Subdomain {
   // Materials on the mesh, used for scattering lookup
   std::vector<int> mixed_to_zones;     // mapping from mixed slot to zones
   std::vector<int> mixed_material;  // material number for each mixed slot
-  std::vector<double> mixed_fraction;  // volume fraction * density for each mixed slot
+  std::vector<double> mixed_fraction;  // volume fraction each mixed slot
+  std::vector<double> mixed_weighted; // volume fraction * volume for each mixed slot
 };
 
 #endif

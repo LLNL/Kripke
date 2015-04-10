@@ -3,6 +3,8 @@
  *--------------------------------------------------------------------------*/
 
 #include <Kripke.h>
+#include <Kripke/Subdomain.h>
+#include <Kripke/SubTVec.h>
 #include <Kripke/SweepComm.h>
 #include <Kripke/Grid.h>
 #include <vector>
@@ -94,12 +96,20 @@ int SweepSolver (Grid_Data *grid_data)
 int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
 {
   // Create a new sweep communicator object
-  SweepComm sweep_comm;
+  SweepComm sweep_comm(grid_data);
 
   // Add all subdomains in our list
   for(int i = 0;i < subdomain_list.size();++ i){
     int sdom_id = subdomain_list[i];
-    sweep_comm.addSubdomain(sdom_id, grid_data->subdomains[sdom_id]);
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
+    sweep_comm.addSubdomain(sdom_id, sdom);
+
+    // Clear boundary conditions
+    for(int dim = 0;dim < 3;++ dim){
+      if(sdom.upwind[dim].subdomain_id == -1){
+        sdom.plane_data[dim]->clear(0.0);
+      }
+    }
   }
 
   /* Loop until we have finished all of our work */

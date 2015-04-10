@@ -63,6 +63,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   sigma_tot.resize(total_num_groups, 0.0);
 
   // Setup scattering transfer matrix for 2 materials
+  double sigs_init[3] = {.05, .00005, 0.05};
   sigs.resize(3);
   for(int mat = 0;mat < 3;++ mat){
     // allocate transfer matrix
@@ -72,10 +73,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
     sigs[mat]->clear(0.0);
     for(int l = 0;l < legendre_order+1;++ l){
       for(int g = 0;g < total_num_groups;++ g){
-        (*sigs[mat])(g, l, g) = 1.0;
-        for(int gp = 0;gp < total_num_groups;++ gp){
-          (*sigs[mat])(g, l, gp) = drand48();
-        }
+        (*sigs[mat])(g, l, g) = sigs_init[mat];
       }
     }
   }
@@ -100,9 +98,12 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
         sdom.setup(sdom_id, input_vars, gs, ds, zs, directions, kernel, layout);
 
         // Create ell and ell_plus, if this is the first of this ds
+        bool compute_ell = false;
         if(ell[ds] == NULL){
           ell[ds] = new SubTVec(kernel->nestingEll(), total_num_moments, sdom.num_directions, 1);
           ell_plus[ds] = new SubTVec(kernel->nestingEllPlus(), total_num_moments, sdom.num_directions, 1);
+
+          compute_ell = true;
         }
 
         // Create phi and phi_out, if this is the first of this zs
@@ -114,11 +115,17 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
         // Set the variables for this subdomain
         sdom.setVars(ell[ds], ell_plus[ds], phi[zs], phi_out[zs]);
+
+        if(compute_ell){
+          // Compute the L and L+ matrices
+          sdom.computeLLPlus();
+        }
       }
     }
   }
-
   delete layout;
+
+
 
   // Now compute number of elements allocated globally
   long long vec_size[4] = {0,0,0,0};
@@ -268,6 +275,11 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
 
 #ifdef KRIPKE_USE_SILO
 void Grid_Data::writeSilo(std::string const &fname_base){
+
+  // Recompute Phi... so we can write out phi0
+  kernel->LTimes(this);
+
+
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   int mpi_size;
@@ -331,6 +343,34 @@ void Grid_Data::writeSilo(std::string const &fname_base){
       // cleanup
       for(int i = 0;i < mpi_size*num_zone_sets; ++i){
         free(mat_names[i]);
+      }
+    }
+
+    // Write out multivar for phi0
+    {
+      // setup mesh names and types
+      std::vector<char *> var_names(mpi_size*num_zone_sets);
+      int mesh_idx = 0;
+      for(int rank = 0;rank < mpi_size;++ rank){
+        for(int idx = 0;idx < num_zone_sets;++ idx){
+          int sdom_id = zs_to_sdomid[idx];
+          std::stringstream name;
+
+          name << fname_base << "/rank_" << rank << ".silo:/sdom" << sdom_id << "/phi0";
+          var_names[mesh_idx] = strdup(name.str().c_str());
+
+          mesh_idx ++;
+        }
+      }
+
+      std::vector<int> var_types(mpi_size*num_zone_sets, DB_QUADVAR);
+
+      DBPutMultivar(root, "phi0", mpi_size*num_zone_sets,
+          &var_names[0],  &var_types[0] , NULL);
+
+      // cleanup
+      for(int i = 0;i < mpi_size*num_zone_sets; ++i){
+        free(var_names[i]);
       }
     }
 
@@ -413,11 +453,24 @@ void Grid_Data::writeSilo(std::string const &fname_base){
         last_z = z;
       }
 
-
       DBPutMaterial(proc, "material", "mesh", 3, matnos,
           &matlist[0], sdom.nzones, 3,
           &mix_next[0], &mix_mat[0], &sdom.mixed_to_zones[0], &sdom.mixed_fraction[0], num_mixed,
           DB_DOUBLE, NULL);
+    }
+
+    // Write phi0
+    {
+      int num_zones = sdom.num_zones;
+      std::vector<double> phi0(num_zones);
+
+      // extract phi0 from phi for the 0th group
+      for(int z = 0;z < num_zones;++ z){
+        phi0[z] = (*sdom.phi)(0,0,z);
+      }
+
+      DBPutQuadvar1(proc, "phi0", "mesh", &phi0[0],
+          sdom.nzones, 3, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
     }
   }
 

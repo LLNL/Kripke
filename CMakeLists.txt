@@ -53,10 +53,8 @@ set(CPACK_SOURCE_GENERATOR "TGZ")
 set(CPACK_SOURCE_IGNORE_FILES "tarball.py;kripke-tarball;.git;.cproject;.project;${CPACK_SOURCE_IGNORE_FILES}")
 include(CPack)
 
-#set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_BUILD_TYPE Release)
-
-enable_language(CXX)
+set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Release)
 
 message(STATUS "Selected Build Type ${CMAKE_BUILD_TYPE}")
 message(STATUS "Selected C++ Compiler ${CMAKE_CXX_COMPILER}")

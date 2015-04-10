@@ -30,6 +30,7 @@ void InitDirections(Grid_Data *grid_data, int num_directions_per_octant)
     directions[d].id = (omegas[0] > 0.) ? 1 : -1;
     directions[d].jd = (omegas[1] > 0.) ? 1 : -1;
     directions[d].kd = (omegas[2] > 0.) ? 1 : -1;
+    directions[d].w = 1.0 / (double)num_directions;
     directions[d].xcos = fabs(omegas[0]);
     directions[d].ycos = fabs(omegas[1]);
     directions[d].zcos = fabs(omegas[2]);

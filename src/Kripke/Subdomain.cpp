@@ -124,8 +124,10 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
 
   // allocate the storage for solution and source terms
   psi = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, num_zones);
+  psi->clear(0.0);
   rhs = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, num_zones);
   sigt = new SubTVec(kernel->nestingSigt(), num_groups, 1, num_zones);
+  sigt->clear(0.0);
 
   computeSweepIndexSet();
 
@@ -137,6 +139,7 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   }
 
   // paint the mesh
+  double sigt_init[3] = {0.1, 0.0001, 0.1};
   int num_subsamples = 4; // number of subsamples per spatial dimension
   double sample_vol_frac = 1.0 / (double)(num_subsamples*num_subsamples*num_subsamples);
   int zone_id = 0;
@@ -152,6 +155,8 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
 
       for (int i = 0; i != nzones[0]; i ++) {
         double sdx = deltas[0][i+1] / (double)(num_subsamples+1);
+
+        double volume = deltas[0][i+1] * deltas[1][j+1] * deltas[2][k+1];
 
         // subsample probe the geometry to get our materials
         double frac[3] = {0.0, 0.0, 0.0}; // fraction of both materials
@@ -179,6 +184,12 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
             mixed_to_zones.push_back(zone_id);
             mixed_material.push_back(mat);
             mixed_fraction.push_back(frac[mat]);
+            mixed_weighted.push_back(frac[mat]*volume);
+
+            // initialize background sigt
+            for(int g = 0;g < num_groups;++ g){
+              (*sigt)(g,0,zone_id) += frac[mat] * sigt_init[mat] * volume;
+            }
           }
         }
 
@@ -290,5 +301,150 @@ void Subdomain::computeSweepIndexSet(void){
   }
 }
 
+namespace {
+  double FactFcn(int n)
+  {
+    double fact, f1;
+    int i;
 
+    /* n <= 1 case */
+    if(n <= 1){
+      fact=1.0;
+      return(fact);
+    }
+
+    /* n > 1 case */
+    fact = (double) n;
+    f1 = (double) (n - 1);
+    for(i=0; i<n-1; i++){
+      fact = fact*f1;
+      f1 = f1-1;
+    }
+    return(fact);
+  }
+
+  inline double PnmFcn(int n, int m, double x)
+  {
+    /*-----------------------------------------------------------------
+     * It is assumed that 0 <= m <= n and that abs(x) <= 1.0.
+     * No error checking is done, however.
+     *---------------------------------------------------------------*/
+    double fact, pnn, pmm, pmmp1, somx2;
+
+    int i, nn;
+
+    if(std::abs(x) > 1.0){
+      printf("Bad input to ardra_PnmFcn: abs(x) > 1.0, x = %e\n", x);
+      MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    else if((x > 1.0) && (x <= 1.0)){
+      x = 1.0;
+    }
+    else if((-1.0 <= x ) && (x < -1.0)){
+      x = -1.0;
+    }
+
+    pmm=1.0;
+    if(m > 0){
+      somx2=sqrt((1.0-x)*(1.0+x));
+      fact=1.0;
+      for(i=1; i<=m; i++){
+        pmm *= -fact*somx2;
+        fact += 2.0;
+      }
+    }
+    if(n == m){
+      return(pmm);
+    }
+    else {
+      pmmp1=x*(2*m+1)*pmm;
+      if(n == (m+1)){
+        return(pmmp1);
+      }
+      else {
+        for(nn=m+2; nn<=n; nn++){
+          pnn=(x*(2*nn-1)*pmmp1-(nn+m-1)*pmm)/(nn-m);
+          pmm=pmmp1;
+          pmmp1=pnn;
+        }
+        return(pnn);
+      }
+    }
+  }
+
+  inline double YnmFcn(int n, int m, double mu, double eta, double xi)
+  {
+    double fac1, fac2, anm, ynm, pnm, dm0, taum, tmp, phi, phi_tmp;
+    double floor=1.e-20;
+    int nn, mm;
+
+    /* Calculate the correct phi for omega=(mu,eta,xi) */
+    tmp = fabs(eta/(mu+floor));
+    phi_tmp = atan(tmp);
+    if( (mu>0) && (eta>0) ){
+      phi = phi_tmp;
+    }
+    else if( (mu<0) && (eta>0) ){
+      phi = M_PI - fabs(phi_tmp);
+    }
+    else if( (mu<0) && (eta<0) ){
+      phi = M_PI + fabs(phi_tmp);
+    }
+    else {
+      phi = 2.0*M_PI - fabs(phi_tmp);
+    }
+
+    /* Begin evaluation of Ynm(omega) */
+    nn = n - std::abs(m);
+    fac1 = (double) FactFcn(nn);
+    nn = n + std::abs(m);
+    fac2 = (double) FactFcn(nn);
+    mm = std::abs(m);
+    pnm = PnmFcn(n, mm, xi);
+    tmp = ((double) m)*phi;
+    if(m >= 0){
+      taum = cos(tmp);
+    }
+    else {taum = sin(-tmp); }
+    if(m == 0){
+      dm0 = 1.0;
+    }
+    else {dm0 = 0.0; }
+    tmp = ((2*n+1)*fac1)/(2.0*(1.0+dm0)*M_PI*fac2);
+    anm = sqrt( tmp );
+    ynm = anm*pnm*taum;
+    return(ynm);
+  }
+}
+
+/**
+ * Compute L and L+
+ * This assumes that the quadrature set is defined.
+ */
+void Subdomain::computeLLPlus(void){
+  int num_moments = ell->zones;
+  int nm = 0;
+  double SQRT4PI = std::sqrt(4*M_PI);
+  for(int n=0; n< num_moments; n++){
+    for(int m=-n; m<=n; m++){
+      for(int d=0; d<num_directions; d++){
+
+        // Get quadrature point info
+        double xcos = (directions[d].id)*(directions[d].xcos);
+        double ycos = (directions[d].jd)*(directions[d].ycos);
+        double zcos = (directions[d].kd)*(directions[d].zcos);
+        double w =  directions[d].w;
+
+        // Compute element of L
+        double ell_tmp = w*YnmFcn(n, m, xcos, ycos, zcos);
+        (*ell)(0,d,nm) = ell_tmp/SQRT4PI;
+
+        // Compute element of L+
+        double ell_plus_tmp = w*YnmFcn(n, m, xcos, ycos, zcos);
+        (*ell_plus)(0,d,nm) = ell_plus_tmp*SQRT4PI;
+      }
+      nm ++;
+    }
+  }
+}
 
