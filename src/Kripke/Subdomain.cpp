@@ -316,26 +316,26 @@ void Subdomain::computeSweepIndexSet(void){
 
       if ( i_inc == 1){
         i_min = sweep_block.start_i;
-        i_max = sweep_block.end_i-1;
+        i_max = sweep_block.end_i;
       }
       else{
-        i_min = sweep_block.end_i + 1;
+        i_min = sweep_block.end_i;
         i_max = sweep_block.start_i;
       }
       if ( j_inc == 1){
         j_min = sweep_block.start_j;
-        j_max = sweep_block.end_j-1;
+        j_max = sweep_block.end_j;
       }
       else{
-        j_min = sweep_block.end_j + 1;
+        j_min = sweep_block.end_j;
         j_max = sweep_block.start_j;
       }
       if ( k_inc == 1){
         k_min = sweep_block.start_k;
-        k_max = sweep_block.end_k-1;
+        k_max = sweep_block.end_k;
       }
       else{
-        k_min = sweep_block.end_k + 1;
+        k_min = sweep_block.end_k;
         k_max = sweep_block.start_k;
       }
       int ii_tmp = (1 - i_inc)/2*i_max;
