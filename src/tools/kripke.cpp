@@ -438,6 +438,8 @@ int main(int argc, char **argv) {
   ivars.num_zonesets_dim[1] = zset[1];
   ivars.num_zonesets_dim[2] = zset[2];
   ivars.layout_pattern = layout;
+  ivars.quad_num_polar = 0; //12;
+  ivars.quad_num_azimuthal = 0; //6;
 #ifdef KRIPKE_USE_SILO
   ivars.silo_basename = silo_basename;
 #endif

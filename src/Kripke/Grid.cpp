@@ -27,7 +27,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
   // Create quadrature set (for all directions)
   int total_num_directions = input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset;
-  InitDirections(this, total_num_directions);
+  InitDirections(this, input_vars);
 
   num_direction_sets = 8*input_vars->num_dirsets_per_octant;
   num_directions_per_set = input_vars->num_dirs_per_dirset;

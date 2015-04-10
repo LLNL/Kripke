@@ -8,6 +8,7 @@
 #include <vector>
 
 class Grid_Data;
+struct Input_Variables;
 
 /**
  * Contains information needed for one quadrature set direction.
@@ -23,9 +24,10 @@ struct Directions{
                             cosine is positive; = -1 if not). */
   int kd;                   /* direction flag (= 1 if z-direction
                             cosine is positive; = -1 if not). */
+  int octant;
 };
 
 
-void InitDirections(Grid_Data *grid_data, int num_directions_per_octant);
+void InitDirections(Grid_Data *grid_data, Input_Variables *input_vars);
 
 #endif
