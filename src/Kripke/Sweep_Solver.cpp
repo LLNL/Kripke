@@ -33,7 +33,6 @@ int SweepSolver (Grid_Data *grid_data)
       kernel->LTimes(grid_data);
     }
 
-
     // Compute Scattering Source Term
     {
       BLOCK_TIMER(grid_data->timing, Scattering);
@@ -43,7 +42,7 @@ int SweepSolver (Grid_Data *grid_data)
     // Compute External Source Term
     {
       BLOCK_TIMER(grid_data->timing, Source);
-      kernel->source(grid_data);
+      if(iter == 0)kernel->source(grid_data);
     }
 
     // Moments to Discrete transformation
@@ -52,6 +51,7 @@ int SweepSolver (Grid_Data *grid_data)
       kernel->LPlusTimes(grid_data);
     }
 
+    grid_data->particleEdit();
     /*
      * Sweep each Group Set
      */

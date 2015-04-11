@@ -196,6 +196,61 @@ void Grid_Data::randomizeData(void){
   }
 }
 
+void Grid_Data::particleEdit(void){
+  // sum up particles for psi and rhs
+  double part[4] = {0.0, 0.0, 0.0, 0.0};
+  for(int sdom_id = 0;sdom_id < subdomains.size();++ sdom_id){
+    Subdomain &sdom = subdomains[sdom_id];
+
+    int num_zones = sdom.num_zones;
+    int num_directions = sdom.num_directions;
+    int num_groups= sdom.num_groups;
+    Directions *dirs = sdom.directions;
+
+    for(int z = 0;z < num_zones;++ z){
+      for(int d = 0;d < num_directions;++ d){
+        double w = dirs[d].w;
+        for(int g = 0;g < num_groups;++ g){
+          part[0] += w * (*sdom.psi)(g,d,z);
+          part[1] += w * (*sdom.rhs)(g,d,z);
+        }
+      }
+    }
+  }
+
+  // sum up particles for phi and phi_out
+  for(int zs = 0;zs < num_zone_sets;++ zs){
+    int sdom_id = zs_to_sdomid[zs];
+    Subdomain &sdom = subdomains[sdom_id];
+
+    int num_zones = sdom.num_zones;
+    int num_groups= sdom.num_groups;
+
+    for(int z = 0;z < num_zones;++ z){
+      for(int g = 0;g < num_groups;++ g){
+        part[2] += (*sdom.phi)(g,0,z);
+        part[3] += (*sdom.phi_out)(g,0,z);
+      }
+    }
+  }
+
+  // reduce
+  double part_global[4];
+  MPI_Reduce(part, part_global, 4, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+  int mpi_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  if(mpi_rank == 0){
+    printf("Particle Edit:\n");
+    printf("  psi     = %e\n", part_global[0]);
+    printf("  phi     = %e\n", part_global[2]);
+    printf("  phi_out = %e\n", part_global[3]);
+    printf("  rhs     = %e\n", part_global[1]);
+    printf("  phi_out/rhs = %e\n", part_global[3]/part_global[1]);
+  }
+}
+
+
 /**
  * Copies all variables and matrices for testing suite.
  * Correctly copies data from one nesting to another.

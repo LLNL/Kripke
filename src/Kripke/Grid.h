@@ -25,6 +25,7 @@ public:
   void randomizeData(void);
   void copy(Grid_Data const &b);
   bool compare(Grid_Data const &b, double tol, bool verbose);
+  void particleEdit(void);
 #ifdef KRIPKE_USE_SILO
   void writeSilo(std::string const &fname);
 #endif

@@ -54,7 +54,7 @@ void usage(void){
     printf("  --gperf                Turn on Google Perftools profiling\n");
     printf("  --procs <npx,npy,npz>  MPI task spatial decomposition\n");
     printf("                         Default:  --procs 1,1,1\n");
-    printf("  --quad <polar,azim>    Use a Gauss-Legendre Product Quadrature\n");
+    printf("  --quad <polar:azim>    Use a Gauss-Legendre Product Quadrature\n");
     printf("                         with the specified number of polar and azimuthal points\n");
     printf("                         Default:  --quad 0,0  [disabled, use dummy S2]\n");
     printf("  --restart <point>      Restart at given point\n");
@@ -320,7 +320,7 @@ int main(int argc, char **argv) {
       lorder = std::atoi(cmd.pop().c_str());
     }
     else if(opt == "--quad"){
-      std::vector<std::string> values = split(cmd.pop(), ',');
+      std::vector<std::string> values = split(cmd.pop(), ':');
       if(values.size()!=2)usage();
       num_polar = std::atoi(values[0].c_str());
       num_azimuthal = std::atoi(values[1].c_str());

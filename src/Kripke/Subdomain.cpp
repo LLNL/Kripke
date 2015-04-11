@@ -435,11 +435,12 @@ void Subdomain::computeLLPlus(void){
 
         // Compute element of L
         double ell_tmp = w*YnmFcn(n, m, xcos, ycos, zcos);
-        (*ell)(0,d,nm) = ell_tmp/SQRT4PI;
+        (*ell)(nm,d,0) = ell_tmp*SQRT4PI;
 
         // Compute element of L+
         double ell_plus_tmp = w*YnmFcn(n, m, xcos, ycos, zcos);
-        (*ell_plus)(0,d,nm) = ell_plus_tmp*SQRT4PI;
+        (*ell_plus)(nm,d,0) = ell_plus_tmp*SQRT4PI;
+        printf("ell(nm=%d, d=%d)=%e,  w=%e\n", nm, d, (*ell_plus)(nm,d,0), w);
       }
       nm ++;
     }
