@@ -152,7 +152,7 @@ void Kernel_3d_DGZ::scattering(Grid_Data *grid_data){
     Subdomain &sdom = grid_data->subdomains[sdom_id];
     int const * KRESTRICT mixed_to_zones = &sdom.mixed_to_zones[0];
     int const * KRESTRICT mixed_material = &sdom.mixed_material[0];
-    double const * KRESTRICT mixed_fraction = &sdom.mixed_weighted[0];
+    double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
 
     // Zero out source terms
     phi_out.clear(0.0);

@@ -183,7 +183,6 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
             mixed_to_zones.push_back(zone_id);
             mixed_material.push_back(mat);
             mixed_fraction.push_back(frac[mat]);
-            mixed_weighted.push_back(frac[mat]*volume);
 
             // initialize background sigt
             for(int g = 0;g < num_groups;++ g){

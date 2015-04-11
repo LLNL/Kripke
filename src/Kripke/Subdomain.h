@@ -83,7 +83,6 @@ struct Subdomain {
   std::vector<int> mixed_to_zones;     // mapping from mixed slot to zones
   std::vector<int> mixed_material;  // material number for each mixed slot
   std::vector<double> mixed_fraction;  // volume fraction each mixed slot
-  std::vector<double> mixed_weighted; // volume fraction * volume for each mixed slot
 };
 
 #endif
