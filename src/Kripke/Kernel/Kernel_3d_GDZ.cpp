@@ -158,7 +158,7 @@ void Kernel_3d_GDZ::scattering(Grid_Data *grid_data){
     Subdomain &sdom = grid_data->subdomains[sdom_id];
     int const * KRESTRICT mixed_to_zones = &sdom.mixed_to_zones[0];
     int const * KRESTRICT mixed_material = &sdom.mixed_material[0];
-    double const * KRESTRICT mixed_fraction = &sdom.mixed_weighted[0];
+    double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
 
     // Zero out source terms
     phi_out.clear(0.0);
@@ -192,7 +192,7 @@ void Kernel_3d_GDZ::scattering(Grid_Data *grid_data){
             double fraction = mixed_fraction[mix];
             double sigs_value = sigs_g_gp_n[material];
 
-            phi_out_gp_nm[zone] += sigs_value * phi_g_nm[zone] * fraction;
+            phi_out_gp_nm[zone] +=  sigs_value * phi_g_nm[zone] * fraction;
           }
 
           phi_g_nm += num_zones;
@@ -225,7 +225,7 @@ void Kernel_3d_GDZ::source(Grid_Data *grid_data){
     Subdomain &sdom = grid_data->subdomains[sdom_id];
     int const * KRESTRICT mixed_to_zones = &sdom.mixed_to_zones[0];
     int const * KRESTRICT mixed_material = &sdom.mixed_material[0];
-    double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
+    double const * KRESTRICT mixed_fraction = &sdom.mixed_weighted[0];
 
     // grab dimensions
     int num_mixed = sdom.mixed_to_zones.size();

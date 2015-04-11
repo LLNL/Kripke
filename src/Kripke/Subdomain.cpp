@@ -139,7 +139,6 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   }
 
   // paint the mesh
-  double sigt_init[3] = {0.1, 0.0001, 0.1};
   int num_subsamples = 4; // number of subsamples per spatial dimension
   double sample_vol_frac = 1.0 / (double)(num_subsamples*num_subsamples*num_subsamples);
   int zone_id = 0;
@@ -188,7 +187,7 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
 
             // initialize background sigt
             for(int g = 0;g < num_groups;++ g){
-              (*sigt)(g,0,zone_id) += frac[mat] * sigt_init[mat] * volume;
+              (*sigt)(g,0,zone_id) += frac[mat] * input_vars->sigt[mat] * volume;
             }
           }
         }

@@ -46,7 +46,7 @@ namespace {
 
 
   bool dirSortFcn(Directions const &a, Directions const &b){
-    return b.octant > a.octant;
+    return b.octant < a.octant;
   }
 }
 
@@ -96,29 +96,31 @@ void InitDirections(Grid_Data *grid_data, Input_Variables *input_vars)
     // compute azmuhtal angles and weights
     std::vector<double> az_angle(num_azimuth);
     std::vector<double> az_weight(num_azimuth);
-    double dangle = M_PI*2.0/((double) num_azimuth);
-    az_angle[0] = dangle/2.0;
-    for(int i=1; i<num_azimuth; i++){
-      az_angle[i] = az_angle[i-1] + dangle;
-    }
+    double dangle = 2.0*M_PI/((double) num_azimuth);
+
     for(int i=0; i<num_azimuth; i++){
+      if(i == 0){
+        az_angle[0] = dangle/2.0;
+      }
+      else{
+        az_angle[i] = az_angle[i-1] + dangle;
+      }
       az_weight[i] = dangle;
     }
 
+
     // Loop over polar 'octants
     int d = 0;
-    double total_w = 0;
     for(int i=0; i< num_polar; i++){
       for(int j=0; j< num_azimuth; j++){
-        directions[d].xcos = sqrt(1.0-polar_cos[i]*polar_cos[i]) * cos(az_angle[j]);
-        directions[d].ycos = sqrt(1.0-polar_cos[i]*polar_cos[i]) * sin(az_angle[j]);
-        directions[d].zcos = polar_cos[i];
-        directions[d].w = polar_weight[i]*az_weight[j];
-        total_w += directions[d].w;
+        double xcos = sqrt(1.0-polar_cos[i]*polar_cos[i]) * cos(az_angle[j]);
+        double ycos = sqrt(1.0-polar_cos[i]*polar_cos[i]) * sin(az_angle[j]);
+        double zcos = polar_cos[i];
+        double w = polar_weight[i]*az_weight[j]/(4.0*M_PI);
 
-        directions[d].id = (directions[d].xcos > 0.) ? 1 : -1;
-        directions[d].jd = (directions[d].ycos > 0.) ? 1 : -1;
-        directions[d].kd = (directions[d].zcos > 0.) ? 1 : -1;
+        directions[d].id = (xcos > 0.) ? 1 : -1;
+        directions[d].jd = (ycos > 0.) ? 1 : -1;
+        directions[d].kd = (zcos > 0.) ? 1 : -1;
 
         directions[d].octant = 0;
         if(directions[d].id == -1){
@@ -131,16 +133,18 @@ void InitDirections(Grid_Data *grid_data, Input_Variables *input_vars)
           directions[d].octant += 4;
         }
 
+        directions[d].xcos = std::abs(xcos);
+        directions[d].ycos = std::abs(ycos);
+        directions[d].zcos = std::abs(zcos);
+        directions[d].w = w;
+
         ++ d;
       }
-    }
-    // normalize weights
-    for(int d = 0;d < num_directions;++ d){
-      directions[d].w /= total_w;
     }
 
     // Sort by octant.. so each set has same directions
     std::sort(directions.begin(), directions.end(), dirSortFcn);
+
   }
   else{
     // Do (essentialy) an S2 quadrature.. but with multiple directions

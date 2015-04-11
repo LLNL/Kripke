@@ -62,19 +62,16 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   int total_num_groups = num_group_sets*num_groups_per_set;
   sigma_tot.resize(total_num_groups, 0.0);
 
-  // Setup scattering transfer matrix for 2 materials
-  double sigs_init[3] = {.05, .00005, 0.05};
+  // Setup scattering transfer matrix for 3 materials
   sigs.resize(3);
   for(int mat = 0;mat < 3;++ mat){
     // allocate transfer matrix
     sigs[mat] = new SubTVec(kernel->nestingSigs(), total_num_groups, legendre_order+1, total_num_groups);
 
-    // Set to identity for all moments
+    // Set to isotropic scattering given user inputs
     sigs[mat]->clear(0.0);
-    for(int l = 0;l < legendre_order+1;++ l){
-      for(int g = 0;g < total_num_groups;++ g){
-        (*sigs[mat])(g, l, g) = sigs_init[mat];
-      }
+    for(int g = 0;g < total_num_groups;++ g){
+      (*sigs[mat])(g, 0, g) = input_vars->sigs[mat];
     }
   }
 
@@ -279,7 +276,6 @@ void Grid_Data::writeSilo(std::string const &fname_base){
   // Recompute Phi... so we can write out phi0
   kernel->LTimes(this);
 
-
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   int mpi_size;
@@ -366,6 +362,34 @@ void Grid_Data::writeSilo(std::string const &fname_base){
       std::vector<int> var_types(mpi_size*num_zone_sets, DB_QUADVAR);
 
       DBPutMultivar(root, "phi0", mpi_size*num_zone_sets,
+          &var_names[0],  &var_types[0] , NULL);
+
+      // cleanup
+      for(int i = 0;i < mpi_size*num_zone_sets; ++i){
+        free(var_names[i]);
+      }
+    }
+
+    // Write out multivar for phiout0
+    {
+      // setup mesh names and types
+      std::vector<char *> var_names(mpi_size*num_zone_sets);
+      int mesh_idx = 0;
+      for(int rank = 0;rank < mpi_size;++ rank){
+        for(int idx = 0;idx < num_zone_sets;++ idx){
+          int sdom_id = zs_to_sdomid[idx];
+          std::stringstream name;
+
+          name << fname_base << "/rank_" << rank << ".silo:/sdom" << sdom_id << "/phiout0";
+          var_names[mesh_idx] = strdup(name.str().c_str());
+
+          mesh_idx ++;
+        }
+      }
+
+      std::vector<int> var_types(mpi_size*num_zone_sets, DB_QUADVAR);
+
+      DBPutMultivar(root, "phiout0", mpi_size*num_zone_sets,
           &var_names[0],  &var_types[0] , NULL);
 
       // cleanup
@@ -470,6 +494,19 @@ void Grid_Data::writeSilo(std::string const &fname_base){
       }
 
       DBPutQuadvar1(proc, "phi0", "mesh", &phi0[0],
+          sdom.nzones, 3, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
+    }
+    // Write phiout0
+    {
+      int num_zones = sdom.num_zones;
+      std::vector<double> phi0(num_zones);
+
+      // extract phi0 from phi for the 0th group
+      for(int z = 0;z < num_zones;++ z){
+        phi0[z] = (*sdom.phi_out)(0,0,z);
+      }
+
+      DBPutQuadvar1(proc, "phiout0", "mesh", &phi0[0],
           sdom.nzones, 3, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
     }
   }
