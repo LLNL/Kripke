@@ -5,10 +5,13 @@
 #include<vector>
 #include<mpi.h>
 
+class Grid_Data;
 class Subdomain;
 
 class SweepComm {
   public:
+    explicit SweepComm(Grid_Data *data);
+
     // Adds a subdomain to the work queue
     void addSubdomain(int sdom_id, Subdomain &sdom);
 
@@ -23,6 +26,8 @@ class SweepComm {
     void markComplete(int sdom_id);
 
   private:
+    Grid_Data *grid_data;
+
     // These vectors contian the recieve requests
     std::vector<MPI_Request> recv_requests;
     std::vector<int> recv_subdomains;

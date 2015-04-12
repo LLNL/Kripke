@@ -22,6 +22,10 @@ struct Input_Variables {
   int niter;                    // number of solver iterations to run
   int legendre_order;           // Scattering order (number Legendre coeff's - 1)
   int layout_pattern;           // Which subdomain/task layout to use
+  int quad_num_polar;           // Number of polar quadrature points
+  int quad_num_azimuthal;       // Number of azimuthal quadrature points
+  double sigt[3];               // total cross section for 3 materials
+  double sigs[3];               // total scattering cross section for 3 materials
 #ifdef KRIPKE_USE_SILO
   std::string silo_basename;    // name prefix for silo output files
 #endif

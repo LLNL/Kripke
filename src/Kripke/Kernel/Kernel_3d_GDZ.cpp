@@ -292,7 +292,7 @@ void Kernel_3d_GDZ::scattering(Grid_Data *grid_data){
             double fraction = mixed_fraction[mix];
             double sigs_value = sigs_g_gp_n[material];
 
-            phi_out_gp_nm[zone] += sigs_value * phi_g_nm[zone] * fraction;
+            phi_out_gp_nm[zone] +=  sigs_value * phi_g_nm[zone] * fraction;
           }
 
           phi_g_nm += num_zones;

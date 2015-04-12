@@ -3,6 +3,8 @@
  *--------------------------------------------------------------------------*/
 
 #include <Kripke.h>
+#include <Kripke/Subdomain.h>
+#include <Kripke/SubTVec.h>
 #include <Kripke/SweepComm.h>
 #include <Kripke/Grid.h>
 #include <vector>
@@ -24,9 +26,13 @@ int SweepSolver (Grid_Data *grid_data)
 {
   Kernel *kernel = grid_data->kernel;
 
+  int mpi_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+
   BLOCK_TIMER(grid_data->timing, Solve);
 
   // Loop over iterations
+  double part_last = 0.0;
   for(int iter = 0;iter < grid_data->niter;++ iter){
 
     /*
@@ -38,7 +44,6 @@ int SweepSolver (Grid_Data *grid_data)
       BLOCK_TIMER(grid_data->timing, LTimes);
       kernel->LTimes(grid_data);
     }
-
 
     // Compute Scattering Source Term
     {
@@ -58,6 +63,7 @@ int SweepSolver (Grid_Data *grid_data)
       kernel->LPlusTimes(grid_data);
     }
 
+    //grid_data->particleEdit();
     /*
      * Sweep each Group Set
      */
@@ -90,6 +96,12 @@ int SweepSolver (Grid_Data *grid_data)
         }
       }
     }
+
+    double part = grid_data->particleEdit();
+    if(mpi_rank==0){
+      printf("iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
+    }
+    part_last = part;
   }
   return(0);
 }
@@ -102,18 +114,24 @@ int SweepSolver (Grid_Data *grid_data)
 int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
 {
   // Create a new sweep communicator object
-  SweepComm sweep_comm;
+  SweepComm sweep_comm(grid_data);
 
   // Add all subdomains in our list
   for(int i = 0;i < subdomain_list.size();++ i){
     int sdom_id = subdomain_list[i];
-    sweep_comm.addSubdomain(sdom_id, grid_data->subdomains[sdom_id]);
-  
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
+    sweep_comm.addSubdomain(sdom_id, sdom);
+    // Clear boundary conditions
+    for(int dim = 0;dim < 3;++ dim){
+      if(sdom.upwind[dim].subdomain_id == -1){
+        sdom.plane_data[dim]->clear(0.0);
+      }
+		}
+      
 #ifdef KRIPKE_USE_CUDA
     if(grid_data->kernel->sweep_mode == SWEEP_GPU){
       //LG  copy RHS to device
       //LG  the cudaMemcpyH2D can proceed asynchronousely and overlap with communication
-      Subdomain &sdom = grid_data->subdomains[sdom_id];
       double *dptr_h_rhs = sdom.rhs->ptr();
       if ( sdom.d_rhs == NULL){ // allocate
          sdom.d_rhs = (double *) get_cudaMalloc((size_t) ( sdom.num_zones * sdom.num_groups * sdom.num_directions) * sizeof(double));

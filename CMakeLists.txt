@@ -64,9 +64,6 @@ include(CPack)
 #set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_BUILD_TYPE Release)
 
-#enable_language(CXX)
-
-
 message(STATUS "Selected Build Type ${CMAKE_BUILD_TYPE}")
 message(STATUS "Selected C++ Compiler ${CMAKE_CXX_COMPILER}")
 message(STATUS "Selected C++ Flags: ${CMAKE_CXX_FLAGS}")

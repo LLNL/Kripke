@@ -54,6 +54,9 @@ void usage(void){
     printf("  --gperf                Turn on Google Perftools profiling\n");
     printf("  --procs <npx,npy,npz>  MPI task spatial decomposition\n");
     printf("                         Default:  --procs 1,1,1\n");
+    printf("  --quad <polar:azim>    Use a Gauss-Legendre Product Quadrature\n");
+    printf("                         with the specified number of polar and azimuthal points\n");
+    printf("                         Default:  --quad 0,0  [disabled, use dummy S2]\n");
     printf("  --restart <point>      Restart at given point\n");
 #ifdef KRIPKE_USE_SILO
     printf("  --silo <BASENAME>      Create SILO output files\n");
@@ -247,7 +250,11 @@ int main(int argc, char **argv) {
   int layout = 0;
   int nzones[3] = {12, 12, 12};
   int lorder = 4;
+  int num_polar = 0;
+  int num_azimuthal = 0;
   int niter = 10;
+  double sigt[3] = {0.10, 0.0001, 0.10};
+  double sigs[3] = {0.05, 0.00005, 0.05};
   bool test = false;
   bool perf_tools = false;
   int restart_point = 0;
@@ -322,6 +329,26 @@ int main(int argc, char **argv) {
     }
     else if(opt == "--legendre"){
       lorder = std::atoi(cmd.pop().c_str());
+    }
+    else if(opt == "--quad"){
+      std::vector<std::string> values = split(cmd.pop(), ':');
+      if(values.size()!=2)usage();
+      num_polar = std::atoi(values[0].c_str());
+      num_azimuthal = std::atoi(values[1].c_str());
+    }
+    else if(opt == "--sigs"){
+      std::vector<std::string> values = split(cmd.pop(), ',');
+      if(values.size()!=3)usage();
+      for(int mat = 0;mat < 3;++ mat){
+        sigs[mat] = std::atof(values[mat].c_str());
+      }
+    }
+    else if(opt == "--sigt"){
+      std::vector<std::string> values = split(cmd.pop(), ',');
+      if(values.size()!=3)usage();
+      for(int mat = 0;mat < 3;++ mat){
+        sigt[mat] = std::atof(values[mat].c_str());
+      }
     }
     else if(opt == "--niter"){
       niter = std::atoi(cmd.pop().c_str());
@@ -400,6 +427,15 @@ int main(int argc, char **argv) {
     printf("Processors:            %d x %d x %d\n", nprocs[0], nprocs[1], nprocs[2]);
     printf("Zones:                 %d x %d x %d\n", nzones[0], nzones[1], nzones[2]);
     printf("Legendre Order:        %d\n", lorder);
+    printf("Total X-Sec:           sigt=[%lf, %lf, %lf]\n", sigt[0], sigt[1], sigt[2]);
+    printf("Scattering X-Sec:      sigs=[%lf, %lf, %lf]\n", sigs[0], sigs[1], sigs[2]);
+    printf("Quadrature Set:        ");
+    if(num_polar == 0){
+      printf("Dummy S2\n");
+    }
+    else {
+      printf("Gauss-Legendre, %d polar, %d azimuthal\n", num_polar, num_azimuthal);
+    }
     printf("Number iterations:     %d\n", niter);
 
     if(grp_list.size() == 0){
@@ -463,12 +499,19 @@ int main(int argc, char **argv) {
   ivars.npx = nprocs[0];
   ivars.npy = nprocs[1];
   ivars.npz = nprocs[2];
-  ivars.legendre_order = lorder + 1;
+  ivars.legendre_order = lorder;
   ivars.niter = niter;
   ivars.num_zonesets_dim[0] = zset[0];
   ivars.num_zonesets_dim[1] = zset[1];
   ivars.num_zonesets_dim[2] = zset[2];
+
+  for(int mat = 0;mat < 3;++ mat){
+    ivars.sigt[mat] = sigt[mat];
+    ivars.sigs[mat] = sigs[mat];
+  }
   ivars.layout_pattern = layout;
+  ivars.quad_num_polar = num_polar;
+  ivars.quad_num_azimuthal = num_azimuthal;
 #ifdef KRIPKE_USE_SILO
   ivars.silo_basename = silo_basename;
 #endif
