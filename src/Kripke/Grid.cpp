@@ -302,8 +302,65 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   return is_diff;
 }
 
-
+#ifndef KRIPKE_USE_SILO
+#define KRIPKE_USE_SILO
+#endif
 #ifdef KRIPKE_USE_SILO
+
+enum MultivarType {
+  MULTI_MESH,
+  MULTI_MAT,
+  MULTI_VAR
+};
+
+namespace {
+  /**
+    Writes a multimesh or multivar to the root file.
+  */
+
+  void siloWriteMulti(DBfile *root, MultivarType mv_type,
+    std::string const &fname_base, std::string const &var_name,
+    std::vector<int> sdom_id_list, int var_type = 0)
+  {
+    int mpi_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    int num_sdom = sdom_id_list.size();
+
+    // setup names and types
+    std::vector<int> var_types(mpi_size*num_sdom, var_type);
+    std::vector<char *> var_names(mpi_size*num_sdom);
+    int var_idx = 0;
+    for(int rank = 0;rank < mpi_size;++ rank){
+      for(int idx = 0;idx < num_sdom;++ idx){
+        int sdom_id = sdom_id_list[idx];
+        std::stringstream name;
+        name << fname_base << "/rank_" << rank << ".silo:/sdom" << sdom_id << "/" << var_name;
+        var_names[var_idx] = strdup(name.str().c_str());
+        var_idx ++;
+      }
+    }
+
+    if(mv_type == MULTI_MESH){
+      DBPutMultimesh(root, var_name.c_str(), mpi_size*num_sdom,
+          &var_names[0], &var_types[0], NULL);
+    }
+    else if(mv_type == MULTI_MAT){
+      DBPutMultimat(root, var_name.c_str(), mpi_size*num_sdom,
+          &var_names[0],  NULL);
+    }
+    else{
+      DBPutMultivar(root, var_name.c_str(), mpi_size*num_sdom,
+          &var_names[0],  &var_types[0] , NULL);
+    }
+
+    // cleanup
+    for(int i = 0;i < mpi_size*num_sdom; ++i){
+      free(var_names[i]);
+    }
+  }
+} //namespace
+
+
 void Grid_Data::writeSilo(std::string const &fname_base){
 
   // Recompute Phi... so we can write out phi0
@@ -322,86 +379,10 @@ void Grid_Data::writeSilo(std::string const &fname_base){
     DBfile *root = DBCreate(fname_root.c_str(),
         DB_CLOBBER, DB_LOCAL, NULL, DB_HDF5);
 
-    // Write out multimesh for spatial mesh
-    {
-      // setup mesh names and types
-      std::vector<char *> mesh_names(mpi_size*num_zone_sets);
-      int mesh_idx = 0;
-      for(int rank = 0;rank < mpi_size;++ rank){
-        for(int idx = 0;idx < num_zone_sets;++ idx){
-          int sdom_id = zs_to_sdomid[idx];
-          std::stringstream name;
-
-          name << fname_base << "/rank_" << rank << ".silo:/sdom" << sdom_id << "/mesh";
-          mesh_names[mesh_idx] = strdup(name.str().c_str());
-
-          mesh_idx ++;
-        }
-      }
-      std::vector<int> mesh_types(mpi_size*num_zone_sets, DB_QUAD_RECT);
-
-      DBPutMultimesh(root, "mesh", mpi_size*num_zone_sets,
-          &mesh_names[0], &mesh_types[0], NULL);
-
-      // cleanup
-      for(int i = 0;i < mpi_size*num_zone_sets; ++i){
-        free(mesh_names[i]);
-      }
-    }
-
-    // Write out multimat for materials
-    {
-      // setup mesh names and types
-      std::vector<char *> mat_names(mpi_size*num_zone_sets);
-      int mesh_idx = 0;
-      for(int rank = 0;rank < mpi_size;++ rank){
-        for(int idx = 0;idx < num_zone_sets;++ idx){
-          int sdom_id = zs_to_sdomid[idx];
-          std::stringstream name;
-
-          name << fname_base << "/rank_" << rank << ".silo:/sdom" << sdom_id << "/material";
-          mat_names[mesh_idx] = strdup(name.str().c_str());
-
-          mesh_idx ++;
-        }
-      }
-
-      DBPutMultimat(root, "material", mpi_size*num_zone_sets,
-          &mat_names[0],  NULL);
-
-      // cleanup
-      for(int i = 0;i < mpi_size*num_zone_sets; ++i){
-        free(mat_names[i]);
-      }
-    }
-
-    // Write out multivar for phi0
-    {
-      // setup mesh names and types
-      std::vector<char *> var_names(mpi_size*num_zone_sets);
-      int mesh_idx = 0;
-      for(int rank = 0;rank < mpi_size;++ rank){
-        for(int idx = 0;idx < num_zone_sets;++ idx){
-          int sdom_id = zs_to_sdomid[idx];
-          std::stringstream name;
-
-          name << fname_base << "/rank_" << rank << ".silo:/sdom" << sdom_id << "/phi0";
-          var_names[mesh_idx] = strdup(name.str().c_str());
-
-          mesh_idx ++;
-        }
-      }
-
-      std::vector<int> var_types(mpi_size*num_zone_sets, DB_QUADVAR);
-
-      DBPutMultivar(root, "phi0", mpi_size*num_zone_sets,
-          &var_names[0],  &var_types[0] , NULL);
-
-      // cleanup
-      for(int i = 0;i < mpi_size*num_zone_sets; ++i){
-        free(var_names[i]);
-      }
-    }
+    // Write out multimesh and multivars
+    siloWriteMulti(root, MULTI_MESH, fname_base, "mesh", zs_to_sdomid, DB_QUAD_RECT);
+    siloWriteMulti(root, MULTI_MAT, fname_base, "material", zs_to_sdomid);
+    siloWriteMulti(root, MULTI_VAR, fname_base, "phi0", zs_to_sdomid, DB_QUADVAR);
 
     // Root file
     DBClose(root);
