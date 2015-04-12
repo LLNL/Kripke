@@ -28,36 +28,35 @@ int SweepSolver (Grid_Data *grid_data)
   for(int iter = 0;iter < grid_data->niter;++ iter){
 
     /*
-     * Compute the RHS
+     * Compute the RHS:  rhs = LPlus*S*L*psi + Q
      */
 
-    // Discrete to Moments transformation
+    // Discrete to Moments transformation (phi = L*psi)
     {
       BLOCK_TIMER(grid_data->timing, LTimes);
       kernel->LTimes(grid_data);
     }
 
-    // Compute Scattering Source Term
+    // Compute Scattering Source Term (psi_out = S*phi)
     {
       BLOCK_TIMER(grid_data->timing, Scattering);
       kernel->scattering(grid_data);
     }
 
-    // Compute External Source Term
+    // Compute External Source Term (psi_out = psi_out + Q)
     {
       BLOCK_TIMER(grid_data->timing, Source);
       kernel->source(grid_data);
     }
 
-    // Moments to Discrete transformation
+    // Moments to Discrete transformation (rhs = LPlus*psi_out)
     {
       BLOCK_TIMER(grid_data->timing, LPlusTimes);
       kernel->LPlusTimes(grid_data);
     }
 
-    //grid_data->particleEdit();
     /*
-     * Sweep each Group Set
+     * Sweep (psi = Hinv*rhs)
      */
     {
       BLOCK_TIMER(grid_data->timing, Sweep);

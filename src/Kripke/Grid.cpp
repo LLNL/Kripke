@@ -358,6 +358,41 @@ namespace {
       free(var_names[i]);
     }
   }
+
+  void siloWriteRectMesh(DBfile *silo_file,
+    std::string const &mesh_name,
+    int const *nzones,
+    double const *zeros,
+    double const *deltas_x,
+    double const *deltas_y,
+    double const *deltas_z)
+  {
+    static char const *coordnames[3] = {"X", "Y", "Z"};
+    double const *deltas[3] = {deltas_x, deltas_y, deltas_z};
+    double *coords[3];
+    for(int dim = 0;dim < 3;++ dim){
+      coords[dim] = new double[nzones[dim]];
+      coords[dim][0] = zeros[dim];
+      for(int z = 0;z < nzones[dim];++ z){
+        coords[dim][1+z] = coords[dim][z] + deltas[dim][z];
+      }
+    }
+    int nnodes[3] = {
+      nzones[0]+1,
+      nzones[1]+1,
+      nzones[2]+1
+    };
+
+    DBPutQuadmesh(silo_file, mesh_name.c_str(), const_cast<char**>(coordnames), coords, nnodes, 3, DB_DOUBLE,
+        DB_COLLINEAR, NULL);
+
+    // cleanup
+    delete[] coords[0];
+    delete[] coords[1];
+    delete[] coords[2];
+  }
+
+
 } //namespace
 
 
@@ -380,7 +415,7 @@ void Grid_Data::writeSilo(std::string const &fname_base){
     siloWriteMulti(root, MULTI_MAT, fname_base, "material", zs_to_sdomid);
     siloWriteMulti(root, MULTI_VAR, fname_base, "phi0", zs_to_sdomid, DB_QUADVAR);
 
-    // Root file
+    // Close root file
     DBClose(root);
 
     // Create a subdirectory to hold processor info
@@ -410,30 +445,9 @@ void Grid_Data::writeSilo(std::string const &fname_base){
     DBSetDir(proc, dirname.str().c_str());
 
     // Write the mesh
-    {
-      static char const *coordnames[3] = {"X", "Y", "Z"};
-      double *coords[3];
-      for(int dim = 0;dim < 3;++ dim){
-        coords[dim] = new double[sdom.nzones[dim]+1];
-        coords[dim][0] = sdom.zeros[dim];
-        for(int z = 0;z < sdom.nzones[dim];++ z){
-          coords[dim][1+z] = coords[dim][z] + sdom.deltas[dim][z+1];
-        }
-      }
-      int nnodes[3] = {
-          sdom.nzones[0]+1,
-          sdom.nzones[1]+1,
-          sdom.nzones[2]+1
-      };
+    siloWriteRectMesh(proc, "mesh", sdom.nzones, sdom.zeros,
+      &sdom.deltas[0][1], &sdom.deltas[1][1], &sdom.deltas[2][1]);
 
-      DBPutQuadmesh(proc, "mesh", const_cast<char**>(coordnames), coords, nnodes, 3, DB_DOUBLE,
-          DB_COLLINEAR, NULL);
-
-      // cleanup
-      delete[] coords[0];
-      delete[] coords[1];
-      delete[] coords[2];
-    }
 
     // Write the material
     {

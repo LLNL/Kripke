@@ -51,7 +51,7 @@ struct Subdomain {
   int num_directions;   // Number of directions in this set
   int num_zones;        // Number of zones in this set
 
-  int zeros[3];                     // origin of local mesh
+  double zeros[3];                     // origin of local mesh
   int nzones[3];                    // Number of zones in each dimension
   std::vector<double> deltas[3];    // Spatial grid deltas in each dimension (including ghost zones)
 
