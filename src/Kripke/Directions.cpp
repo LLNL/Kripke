@@ -116,7 +116,7 @@ void InitDirections(Grid_Data *grid_data, Input_Variables *input_vars)
         double xcos = sqrt(1.0-polar_cos[i]*polar_cos[i]) * cos(az_angle[j]);
         double ycos = sqrt(1.0-polar_cos[i]*polar_cos[i]) * sin(az_angle[j]);
         double zcos = polar_cos[i];
-        double w = polar_weight[i]*az_weight[j]/(4.0*M_PI);
+        double w = polar_weight[i]*az_weight[j];
 
         directions[d].id = (xcos > 0.) ? 1 : -1;
         directions[d].jd = (ycos > 0.) ? 1 : -1;
@@ -144,11 +144,15 @@ void InitDirections(Grid_Data *grid_data, Input_Variables *input_vars)
 
     // Sort by octant.. so each set has same directions
     std::sort(directions.begin(), directions.end(), dirSortFcn);
-
   }
   else{
     // Do (essentialy) an S2 quadrature.. but with multiple directions
     // co-located
+
+    // Compute x,y,z cosine values
+    double mu  = cos(M_PI/4);
+    double eta = sqrt(1-mu*mu) * cos(M_PI/4);
+    double xi  = sqrt(1-mu*mu) * sin(M_PI/4);
     int d = 0;
     for(int octant = 0;octant < 8;++ octant){
       double omegas[3];
@@ -164,15 +168,6 @@ void InitDirections(Grid_Data *grid_data, Input_Variables *input_vars)
 
         // Store quadrature point's weight
         directions[d].w = 1.0 / (double)num_directions;
-
-        // Get the direction of this quadrature point
-        double theta = M_PI/4;
-        double omega = M_PI/4;
-
-        // Compute x,y,z cosine values
-        double mu  = cos(theta);
-        double eta = sqrt(1-mu*mu) * cos(omega);
-        double xi  = sqrt(1-mu*mu) * sin(omega);
         directions[d].xcos = mu;
         directions[d].ycos = eta;
         directions[d].zcos = xi;

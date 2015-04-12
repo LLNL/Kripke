@@ -468,7 +468,7 @@ int main(int argc, char **argv) {
   ivars.npx = nprocs[0];
   ivars.npy = nprocs[1];
   ivars.npz = nprocs[2];
-  ivars.legendre_order = lorder + 1;
+  ivars.legendre_order = lorder;
   ivars.niter = niter;
   ivars.num_zonesets_dim[0] = zset[0];
   ivars.num_zonesets_dim[1] = zset[1];

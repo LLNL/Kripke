@@ -41,7 +41,7 @@ struct Subdomain {
   void copy(Subdomain const &b);
   bool compare(Subdomain const &b, double tol, bool verbose);
   void computeSweepIndexSet(void);
-  void computeLLPlus(void);
+  void computeLLPlus(int legendre_order);
 
   int idx_group_set;
   int idx_dir_set;

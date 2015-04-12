@@ -115,7 +115,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
         if(compute_ell){
           // Compute the L and L+ matrices
-          sdom.computeLLPlus();
+          sdom.computeLLPlus(legendre_order);
         }
       }
     }
@@ -196,9 +196,13 @@ void Grid_Data::randomizeData(void){
   }
 }
 
-void Grid_Data::particleEdit(void){
+
+/**
+ * Returns the integral of psi.. to look at convergence
+ */
+double Grid_Data::particleEdit(void){
   // sum up particles for psi and rhs
-  double part[4] = {0.0, 0.0, 0.0, 0.0};
+  double part = 0.0;
   for(int sdom_id = 0;sdom_id < subdomains.size();++ sdom_id){
     Subdomain &sdom = subdomains[sdom_id];
 
@@ -211,43 +215,17 @@ void Grid_Data::particleEdit(void){
       for(int d = 0;d < num_directions;++ d){
         double w = dirs[d].w;
         for(int g = 0;g < num_groups;++ g){
-          part[0] += w * (*sdom.psi)(g,d,z);
-          part[1] += w * (*sdom.rhs)(g,d,z);
+          part += w * (*sdom.psi)(g,d,z);
         }
       }
     }
   }
 
-  // sum up particles for phi and phi_out
-  for(int zs = 0;zs < num_zone_sets;++ zs){
-    int sdom_id = zs_to_sdomid[zs];
-    Subdomain &sdom = subdomains[sdom_id];
-
-    int num_zones = sdom.num_zones;
-    int num_groups= sdom.num_groups;
-
-    for(int z = 0;z < num_zones;++ z){
-      for(int g = 0;g < num_groups;++ g){
-        part[2] += (*sdom.phi)(g,0,z);
-        part[3] += (*sdom.phi_out)(g,0,z);
-      }
-    }
-  }
-
   // reduce
-  double part_global[4];
-  MPI_Reduce(part, part_global, 4, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  double part_global;
+  MPI_Reduce(&part, &part_global, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
-  int mpi_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-  if(mpi_rank == 0){
-    printf("Particle Edit:\n");
-    printf("  psi     = %e\n", part_global[0]);
-    printf("  phi     = %e\n", part_global[2]);
-    printf("  phi_out = %e\n", part_global[3]);
-    printf("  rhs     = %e\n", part_global[1]);
-    printf("  phi_out/rhs = %e\n", part_global[3]/part_global[1]);
-  }
+  return part_global;
 }
 
 
@@ -425,34 +403,6 @@ void Grid_Data::writeSilo(std::string const &fname_base){
       }
     }
 
-    // Write out multivar for phiout0
-    {
-      // setup mesh names and types
-      std::vector<char *> var_names(mpi_size*num_zone_sets);
-      int mesh_idx = 0;
-      for(int rank = 0;rank < mpi_size;++ rank){
-        for(int idx = 0;idx < num_zone_sets;++ idx){
-          int sdom_id = zs_to_sdomid[idx];
-          std::stringstream name;
-
-          name << fname_base << "/rank_" << rank << ".silo:/sdom" << sdom_id << "/phiout0";
-          var_names[mesh_idx] = strdup(name.str().c_str());
-
-          mesh_idx ++;
-        }
-      }
-
-      std::vector<int> var_types(mpi_size*num_zone_sets, DB_QUADVAR);
-
-      DBPutMultivar(root, "phiout0", mpi_size*num_zone_sets,
-          &var_names[0],  &var_types[0] , NULL);
-
-      // cleanup
-      for(int i = 0;i < mpi_size*num_zone_sets; ++i){
-        free(var_names[i]);
-      }
-    }
-
     // Root file
     DBClose(root);
 
@@ -549,19 +499,6 @@ void Grid_Data::writeSilo(std::string const &fname_base){
       }
 
       DBPutQuadvar1(proc, "phi0", "mesh", &phi0[0],
-          sdom.nzones, 3, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
-    }
-    // Write phiout0
-    {
-      int num_zones = sdom.num_zones;
-      std::vector<double> phi0(num_zones);
-
-      // extract phi0 from phi for the 0th group
-      for(int z = 0;z < num_zones;++ z){
-        phi0[z] = (*sdom.phi_out)(0,0,z);
-      }
-
-      DBPutQuadvar1(proc, "phiout0", "mesh", &phi0[0],
           sdom.nzones, 3, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
     }
   }

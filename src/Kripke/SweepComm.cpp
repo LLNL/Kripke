@@ -174,6 +174,12 @@ void SweepComm::markComplete(int sdom_id){
       // copy the boundary condition data into the downwinds plane data
       Subdomain &sdom_downwind = grid_data->subdomains[sdom->downwind[dim].subdomain_id];
       sdom_downwind.plane_data[dim]->copy(*sdom->plane_data[dim]);
+      int num_elem = sdom_downwind.plane_data[dim]->elements;
+      double const * KRESTRICT src_ptr = sdom->plane_data[dim]->ptr();
+      double * KRESTRICT dst_ptr = sdom_downwind.plane_data[dim]->ptr();
+      for(int i = 0;i < num_elem;++ i){
+        dst_ptr[i] = src_ptr[i];
+      }
 
       continue;
     }

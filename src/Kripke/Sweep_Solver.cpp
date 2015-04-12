@@ -18,9 +18,13 @@ int SweepSolver (Grid_Data *grid_data)
 {
   Kernel *kernel = grid_data->kernel;
 
+  int mpi_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+
   BLOCK_TIMER(grid_data->timing, Solve);
 
   // Loop over iterations
+  double part_last = 0.0;
   for(int iter = 0;iter < grid_data->niter;++ iter){
 
     /*
@@ -42,7 +46,7 @@ int SweepSolver (Grid_Data *grid_data)
     // Compute External Source Term
     {
       BLOCK_TIMER(grid_data->timing, Source);
-      if(iter == 0)kernel->source(grid_data);
+      kernel->source(grid_data);
     }
 
     // Moments to Discrete transformation
@@ -51,7 +55,7 @@ int SweepSolver (Grid_Data *grid_data)
       kernel->LPlusTimes(grid_data);
     }
 
-    grid_data->particleEdit();
+    //grid_data->particleEdit();
     /*
      * Sweep each Group Set
      */
@@ -84,6 +88,12 @@ int SweepSolver (Grid_Data *grid_data)
         }
       }
     }
+
+    double part = grid_data->particleEdit();
+    if(mpi_rank==0){
+      printf("iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
+    }
+    part_last = part;
   }
   return(0);
 }

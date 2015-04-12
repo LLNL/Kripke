@@ -267,34 +267,34 @@ bool Subdomain::compare(Subdomain const &b, double tol, bool verbose){
 void Subdomain::computeSweepIndexSet(void){
   if(directions[0].id > 0){
     sweep_block.start_i = 0;
-    sweep_block.end_i = nzones[0]-1;
+    sweep_block.end_i = nzones[0];
     sweep_block.inc_i = 1;
   }
   else {
     sweep_block.start_i = nzones[0]-1;
-    sweep_block.end_i = 0;
+    sweep_block.end_i = -1;
     sweep_block.inc_i = -1;
   }
 
   if(directions[0].jd > 0){
     sweep_block.start_j = 0;
-    sweep_block.end_j = nzones[1]-1;
+    sweep_block.end_j = nzones[1];
     sweep_block.inc_j = 1;
   }
   else {
     sweep_block.start_j = nzones[1]-1;
-    sweep_block.end_j = 0;
+    sweep_block.end_j = -1;
     sweep_block.inc_j = -1;
   }
 
   if(directions[0].kd > 0){
     sweep_block.start_k = 0;
-    sweep_block.end_k = nzones[2]-1;
+    sweep_block.end_k = nzones[2];
     sweep_block.inc_k =  1;
   }
   else {
     sweep_block.start_k = nzones[2]-1;
-    sweep_block.end_k = 0;
+    sweep_block.end_k = -1;
     sweep_block.inc_k = -1;
   }
 }
@@ -419,11 +419,11 @@ namespace {
  * Compute L and L+
  * This assumes that the quadrature set is defined.
  */
-void Subdomain::computeLLPlus(void){
-  int num_moments = ell->zones;
+void Subdomain::computeLLPlus(int legendre_order){
+  int dir0 = direction0;
   int nm = 0;
   double SQRT4PI = std::sqrt(4*M_PI);
-  for(int n=0; n< num_moments; n++){
+  for(int n=0; n < legendre_order+1; n++){
     for(int m=-n; m<=n; m++){
       for(int d=0; d<num_directions; d++){
 
@@ -434,13 +434,12 @@ void Subdomain::computeLLPlus(void){
         double w =  directions[d].w;
 
         // Compute element of L
-        double ell_tmp = w*YnmFcn(n, m, xcos, ycos, zcos);
-        (*ell)(nm,d,0) = ell_tmp*SQRT4PI;
+        double ell_tmp = w*YnmFcn(n, m, xcos, ycos, zcos)/SQRT4PI;
+        (*ell)(nm,d,0) = ell_tmp;
 
         // Compute element of L+
-        double ell_plus_tmp = w*YnmFcn(n, m, xcos, ycos, zcos);
-        (*ell_plus)(nm,d,0) = ell_plus_tmp*SQRT4PI;
-        printf("ell(nm=%d, d=%d)=%e,  w=%e\n", nm, d, (*ell_plus)(nm,d,0), w);
+        double ell_plus_tmp = YnmFcn(n, m, xcos, ycos, zcos)*SQRT4PI;
+        (*ell_plus)(nm,d,0) = ell_plus_tmp;
       }
       nm ++;
     }
