@@ -368,10 +368,6 @@ void Grid_Data::writeSilo(std::string const &fname_base){
 
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-  int mpi_size;
-  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-
-  int num_subdomains = subdomains.size();
 
   if(mpi_rank == 0){
     // Create a root file
@@ -401,6 +397,7 @@ void Grid_Data::writeSilo(std::string const &fname_base){
       DB_CLOBBER, DB_LOCAL, NULL, DB_HDF5);
 
   // Write out data for each subdomain
+  int num_subdomains = subdomains.size();
   for(int sdom_id = 0;sdom_id < num_subdomains;++ sdom_id){
     Subdomain &sdom = subdomains[sdom_id];
 
@@ -414,7 +411,7 @@ void Grid_Data::writeSilo(std::string const &fname_base){
 
     // Write the mesh
     {
-      char *coordnames[3] = {"X", "Y", "Z"};
+      static char const *coordnames[3] = {"X", "Y", "Z"};
       double *coords[3];
       for(int dim = 0;dim < 3;++ dim){
         coords[dim] = new double[sdom.nzones[dim]+1];
@@ -429,7 +426,7 @@ void Grid_Data::writeSilo(std::string const &fname_base){
           sdom.nzones[2]+1
       };
 
-      DBPutQuadmesh(proc, "mesh", coordnames, coords, nnodes, 3, DB_DOUBLE,
+      DBPutQuadmesh(proc, "mesh", const_cast<char**>(coordnames), coords, nnodes, 3, DB_DOUBLE,
           DB_COLLINEAR, NULL);
 
       // cleanup
