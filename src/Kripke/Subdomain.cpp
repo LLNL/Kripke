@@ -139,6 +139,9 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   }
 
   // paint the mesh
+  reg_volume[0] = 0.0;
+  reg_volume[1] = 0.0;
+  reg_volume[2] = 0.0;
   int num_subsamples = 4; // number of subsamples per spatial dimension
   double sample_vol_frac = 1.0 / (double)(num_subsamples*num_subsamples*num_subsamples);
   int zone_id = 0;
@@ -184,6 +187,7 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
             mixed_to_zones.push_back(zone_id);
             mixed_material.push_back(mat);
             mixed_fraction.push_back(frac[mat]);
+            reg_volume[mat] += frac[mat] * zone_volume;
 
             // initialize background sigt
             for(int g = 0;g < num_groups;++ g){

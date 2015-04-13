@@ -124,8 +124,10 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
 
 
-  // Now compute number of elements allocated globally
+  // Now compute number of elements allocated globally,
+  // and get each materials volume
   long long vec_size[4] = {0,0,0,0};
+  double vec_volume[3] = {0.0, 0.0, 0.0};
   for(int sdom_id = 0;sdom_id < subdomains.size();++sdom_id){
     Subdomain &sdom = subdomains[sdom_id];
     vec_size[0] += sdom.psi->elements;
@@ -134,16 +136,25 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   for(int zs = 0;zs < num_zone_sets;++ zs){
     vec_size[2] += phi[zs]->elements;
     vec_size[3] += phi_out[zs]->elements;
+    int sdom_id = zs_to_sdomid[zs];
+    for(int mat = 0;mat < 3;++ mat){
+      vec_volume[mat] += subdomains[sdom_id].reg_volume[mat];
+    }
   }
 
-  long long vec_global[4];
-  MPI_Reduce(vec_size, vec_global, 4, MPI_LONG_LONG_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  long long global_size[4];
+  MPI_Reduce(vec_size, global_size, 4, MPI_LONG_LONG_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+  double global_volume[3];
+  MPI_Reduce(vec_volume, global_volume, 3, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   if(mpi_rank == 0){
     printf("Unknown counts: psi=%ld, rhs=%ld, phi=%ld, phi_out=%ld\n",
-      (long)vec_global[0], (long)vec_global[1], (long)vec_global[2], (long)vec_global[3]);
+      (long)global_size[0], (long)global_size[1], (long)global_size[2], (long)global_size[3]);
+    printf("Region volumes: Reg1=%e, Reg2=%e, Reg3=%e\n",
+        global_volume[0], global_volume[1], global_volume[2]);
   }
 }
 

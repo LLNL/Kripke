@@ -80,6 +80,7 @@ struct Subdomain {
   SubTVec *phi_out;
 
   // Materials on the mesh, used for scattering lookup
+  double reg_volume[3];               // volume of each material region
   std::vector<double> volume;         // volume of each zone
   std::vector<int> mixed_to_zones;    // mapping from mixed slot to zones
   std::vector<int> mixed_material;    // material number for each mixed slot
