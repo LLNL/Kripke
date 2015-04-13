@@ -18,21 +18,19 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
   # If the user didn't specify a toolchain, then default the toolchain file
   if(NOT DEFINED TOOLCHAIN)  
     if(SYS_TYPE MATCHES bgqos_0)
-      set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/bgqos_0-xlc.cmake")
+      set(TOOLCHAIN "xlc")
     elseif(SYS_TYPE MATCHES chaos_5_x86_64_ib)
-      set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/chaos_5_x86_64_ib-ic14.cmake")
-      include("${CMAKE_TOOLCHAIN_PATH}/chaos_5_x86_64_ib-ic14.cmake")
+      set(TOOLCHAIN "ic14")
+    else()
+      set(TOOLCHAIN "gcc")
     endif()
-    
-  # If the user selected a toolchain (ex. ic14, gcc) then prepend the systype
-  else()
-    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/${SYS_TYPE}-${TOOLCHAIN}.cmake")
-  endif()
+  endif()    
+  set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/${SYS_TYPE}-${TOOLCHAIN}.cmake")
   
-  message(STATUS "Selected toolchain file ${CMAKE_TOOLCHAIN_FILE}")
 endif()
 
-
+message(STATUS "Selected toolchain file ${CMAKE_TOOLCHAIN_FILE}")
+include(${CMAKE_TOOLCHAIN_FILE})
 
 
 #
@@ -47,7 +45,7 @@ include(${CMAKE_TOOLCHAIN_FILE})
 
 
 set(CPACK_PACKAGE_VERSION_MAJOR "1")
-set(CPACK_PACKAGE_VERSION_MINOR "0")
+set(CPACK_PACKAGE_VERSION_MINOR "1")
 set(CPACK_PACKAGE_VERSION_PATCH "0")
 set(CPACK_SOURCE_GENERATOR "TGZ")
 set(CPACK_SOURCE_IGNORE_FILES "tarball.py;kripke-tarball;.git;.cproject;.project;${CPACK_SOURCE_IGNORE_FILES}")

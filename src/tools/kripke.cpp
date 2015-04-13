@@ -42,9 +42,9 @@ void usage(void){
     printf("  --grp [G:g,G:g,...]    List of grpsets and groups/set pairs\n");
     printf("                         Default:  --grp 1:1\n");
     printf("  --layout <lout>        Layout of spatial subdomains and mpi ranks\n");
-    printf("                         0: Blocked layout, subdomains on local rank are adjacent");
-    printf("                         1: Scattered layout, ranks with same subdomain are adjacent");
-    printf("                         Default: --layout 0");
+    printf("                         0: Blocked layout, subdomains on local rank are adjacent\n");
+    printf("                         1: Scattered layout, ranks with same subdomain are adjacent\n");
+    printf("                         Default: --layout 0\n");
     printf("  --legendre <lorder>    Scattering Legendre Expansion Order (0, 1, ...)\n");
     printf("                         Default:  --legendre 2\n");
     printf("  --nest [n,n,...]       List of data nestings\n");

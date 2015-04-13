@@ -1,0 +1,8 @@
+
+set(SILO_DEFAULT_LIBS "siloh5")
+
+set(SILO_DEFAULT_DEFINITIONS "-DKRIPKE_USE_SILO")
+
+
+
+
