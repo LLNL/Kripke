@@ -155,7 +155,8 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
       for (int i = 0; i != nzones[0]; i ++) {
         double sdx = deltas[0][i+1] / (double)(num_subsamples+1);
 
-        double volume = deltas[0][i+1] * deltas[1][j+1] * deltas[2][k+1];
+        double zone_volume = deltas[0][i+1] * deltas[1][j+1] * deltas[2][k+1];
+        volume.push_back(zone_volume);
 
         // subsample probe the geometry to get our materials
         double frac[3] = {0.0, 0.0, 0.0}; // fraction of both materials
@@ -186,7 +187,7 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
 
             // initialize background sigt
             for(int g = 0;g < num_groups;++ g){
-              (*sigt)(g,0,zone_id) += frac[mat] * input_vars->sigt[mat] * volume;
+              (*sigt)(g,0,zone_id) += frac[mat] * input_vars->sigt[mat];
             }
           }
         }

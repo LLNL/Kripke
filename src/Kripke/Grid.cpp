@@ -212,10 +212,11 @@ double Grid_Data::particleEdit(void){
     Directions *dirs = sdom.directions;
 
     for(int z = 0;z < num_zones;++ z){
+      double vol = sdom.volume[z];
       for(int d = 0;d < num_directions;++ d){
         double w = dirs[d].w;
         for(int g = 0;g < num_groups;++ g){
-          part += w * (*sdom.psi)(g,d,z);
+          part += w * (*sdom.psi)(g,d,z) * vol;
         }
       }
     }
