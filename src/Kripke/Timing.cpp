@@ -40,7 +40,7 @@ void Timing::start(std::string const &name){
 
   if(!timer.started){
     timer.started = true;
-    timer.start_time = MPI_Wtime();
+    timer.start_time = getTime();
 
 #ifdef KRIPKE_USE_PAPI
     int num_papi = papi_event.size();

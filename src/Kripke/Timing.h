@@ -12,10 +12,19 @@
 #include <vector>
 #include <map>
 #include <stdio.h>
+#include <time.h>
+#include <sys/time.h>
 
 #ifdef KRIPKE_USE_PAPI
 #include<papi.h>
 #endif
+
+inline double getTime(void){
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return (double)tv.tv_sec + (double)tv.tv_usec/1000000.0;
+}
+
 
 struct Timer {
   Timer() :
@@ -24,7 +33,7 @@ struct Timer {
     total_time(0.0),
     count(0)
   {}
-  
+
   bool started;
   double start_time;
   double total_time;
@@ -41,16 +50,16 @@ class Timing {
 
     void start(std::string const &name);
     void stop(std::string const &name);
-    
+
     void stopAll(void);
     void clear(void);
-    
+
     void print(void) const;
     void printTabular(bool print_header,
         std::vector<std::string> const &headers,
         std::vector<std::string> const &values,
         FILE *fp = stdout) const;
-    
+
     double getTotal(std::string const &name) const;
 
     void setPapiEvents(std::vector<std::string> names);
