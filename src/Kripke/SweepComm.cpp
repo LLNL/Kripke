@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 
-SweepComm::SweepComm(Grid_Data *data) : grid_data(data)
+SweepComm::SweepComm(Grid_Data *data, bool bj) : grid_data(data), block_jacobi(bj)
 {
 
 }
@@ -57,6 +57,8 @@ void SweepComm::addSubdomain(int sdom_id, Subdomain &sdom){
   queue_sdom_ids.push_back(sdom_id);
   queue_subdomains.push_back(&sdom);
   queue_depends.push_back(num_depends);
+
+
 }
 
 // Checks if there are any outstanding subdomains to complete
@@ -82,6 +84,31 @@ bool SweepComm::workRemaining(void){
   Checks for incomming messages, and returns a list of ready subdomain id's
 */
 std::vector<int> SweepComm::readySubdomains(void){
+  // If we're in BJ mode, theo first call to readySubdomains will perform
+  // all sends, wait for sends to complete, then report everything as
+  // ready
+  if(block_jacobi){
+    // have we not sent everything?
+    if(recv_requests.size() > 0){
+      // loop over subdomains and send
+      for(int i = 0;i < queue_subdomains.size();++ i){
+        postSends(queue_subdomains[i]);
+      }
+
+      // wait for all recieves to complete
+      int num_recvs = recv_requests.size();
+      std::vector<MPI_Status> status(num_recvs);
+      MPI_Waitall(num_recvs, &recv_requests[0], &status[0]);
+      recv_requests.clear();
+      recv_subdomains.clear();
+    }
+
+
+    // return list of all subdomains in queue
+    return queue_sdom_ids;
+  }
+
+
   // Check for any recv requests that have completed
   int num_requests = recv_requests.size();
   bool done = false;
@@ -131,7 +158,8 @@ std::vector<int> SweepComm::readySubdomains(void){
 /**
   Marks subdomains as complete, and performs downwind communication
 */
-void SweepComm::markComplete(int sdom_id){
+int SweepComm::findSubdomain(int sdom_id){
+
   // find subdomain in queue
   int index;
   for(index = 0;index < queue_sdom_ids.size();++ index){
@@ -144,6 +172,13 @@ void SweepComm::markComplete(int sdom_id){
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
+  return index;
+}
+
+void SweepComm::markComplete(int sdom_id){
+  int index = findSubdomain(sdom_id);
+
+  // Get subdomain pointer before removing it from queue
   Subdomain *sdom = queue_subdomains[index];
 
   // remove subdomain from queue
@@ -151,6 +186,13 @@ void SweepComm::markComplete(int sdom_id){
   queue_subdomains.erase(queue_subdomains.begin()+index);
   queue_depends.erase(queue_depends.begin()+index);
 
+  // Send downwind info if we are doing a normal sweep
+  if(!block_jacobi){
+    postSends(sdom);
+  }
+}
+
+void SweepComm::postSends(Subdomain *sdom){
   // post sends for downwind dependencies
   int mpi_rank, mpi_size;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);

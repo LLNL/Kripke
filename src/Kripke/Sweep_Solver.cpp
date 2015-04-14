@@ -104,16 +104,27 @@ int SweepSolver (Grid_Data *grid_data)
 */
 int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
 {
+  bool block_jacobi = true;
   // Create a new sweep communicator object
-  SweepComm sweep_comm(grid_data);
+  SweepComm sweep_comm(grid_data, block_jacobi);
 
   // Add all subdomains in our list
   for(int i = 0;i < subdomain_list.size();++ i){
     int sdom_id = subdomain_list[i];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
     sweep_comm.addSubdomain(sdom_id, sdom);
+  }
 
-    // Clear boundary conditions
+  // if we are doing BJ, then make sure all of the sends happen before we
+  // clear BC's
+  if(block_jacobi){
+    sweep_comm.workRemaining();
+  }
+
+  // Clear boundary conditions
+  for(int i = 0;i < subdomain_list.size();++ i){
+    int sdom_id = subdomain_list[i];
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
     for(int dim = 0;dim < 3;++ dim){
       if(sdom.upwind[dim].subdomain_id == -1){
         sdom.plane_data[dim]->clear(0.0);
@@ -121,14 +132,23 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
     }
   }
 
+  double start_time = getTime();
+  double total_exec_time = 0.0;
+  double average_load = 0.0;
+  int max_backlog = 0;
+
   /* Loop until we have finished all of our work */
   while(sweep_comm.workRemaining()){
 
     // Get a list of subdomains that have met dependencies
     std::vector<int> sdom_ready = sweep_comm.readySubdomains();
+    int backlog = sdom_ready.size();
+    max_backlog = std::max(backlog, max_backlog);
 
-    for(int idx = 0;idx < sdom_ready.size();++ idx){
-      int sdom_id = sdom_ready[idx];
+    // Run top of list
+    if(backlog > 0){
+      double exec_start = getTime();
+      int sdom_id = sdom_ready[0];
 
       /* Use standard Diamond-Difference sweep */
       {
@@ -140,8 +160,20 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
 
       // Mark as complete (and do any communication)
       sweep_comm.markComplete(sdom_id);
+
+      double exec_end = getTime();
+
+      total_exec_time += exec_end - exec_start;
+      average_load += (exec_end - exec_start) * (double)backlog;
     }
   }
+
+  double total_time = getTime() - start_time;
+  average_load = average_load / total_time;
+
+ /* printf("  run_percent=%e, ave_load=%e, max_backlog=%d\n",
+    total_exec_time/total_time, average_load, max_backlog
+  );*/
 
   return(0);
 }

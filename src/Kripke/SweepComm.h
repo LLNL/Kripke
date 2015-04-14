@@ -10,7 +10,7 @@ class Subdomain;
 
 class SweepComm {
   public:
-    explicit SweepComm(Grid_Data *data);
+    SweepComm(Grid_Data *data, bool bj_mode = false);
 
     // Adds a subdomain to the work queue
     void addSubdomain(int sdom_id, Subdomain &sdom);
@@ -26,7 +26,11 @@ class SweepComm {
     void markComplete(int sdom_id);
 
   private:
+    int findSubdomain(int sdom_id);
+    void postSends(Subdomain *sdom);
+
     Grid_Data *grid_data;
+    bool block_jacobi; // Turns off parallel sweep, does up-front boundary exchange
 
     // These vectors contian the recieve requests
     std::vector<MPI_Request> recv_requests;
