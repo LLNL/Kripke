@@ -105,9 +105,13 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
         // Create phi and phi_out, if this is the first of this zs
         if(phi[zs] == NULL){
-          zs_to_sdomid[zs] = sdom_id;
           phi[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
           phi_out[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
+        }
+
+        // setup zs to sdom mapping
+        if(gs == 0 && ds == 0){
+          zs_to_sdomid[zs] = sdom_id;
         }
 
         // Set the variables for this subdomain
@@ -443,8 +447,9 @@ void Grid_Data::writeSilo(std::string const &fname_base){
       DB_CLOBBER, DB_LOCAL, NULL, DB_HDF5);
 
   // Write out data for each subdomain
-  int num_subdomains = subdomains.size();
-  for(int sdom_id = 0;sdom_id < num_subdomains;++ sdom_id){
+  int num_zone_sets = zs_to_sdomid.size();
+  for(int sdom_idx = 0;sdom_idx < num_zone_sets;++ sdom_idx){
+    int sdom_id = zs_to_sdomid[sdom_idx];
     Subdomain &sdom = subdomains[sdom_id];
 
     // Create a directory for the subdomain
@@ -493,6 +498,7 @@ void Grid_Data::writeSilo(std::string const &fname_base){
 
     // Write phi0
     {
+
       int num_zones = sdom.num_zones;
       std::vector<double> phi0(num_zones);
 

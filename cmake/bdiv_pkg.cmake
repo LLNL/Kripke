@@ -88,7 +88,7 @@ macro (bdiv_opt_pkg PACKAGE VERSION ENABLE_DEFAULT)
     include_directories(${${PACKAGE}_INCLUDE_DIRS})
     link_directories(${${PACKAGE}_LIB_DIR})
     add_definitions(${${PACKAGE}_DEFINITIONS})
-    set(BDIV_LIBS ${BDIV_LIBS} ${${PACKAGE}_LIBS})
+    set(BDIV_LIBS ${BDIV_LIBS} ${${PACKAGE}_LIBS} ${${PACKAGE}_EXTRALIBS})
     
   endif()
   
