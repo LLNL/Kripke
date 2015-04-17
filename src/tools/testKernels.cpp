@@ -64,7 +64,7 @@ struct runSweep {
     for(int i = 0;i < grid_data->subdomains.size();++ i){
       sdom_list[i] = i;
     }
-    SweepSubdomains(sdom_list, grid_data);
+    SweepSubdomains(sdom_list, grid_data, false);
   }
 };
 

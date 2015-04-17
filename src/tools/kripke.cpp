@@ -52,6 +52,10 @@ void usage(void){
     printf("  --niter <NITER>        Number of solver iterations to run (default: 10)\n");
     printf("  --out <OUTFILE>        Optional output file (default: none)\n");
     printf("  --gperf                Turn on Google Perftools profiling\n");
+    printf("  --pmethod <method>     Parallel solver method\n");
+    printf("                         sweep: Full up-wind sweep (wavefront algorithm)\n");
+    printf("                         bj: Block Jacobi\n");
+    printf("                         Default: --pmethod sweep\n");
     printf("  --procs <npx,npy,npz>  MPI task spatial decomposition\n");
     printf("                         Default:  --procs 1,1,1\n");
     printf("  --quad <polar:azim>    Use a Gauss-Legendre Product Quadrature\n");
@@ -127,7 +131,7 @@ void runPoint(int point, int num_tasks, int num_threads, Input_Variables &input_
   grid_data->timing.setPapiEvents(papi_names);
 
   /* Run the solver */
-  SweepSolver(grid_data);
+  SweepSolver(grid_data, input_variables.parallel_method == PMETHOD_BJ);
 
 #ifdef KRIPKE_USE_SILO
   /* output silo data, if requested */
@@ -248,6 +252,7 @@ int main(int argc, char **argv) {
   bool test = false;
   bool perf_tools = false;
   int restart_point = 0;
+  ParallelMethod parallel_method = PMETHOD_SWEEP;
 #ifdef KRIPKE_USE_SILO
   std::string silo_basename = "";
 #endif
@@ -295,6 +300,18 @@ int main(int argc, char **argv) {
       nprocs[0] = std::atoi(np[0].c_str());
       nprocs[1] = std::atoi(np[1].c_str());
       nprocs[2] = std::atoi(np[2].c_str());
+    }
+    else if(opt == "--pmethod"){
+      std::string method = cmd.pop();
+      if(!strcasecmp(method.c_str(), "sweep")){
+        parallel_method = PMETHOD_SWEEP;
+      }
+      else if(!strcasecmp(method.c_str(), "bj")){
+        parallel_method = PMETHOD_BJ;
+      }
+      else{
+        usage();
+      }
     }
     else if(opt == "--grp"){
       std::vector<std::string> sets = split(cmd.pop(), ',');
@@ -405,6 +422,13 @@ int main(int argc, char **argv) {
     else {
       printf("Gauss-Legendre, %d polar, %d azimuthal\n", num_polar, num_azimuthal);
     }
+    printf("Parallel method:       ");
+    if(parallel_method == PMETHOD_SWEEP){
+      printf("Sweep\n");
+    }
+    else if(parallel_method == PMETHOD_BJ){
+      printf("Block Jacobi\n");
+    }
     printf("Number iterations:     %d\n", niter);
 
     if(grp_list.size() == 0){
@@ -473,6 +497,7 @@ int main(int argc, char **argv) {
   ivars.num_zonesets_dim[0] = zset[0];
   ivars.num_zonesets_dim[1] = zset[1];
   ivars.num_zonesets_dim[2] = zset[2];
+  ivars.parallel_method = parallel_method;
 
   for(int mat = 0;mat < 3;++ mat){
     ivars.sigt[mat] = sigt[mat];

@@ -26,6 +26,22 @@ void SweepComm::addSubdomain(int sdom_id, Subdomain &sdom){
   // go thru each dimensions upwind neighbors, and add the dependencies
   int num_depends = 0;
   for(int dim = 0;dim < 3;++ dim){
+    // If we are doing BJ, then copy plane data into send buffers
+    if(block_jacobi){
+      bj_send_buffers[dim].push_back(std::vector<double>());
+
+      if(sdom.downwind[dim].subdomain_id != -1){
+        std::vector<double> &buf = bj_send_buffers[dim][bj_send_buffers[dim].size()-1];
+        int num_elements = sdom.plane_data[dim]->elements;
+        buf.resize(num_elements);
+        double const *old_buf = sdom.plane_data[dim]->ptr();
+        for(int i = 0;i < num_elements;++ i){
+          buf[i] = old_buf[i];
+        }
+      }
+    }
+
+
     // If it's a boundary condition, skip it
     if(sdom.upwind[dim].mpi_rank < 0){
       continue;
@@ -92,7 +108,8 @@ std::vector<int> SweepComm::readySubdomains(void){
     if(recv_requests.size() > 0){
       // loop over subdomains and send
       for(int i = 0;i < queue_subdomains.size();++ i){
-        postSends(queue_subdomains[i]);
+        //printf("send %d\n", queue_sdom_ids[i]);
+        postSends(queue_subdomains[i], i);
       }
 
       // wait for all recieves to complete
@@ -102,7 +119,6 @@ std::vector<int> SweepComm::readySubdomains(void){
       recv_requests.clear();
       recv_subdomains.clear();
     }
-
 
     // return list of all subdomains in queue
     return queue_sdom_ids;
@@ -188,11 +204,16 @@ void SweepComm::markComplete(int sdom_id){
 
   // Send downwind info if we are doing a normal sweep
   if(!block_jacobi){
-    postSends(sdom);
+    postSends(sdom, index);
+  }
+  else{
+    for(int dim = 0;dim < 3;++ dim){
+      bj_send_buffers[dim].erase(bj_send_buffers[dim].begin()+index);
+    }
   }
 }
 
-void SweepComm::postSends(Subdomain *sdom){
+void SweepComm::postSends(Subdomain *sdom, int index){
   // post sends for downwind dependencies
   int mpi_rank, mpi_size;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -201,6 +222,15 @@ void SweepComm::postSends(Subdomain *sdom){
     // If it's a boundary condition, skip it
     if(sdom->downwind[dim].mpi_rank < 0){
       continue;
+    }
+
+    // Get outgoing data pointer
+    double * KRESTRICT src_ptr = NULL;
+    if(block_jacobi){
+      src_ptr = &bj_send_buffers[dim][index][0];
+    }
+    else{
+      src_ptr = sdom->plane_data[dim]->ptr();
     }
 
     // If it's an on-rank communication (to another subdomain)
@@ -217,11 +247,12 @@ void SweepComm::postSends(Subdomain *sdom){
       Subdomain &sdom_downwind = grid_data->subdomains[sdom->downwind[dim].subdomain_id];
       sdom_downwind.plane_data[dim]->copy(*sdom->plane_data[dim]);
       int num_elem = sdom_downwind.plane_data[dim]->elements;
-      double const * KRESTRICT src_ptr = sdom->plane_data[dim]->ptr();
+      //double const * KRESTRICT src_ptr = sdom->plane_data[dim]->ptr();
       double * KRESTRICT dst_ptr = sdom_downwind.plane_data[dim]->ptr();
       for(int i = 0;i < num_elem;++ i){
         dst_ptr[i] = src_ptr[i];
       }
+      //printf("%d: BndrExch ->%d\n", mpi_rank, sdom->downwind[dim].subdomain_id);
 
       continue;
     }
@@ -234,7 +265,7 @@ void SweepComm::postSends(Subdomain *sdom){
     int tag = sdom->downwind[dim].mpi_rank + mpi_size*sdom->downwind[dim].subdomain_id;
 
     // Post the send
-    MPI_Isend(sdom->plane_data[dim]->ptr(), sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
+    MPI_Isend(src_ptr, sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
       tag, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
   }
 }

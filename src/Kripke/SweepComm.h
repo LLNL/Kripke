@@ -27,7 +27,7 @@ class SweepComm {
 
   private:
     int findSubdomain(int sdom_id);
-    void postSends(Subdomain *sdom);
+    void postSends(Subdomain *sdom, int index);
 
     Grid_Data *grid_data;
     bool block_jacobi; // Turns off parallel sweep, does up-front boundary exchange
@@ -40,6 +40,7 @@ class SweepComm {
     std::vector<int> queue_sdom_ids;
     std::vector<Subdomain *> queue_subdomains;
     std::vector<int> queue_depends;
+    std::vector<std::vector<double> > bj_send_buffers[3];
 
     // These vectors have the remaining send requests that are incomplete
     std::vector<MPI_Request> send_requests;
