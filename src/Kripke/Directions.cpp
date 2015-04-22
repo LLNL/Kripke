@@ -146,8 +146,7 @@ void InitDirections(Grid_Data *grid_data, Input_Variables *input_vars)
     std::sort(directions.begin(), directions.end(), dirSortFcn);
   }
   else{
-    // Do (essentialy) an S2 quadrature.. but with multiple directions
-    // co-located
+    // Do (essentialy) an S2 quadrature.. but with repeated directions
 
     // Compute x,y,z cosine values
     double mu  = cos(M_PI/4);
@@ -167,7 +166,7 @@ void InitDirections(Grid_Data *grid_data, Input_Variables *input_vars)
         directions[d].kd = (omegas[2] > 0.) ? 1 : -1;
 
         // Store quadrature point's weight
-        directions[d].w = 1.0 / (double)num_directions;
+        directions[d].w = 4.0*M_PI / (double)num_directions;
         directions[d].xcos = mu;
         directions[d].ycos = eta;
         directions[d].zcos = xi;

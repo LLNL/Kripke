@@ -23,13 +23,6 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
 
   BLOCK_TIMER(grid_data->timing, Solve);
 
-  for(int sdom_id = 0;sdom_id < grid_data->subdomains.size();++sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
-    // Clear boundary conditions
-    for(int dim = 0;dim < 3;++ dim){
-      sdom.plane_data[dim]->clear(0.0);
-    }
-  }
 
   // Loop over iterations
   double part_last = 0.0;
@@ -124,15 +117,8 @@ void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, boo
   // Add all subdomains in our list
   for(int i = 0;i < subdomain_list.size();++ i){
     int sdom_id = subdomain_list[i];
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
-    comm->addSubdomain(sdom_id, sdom);
+    comm->addSubdomain(sdom_id, grid_data->subdomains[sdom_id]);
   }
-
-
-  double start_time = getTime();
-  double total_exec_time = 0.0;
-  double average_load = 0.0;
-  int max_backlog = 0;
 
   /* Loop until we have finished all of our work */
   while(comm->workRemaining()){
@@ -140,45 +126,27 @@ void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, boo
     // Get a list of subdomains that have met dependencies
     std::vector<int> sdom_ready = comm->readySubdomains();
     int backlog = sdom_ready.size();
-    max_backlog = std::max(backlog, max_backlog);
 
     // Run top of list
     if(backlog > 0){
-      double exec_start = getTime();
       int sdom_id = sdom_ready[0];
-
-      /* Use standard Diamond-Difference sweep */
+      Subdomain &sdom = grid_data->subdomains[sdom_id];
+      // Clear boundary conditions
+      for(int dim = 0;dim < 3;++ dim){
+        if(sdom.upwind[dim].subdomain_id == -1){
+          sdom.plane_data[dim]->clear(0.0);
+        }
+      }
       {
         BLOCK_TIMER(grid_data->timing, Sweep_Kernel);
-
-        Subdomain &sdom = grid_data->subdomains[sdom_id];
-        // Clear boundary conditions
-        for(int dim = 0;dim < 3;++ dim){
-          if(sdom.upwind[dim].subdomain_id == -1){
-            sdom.plane_data[dim]->clear(0.0);
-          }
-        }
-
-        int mpi_rank;
-        MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-
-        //printf("run %d\n", sdom_id);
         // Perform subdomain sweep
         grid_data->kernel->sweep(&sdom);
       }
 
       // Mark as complete (and do any communication)
       comm->markComplete(sdom_id);
-
-      double exec_end = getTime();
-
-      total_exec_time += exec_end - exec_start;
-      average_load += (exec_end - exec_start) * (double)backlog;
     }
   }
-
-  double total_time = getTime() - start_time;
-  average_load = average_load / total_time;
 
   delete comm;
 }
