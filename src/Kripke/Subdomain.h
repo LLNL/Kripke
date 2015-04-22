@@ -66,6 +66,7 @@ struct Subdomain {
 
   // Sweep boundary data
   SubTVec *plane_data[3];
+  SubTVec *old_plane_data[3];
 
   // Variables
   SubTVec *psi;         // Solution

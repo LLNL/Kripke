@@ -69,17 +69,19 @@ Subdomain::Subdomain() :
   phi(NULL),
   phi_out(NULL)
 {
-  plane_data[0] = NULL;
-  plane_data[1] = NULL;
-  plane_data[2] = NULL;
+  for(int dim = 0;dim < 3;++ dim){
+    plane_data[dim] = NULL;
+    old_plane_data[dim] = NULL;
+  }
 }
 Subdomain::~Subdomain(){
   delete psi;
   delete rhs;
   delete sigt;
-  delete plane_data[0];
-  delete plane_data[1];
-  delete plane_data[2];
+  for(int dim = 0;dim < 3;++ dim){
+    delete plane_data[dim];
+    delete old_plane_data[dim];
+  }
 }
 
 
@@ -121,6 +123,10 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   plane_data[0] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[1] * nzones[2]);
   plane_data[1] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[2]);
   plane_data[2] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[1]);
+
+  old_plane_data[0] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[1] * nzones[2]);
+  old_plane_data[1] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[2]);
+  old_plane_data[2] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[1]);
 
   // allocate the storage for solution and source terms
   psi = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, num_zones);

@@ -5,7 +5,7 @@
 #include <Kripke.h>
 #include <Kripke/Subdomain.h>
 #include <Kripke/SubTVec.h>
-#include <Kripke/SweepComm.h>
+#include <Kripke/ParallelComm.h>
 #include <Kripke/Grid.h>
 #include <vector>
 #include <stdio.h>
@@ -110,16 +110,22 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
 /**
   Perform full parallel sweep algorithm on subset of subdomains.
 */
-int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi)
+void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi)
 {
   // Create a new sweep communicator object
-  SweepComm sweep_comm(grid_data, block_jacobi);
+  ParallelComm *comm = NULL;
+  if(block_jacobi){
+    comm = new BlockJacobiComm(grid_data);
+  }
+  else {
+    comm = new SweepComm(grid_data);
+  }
 
   // Add all subdomains in our list
   for(int i = 0;i < subdomain_list.size();++ i){
     int sdom_id = subdomain_list[i];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
-    sweep_comm.addSubdomain(sdom_id, sdom);
+    comm->addSubdomain(sdom_id, sdom);
   }
 
 
@@ -129,10 +135,10 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, bool
   int max_backlog = 0;
 
   /* Loop until we have finished all of our work */
-  while(sweep_comm.workRemaining()){
+  while(comm->workRemaining()){
 
     // Get a list of subdomains that have met dependencies
-    std::vector<int> sdom_ready = sweep_comm.readySubdomains();
+    std::vector<int> sdom_ready = comm->readySubdomains();
     int backlog = sdom_ready.size();
     max_backlog = std::max(backlog, max_backlog);
 
@@ -155,14 +161,14 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, bool
 
         int mpi_rank;
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-        //printf("%d: Sweep %d\n", mpi_rank, sdom_id);
 
+        //printf("run %d\n", sdom_id);
         // Perform subdomain sweep
         grid_data->kernel->sweep(&sdom);
       }
 
       // Mark as complete (and do any communication)
-      sweep_comm.markComplete(sdom_id);
+      comm->markComplete(sdom_id);
 
       double exec_end = getTime();
 
@@ -174,11 +180,7 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, bool
   double total_time = getTime() - start_time;
   average_load = average_load / total_time;
 
- /* printf("  run_percent=%e, ave_load=%e, max_backlog=%d\n",
-    total_exec_time/total_time, average_load, max_backlog
-  );*/
-
-  return(0);
+  delete comm;
 }
 
 

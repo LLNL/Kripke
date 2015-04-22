@@ -25,7 +25,7 @@ struct Grid_Data;
 
 // In Kripke/Sweep_Solver.cpp
 int SweepSolver(Grid_Data *grid_data, bool block_jacobi);
-int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi);
+void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi);
 
 /**
  * Tags for choosing which data nesting to be chosen
