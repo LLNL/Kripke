@@ -5,9 +5,6 @@
 
 class Kernel_3d_DGZ : public Kernel {
   public:
-    Kernel_3d_DGZ();
-    virtual ~Kernel_3d_DGZ();
-
     virtual Nesting_Order nestingPsi(void) const;
     virtual Nesting_Order nestingPhi(void) const;
     virtual Nesting_Order nestingSigt(void) const;

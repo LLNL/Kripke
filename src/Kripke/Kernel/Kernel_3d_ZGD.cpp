@@ -2,14 +2,6 @@
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 
-Kernel_3d_ZGD::Kernel_3d_ZGD() {
-
-}
-
-Kernel_3d_ZGD::~Kernel_3d_ZGD() {
-
-}
-
 Nesting_Order Kernel_3d_ZGD::nestingPsi(void) const {
   return NEST_ZGD;
 }

@@ -18,9 +18,6 @@ struct Subdomain;
  */
 class Kernel {
   public:
-    Kernel();
-    virtual ~Kernel();
-
     virtual Nesting_Order nestingPsi(void) const = 0;
     virtual Nesting_Order nestingPhi(void) const = 0;
     virtual Nesting_Order nestingSigt(void) const = 0;

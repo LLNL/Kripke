@@ -9,14 +9,6 @@
 #include<Kripke/Kernel/Kernel_3d_ZGD.h>
 #include<Kripke/Kernel/Kernel_3d_GZD.h>
 
-Kernel::Kernel(){
-
-}
-
-Kernel::~Kernel(){
-
-}
-
 
 /**
  * Factory to create a kernel object for the specified nesting
