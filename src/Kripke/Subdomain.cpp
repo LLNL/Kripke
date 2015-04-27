@@ -58,22 +58,27 @@ Subdomain::Subdomain() :
   num_groups(0),
   num_directions(0),
   num_zones(0),
-  d_delta_x(NULL),
-  d_delta_y(NULL),
-  d_delta_z(NULL),
   group0(0),
   direction0(0),
   psi(NULL),
   rhs(NULL),
-  d_rhs(NULL),
   sigt(NULL),
-  d_sigt(NULL),
   directions(NULL),
-  d_directions(NULL),
   ell(NULL),
   ell_plus(NULL),
   phi(NULL),
-  phi_out(NULL)
+  phi_out(NULL),
+
+  d_rhs(NULL),
+  d_delta_x(NULL),
+  d_delta_y(NULL),
+  d_delta_z(NULL),
+  d_sigt(NULL),
+  d_directions(NULL),
+  d_ell_plus(NULL),
+  d_ell(NULL),
+  d_phi(NULL),
+  d_phi_out(NULL)
 {
   plane_data[0] = NULL;
   plane_data[1] = NULL;

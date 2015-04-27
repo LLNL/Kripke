@@ -26,6 +26,15 @@
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/memory.h>
 #endif
 
+
+
+#ifdef KRIPKE_USE_HWLOC 
+#include <hwloc.h>
+#include "Kripke/cu_utils.h"
+#endif
+
+
+
 typedef std::pair<int, int> IntPair;
 
 std::vector<std::string> papi_names;
@@ -210,6 +219,36 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   int num_tasks;
   MPI_Comm_size(MPI_COMM_WORLD, &num_tasks);
+
+
+#ifdef KRIPKE_USE_HWLOC 
+
+  hwloc_topology_t topology;
+
+  /* Allocate and initialize topology object. */
+  hwloc_topology_init(&topology);
+  /* Perform the topology detection. */
+  hwloc_topology_load(topology);
+
+  hwloc_topology_set_flags(topology,HWLOC_TOPOLOGY_FLAG_WHOLE_IO);
+
+  {
+  int nbcores = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_CORE);
+  int nbpus = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU);
+
+  printf("%d COREs   %d PUs  \n", nbcores, nbpus);
+  int pus_per_core = nbpus/nbcores;
+
+  int core = sched_getcpu();
+  int numGPUs = get_cudaGetDeviceCount();
+  printf("rank = %d:  Core %d core/pus_per_core = %d \n", myid,  core, core/pus_per_core  );
+  int my_GPU = (core/pus_per_core) / (nbcores/numGPUs);
+
+  printf( "rank = %d will use GPU %d \n",myid,my_GPU);
+  set_cudaSetDevice( my_GPU);
+
+  }
+#endif
 
   if (myid == 0) {
     /* Print out a banner message along with a version number. */

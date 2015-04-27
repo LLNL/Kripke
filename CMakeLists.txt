@@ -98,6 +98,9 @@ bdiv_opt_pkg(BGPM 20030410 OFF)
 # BLAS 
 bdiv_opt_pkg(esslblas 0 OFF)
 
+#HWLOC
+bdiv_opt_pkg(hwloc 0 ON)
+
 
 
 #

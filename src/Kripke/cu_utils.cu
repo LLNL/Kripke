@@ -8,6 +8,22 @@
 #include "cu_utils.h"
 
 
+int get_cudaGetDeviceCount(){
+   int ndev;
+   cudaGetDeviceCount(&ndev);
+   return  ndev;
+}
+
+void set_cudaSetDevice(int id){
+   cudaSetDevice(id);
+}
+
+
+void set_cudaMemZeroAsync( void *ptr,  size_t size){
+   cudaMemsetAsync(ptr,0,size);
+}
+
+
 void * get_cudaMallocManaged(size_t size){
    void *data;
    cudaMallocManaged(&data, size);
@@ -38,5 +54,12 @@ void  do_cudaMemcpyD2H( void *dst, void * src,  size_t size){
   cudaMemcpy(dst, src, size, cudaMemcpyDeviceToHost);
 }
 
+void  do_cudaMemcpyH2D_Async( void *dst, void * src,  size_t size){
+  cudaMemcpyAsync(dst, src, size, cudaMemcpyHostToDevice);
+}
+
+void  do_cudaMemcpyD2H_Async( void *dst, void * src,  size_t size){
+  cudaMemcpyAsync(dst, src, size, cudaMemcpyDeviceToHost);
+}
 
 

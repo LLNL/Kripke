@@ -25,6 +25,12 @@
 }
 
 
+__global__ void  LTimes_ZGD(double *phi, double * __restrict__ psi, double * __restrict__ ell,
+                                int num_zones, int num_groups, int num_local_directions, int num_local_groups, int nidx);
+
+
+__global__ void  LPlusTimes_ZGD(double *rhs, double * __restrict__ phi_out, double * __restrict__ ell_plus,
+                                int num_zones, int num_groups, int num_local_directions, int num_local_groups, int nidx);
 
 
 
@@ -34,11 +40,147 @@ __global__ void  sweep_over_hyperplane_ZGD(int sliceID, int *offset, int *ii_jj_
                     double *i_plane, double *j_plane, double *k_plane);
 
 
+int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_ell,
+                    int num_zones, int num_groups, int num_local_directions, int num_local_groups, int nidx);
+
+
+int  cuda_LPlusTimes_ZGD(double *d_rhs, double *h_phi_out, double *h_ell_plus,
+                    int num_zones, int num_groups, int num_local_directions, int num_local_groups, int nidx);
+
 int cuda_sweep_ZGD( double *rhs, double *phi, double *psi,  double *sigt, Directions *direction,
                     double *i_plane, double *j_plane, double *k_plane,
                     int *ii_jj_kk_z_idx, int *offset, int *d_offset, double *dx, double *dy, double *dz,
                     int num_zones, int num_directions, int num_groups,
                     int local_imax, int local_jmax, int local_kmax, int Nslices);
+
+
+int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_ell,
+                    int num_zones, int num_groups, int num_local_directions, int num_local_groups, int nidx){
+
+  cudaCheckError();
+
+  dim3 threadsPerBlock(32);
+
+  LTimes_ZGD<<<num_zones,threadsPerBlock,nidx*sizeof(double)>>>(d_phi,h_psi,d_ell,num_zones,num_groups,num_local_directions,num_local_groups,nidx);
+
+  cudaCheckError();
+
+  return 0;
+}
+
+__global__ void  LTimes_ZGD(double *phi, double * __restrict__ psi, double * __restrict__ ell,
+                                int num_zones, int num_groups, int num_local_directions, int num_local_groups, int nidx){
+
+
+      extern __shared__ double ss_phi[];
+
+      int z = blockIdx.x;
+      double *block_phi = &phi[z*num_groups*nidx];
+      double *block_psi = &psi[z*num_local_groups*num_local_directions];
+
+
+      for(int group = 0;group < num_local_groups;++ group){
+         
+
+        for(int nm_offset = threadIdx.x; nm_offset < nidx; nm_offset+=blockDim.x)
+           ss_phi[nm_offset] = block_phi[nm_offset+nidx*group];
+ 
+        for (int d = 0; d < num_local_directions; d++) {
+
+          double psi_d = block_psi[d+group*num_local_directions];
+           
+          for(int nm_offset = threadIdx.x; nm_offset < nidx; nm_offset+=blockDim.x)
+            ss_phi[nm_offset] += ell[nm_offset + nidx*d] * psi_d;          
+        }
+        for(int nm_offset = threadIdx.x; nm_offset < nidx; nm_offset+=blockDim.x)
+           block_phi[nm_offset+nidx*group] =  ss_phi[nm_offset];
+
+      }
+
+}
+
+
+
+int  cuda_LPlusTimes_ZGD(double *d_rhs, double *h_phi_out, double *d_ell_plus,
+                    int num_zones, int num_groups, int num_local_directions, int num_local_groups, int nidx){
+
+
+  cudaEvent_t start,stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+  float time_ms, time_s;
+  double *d_phi_out;
+
+  #ifdef CU_TIMING
+  cudaEventRecord(start);
+  #endif
+
+  cudaMalloc((void **) &d_phi_out,num_zones*nidx * num_groups * sizeof(double));
+//  cudaMalloc((void **) &d_ell_plus, nidx * num_local_directions * sizeof(double));
+  cudaMemcpy(d_phi_out, h_phi_out,num_zones * nidx * num_groups * sizeof(double), cudaMemcpyHostToDevice);
+//  cudaCheckError();
+//  cudaMemcpy(d_ell_plus, h_ell_plus, nidx * num_local_directions * sizeof(double), cudaMemcpyHostToDevice);
+  cudaCheckError();
+
+  #ifdef CU_TIMING
+  cudaEventRecord(stop);
+  cudaDeviceSynchronize();
+  cudaCheckError();
+  cudaEventElapsedTime(&time_ms,start,stop);
+  time_s=time_ms*.001;
+  printf("ZGD: time to copy d_phi_out+d_ell_plus H2D: %g [s]\n",time_s);
+  #endif
+  #ifdef CU_TIMING
+  cudaEventRecord(start);
+  #endif
+
+  dim3 threadsPerBlock(32);
+
+  LPlusTimes_ZGD<<<num_zones,threadsPerBlock,num_local_directions*sizeof(double)>>>(d_rhs,d_phi_out,d_ell_plus,num_zones,num_groups,num_local_directions,num_local_groups,nidx);
+
+  #ifdef CU_TIMING
+  cudaEventRecord(stop);
+  cudaDeviceSynchronize();
+  cudaCheckError();
+  cudaEventElapsedTime(&time_ms,start,stop);
+  time_s=time_ms*.001;
+  printf("ZGD: time to LPlusTimes_ZGD (GPU): %g [s]\n",time_s);
+  #endif
+
+
+  cudaFree(d_phi_out);
+//  cudaFree(d_ell_plus);
+
+  return 0;
+
+}
+
+
+
+__global__ void  LPlusTimes_ZGD(double *rhs, double * __restrict__ phi_out,
+                                double * __restrict__ ell_plus,
+                                int num_zones, int num_groups, int num_local_directions, int num_local_groups, int nidx){
+
+
+      int z = blockIdx.x;
+      extern __shared__ double rhs_acc[];
+      double *block_rhs =  &rhs[z*num_groups*num_local_directions];
+      double *block_phi_out = &phi_out[z*num_groups*nidx];
+
+      for(int group = 0; group < num_local_groups;++ group){
+        for (int d = threadIdx.x; d < num_local_directions; d+=blockDim.x) {
+          rhs_acc[d] = 0.0;
+
+          for(int nm_offset = 0;nm_offset < nidx;++nm_offset)
+             rhs_acc[d] += ell_plus[nm_offset + d*nidx] * block_phi_out[nm_offset + group*nidx];
+          
+          block_rhs[d+num_local_directions*group] += rhs_acc[d];
+        }
+      }
+}
+
+
+
 
 int cuda_sweep_ZGD( double *d_rhs, double *h_phi, double *h_psi, double *d_sigt, Directions *d_direction,
                     double *h_i_plane, double *h_j_plane, double *h_k_plane,
@@ -62,6 +204,7 @@ int cuda_sweep_ZGD( double *d_rhs, double *h_phi, double *h_psi, double *d_sigt,
   cudaEventCreate(&stop);
 
 
+
 #ifdef USE_PSI_HOST_MEM
   double *d_psi = h_psi;
 #else
@@ -71,6 +214,7 @@ int cuda_sweep_ZGD( double *d_rhs, double *h_phi, double *h_psi, double *d_sigt,
   #endif
   cudaMalloc((void **) &d_psi, N*sizeof(double));
   cudaMemcpy(d_psi, h_psi,   N*sizeof(double), cudaMemcpyHostToDevice);
+  cudaCheckError();
 
   #ifdef CU_TIMING
   cudaEventRecord(stop);
@@ -145,7 +289,7 @@ int cuda_sweep_ZGD( double *d_rhs, double *h_phi, double *h_psi, double *d_sigt,
      #endif
 
      dim3 numBlocks = h_offset[slice+1] - h_offset[slice];
-     sweep_over_hyperplane_ZGD<<<numBlocks,threadsPerBlock, 3*num_directions*sizeof(double) >>>(slice,d_offset,d_ii_jj_kk_z_idx,num_directions,num_groups,local_imax,local_jmax,local_kmax,
+     sweep_over_hyperplane_ZGD<<<numBlocks,threadsPerBlock, num_groups*sizeof(double) >>>(slice,d_offset,d_ii_jj_kk_z_idx,num_directions,num_groups,local_imax,local_jmax,local_kmax,
                                                           d_dx, d_dy, d_dz, d_rhs, d_phi, d_psi, d_sigt, d_direction, d_i_plane, d_j_plane, d_k_plane);
      #ifdef CU_TIMING
      cudaEventRecord(stop);                                              
@@ -251,15 +395,15 @@ __global__ void sweep_over_hyperplane_ZGD(int sliceID, int *offset, int *ii_jj_k
       double * KRESTRICT psi_fr_z = &j_plane[J_P_I*dir_grp]; 
       double * KRESTRICT psi_bo_z = &k_plane[K_P_I*dir_grp]; 
 
-      extern __shared__ double xyzcos_dxyz[];
+//      extern __shared__ double xyzcos_dxyz[];
 
       
 //      for( int d = threadIdx.x + threadIdx.y*blockDim.x;  d < num_directions; d = d + blockDim.x*blockDim.y){//not working - BUG?
-      for( int d = threadIdx.x;  d < num_directions; d = d + blockDim.x){
-         xyzcos_dxyz[3*d]   = direction[d].xcos * two_inv_dxi;
-         xyzcos_dxyz[3*d+1] = direction[d].ycos * two_inv_dyj;
-         xyzcos_dxyz[3*d+2] = direction[d].zcos * two_inv_dzk;
-      }
+//      for( int d = threadIdx.x;  d < num_directions; d = d + blockDim.x){
+//         xyzcos_dxyz[3*d]   = direction[d].xcos * two_inv_dxi;
+//         xyzcos_dxyz[3*d+1] = direction[d].ycos * two_inv_dyj;
+//         xyzcos_dxyz[3*d+2] = direction[d].zcos * two_inv_dzk;
+//      }
 
       for (int group = threadIdx.y; group < num_groups; group += blockDim.y){
 
@@ -267,9 +411,9 @@ __global__ void sweep_over_hyperplane_ZGD(int sliceID, int *offset, int *ii_jj_k
 
             int gd = d + group*num_directions;
 
-            double xcos_dxi =  xyzcos_dxyz[3*d];
-            double ycos_dyj =  xyzcos_dxyz[3*d+1]; 
-            double zcos_dzk =  xyzcos_dxyz[3*d+2];
+            double xcos_dxi =  direction[d].xcos * two_inv_dxi; 
+            double ycos_dyj =  direction[d].ycos * two_inv_dyj;
+            double zcos_dzk =  direction[d].zcos * two_inv_dzk;
 
             double psi_lf_z_g_d = psi_lf_z[gd];
             double psi_fr_z_g_d = psi_fr_z[gd];

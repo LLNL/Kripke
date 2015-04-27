@@ -118,28 +118,28 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
 
   // Add all subdomains in our list
   for(int i = 0;i < subdomain_list.size();++ i){
+
     int sdom_id = subdomain_list[i];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
+
+#ifdef KRIPKE_USE_CUDA
+    if(grid_data->kernel->sweep_mode == SWEEP_GPU){
+      //LG  copy RHS to device
+      double *dptr_h_rhs = sdom.rhs->ptr();
+      if ( sdom.d_rhs == NULL){ // allocate
+         sdom.d_rhs = (double *) get_cudaMalloc((size_t) ( sdom.num_zones * sdom.num_groups * sdom.num_directions) * sizeof(double));
+      }
+      //do_cudaMemcpyH2D_Async( (void*)  sdom.d_rhs,  dptr_h_rhs, (size_t) ( sdom.num_zones * sdom.num_groups * sdom.num_directions ) * sizeof(double));
+    }
+#endif
+
     sweep_comm.addSubdomain(sdom_id, sdom);
     // Clear boundary conditions
     for(int dim = 0;dim < 3;++ dim){
       if(sdom.upwind[dim].subdomain_id == -1){
         sdom.plane_data[dim]->clear(0.0);
       }
-		}
-      
-#ifdef KRIPKE_USE_CUDA
-    if(grid_data->kernel->sweep_mode == SWEEP_GPU){
-      //LG  copy RHS to device
-      //LG  the cudaMemcpyH2D can proceed asynchronousely and overlap with communication
-      double *dptr_h_rhs = sdom.rhs->ptr();
-      if ( sdom.d_rhs == NULL){ // allocate
-         sdom.d_rhs = (double *) get_cudaMalloc((size_t) ( sdom.num_zones * sdom.num_groups * sdom.num_directions) * sizeof(double));
-      }
-      //copy RHS to device
-      do_cudaMemcpyH2D( (void*)  sdom.d_rhs,  dptr_h_rhs, (size_t) ( sdom.num_zones * sdom.num_groups * sdom.num_directions ) * sizeof(double));
     }
-#endif
   }
 
   /* Loop until we have finished all of our work */

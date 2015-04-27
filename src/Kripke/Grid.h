@@ -64,6 +64,11 @@ public:
   // Per zoneset phi and phi_out (Subdomains point into these arrays)
   std::vector<SubTVec *> phi;               // Moments of psi
   std::vector<SubTVec *> phi_out;           // Scattering source
+#ifdef KRIPKE_USE_CUDA
+  std::vector<double *> d_phi; //LG  pointers to phi on the device
+  std::vector<double *> d_ell; //LG  pointers to phi on the device
+  std::vector<double *> d_ell_plus; //LG  pointers to phi on the device
+#endif
 };
 
 #endif

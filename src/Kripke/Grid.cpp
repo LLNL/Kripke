@@ -3,6 +3,7 @@
 #include <Kripke/Input_Variables.h>
 #include <Kripke/Layout.h>
 #include <Kripke/SubTVec.h>
+#include "Kripke/cu_utils.h"
 #include <cmath>
 #include <sstream>
 #include <mpi.h>
@@ -81,6 +82,11 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   ell_plus.resize(num_direction_sets, NULL);
   phi.resize(num_zone_sets, NULL);
   phi_out.resize(num_zone_sets, NULL);
+  #ifdef KRIPKE_USE_CUDA
+  d_ell.resize(num_direction_sets, NULL);
+  d_ell_plus.resize(num_direction_sets, NULL);
+  d_phi.resize(num_zone_sets, NULL);
+  #endif
 
   // Initialize Subdomains
   zs_to_sdomid.resize(num_zone_sets);
@@ -100,7 +106,10 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
         if(ell[ds] == NULL){
           ell[ds] = new SubTVec(kernel->nestingEll(), total_num_moments, sdom.num_directions, 1);
           ell_plus[ds] = new SubTVec(kernel->nestingEllPlus(), total_num_moments, sdom.num_directions, 1);
-
+	  #ifdef KRIPKE_USE_CUDA
+	  d_ell[zs] = (double*) get_cudaMalloc((size_t) (ell[ds]->elements) * sizeof(double) );
+	  d_ell_plus[zs] = (double*) get_cudaMalloc((size_t) (ell_plus[ds]->elements) * sizeof(double) );
+          #endif
           compute_ell = true;
         }
 
@@ -109,14 +118,29 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
           zs_to_sdomid[zs] = sdom_id;
           phi[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
           phi_out[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
+          //LG
+	  #ifdef KRIPKE_USE_CUDA
+	  d_phi[zs] = (double*) get_cudaMalloc((size_t) (phi[zs]->elements)*sizeof(double));
+          #endif
         }
 
         // Set the variables for this subdomain
         sdom.setVars(ell[ds], ell_plus[ds], phi[zs], phi_out[zs]);
+#ifdef KRIPKE_USE_CUDA
+        sdom.d_phi = d_phi[zs];
+        sdom.d_ell = d_ell[zs];
+        sdom.d_ell_plus = d_ell_plus[zs];
+#endif
+
+//LG  need to sdom.setVars d_ell, d_ell_plus, d_phi and d_phi_out 
 
         if(compute_ell){
           // Compute the L and L+ matrices
           sdom.computeLLPlus(legendre_order);
+	  #ifdef KRIPKE_USE_CUDA
+          do_cudaMemcpyH2D( (void *) sdom.d_ell, (void*)  sdom.ell->ptr(), (size_t) (sdom.ell->elements)*sizeof(double));
+          do_cudaMemcpyH2D( (void *) sdom.d_ell_plus, (void*)  sdom.ell_plus->ptr(), (size_t) (sdom.ell_plus->elements)*sizeof(double));
+          #endif
         }
       }
     }

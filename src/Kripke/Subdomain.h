@@ -80,12 +80,8 @@ struct Subdomain {
   // Variables
   SubTVec *psi;         // Solution
   SubTVec *rhs;         // RHS, source term
-//LG
-  double *d_rhs;        // RHS, on GPU
   SubTVec *sigt;        // Zonal per-group cross-section
 
-//LG
-  double *d_sigt;       // ZOnal per-group cross-sectio, stored on GPU
 
   // Pointers into directions and directionset data from Grid_Data
   Directions *directions;
@@ -95,6 +91,14 @@ struct Subdomain {
   SubTVec *ell_plus;
   SubTVec *phi;
   SubTVec *phi_out;
+
+//LG
+  double *d_sigt;       // ZOnal per-group cross-sectio, stored on GPU
+  double *d_rhs;        // RHS, on GPU
+  double *d_ell_plus;
+  double *d_ell;
+  double *d_phi_out;
+  double *d_phi;
 
   // Materials on the mesh, used for scattering lookup
   std::vector<int> mixed_to_zones;     // mapping from mixed slot to zones
