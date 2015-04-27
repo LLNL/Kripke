@@ -5,9 +5,6 @@
 
 class Kernel_3d_ZDG : public Kernel {
   public:
-  Kernel_3d_ZDG();
-    virtual ~Kernel_3d_ZDG();
-
     virtual Nesting_Order nestingPsi(void) const;
     virtual Nesting_Order nestingPhi(void) const;
     virtual Nesting_Order nestingSigt(void) const;

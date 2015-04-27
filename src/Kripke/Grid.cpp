@@ -318,7 +318,9 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   return is_diff;
 }
 
-
+#ifndef KRIPKE_USE_SILO
+#define KRIPKE_USE_SILO
+#endif
 
 #ifdef KRIPKE_USE_SILO
 

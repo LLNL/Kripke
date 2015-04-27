@@ -69,17 +69,19 @@ Subdomain::Subdomain() :
   phi(NULL),
   phi_out(NULL)
 {
-  plane_data[0] = NULL;
-  plane_data[1] = NULL;
-  plane_data[2] = NULL;
+  for(int dim = 0;dim < 3;++ dim){
+    plane_data[dim] = NULL;
+    old_plane_data[dim] = NULL;
+  }
 }
 Subdomain::~Subdomain(){
   delete psi;
   delete rhs;
   delete sigt;
-  delete plane_data[0];
-  delete plane_data[1];
-  delete plane_data[2];
+  for(int dim = 0;dim < 3;++ dim){
+    delete plane_data[dim];
+    delete old_plane_data[dim];
+  }
 }
 
 
@@ -121,6 +123,11 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   plane_data[0] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[1] * nzones[2]);
   plane_data[1] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[2]);
   plane_data[2] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[1]);
+
+  // For block-jacobi parallel method
+  old_plane_data[0] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[1] * nzones[2]);
+  old_plane_data[1] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[2]);
+  old_plane_data[2] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[1]);
 
   // allocate the storage for solution and source terms
   psi = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, num_zones);
@@ -307,21 +314,9 @@ void Subdomain::computeSweepIndexSet(void){
 namespace {
   double FactFcn(int n)
   {
-    double fact, f1;
-    int i;
-
-    /* n <= 1 case */
-    if(n <= 1){
-      fact=1.0;
-      return(fact);
-    }
-
-    /* n > 1 case */
-    fact = (double) n;
-    f1 = (double) (n - 1);
-    for(i=0; i<n-1; i++){
-      fact = fact*f1;
-      f1 = f1-1;
+    double fact = 1.0;
+    for(int i = n;i > 0 ;--i){
+      fact *= (double)i;
     }
     return(fact);
   }
@@ -426,25 +421,21 @@ namespace {
  */
 void Subdomain::computeLLPlus(int legendre_order){
   int dir0 = direction0;
-  int nm = 0;
   double SQRT4PI = std::sqrt(4*M_PI);
-  for(int n=0; n < legendre_order+1; n++){
+  for(int n=0, nm=0; n < legendre_order+1; n++){
     for(int m=-n; m<=n; m++){
       for(int d=0; d<num_directions; d++){
-
         // Get quadrature point info
         double xcos = (directions[d].id)*(directions[d].xcos);
         double ycos = (directions[d].jd)*(directions[d].ycos);
         double zcos = (directions[d].kd)*(directions[d].zcos);
         double w =  directions[d].w;
 
-        // Compute element of L
-        double ell_tmp = w*YnmFcn(n, m, xcos, ycos, zcos)/SQRT4PI;
-        (*ell)(nm,d,0) = ell_tmp;
+        double ynm = YnmFcn(n, m, xcos, ycos, zcos);
 
-        // Compute element of L+
-        double ell_plus_tmp = YnmFcn(n, m, xcos, ycos, zcos)*SQRT4PI;
-        (*ell_plus)(nm,d,0) = ell_plus_tmp;
+        // Compute element of L and L+
+        (*ell)(nm,d,0) = w*ynm/SQRT4PI;
+        (*ell_plus)(nm,d,0) = ynm*SQRT4PI;
       }
       nm ++;
     }

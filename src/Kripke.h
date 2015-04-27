@@ -24,8 +24,8 @@ struct Grid_Data;
 
 
 // In Kripke/Sweep_Solver.cpp
-int SweepSolver(Grid_Data *grid_data);
-int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data);
+int SweepSolver(Grid_Data *grid_data, bool block_jacobi);
+void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi);
 
 /**
  * Tags for choosing which data nesting to be chosen
@@ -39,6 +39,15 @@ enum Nesting_Order {
   NEST_GZD,
   NEST_ZDG,
   NEST_ZGD
+};
+
+
+/**
+  Tags for which parallel algorithm to use.
+*/
+enum ParallelMethod {
+  PMETHOD_SWEEP,
+  PMETHOD_BJ
 };
 
 /**

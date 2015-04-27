@@ -5,7 +5,7 @@
 #include <Kripke.h>
 #include <Kripke/Subdomain.h>
 #include <Kripke/SubTVec.h>
-#include <Kripke/SweepComm.h>
+#include <Kripke/ParallelComm.h>
 #include <Kripke/Grid.h>
 #include <vector>
 #include <stdio.h>
@@ -14,7 +14,7 @@
 /**
   Run solver iterations.
 */
-int SweepSolver (Grid_Data *grid_data)
+int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
 {
   Kernel *kernel = grid_data->kernel;
 
@@ -22,6 +22,7 @@ int SweepSolver (Grid_Data *grid_data)
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
   BLOCK_TIMER(grid_data->timing, Solve);
+
 
   // Loop over iterations
   double part_last = 0.0;
@@ -69,7 +70,7 @@ int SweepSolver (Grid_Data *grid_data)
         }
 
         // Sweep everything
-        SweepSubdomains(sdom_list, grid_data);
+        SweepSubdomains(sdom_list, grid_data, block_jacobi);
       }
       // This is the ARDRA version, doing each groupset sweep independently
       else{
@@ -83,7 +84,7 @@ int SweepSolver (Grid_Data *grid_data)
           }
 
           // Sweep the groupset
-          SweepSubdomains(sdom_list, grid_data);
+          SweepSubdomains(sdom_list, grid_data, block_jacobi);
         }
       }
     }
@@ -102,48 +103,52 @@ int SweepSolver (Grid_Data *grid_data)
 /**
   Perform full parallel sweep algorithm on subset of subdomains.
 */
-int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
+void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi)
 {
   // Create a new sweep communicator object
-  SweepComm sweep_comm(grid_data);
+  ParallelComm *comm = NULL;
+  if(block_jacobi){
+    comm = new BlockJacobiComm(grid_data);
+  }
+  else {
+    comm = new SweepComm(grid_data);
+  }
 
   // Add all subdomains in our list
   for(int i = 0;i < subdomain_list.size();++ i){
     int sdom_id = subdomain_list[i];
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
-    sweep_comm.addSubdomain(sdom_id, sdom);
-
-    // Clear boundary conditions
-    for(int dim = 0;dim < 3;++ dim){
-      if(sdom.upwind[dim].subdomain_id == -1){
-        sdom.plane_data[dim]->clear(0.0);
-      }
-    }
+    comm->addSubdomain(sdom_id, grid_data->subdomains[sdom_id]);
   }
 
   /* Loop until we have finished all of our work */
-  while(sweep_comm.workRemaining()){
+  while(comm->workRemaining()){
 
     // Get a list of subdomains that have met dependencies
-    std::vector<int> sdom_ready = sweep_comm.readySubdomains();
+    std::vector<int> sdom_ready = comm->readySubdomains();
+    int backlog = sdom_ready.size();
 
-    for(int idx = 0;idx < sdom_ready.size();++ idx){
-      int sdom_id = sdom_ready[idx];
-
-      /* Use standard Diamond-Difference sweep */
+    // Run top of list
+    if(backlog > 0){
+      int sdom_id = sdom_ready[0];
+      Subdomain &sdom = grid_data->subdomains[sdom_id];
+      // Clear boundary conditions
+      for(int dim = 0;dim < 3;++ dim){
+        if(sdom.upwind[dim].subdomain_id == -1){
+          sdom.plane_data[dim]->clear(0.0);
+        }
+      }
       {
         BLOCK_TIMER(grid_data->timing, Sweep_Kernel);
-
-        Subdomain &sdom = grid_data->subdomains[sdom_id];
+        // Perform subdomain sweep
         grid_data->kernel->sweep(&sdom);
       }
 
       // Mark as complete (and do any communication)
-      sweep_comm.markComplete(sdom_id);
+      comm->markComplete(sdom_id);
     }
   }
 
-  return(0);
+  delete comm;
 }
 
 

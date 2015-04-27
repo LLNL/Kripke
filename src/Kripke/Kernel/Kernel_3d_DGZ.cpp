@@ -2,16 +2,6 @@
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 
-
-
-Kernel_3d_DGZ::Kernel_3d_DGZ() {
-
-}
-
-Kernel_3d_DGZ::~Kernel_3d_DGZ() {
-
-}
-
 Nesting_Order Kernel_3d_DGZ::nestingPsi(void) const {
   return NEST_DGZ;
 }
