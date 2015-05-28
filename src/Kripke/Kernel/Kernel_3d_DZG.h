@@ -20,6 +20,7 @@ class Kernel_3d_DZG : public Kernel {
     virtual void scattering(Grid_Data *grid_data);
     virtual void source(Grid_Data *grid_data);
     virtual void sweep(Subdomain *ga_set);
+    virtual void LPlusTimes_sweep(Subdomain *ga_set);
 };
 
 #endif

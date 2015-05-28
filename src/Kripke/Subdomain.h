@@ -63,7 +63,9 @@ struct Subdomain {
   int nzones[3];                    // Number of zones in each dimension
   std::vector<double> deltas[3];    // Spatial grid deltas in each dimension (including ghost zones)
 //LG
+#ifdef KRIPKE_USE_CUDA
   double *d_delta_x, *d_delta_y, *d_delta_z; // Spatial grid deltas in each dimension, stored as 1D array on GPU
+#endif
 
   int group0;           // Starting global group id
   int direction0;       // Starting global direction id
@@ -86,24 +88,39 @@ struct Subdomain {
   // Pointers into directions and directionset data from Grid_Data
   Directions *directions;
 //LG
-  Directions *d_directions; // direction data on GPU
   SubTVec *ell;
   SubTVec *ell_plus;
   SubTVec *phi;
   SubTVec *phi_out;
 
 //LG
+#ifdef KRIPKE_USE_CUDA
+  Directions *d_directions; // direction data on GPU
   double *d_sigt;       // ZOnal per-group cross-sectio, stored on GPU
   double *d_rhs;        // RHS, on GPU
   double *d_ell_plus;
   double *d_ell;
   double *d_phi_out;
   double *d_phi;
+#endif
 
   // Materials on the mesh, used for scattering lookup
   std::vector<int> mixed_to_zones;     // mapping from mixed slot to zones
   std::vector<int> mixed_material;  // material number for each mixed slot
   std::vector<double> mixed_fraction;  // volume fraction each mixed slot
+//LG  replace  with std::vector later on
+  int *mixed_offset;  // volume fraction each mixed slot
+
+
+//LG
+#ifdef KRIPKE_USE_CUDA
+  int *d_mixed_to_zones;
+  int *d_mixed_material;
+  double *d_mixed_fraction;
+  int *d_mixed_offset;
+#endif
+
+
 };
 
 #endif

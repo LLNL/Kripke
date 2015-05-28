@@ -35,7 +35,7 @@ class Kernel {
     virtual void scattering(Grid_Data *grid_data) = 0;
     virtual void source(Grid_Data *grid_data) = 0;
     virtual void sweep(Subdomain *ga_set) = 0;
-
+    virtual void LPlusTimes_sweep(Subdomain *ga_set) = 0;
 
     void setSweepMode(SweepMode mode);
 

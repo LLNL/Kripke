@@ -5,6 +5,7 @@
 
 int get_cudaGetDeviceCount();
 void set_cudaSetDevice(int id);
+void do_cudaDeviceSynchronize();
 
 void set_cudaMemZeroAsync( void *ptr,  size_t size);
 

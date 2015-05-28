@@ -60,22 +60,38 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
     }
   }
 
+#ifdef KRIPKE_USE_CUDA
+  d_moment_to_coeff = (int*) get_cudaMalloc((size_t) (total_num_moments) * sizeof(int) );
+  do_cudaMemcpyH2D( (void *) d_moment_to_coeff, (void*) &moment_to_coeff[0], (size_t) (total_num_moments)*sizeof(int));
+#endif
+
+
   // setup cross-sections
   int total_num_groups = num_group_sets*num_groups_per_set;
   sigma_tot.resize(total_num_groups, 0.0);
 
   // Setup scattering transfer matrix for 3 materials
   sigs.resize(3);
+#ifdef KRIPKE_USE_CUDA
+  d_sigs.resize(3);
+#endif
   for(int mat = 0;mat < 3;++ mat){
     // allocate transfer matrix
     sigs[mat] = new SubTVec(kernel->nestingSigs(), total_num_groups, legendre_order+1, total_num_groups);
+#ifdef KRIPKE_USE_CUDA
+    d_sigs[mat] = (double*) get_cudaMalloc((size_t) (sigs[mat]->elements) * sizeof(double) ); 
+#endif
 
     // Set to isotropic scattering given user inputs
     sigs[mat]->clear(0.0);
     for(int g = 0;g < total_num_groups;++ g){
       (*sigs[mat])(g, 0, g) = input_vars->sigs[mat];
     }
+    #ifdef KRIPKE_USE_CUDA
+    do_cudaMemcpyH2D( (void *) d_sigs[mat], (void*) sigs[mat]->ptr(), (size_t) (sigs[mat]->elements)*sizeof(double));
+    #endif
   }
+  
 
   // just allocate pointer vectors, we will allocate them below
   ell.resize(num_direction_sets, NULL);
@@ -86,6 +102,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   d_ell.resize(num_direction_sets, NULL);
   d_ell_plus.resize(num_direction_sets, NULL);
   d_phi.resize(num_zone_sets, NULL);
+  d_phi_out.resize(num_zone_sets, NULL);
   #endif
 
   // Initialize Subdomains
@@ -101,14 +118,34 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
         Subdomain &sdom = subdomains[sdom_id];
         sdom.setup(sdom_id, input_vars, gs, ds, zs, directions, kernel, layout);
 
+        //allocate data for offsets
+        sdom.mixed_offset = new int[480+1];  //480 blocks (1 warps each)  
+//LG  copy data required for scatter to GPU
+        
+#ifdef KRIPKE_USE_CUDA
+	{
+         int size = sdom.mixed_to_zones.size();
+         sdom.d_mixed_to_zones = (int*) get_cudaMalloc((size_t) (size)*sizeof(int) );
+	 do_cudaMemcpyH2D( (void *) sdom.d_mixed_to_zones, (void *) &sdom.mixed_to_zones[0], (size_t) (size)*sizeof(int));
+         size = sdom.mixed_material.size();
+         sdom.d_mixed_material = (int*) get_cudaMalloc((size_t) (size)*sizeof(int) );
+         do_cudaMemcpyH2D( (void *) sdom.d_mixed_material, (void *) &sdom.mixed_material[0], (size_t) (size)*sizeof(int));
+         size = sdom.mixed_fraction.size();
+         sdom.d_mixed_fraction = (double*) get_cudaMalloc((size_t) (size)*sizeof(double) );
+         do_cudaMemcpyH2D( (void *) sdom.d_mixed_fraction,(void *) &sdom.mixed_fraction[0], (size_t) (size)*sizeof(double));
+         sdom.d_mixed_offset = NULL; 
+        }
+#endif
+
+
         // Create ell and ell_plus, if this is the first of this ds
         bool compute_ell = false;
         if(ell[ds] == NULL){
           ell[ds] = new SubTVec(kernel->nestingEll(), total_num_moments, sdom.num_directions, 1);
           ell_plus[ds] = new SubTVec(kernel->nestingEllPlus(), total_num_moments, sdom.num_directions, 1);
 	  #ifdef KRIPKE_USE_CUDA
-	  d_ell[zs] = (double*) get_cudaMalloc((size_t) (ell[ds]->elements) * sizeof(double) );
-	  d_ell_plus[zs] = (double*) get_cudaMalloc((size_t) (ell_plus[ds]->elements) * sizeof(double) );
+          d_ell[ds] = (double*) get_cudaMalloc((size_t) (ell[ds]->elements) * sizeof(double) );
+          d_ell_plus[ds] = (double*) get_cudaMalloc((size_t) (ell_plus[ds]->elements) * sizeof(double) );
           #endif
           compute_ell = true;
         }
@@ -118,9 +155,10 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
           zs_to_sdomid[zs] = sdom_id;
           phi[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
           phi_out[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
-          //LG
+          
 	  #ifdef KRIPKE_USE_CUDA
 	  d_phi[zs] = (double*) get_cudaMalloc((size_t) (phi[zs]->elements)*sizeof(double));
+          d_phi_out[zs] = (double*) get_cudaMalloc((size_t) (phi_out[zs]->elements)*sizeof(double));
           #endif
         }
 
@@ -128,8 +166,9 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
         sdom.setVars(ell[ds], ell_plus[ds], phi[zs], phi_out[zs]);
 #ifdef KRIPKE_USE_CUDA
         sdom.d_phi = d_phi[zs];
-        sdom.d_ell = d_ell[zs];
-        sdom.d_ell_plus = d_ell_plus[zs];
+        sdom.d_phi_out = d_phi_out[zs];
+        sdom.d_ell = d_ell[ds];
+        sdom.d_ell_plus = d_ell_plus[ds];
 #endif
 
 //LG  need to sdom.setVars d_ell, d_ell_plus, d_phi and d_phi_out 
@@ -185,6 +224,10 @@ Grid_Data::~Grid_Data(){
   for(int mat = 0;mat < 3;++ mat){
     delete sigs[mat];
   }
+
+//LG  
+//  need to free GPIU memory  
+
 }
 
 /**
@@ -236,6 +279,7 @@ double Grid_Data::particleEdit(void){
     int num_groups= sdom.num_groups;
     Directions *dirs = sdom.directions;
 
+    #pragma omp parallel for reduction(+:part)
     for(int z = 0;z < num_zones;++ z){
       for(int d = 0;d < num_directions;++ d){
         double w = dirs[d].w;

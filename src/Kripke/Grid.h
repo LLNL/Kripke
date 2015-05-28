@@ -66,8 +66,11 @@ public:
   std::vector<SubTVec *> phi_out;           // Scattering source
 #ifdef KRIPKE_USE_CUDA
   std::vector<double *> d_phi; //LG  pointers to phi on the device
+  std::vector<double *> d_phi_out; //LG  pointers to phi on the device
   std::vector<double *> d_ell; //LG  pointers to phi on the device
   std::vector<double *> d_ell_plus; //LG  pointers to phi on the device
+  std::vector<double *> d_sigs; //LG  pointers to phi on the device
+  int *d_moment_to_coeff;         // Map from harmonic moments to legendre coefficients
 #endif
 };
 

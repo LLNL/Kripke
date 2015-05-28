@@ -18,6 +18,10 @@ void set_cudaSetDevice(int id){
    cudaSetDevice(id);
 }
 
+void do_cudaDeviceSynchronize(){
+   cudaDeviceSynchronize();
+} 	
+
 
 void set_cudaMemZeroAsync( void *ptr,  size_t size){
    cudaMemsetAsync(ptr,0,size);

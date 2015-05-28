@@ -15,6 +15,8 @@ include(cmake/CUDA.cmake)
 
 set(SYS_TYPE $ENV{SYS_TYPE})
 
+
+
 set(CMAKE_TOOLCHAIN_PATH "./cmake/Toolchain")
 
 set(CMAKE_C_FLAGS -O3)
@@ -31,8 +33,8 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
       set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/chaos_5_x86_64_ib-ic14.cmake")
       include("${CMAKE_TOOLCHAIN_PATH}/chaos_5_x86_64_ib-ic14.cmake")
     elseif(SYS_TYPE MATCHES ppc64el)
-      set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/ppc64el-xlc.cmake")
-      include("${CMAKE_TOOLCHAIN_PATH}/ppc64el-xlc.cmake")
+      set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/ppc64el-gcc.cmake")
+      include("${CMAKE_TOOLCHAIN_PATH}/ppc64el-gcc.cmake")
     endif()
     
   # If the user selected a toolchain (ex. ic14, gcc) then prepend the systype
@@ -100,6 +102,9 @@ bdiv_opt_pkg(esslblas 0 OFF)
 
 #HWLOC
 bdiv_opt_pkg(hwloc 0 ON)
+
+#HPC
+bdiv_opt_pkg(hpclib 0 ON)
 
 
 

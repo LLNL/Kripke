@@ -4,6 +4,7 @@
 
 #include "Kripke/cu_utils.h"
 
+#define LPlusTimes_sweep_combined
 
 #ifdef KRIPKE_USE_CUDA
 int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_ell,
@@ -18,6 +19,27 @@ int cuda_sweep_ZGD( double *rhs, double *phi,
                     int *ii_jj_kk_z_idx, int *h_offset, int *d_offset, double *dx, double *dy, double *dz,
                     int num_zones, int num_directions, int num_groups,
                     int local_imax, int local_jmax, int local_kmax, int Nslices);
+
+
+int cuda_LPlusTimes_sweep_ZGD( double *phi_out, double *ell_plus,
+                    double *psi, double *sigt,  Directions *direction,
+                    double *i_plane, double *j_plane, double *k_plane,
+                    int *ii_jj_kk_z_idx, int *h_offset, int *d_offset, double *dx, double *dy, double *dz,
+                    int num_zones, int num_directions, int num_groups, int nidx,
+                    int local_imax, int local_jmax, int local_kmax, int Nslices);
+
+
+
+int  cuda_scattering_ZGD(int *d_mixed_to_zones, int *d_mixed_material, double *d_mixed_fraction, int *d_mixed_offset,
+                      double *d_phi, double *d_phi_out, double *d_sigs0, double *d_sigs1, double *d_sigs2,
+                      int *moment_to_coeff, int num_mixed, int num_moments, int num_groups, int num_coeff);
+
+
+int  cuda_source_ZGD(int *d_mixed_to_zones, int *d_mixed_material, double *d_mixed_fraction, 
+                    int *d_mixed_offset, double *d_phi_out, 
+                    int total_num_moments,  int num_groups);
+
+
 #endif
 
 
@@ -121,19 +143,15 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
     }
    }
   } // Subdomain
-#ifdef KRIPKE_USE_CUDA
-  if(sweep_mode == SWEEP_GPU){
-      for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
-        double *tphi = grid_data->phi[ds]->ptr();
-        do_cudaMemcpyD2H ( (void *) tphi, (void*) grid_data->d_phi[ds], grid_data->phi[ds]->elements * sizeof(double));
-      }
-    }
-#endif
 
 }
 
 void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
+    #ifdef LPlusTimes_sweep_combined
+      return;
+    #endif
+  
   int nidx = grid_data->total_num_moments;
 
   // Loop over Subdomains
@@ -169,10 +187,13 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
 
       set_cudaMemZeroAsync( (void *) sdom.d_rhs,  (size_t) ( sdom.num_zones * sdom.num_groups * sdom.num_directions ) * sizeof(double));
 
-      cuda_LPlusTimes_ZGD(sdom.d_rhs,sdom.phi_out->ptr(group0, 0, 0), sdom.d_ell_plus,
-                    num_zones, num_groups, num_local_directions, num_local_groups, nidx);
 
-      //do_cudaMemcpyD2H(  (void *)dptr_h_rhs, (void*)  sdom.d_rhs, (size_t) ( sdom.num_zones * sdom.num_groups * sdom.num_directions ) * sizeof(double));
+      //      cuda_LPlusTimes_ZGD(sdom.d_rhs,sdom.phi_out->ptr(group0, 0, 0), sdom.d_ell_plus,
+      //              num_zones, num_groups, num_local_directions, num_local_groups, nidx);
+
+            cuda_LPlusTimes_ZGD(sdom.d_rhs,sdom.d_phi_out, sdom.d_ell_plus,
+                    num_zones, num_groups, num_local_directions, num_local_groups, nidx);      
+
 
   }
 #endif
@@ -237,7 +258,15 @@ void Kernel_3d_ZGD::scattering(Grid_Data *grid_data){
     double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
 
     // Zero out source terms
-    phi_out.clear(0.0);
+
+#ifdef KRIPKE_USE_CUDA
+    if(sweep_mode == SWEEP_GPU)
+       set_cudaMemZeroAsync( (void *) grid_data->d_phi_out[zs], (size_t)(grid_data->phi_out[zs]->elements) * sizeof(double));
+    else
+     phi_out.clear(0.0);
+#else
+     phi_out.clear(0.0);
+#endif
 
     // grab dimensions
     int num_mixed = sdom.mixed_to_zones.size();
@@ -252,6 +281,77 @@ void Kernel_3d_ZGD::scattering(Grid_Data *grid_data){
         sigs1.ptr(),
         sigs2.ptr()
     };
+
+
+#ifdef KRIPKE_USE_CUDA
+ if(sweep_mode == SWEEP_GPU){
+  if (sdom.d_mixed_offset == NULL){
+
+    int Nwarps, max_Nwarps = 480;
+    if (num_mixed < max_Nwarps)
+      Nwarps = num_mixed;
+    else
+      Nwarps = max_Nwarps;
+
+    int * offsets =  sdom.mixed_offset;
+    int chunk_size = (num_mixed + Nwarps - 1)/Nwarps;
+    for (int i = 0; i < Nwarps; ++i){
+      offsets[i] = i*chunk_size;
+      if (offsets[i] > num_mixed)  offsets[i] = num_mixed;
+    }
+
+    for (int i = 1; i < Nwarps; ++i){
+      int shift_back = 0;
+      //zone_start
+      int zone = mixed_to_zones[ offsets[i] ];
+      int zone_m1 = mixed_to_zones[ offsets[i] - 1];
+      while (zone == zone_m1){
+        zone_m1 = mixed_to_zones[ offsets[i] - 1 - (shift_back+1) ];
+        shift_back++;
+//        printf("warp_id = %d, zone = %d, zone_m1 = %d, shift_back = %d\n",i,zone, zone_m1, shift_back);
+      }
+      offsets[i] = offsets[i] - shift_back;
+    }
+    offsets[Nwarps] = num_mixed;
+    for (int i = Nwarps; i <= max_Nwarps; i++)
+       offsets[i+1] = num_mixed;
+
+//    for (int i = 0; i <= Nwarps; ++i)
+//       printf("offsets[%d] = %d\n",i,offsets[i]);
+
+
+//LG need to add validation, to make sure that blocks do not overlap
+    for (int i = 1; i < Nwarps; i++){
+      if (offsets[i] < offsets[i-1])
+        printf("ERROR:  offsets are not properly set up\n" );
+    }
+
+//test if different blocks have the same zone
+
+    for (int i = 0; i < Nwarps; i++){
+      for (int j = offsets[i]; j < offsets[i+1]; ++j){
+        int zone_j =  mixed_to_zones[j];
+        for (int k = offsets[i+1]; k < num_mixed; ++k){
+           int zone_k = mixed_to_zones[k];
+           if (zone_j == zone_k)  printf(" block %d zone %d has a duplicate at location %d \n",i,zone_j,k);
+        }
+      }
+    }
+
+    sdom.d_mixed_offset = (int*) get_cudaMalloc(size_t   (max_Nwarps+1) * sizeof(int)   );
+    do_cudaMemcpyH2D( (void *) (sdom.d_mixed_offset), (void *) offsets, (size_t) (max_Nwarps+1) * sizeof(int));
+  }
+
+  cuda_scattering_ZGD(sdom.d_mixed_to_zones, sdom.d_mixed_material, sdom.d_mixed_fraction, sdom.d_mixed_offset,
+                      sdom.d_phi, sdom.d_phi_out, grid_data->d_sigs[0], grid_data->d_sigs[1], grid_data->d_sigs[2], 
+                      grid_data->d_moment_to_coeff,
+                      sdom.mixed_to_zones.size(), grid_data->total_num_moments, phi.groups, num_coeff);
+ 
+}
+
+#endif
+
+ if(sweep_mode != SWEEP_GPU){
 
     for(int mix = 0;mix < num_mixed;++ mix){
       int zone = mixed_to_zones[mix];
@@ -276,6 +376,9 @@ void Kernel_3d_ZGD::scattering(Grid_Data *grid_data){
         phi_z_g += num_moments;
       }
     }
+
+  }
+
   }
 }
 
@@ -304,18 +407,33 @@ void Kernel_3d_ZGD::source(Grid_Data *grid_data){
     int num_groups = phi_out.groups;
     int num_moments = grid_data->total_num_moments;
 
-    for(int mix = 0;mix < num_mixed;++ mix){
-      int zone = mixed_to_zones[mix];
-      int material = mixed_material[mix];
-      double fraction = mixed_fraction[mix];
+#ifdef KRIPKE_USE_CUDA
+    if(sweep_mode == SWEEP_GPU){
 
-      if(material == 0){
-        double *phi_out_z = phi_out.ptr() + zone*num_moments*num_groups;
-        for(int g = 0;g < num_groups;++ g){
-          phi_out_z[g*num_moments] += 1.0 * fraction;
+    cuda_source_ZGD(sdom.d_mixed_to_zones, sdom.d_mixed_material, sdom.d_mixed_fraction, 
+                    sdom.d_mixed_offset, sdom.d_phi_out, 
+                    grid_data->total_num_moments, phi_out.groups);
+
+    //double *tphi_out = grid_data->phi_out[zs]->ptr();
+    //do_cudaMemcpyD2H ( (void *) tphi_out, (void*) grid_data->d_phi_out[zs], grid_data->phi_out[zs]->elements * sizeof(double));
+    }
+#endif
+
+    if(sweep_mode != SWEEP_GPU){
+
+      for(int mix = 0;mix < num_mixed;++ mix){
+        int material = mixed_material[mix];
+
+        if(material == 0){
+          int zone = mixed_to_zones[mix];
+          double fraction = mixed_fraction[mix];
+          double *phi_out_z = phi_out.ptr() + zone*num_moments*num_groups;
+          for(int g = 0;g < num_groups;++ g){
+            phi_out_z[g*num_moments] += 1.0 * fraction;
+          }
         }
       }
-    }
+    }//end of  "if(sweep_mode != SWEEP_GPU)"
   }
 }
 
@@ -328,6 +446,12 @@ void Kernel_3d_ZGD::source(Grid_Data *grid_data){
   + (local_imax)*(local_jmax)*(k)
 
 void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
+
+  #ifdef LPlusTimes_sweep_combined
+     LPlusTimes_sweep(sdom);
+     return;
+  #endif
+
   int num_directions = sdom->num_directions;
   int num_groups = sdom->num_groups;
   int num_zones = sdom->num_zones;
@@ -531,5 +655,234 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
   }
   // say what we really did
   sweep_mode = SWEEP_SERIAL;
+}
+
+
+void Kernel_3d_ZGD::LPlusTimes_sweep(Subdomain *sdom) {
+
+  int num_directions = sdom->num_directions;
+  int num_groups = sdom->num_groups;
+  int num_zones = sdom->num_zones;
+
+  Directions *direction = sdom->directions;
+
+  int local_imax = sdom->nzones[0];
+  int local_jmax = sdom->nzones[1];
+  int local_kmax = sdom->nzones[2];
+
+  double *dx = &sdom->deltas[0][0];
+  double *dy = &sdom->deltas[1][0];
+  double *dz = &sdom->deltas[2][0];
+
+  // Upwind/Downwind face flux data
+  SubTVec &i_plane = *sdom->plane_data[0];
+  SubTVec &j_plane = *sdom->plane_data[1];
+  SubTVec &k_plane = *sdom->plane_data[2];
+
+  // All directions have same id,jd,kd, since these are all one Direction Set
+  // So pull that information out now
+  Grid_Sweep_Block const &extent = sdom->sweep_block;
+  
+  int *ii_jj_kk_z_idx = extent.ii_jj_kk_z_idx;
+  int *offset         = extent.offset;
+  int Nslices         = extent.Nhyperplanes;
+
+
+
+#ifdef KRIPKE_USE_CUDA
+
+  if(sweep_mode == SWEEP_GPU){
+
+  //LG allocate deltas on GPU
+     if (sdom->d_delta_x == NULL){
+       sdom->d_delta_x = (double*) get_cudaMalloc(size_t   (local_imax+2) * sizeof(double)   );
+       do_cudaMemcpyH2D( (void *) (sdom->d_delta_x), (void *) dx, (size_t) (local_imax+2) * sizeof(double));
+     }
+     if (sdom->d_delta_y == NULL){
+       sdom->d_delta_y = (double*) get_cudaMalloc(size_t   (local_jmax+2) * sizeof(double)   );
+       do_cudaMemcpyH2D( (void *) (sdom->d_delta_y), (void *) dy, (size_t) (local_jmax+2) * sizeof(double));
+     }
+     if (sdom->d_delta_z == NULL){
+       sdom->d_delta_z = (double*) get_cudaMalloc(size_t   (local_kmax+2) * sizeof(double)   );
+       do_cudaMemcpyH2D( (void *) (sdom->d_delta_z), (void *) dz, (size_t) (local_kmax+2) * sizeof(double));
+     }
+
+
+  //LG allocate directions on GPU
+     if ( sdom->d_directions == NULL){
+         sdom->d_directions = (Directions*) get_cudaMalloc((size_t)  num_directions * sizeof(Directions) );
+         do_cudaMemcpyH2D( (void*) sdom->d_directions , (void *)  sdom->directions,  (size_t)   num_directions * sizeof(Directions) );
+     }
+     if ( sdom->d_sigt == NULL){
+        sdom->d_sigt = (double *) get_cudaMalloc((size_t) (num_zones*num_groups) * sizeof(double));
+        do_cudaMemcpyH2D( (void*) sdom->d_sigt,  (void *)  sdom->sigt->ptr(), (size_t) (num_zones*num_groups) * sizeof(double));
+     }
+
+     cuda_LPlusTimes_sweep_ZGD( sdom->d_phi_out, sdom->d_ell_plus,
+                     sdom->psi->ptr(), sdom->d_sigt,  sdom->d_directions,
+                     i_plane.ptr(),j_plane.ptr(),k_plane.ptr(),
+                     extent.d_ii_jj_kk_z_idx, offset, extent.d_offset,
+                     sdom->d_delta_x, sdom->d_delta_y, sdom->d_delta_z,
+                     num_zones, num_directions, num_groups, sdom->ell_plus->groups,
+                     local_imax,local_jmax, local_kmax,
+                     Nslices);
+
+
+
+     // say what we really did
+     sweep_mode = SWEEP_GPU;
+     return;
+  }
+#endif
+
+  if(sweep_mode == SWEEP_HYPERPLANE){
+
+  /*  Perform transport sweep of the grid 1 cell at a time.   */
+#ifdef KRIPKE_USE_OPENMP
+    #pragma omp parallel
+    {
+#endif
+     double rhs_local[num_directions];     
+
+     for (int slice = 0; slice < Nslices; slice++){
+
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp for
+#endif
+
+
+      for (int element = offset[slice]; element < offset[slice+1]; element++){
+        int i    = ii_jj_kk_z_idx[element*4];
+        int j    = ii_jj_kk_z_idx[element*4+1];
+        int k    = ii_jj_kk_z_idx[element*4+2];
+        int z = ii_jj_kk_z_idx[element*4+3];
+        double dxi = dx[i + 1];
+        double dyj = dy[j + 1];
+        double dzk = dz[k + 1];
+        double two_dx = 2.0 / dxi;
+        double two_dy = 2.0 / dyj;
+        double two_dz = 2.0 / dzk;
+
+        double * sigt_z = sdom->sigt->ptr(0, 0, z);
+        double * KRESTRICT phi_out = sdom->phi_out->ptr(0,0, z);
+        int nidx = sdom->ell_plus->groups;
+        double * KRESTRICT ell_plus_ptr = sdom->ell_plus->ptr();
+
+        for (int group = 0; group < num_groups; ++group) {
+              double * KRESTRICT psi_z_g = sdom->psi->ptr(group, 0, z);
+              double * KRESTRICT psi_lf_z_g = i_plane.ptr(group, 0, I_PLANE_INDEX(j, k));
+              double * KRESTRICT psi_fr_z_g = j_plane.ptr(group, 0, J_PLANE_INDEX(i, k));
+              double * KRESTRICT psi_bo_z_g = k_plane.ptr(group, 0, K_PLANE_INDEX(i, j));
+
+   	     double * KRESTRICT ell_plus_d = ell_plus_ptr;
+ 	     for (int d = 0; d < num_directions; d++) {
+                double rhs_acc = 0.0;
+                rhs_local[d] = 0;
+                for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+                  rhs_acc += ell_plus_d[nm_offset + d * nidx] * phi_out[nm_offset + group * nidx];
+                }
+                rhs_local[d] += rhs_acc;				
+              }
+        
+ 		  
+			  
+            for (int d = 0; d < num_directions; ++d) {
+
+              double xcos = direction[d].xcos;
+              double ycos = direction[d].ycos;
+              double zcos = direction[d].zcos;
+
+              double xcos_dxi = xcos * two_dx;
+              double ycos_dyj = ycos * two_dy;
+              double zcos_dzk = zcos * two_dz;
+
+              double psi_lf_z_g_d = psi_lf_z_g[d];
+              double psi_fr_z_g_d = psi_fr_z_g[d];
+              double psi_bo_z_g_d = psi_bo_z_g[d];
+
+              /* Calculate new zonal flux */
+              double psi_z_g_d = (rhs_local[d]
+                  + psi_lf_z_g_d * xcos_dxi
+                  + psi_fr_z_g_d * ycos_dyj
+                  + psi_bo_z_g_d * zcos_dzk)
+                  / (xcos_dxi + ycos_dyj + zcos_dzk + sigt_z[group]);
+
+              psi_z_g[d] = psi_z_g_d;
+
+              /* Apply diamond-difference relationships */
+              psi_lf_z_g[d] = 2.0 * psi_z_g_d - psi_lf_z_g_d;
+              psi_fr_z_g[d] = 2.0 * psi_z_g_d - psi_fr_z_g_d;
+              psi_bo_z_g[d] = 2.0 * psi_z_g_d - psi_bo_z_g_d;
+            }
+          }
+
+      }
+    }
+
+#ifdef KRIPKE_USE_OPENMP
+    }
+#endif
+    // say what we really did
+    sweep_mode = SWEEP_HYPERPLANE;
+    return;
+  }
+
+  // Do the non hyperplane sweep
+  for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
+    double dzk = dz[k + 1];
+    double two_dz = 2.0 / dzk;
+    for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {
+      double dyj = dy[j + 1];
+      double two_dy = 2.0 / dyj;
+      for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
+        double dxi = dx[i + 1];
+        double two_dx = 2.0 / dxi;
+
+        int z = Zonal_INDEX(i, j, k);
+        double * sigt_z = sdom->sigt->ptr(0, 0, z);
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for
+#endif
+        for (int group = 0; group < num_groups; ++group) {
+          double * KRESTRICT psi_z_g = sdom->psi->ptr(group, 0, z);
+          double * KRESTRICT rhs_z_g = sdom->rhs->ptr(group, 0, z);
+
+          double * KRESTRICT psi_lf_z_g = i_plane.ptr(group, 0, I_PLANE_INDEX(j, k));
+          double * KRESTRICT psi_fr_z_g = j_plane.ptr(group, 0, J_PLANE_INDEX(i, k));
+          double * KRESTRICT psi_bo_z_g = k_plane.ptr(group, 0, K_PLANE_INDEX(i, j));
+
+          for (int d = 0; d < num_directions; ++d) {
+
+            double xcos = direction[d].xcos;
+            double ycos = direction[d].ycos;
+            double zcos = direction[d].zcos;
+
+            double zcos_dzk = zcos * two_dz;
+            double ycos_dyj = ycos * two_dy;
+            double xcos_dxi = xcos * two_dx;
+
+            /* Calculate new zonal flux */
+            double psi_z_g_d = (rhs_z_g[d]
+                + psi_lf_z_g[d] * xcos_dxi
+                + psi_fr_z_g[d] * ycos_dyj
+                + psi_bo_z_g[d] * zcos_dzk)
+                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt_z[group]);
+
+            psi_z_g[d] = psi_z_g_d;
+
+            /* Apply diamond-difference relationships */
+            psi_lf_z_g[d] = 2.0 * psi_z_g_d - psi_lf_z_g[d];
+            psi_fr_z_g[d] = 2.0 * psi_z_g_d - psi_fr_z_g[d];
+            psi_bo_z_g[d] = 2.0 * psi_z_g_d - psi_bo_z_g[d];
+          }
+        }
+      }
+    }
+  }
+  // say what we really did
+  sweep_mode = SWEEP_SERIAL;
+
+
+  return ;
 }
 

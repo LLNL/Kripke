@@ -33,6 +33,9 @@
 #include "Kripke/cu_utils.h"
 #endif
 
+#ifdef KRIPKE_USE_HPCLIB
+#include <libhpc.h>
+#endif
 
 
 typedef std::pair<int, int> IntPair;
@@ -248,6 +251,11 @@ int main(int argc, char **argv) {
   set_cudaSetDevice( my_GPU);
 
   }
+#endif
+
+
+#ifdef HPCLIB
+ hpmInit(0,"Kripke");
 #endif
 
   if (myid == 0) {
@@ -632,6 +640,12 @@ int main(int argc, char **argv) {
   /*
    * Cleanup and exit
    */
+
+#ifdef HPCLIB
+ hpmTerminate(0);
+#endif
+
+
   MPI_Finalize();
 #ifdef KRIPKE_USE_PERFTOOLS
   if(perf_tools){

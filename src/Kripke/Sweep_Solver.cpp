@@ -11,12 +11,38 @@
 #include <stdio.h>
 
 
+
 //LG
 #include<Kripke/SubTVec.h>
+
+#ifdef KRIPKE_USE_CUDA
 #include "Kripke/cu_utils.h"
+#endif
 
 #define USE_GPU_SWEEP_ZDG
 #define USE_GPU_SWEEP_ZGD
+
+//#define KRIPKE_USE_CUDA_TIMING
+
+
+void SYNC_GPU(){
+#ifdef KRIPKE_USE_CUDA__
+ do_cudaDeviceSynchronize();
+#else
+  ;
+#endif
+}
+
+
+#include <stddef.h>
+#include <sys/time.h>
+
+double mysecond (void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
+}
 
 
 /**
@@ -40,34 +66,44 @@ int SweepSolver (Grid_Data *grid_data)
      */
 
     // Discrete to Moments transformation
+   
     {
       BLOCK_TIMER(grid_data->timing, LTimes);
       kernel->LTimes(grid_data);
+      SYNC_GPU();
     }
 
     // Compute Scattering Source Term
     {
       BLOCK_TIMER(grid_data->timing, Scattering);
       kernel->scattering(grid_data);
+      SYNC_GPU();
     }
 
     // Compute External Source Term
     {
+      //MPI_Barrier(MPI_COMM_WORLD);
       BLOCK_TIMER(grid_data->timing, Source);
       kernel->source(grid_data);
+      SYNC_GPU();
+      //MPI_Barrier(MPI_COMM_WORLD);
     }
 
     // Moments to Discrete transformation
     {
+      //MPI_Barrier(MPI_COMM_WORLD);
       BLOCK_TIMER(grid_data->timing, LPlusTimes);
       kernel->LPlusTimes(grid_data);
+      SYNC_GPU();
+      //MPI_Barrier(MPI_COMM_WORLD);
     }
 
     //grid_data->particleEdit();
     /*
      * Sweep each Group Set
      */
-    {
+    { 
+      //MPI_Barrier(MPI_COMM_WORLD);
       BLOCK_TIMER(grid_data->timing, Sweep);
 
       if(true){
@@ -95,13 +131,29 @@ int SweepSolver (Grid_Data *grid_data)
           SweepSubdomains(sdom_list, grid_data);
         }
       }
+#ifdef KRIPKE_USE_CUDA_TIMING
+      MPI_Barrier(MPI_COMM_WORLD);
+      SYNC_GPU();
+#endif
     }
 
-    double part = grid_data->particleEdit();
-    if(mpi_rank==0){
-      printf("iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
+    {
+#ifdef KRIPKE_USE_CUDA_TIMING
+      MPI_Barrier(MPI_COMM_WORLD);
+#endif
+      BLOCK_TIMER(grid_data->timing, particleEdit);
+
+      double part = grid_data->particleEdit();
+      if(mpi_rank==0){
+        printf("iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
+      }
+      part_last = part;
+#ifdef KRIPKE_USE_CUDA_TIMING
+      MPI_Barrier(MPI_COMM_WORLD);
+#endif
     }
-    part_last = part;
+
+
   }
   return(0);
 }
@@ -129,7 +181,6 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
       if ( sdom.d_rhs == NULL){ // allocate
          sdom.d_rhs = (double *) get_cudaMalloc((size_t) ( sdom.num_zones * sdom.num_groups * sdom.num_directions) * sizeof(double));
       }
-      //do_cudaMemcpyH2D_Async( (void*)  sdom.d_rhs,  dptr_h_rhs, (size_t) ( sdom.num_zones * sdom.num_groups * sdom.num_directions ) * sizeof(double));
     }
 #endif
 

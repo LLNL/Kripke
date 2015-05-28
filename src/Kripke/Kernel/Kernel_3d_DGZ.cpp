@@ -492,4 +492,7 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
   sweep_mode = SWEEP_SERIAL;
 }
 
+void Kernel_3d_DGZ::LPlusTimes_sweep(Subdomain *sdom) {
+  return ;
+}
 
