@@ -101,10 +101,10 @@ bdiv_opt_pkg(BGPM 20030410 OFF)
 bdiv_opt_pkg(esslblas 0 OFF)
 
 #HWLOC
-bdiv_opt_pkg(hwloc 0 ON)
+bdiv_opt_pkg(hwloc 0 OFF)
 
 #HPC
-bdiv_opt_pkg(hpclib 0 ON)
+bdiv_opt_pkg(hpclib 0 OFF)
 
 
 
