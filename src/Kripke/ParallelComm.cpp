@@ -98,7 +98,6 @@ void ParallelComm::postRecvs(int sdom_id, Subdomain &sdom){
     // compute the tag id of THIS subdomain (tags are always based on destination)
     int tag = computeTag(sdom.upwind[dim].mpi_rank, sdom.upwind[dim].subdomain_id);
 
-
     // Post the recieve
     MPI_Irecv(sdom.plane_data[dim]->ptr(), sdom.plane_data[dim]->elements, MPI_DOUBLE, sdom.upwind[dim].mpi_rank,
       tag, MPI_COMM_WORLD, &recv_requests[recv_requests.size()-1]);
@@ -151,7 +150,7 @@ void ParallelComm::postSends(Subdomain *sdom, double *src_buffers[3]){
     send_requests.push_back(MPI_Request());
 
     // compute the tag id of TARGET subdomain (tags are always based on destination)
-    int tag = computeTag(sdom->downwind[dim].mpi_rank, sdom->downwind[dim].subdomain_id);
+    int tag = computeTag(mpi_rank, sdom->downwind[dim].subdomain_id);
 
     // Post the send
     MPI_Isend(src_buffers[dim], sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
