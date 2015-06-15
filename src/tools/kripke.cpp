@@ -75,7 +75,7 @@ void usage(void){
 #endif
     printf("  --sweep <MODE>         Which sweep implementation to use\n");
     printf("                         Serial, Hyperplane, GPU\n");
-    printf("                         Default:  --sweep serial");
+    printf("                         Default:  --sweep serial\n");
     printf("  --test                 Run Kernel Test instead of solver\n");
     printf("  --zset [x:y:z, ...]    Number of zonesets in x:y:z\n");
     printf("                         Default:  --zst 1:1:1\n");
