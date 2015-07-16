@@ -559,14 +559,21 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
      }
 
 #else
-     cuda_sweep_ZGD( sdom->d_rhs, sdom->phi->ptr(),
-                     sdom->psi->ptr(), sdom->d_sigt,  sdom->d_directions,
-                     i_plane.ptr(),j_plane.ptr(),k_plane.ptr(),
-                     extent.d_ii_jj_kk_z_idx, offset, extent.d_offset,
-                     sdom->d_delta_x, sdom->d_delta_y, sdom->d_delta_z,
-                     num_zones, num_directions, num_groups,
-                     local_imax,local_jmax, local_kmax,
-                     Nslices);
+     if ( sdom->sweep_block.start_i == 0 &&
+	  sdom->sweep_block.start_j == 0 &&
+	  sdom->sweep_block.start_k == 0 ) {
+       cuda_sweep_ZGD( sdom->d_rhs, sdom->phi->ptr(),
+		       sdom->psi->ptr(), sdom->d_sigt,  sdom->d_directions,
+		       i_plane.ptr(),j_plane.ptr(),k_plane.ptr(),
+		       extent.d_ii_jj_kk_z_idx, offset, extent.d_offset,
+		       sdom->d_delta_x, sdom->d_delta_y, sdom->d_delta_z,
+		       num_zones, num_directions, num_groups,
+		       local_imax,local_jmax, local_kmax,
+		       Nslices);
+     }
+     else {
+       printf ("did NOT run a sweep \n");
+     }
 #endif
 
      // say what we really did
@@ -576,6 +583,11 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
 #endif
 
   if(sweep_mode == SWEEP_HYPERPLANE){
+
+    if ( sdom->sweep_block.start_i == 0 &&
+	 sdom->sweep_block.start_j == 0 &&
+	 sdom->sweep_block.start_k == 0 ) {
+      
 
   /*  Perform transport sweep of the grid 1 cell at a time.   */
 #ifdef KRIPKE_USE_OPENMP
@@ -639,6 +651,7 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
           }
 
       }
+    }
     }
 
 #ifdef KRIPKE_USE_OPENMP

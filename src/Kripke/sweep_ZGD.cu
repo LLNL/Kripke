@@ -487,8 +487,10 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
   // setup space to exchange j, k fluxes in SMEM  - per block
   extern __shared__ double smem[];
  
-  double* smem_flux_j = (double*) smem;
-  double* smem_flux_k = (double*) &smem_flux_j[1024];
+  //double * __volatile__ smem_flux_j = (double*) smem;                   // __volatile__ is required for cc10?
+  //double * __volatile__  smem_flux_k = (double*) &smem_flux_j[1024];
+  double * smem_flux_j = (double*) smem;
+  double * smem_flux_k = (double*) &smem_flux_j[1024];
 
   int i = 0;                                                        // always start out at the i=0 plane
 
@@ -517,11 +519,10 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
   int z;       
   const double * block_sigt = NULL;  
   const double * block_rhs = NULL;    // pointer to rhs data
-  double * block_psi;    // pointer to psi data
+  double * __restrict__ block_psi;    // pointer to psi data
 
   // load in the incoming i-plane flux from GMEM for each thread
   flux_i = flux_boundary_i [dir_grp*(j+k*local_jmax) + group*num_directions + d ];
-
 
   // initialize the pointers to GMEM data
   z = j*local_imax + k*local_imax*local_jmax + i;
@@ -540,6 +541,7 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
     // master sync - basically between hyperplanes - required to ensure that all flux data is in SMEM.
     // Significant performance limiter.  Removing this gives a 20% performance boost.
     __syncthreads();
+    __threadfence_block();    // appears to help performance
 
     // check to see if the current zone is in the current hyperplane
     if ( kBlock < nBlocks_k && hplane >= jj + kk ) {
@@ -550,7 +552,7 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
       } 
       else {
 	// get flux_j from one block to the side in SMEM
-	flux_j = smem_flux_j[16*(jj+kk*8-1)+dd];
+	flux_j = smem_flux_j[16*(kk+jj*8-8)+dd];
       }
       
       if ( kk == 0 ) {
@@ -596,7 +598,7 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
       }
       else {
 	// send flux_j to SMEM
-	smem_flux_j[16*(jj+kk*8)+dd] = flux_j;
+	smem_flux_j[16*(kk+jj*8)+dd] = flux_j;
       }
 
       if ( kk == 7 ) {
@@ -626,12 +628,6 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
       	j += 8;                                          // increment to the same jj in the next j-block
 	jBlock++;                                       
  
-	// update rhs, psi, sigt pointers to GMEM
-	z = j*local_imax + k*local_imax*local_jmax + i;
-	block_sigt = &d_sigt[z*num_groups+group];
-	block_rhs = &d_rhs[z*dir_grp + gd];              // pointer to rhs data
-	block_psi = &d_psi[z*dir_grp + gd];              // pointer to psi data
-
 	// handle reaching the end of the j-domain
 	if ( j >= local_jmax ) {
 	  j = jj;
@@ -639,6 +635,12 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
 	  jBlock = 0;
 	  kBlock++;
 	}
+
+	// update rhs, psi, sigt pointers to GMEM
+	z = j*local_imax + k*local_imax*local_jmax + i;
+	block_sigt = &d_sigt[z*num_groups+group];
+	block_rhs = &d_rhs[z*dir_grp + gd];              // pointer to rhs data
+	block_psi = &d_psi[z*dir_grp + gd];              // pointer to psi data
 
 	// load the input flux_i for the new 8x8 block.
 	flux_i = flux_boundary_i [dir_grp*(j+k*local_jmax) + group*num_directions + d ];
@@ -863,10 +865,14 @@ int cuda_sweep_ZGD_fluxRegisters ( const int local_imax,
   float time_ms, time_s;
   cudaEventRecord(start);
   
+  cudaDeviceSynchronize();
+
   for ( int kernel=0; kernel<nKernels; kernel++ ) {
 
+    //cudaDeviceSynchronize();
+
     sweep_over_hyperplane_ZGD_fluxRegisters 
-      <<< 1, threadsPerBlock, 17*1024, sweepstreams[kernel%32] >>> 
+      <<< 1, threadsPerBlock, 16*1024, sweepstreams[kernel%32] >>> 
       ( nBlocks_j,
 	nBlocks_k,
 	i_inc,
