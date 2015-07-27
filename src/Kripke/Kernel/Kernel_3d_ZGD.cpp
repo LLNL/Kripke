@@ -4,7 +4,9 @@
 
 #include "Kripke/cu_utils.h"
 
-#define LPlusTimes_sweep_combined
+#define KRIPKE_ZGD_FLUX_REGISTERS
+
+// #define LPlusTimes_sweep_combined
 
 #ifdef KRIPKE_USE_CUDA
 int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_ell,
@@ -20,6 +22,26 @@ int cuda_sweep_ZGD( double *rhs, double *phi,
                     int num_zones, int num_directions, int num_groups,
                     int local_imax, int local_jmax, int local_kmax, int Nslices);
 
+int cuda_sweep_ZGD_fluxRegisters ( const int local_imax,
+				   const int local_jmax,
+				   const int local_kmax,
+				   const int num_zones,
+				   const int num_directions,
+				   const int num_groups,
+				   const double * __restrict__ d_rhs,
+				   const double * __restrict__ d_sigt,
+				   const Directions * __restrict__ d_directions,
+				   const double * __restrict__ d_dx,
+				   const double * __restrict__ d_dy,
+				   const double * __restrict__ d_dz,
+				   double * h_psi,
+				   double * h_i_plane,
+				   double * h_j_plane,
+				   double * h_k_plane,
+				   int i_inc,
+				   int j_inc,
+				   int k_inc
+				   );
 
 int cuda_LPlusTimes_sweep_ZGD( double *phi_out, double *ell_plus,
                     double *psi, double *sigt,  Directions *direction,
@@ -510,16 +532,49 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
         do_cudaMemcpyH2D( (void*) sdom->d_sigt,  (void *)  sdom->sigt->ptr(), (size_t) (num_zones*num_groups) * sizeof(double));
      }
 
-     cuda_sweep_ZGD( sdom->d_rhs, sdom->phi->ptr(),
-                     sdom->psi->ptr(), sdom->d_sigt,  sdom->d_directions,
-                     i_plane.ptr(),j_plane.ptr(),k_plane.ptr(),
-                     extent.d_ii_jj_kk_z_idx, offset, extent.d_offset,
-                     sdom->d_delta_x, sdom->d_delta_y, sdom->d_delta_z,
-                     num_zones, num_directions, num_groups,
-                     local_imax,local_jmax, local_kmax,
-                     Nslices);
+#ifdef  KRIPKE_ZGD_FLUX_REGISTERS
+     if ( sdom->sweep_block.start_i == 0 &&
+	  sdom->sweep_block.start_j == 0 &&
+	  sdom->sweep_block.start_k == 0 ) {
+       cuda_sweep_ZGD_fluxRegisters ( local_imax,
+				      local_jmax,
+				      local_kmax,
+				      num_zones,
+				      num_directions,
+				      num_groups,
+				      sdom->d_rhs,
+				      sdom->d_sigt,
+				      sdom->d_directions,
+				      sdom->d_delta_x,
+				      sdom->d_delta_y,
+				      sdom->d_delta_z,
+				      sdom->psi->ptr(),
+				      i_plane.ptr(),
+				      j_plane.ptr(),
+				      k_plane.ptr(),
+				      sdom->sweep_block.start_i,
+				      sdom->sweep_block.start_j,
+				      sdom->sweep_block.start_k
+				      );
+     }
 
-
+#else
+     if ( sdom->sweep_block.start_i == 0 &&
+	  sdom->sweep_block.start_j == 0 &&
+	  sdom->sweep_block.start_k == 0 ) {
+       cuda_sweep_ZGD( sdom->d_rhs, sdom->phi->ptr(),
+		       sdom->psi->ptr(), sdom->d_sigt,  sdom->d_directions,
+		       i_plane.ptr(),j_plane.ptr(),k_plane.ptr(),
+		       extent.d_ii_jj_kk_z_idx, offset, extent.d_offset,
+		       sdom->d_delta_x, sdom->d_delta_y, sdom->d_delta_z,
+		       num_zones, num_directions, num_groups,
+		       local_imax,local_jmax, local_kmax,
+		       Nslices);
+     }
+     else {
+       printf ("did NOT run a sweep \n");
+     }
+#endif
 
      // say what we really did
      sweep_mode = SWEEP_GPU;
@@ -528,6 +583,11 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
 #endif
 
   if(sweep_mode == SWEEP_HYPERPLANE){
+
+    if ( sdom->sweep_block.start_i == 0 &&
+	 sdom->sweep_block.start_j == 0 &&
+	 sdom->sweep_block.start_k == 0 ) {
+      
 
   /*  Perform transport sweep of the grid 1 cell at a time.   */
 #ifdef KRIPKE_USE_OPENMP
@@ -591,6 +651,7 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
           }
 
       }
+    }
     }
 
 #ifdef KRIPKE_USE_OPENMP
