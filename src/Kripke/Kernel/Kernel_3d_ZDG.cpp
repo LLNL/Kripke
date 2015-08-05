@@ -15,7 +15,7 @@
 #include <libhpc.h>
 #endif
 
-#define LPlusTimes_sweep_combined
+//#define LPlusTimes_sweep_combined
 
 //#define CPU_TIMER
 

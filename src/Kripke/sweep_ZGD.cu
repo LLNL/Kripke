@@ -566,14 +566,14 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
 
       // calculate the new zonal flux
       double psi_z_g_d = ( ( 
-			    //*block_rhs
-			    __ldg(block_rhs)
+			    *block_rhs
+			    //__ldg(block_rhs)
 			    + flux_i * xcos_dxi
 			    + flux_j * ycos_dyj
 			    + flux_k * zcos_dzk ) / 
 			   ( 
-			    //*block_sigt 
-			    __ldg(block_sigt) 
+			    *block_sigt 
+			    //__ldg(block_sigt) 
 			    + xcos_dxi 
 			    + ycos_dyj  
 			    + zcos_dzk )  
