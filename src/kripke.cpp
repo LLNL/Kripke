@@ -377,9 +377,11 @@ int main(int argc, char **argv) {
     else if(opt == "--test"){
       test = true;
     }
+#ifdef KRIPKE_USE_PAPI
     else if(opt == "--papi"){
       papi_names = split(cmd.pop(), ',');
     }
+#endif
     else if(opt == "--gperf"){
       perf_tools = true;
     }
@@ -408,6 +410,19 @@ int main(int argc, char **argv) {
           printf("OpenMP total threads:  %d\n", num_threads*num_tasks);
         }
     }
+#endif
+
+#ifdef KRIPKE_USE_PAPI
+    printf("PAPI Counters:         ");
+    if(papi_names.size() > 0){
+      for(int i = 0;i < papi_names.size();++ i){
+        printf("%s ", papi_names[i].c_str());
+      }
+    }
+    else{
+      printf("<none>");
+    }
+    printf("\n");
 #endif
     printf("Output File:           %s\n", outfile.c_str());
     printf("Processors:            %d x %d x %d\n", nprocs[0], nprocs[1], nprocs[2]);

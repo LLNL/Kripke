@@ -2,47 +2,85 @@ cmake_minimum_required(VERSION 3.0)
 
 project(KRIPKE)
 
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules" ${CMAKE_MODULE_PATH})
+message(STATUS ${CMAKE_MODULE_PATH})
 
-find_package(MPI)
-if(MPI_FOUND)
-  include_directories(${MPI_INCLUDE_PATH})
-  set(KRIPKE_LIBS ${KRIPKE_LIBS} ${MPI_LIBRARIES})
-  
-  # Dsplay details
-  message(STATUS "MPI C++ Compiler Flags: ${MPI_CXX_COMPILE_FLAGS}")
-  message(STATUS "MPI C++ Include Paths: ${MPI_CXX_INCLUDE_PATH}")
-  message(STATUS "MPI C++ Linker Flags: ${MPI_CXX_LINK_FLAGS}")
-  message(STATUS "MPI C++ Libraries: ${MPI_CXX_LIBRARIES}")  
+
+# MPI Support (Required)
+find_package(MPI REQUIRED)
+include_directories(${MPI_INCLUDE_PATH})
+set(KRIPKE_LIBS ${KRIPKE_LIBS} ${MPI_LIBRARIES})
+
+
+# OpenMP Support (Optional)
+if(ENABLE_OPENMP)
+  find_package(OpenMP REQUIRED)
+  if(OPENMP_FOUND)
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS})
+    add_definitions (-DKRIPKE_USE_OPENMP)
+    message(STATUS "OpenMP Enabled")
+  else()
+    message(WARNING "OpenMP NOT FOUND")
+  endif()
 endif()
 
-find_package(OpenMP)
 
-set(CPACK_PACKAGE_VERSION_MAJOR "1")
-set(CPACK_PACKAGE_VERSION_MINOR "1")
-set(CPACK_PACKAGE_VERSION_PATCH "0")
-set(CPACK_SOURCE_GENERATOR "TGZ")
-set(CPACK_SOURCE_IGNORE_FILES "tarball.py;kripke-tarball;.git;.cproject;.project;${CPACK_SOURCE_IGNORE_FILES}")
-include(CPack)
+# LLNL's Silo file support (Optional)
+if(ENABLE_SILO)
+  find_package(Silo)
+  if(Silo_FOUND)
+    add_definitions (-DKRIPKE_USE_SILO)
+    include_directories(${Silo_INCLUDE_DIRS})
+    set(KRIPKE_LIBS ${KRIPKE_LIBS} ${Silo_LIBRARIES})
+    message(STATUS "Silo Enabled")
+  else()
+    message(WARNING "Silo NOT FOUND")
+  endif()
+endif()
 
-message(STATUS "Selected Build Type ${CMAKE_BUILD_TYPE}")
-message(STATUS "Selected C++ Compiler ${CMAKE_CXX_COMPILER}")
-message(STATUS "Selected C++ Flags: ${CMAKE_CXX_FLAGS}")
-message(STATUS "Selected BDIV Package Path ${PKG_PATH}")
+
+# PAPI Support for Hardware Counters (Optional)
+if(ENABLE_PAPI)
+  find_package(PAPI)
+  if(PAPI_FOUND)
+    add_definitions(-DKRIPKE_USE_PAPI)
+    include_directories(${PAPI_INCLUDE_DIRS})
+    set(KRIPKE_LIBS ${KRIPKE_LIBS} ${PAPI_LIBRARIES})
+    message(STATUS "PAPI Enabled")
+  else()
+    message(WARNING "PAPI NOT FOUND")
+  endif()
+endif()
 
 
-#
-# External libraries 
-#  
+# TCMalloc Support for better malloc/profiling (Optional)
+if(ENABLE_TCMALLOC)
+  find_package(TCMalloc)
+  if(TCMalloc_FOUND)
+    add_definitions(-DKRIPKE_USE_TCMALLOC)
+    include_directories(${TCMalloc_INCLUDE_DIRS})
+    set(KRIPKE_LIBS ${KRIPKE_LIBS} ${TCMalloc_LIBRARIES})
+    message(STATUS "TCMalloc Enabled")
+  else()
+    message(WARNING "TCMalloc NOT FOUND")
+  endif()
+endif()
 
-# Typically used (turned on by default)
-#bdiv_opt_pkg(tcmalloc 0 OFF)
+
+
+# Tarball Creation Support
+if(ENABLE_CPACK)
+  set(CPACK_PACKAGE_VERSION_MAJOR "1")
+  set(CPACK_PACKAGE_VERSION_MINOR "1")
+  set(CPACK_PACKAGE_VERSION_PATCH "0")
+  set(CPACK_SOURCE_GENERATOR "TGZ")
+  set(CPACK_SOURCE_IGNORE_FILES "tarball.py;kripke-tarball;.git;.cproject;.project;${CPACK_SOURCE_IGNORE_FILES}")
+  include(CPack)
+endif()
+
 
 # Optional 
-#bdiv_opt_pkg(memP 0.0 OFF)
-  #bdiv_opt_pkg(papi 4.2.0 OFF)
 #bdiv_opt_pkg(perftools 0 OFF)
-#bdiv_opt_pkg(SILO 4.9 OFF)
-#bdiv_opt_pkg(HDF5 gnu-serial-1.8.8 OFF)
 
 # BG/Q Specific
 #bdiv_opt_pkg(BGPM 20030410 OFF)
@@ -51,9 +89,6 @@ message(STATUS "Selected BDIV Package Path ${PKG_PATH}")
 #
 # Other Build Options
 # 
-
-# OpenMP build option
-#include(cmake/OpenMP.cmake)
 
 # Traverse subdirectories
 include_directories(src)
