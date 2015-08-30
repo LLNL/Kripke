@@ -1,48 +1,21 @@
-cmake_minimum_required(VERSION 2.8)
-
-#
-# Figure out toolchain files to use in this build
-#
-
-
-set(SYS_TYPE $ENV{SYS_TYPE})
-
-if(NOT DEFINED SYS_TYPE)
-  set(SYS_TYPE linux)
-endif()
-
-set(CMAKE_TOOLCHAIN_PATH "./cmake/Toolchain")
-
-if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-
-  # If the user didn't specify a toolchain, then default the toolchain file
-  if(NOT DEFINED TOOLCHAIN)  
-    if(SYS_TYPE MATCHES bgqos_0)
-      set(TOOLCHAIN "xlc")
-    elseif(SYS_TYPE MATCHES chaos_5_x86_64_ib)
-      set(TOOLCHAIN "ic14")
-    else()
-      set(TOOLCHAIN "gcc")
-    endif()
-  endif()    
-  set(CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_PATH}/${SYS_TYPE}-${TOOLCHAIN}.cmake")
-  
-endif()
-
-message(STATUS "Selected toolchain file ${CMAKE_TOOLCHAIN_FILE}")
-include(${CMAKE_TOOLCHAIN_FILE})
-
-
-#
-# Invoke the project, choose language, display some debug info
-#
+cmake_minimum_required(VERSION 3.0)
 
 project(KRIPKE)
 
-# Re-incluing the toolchain file, which allows us to modify the compiler flags
-# since all of the flags are lost after calling project()
-include(${CMAKE_TOOLCHAIN_FILE})
 
+find_package(MPI)
+if(MPI_FOUND)
+  include_directories(${MPI_INCLUDE_PATH})
+  set(KRIPKE_LIBS ${KRIPKE_LIBS} ${MPI_LIBRARIES})
+  
+  # Dsplay details
+  message(STATUS "MPI C++ Compiler Flags: ${MPI_CXX_COMPILE_FLAGS}")
+  message(STATUS "MPI C++ Include Paths: ${MPI_CXX_INCLUDE_PATH}")
+  message(STATUS "MPI C++ Linker Flags: ${MPI_CXX_LINK_FLAGS}")
+  message(STATUS "MPI C++ Libraries: ${MPI_CXX_LIBRARIES}")  
+endif()
+
+find_package(OpenMP)
 
 set(CPACK_PACKAGE_VERSION_MAJOR "1")
 set(CPACK_PACKAGE_VERSION_MINOR "1")
@@ -51,36 +24,28 @@ set(CPACK_SOURCE_GENERATOR "TGZ")
 set(CPACK_SOURCE_IGNORE_FILES "tarball.py;kripke-tarball;.git;.cproject;.project;${CPACK_SOURCE_IGNORE_FILES}")
 include(CPack)
 
-#set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_BUILD_TYPE Release)
-
 message(STATUS "Selected Build Type ${CMAKE_BUILD_TYPE}")
 message(STATUS "Selected C++ Compiler ${CMAKE_CXX_COMPILER}")
 message(STATUS "Selected C++ Flags: ${CMAKE_CXX_FLAGS}")
 message(STATUS "Selected BDIV Package Path ${PKG_PATH}")
 
 
-
 #
-# Libraries to include
+# External libraries 
 #  
 
-# Include macros to aid in BDIV packages
-set(BDIV_LIBRARY_PATH "${KRIPKE_SOURCE_DIR}/cmake/Library")
-include(cmake/bdiv_pkg.cmake)
-
 # Typically used (turned on by default)
-bdiv_opt_pkg(tcmalloc 0 OFF)
+#bdiv_opt_pkg(tcmalloc 0 OFF)
 
 # Optional 
-bdiv_opt_pkg(memP 0.0 OFF)
-bdiv_opt_pkg(papi 4.2.0 OFF)
-bdiv_opt_pkg(perftools 0 OFF)
-bdiv_opt_pkg(SILO 4.9 OFF)
-bdiv_opt_pkg(HDF5 gnu-serial-1.8.8 OFF)
+#bdiv_opt_pkg(memP 0.0 OFF)
+  #bdiv_opt_pkg(papi 4.2.0 OFF)
+#bdiv_opt_pkg(perftools 0 OFF)
+#bdiv_opt_pkg(SILO 4.9 OFF)
+#bdiv_opt_pkg(HDF5 gnu-serial-1.8.8 OFF)
 
 # BG/Q Specific
-bdiv_opt_pkg(BGPM 20030410 OFF)
+#bdiv_opt_pkg(BGPM 20030410 OFF)
 
 
 #
@@ -88,16 +53,15 @@ bdiv_opt_pkg(BGPM 20030410 OFF)
 # 
 
 # OpenMP build option
-include(cmake/OpenMP.cmake)
+#include(cmake/OpenMP.cmake)
 
-
-#
-# Process build files for Kripke
-#
-set(KRIPKE_LIBS kripkelib ${BDIV_LIBS})
-set(KRIPKE_LIBS ${KRIPKE_LIBS} ${KRIPKE_LIBS})
-
-
-
+# Traverse subdirectories
+include_directories(src)
 add_subdirectory(src)
+
+# Setup the kripke target
+add_executable(kripke "src/kripke.cpp")
+target_link_libraries(kripke ${KRIPKE_LIBS} ${KRIPKE_LIBS})
+
+
 

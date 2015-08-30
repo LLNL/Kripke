@@ -1,7 +1,7 @@
 /**
  * This file contains all of the correctness checking code for Kripke.
  */
-#include "testKernels.h"
+#include <Kripke/Test/TestKernels.h>
 
 #include <Kripke.h>
 #include <Kripke/Grid.h>

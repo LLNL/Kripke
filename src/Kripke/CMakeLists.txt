@@ -1,23 +1,27 @@
+include_directories(..)
 
-set(KRIPKE_SOURCE ${KRIPKE_SOURCE}
-  Kripke/Directions.cpp  
-  Kripke/Grid.cpp  
-  Kripke/Kernel.cpp  
-  Kripke/Layout.cpp
-  Kripke/Subdomain.cpp  
-  Kripke/Sweep_Solver.cpp
-  Kripke/ParallelComm.cpp  
-  Kripke/Timing.cpp  
+add_library(lib_kripke  
+  Directions.cpp  
+  Grid.cpp  
+  Kernel.cpp  
+  Layout.cpp
+  Subdomain.cpp  
+  Sweep_Solver.cpp
+  ParallelComm.cpp  
+  Timing.cpp  
     
-  Kripke/Kernel/Kernel_3d_GDZ.cpp
-  Kripke/Kernel/Kernel_3d_DGZ.cpp
-  Kripke/Kernel/Kernel_3d_ZDG.cpp
-  Kripke/Kernel/Kernel_3d_DZG.cpp
-  Kripke/Kernel/Kernel_3d_ZGD.cpp
-  Kripke/Kernel/Kernel_3d_GZD.cpp
+  Kernel/Kernel_3d_GDZ.cpp
+  Kernel/Kernel_3d_DGZ.cpp
+  Kernel/Kernel_3d_ZDG.cpp
+  Kernel/Kernel_3d_DZG.cpp
+  Kernel/Kernel_3d_ZGD.cpp
+  Kernel/Kernel_3d_GZD.cpp
   
-  Kripke/ParallelComm/BlockJacobiComm.cpp
-  Kripke/ParallelComm/SweepComm.cpp 
+  ParallelComm/BlockJacobiComm.cpp
+  ParallelComm/SweepComm.cpp 
+  
+  Test/TestKernels.cpp
 )
+
                                                                                                           
-set(KRIPKE_SOURCE ${KRIPKE_SOURCE} PARENT_SCOPE) 
+set(KRIPKE_LIBS ${KRIPKE_LIBS} lib_kripke PARENT_SCOPE) 

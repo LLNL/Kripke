@@ -1,7 +1,7 @@
 #include<Kripke.h>
 #include<Kripke/Input_Variables.h>
 #include<Kripke/Grid.h>
-#include"testKernels.h"
+#include<Kripke/Test/TestKernels.h>
 #include<stdio.h>
 #include<string.h>
 #include<mpi.h>

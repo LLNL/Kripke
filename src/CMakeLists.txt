@@ -2,6 +2,4 @@ include_directories(.)
 
 add_subdirectory(Kripke)
 
-add_library(kripkelib STATIC ${KRIPKE_SOURCE})
-
-add_subdirectory(tools)
+set(KRIPKE_LIBS ${KRIPKE_LIBS} PARENT_SCOPE)
