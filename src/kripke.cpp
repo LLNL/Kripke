@@ -34,69 +34,86 @@ void usage(void){
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   if(myid == 0){
-    printf("Usage:  [srun ...] kripke [options...]\n");
+    printf("Usage:  [srun ...] kripke [options...]\n\n");
     printf("Problem Size Options:\n");
+    printf("---------------------\n");
     
-    printf("  --dir [D:d,D:d,...]    List of dirsets and dirs/set pairs\n");
-    printf("                         Default:  --dir 1:8\n");
-    printf("                         Example:  --dir 1:4,2:2,4:1\n");
-    printf("  --grp [G:g,G:g,...]    List of grpsets and groups/set pairs\n");
-    printf("                         Default:  --grp 1:32\n");
+    printf("  --groups <ngroups>     Number of energy groups\n");
+    printf("                         Default:  --groups 32\n\n");
+    
     printf("  --legendre <lorder>    Scattering Legendre Expansion Order (0, 1, ...)\n");
-    printf("                         Default:  --legendre 2\n");
+    printf("                         Default:  --legendre 4\n\n");
     
-    printf("  --quad <polar:azim>    Use a Gauss-Legendre Product Quadrature\n");
-    printf("                         with the specified number of polar and azimuthal points\n");
-    printf("                         Default:  --quad 0,0  [disabled, use dummy S2]\n");
+    printf("  --quad [<ndirs>|<polar>:<azim>]\n");
+    printf("                         Define the quadrature set to use\n");
+    printf("                         Either a fake S2 with <ndirs> points,\n");
+    printf("                         OR Gauss-Legendre with <polar> by <azim> points\n");
+    printf("                         Default:  --quad 96\n\n");
+    
     
     
     printf("  --zones <x,y,z>        Number of zones in x,y,z\n");
-    printf("                         Default:  --zones 16,16,16\n");
+    printf("                         Default:  --zones 16,16,16\n\n");
     
     
     printf("\n");
     printf("On-Node Options:\n");
-    printf("  --nest [n,n,...]       List of data nestings\n");
-    printf("                         Default:  --nest DGZ\n");
-    printf("                         Example:  --nest DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
+    printf("----------------\n");
+    printf("  --nest <NEST>          Loop nesting order (and data layout)\n");
+    printf("                         Available: DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
+    printf("                         Default:   --nest DGZ\n\n");
     
     
     printf("\n");
     printf("Parallel Decomposition Options:\n");
+    printf("-------------------------------\n");
     printf("  --layout <lout>        Layout of spatial subdomains over mpi ranks\n");
     printf("                         0: Blocked: local zone sets are adjacent\n");
     printf("                         1: Scattered: adjacent zone sets are distributed\n");
-    printf("                         Default: --layout 0\n");
+    printf("                         Default: --layout 0\n\n");
     
     
     printf("  --procs <npx,npy,npz>  Number of MPI ranks in each spatial dimension\n");
-    printf("                         Default:  --procs 1,1,1\n");
+    printf("                         Default:  --procs 1,1,1\n\n");
     
-    printf("  --zset [x:y:z, ...]    Number of zonesets in x:y:z\n");
-    printf("                         Default:  --zst 1:1:1\n");
+    printf("  --dset <ds>            Number of direction-sets\n");
+    printf("                         Must be a factor of 8, and divide evenly the number\n");
+    printf("                         of quadrature points\n");
+    printf("                         Default:  --dset 8\n\n");
+    
+    printf("  --gset <gs>            Number of energy group-sets\n");
+    printf("                         Must divide evenly the number energy groups\n");
+    printf("                         Default:  --gset 1\n\n");
+    
+    printf("  --zset <zx>:<zy>:<zz>  Number of zone-sets in x:y:z\n");
+    printf("                         Default:  --zset 1:1:1\n\n");
     
     printf("\n");
     printf("Solver Options:\n");
+    printf("---------------\n");
     
-    printf("  --niter <NITER>        Number of solver iterations to run (default: 10)\n");
+    printf("  --niter <NITER>        Number of solver iterations to run\n");
+    printf("                         Default:  --niter 10\n\n");
+    
     printf("  --pmethod <method>     Parallel solver method\n");
     printf("                         sweep: Full up-wind sweep (wavefront algorithm)\n");
     printf("                         bj: Block Jacobi\n");
-    printf("                         Default: --pmethod sweep\n");
+    printf("                         Default: --pmethod sweep\n\n");
     
     printf("\n");
     printf("Output and Testing Options:\n");
+    printf("---------------------------\n");
 #ifdef KRIPKE_USE_PERFTOOLS    
-    printf("  --gperf                Turn on Google Perftools profiling\n");
+    printf("  --gperf                Turn on Google Perftools profiling\n\n");
 #endif
 
-    printf("  --out <OUTFILE>        Optional output file (default: none)\n");
+    printf("  --out <OUTFILE>        Optional output file (default: none)\n\n");
     
-    printf("  --restart <point>      Restart at given point\n");
+    printf("  --restart <point>      Restart at given point\n\n");
 #ifdef KRIPKE_USE_SILO
-    printf("  --silo <BASENAME>      Create SILO output files\n");
+    printf("  --silo <BASENAME>      Create SILO output files\n\n");
 #endif
-    printf("  --test                 Run Kernel Test instead of solver\n");
+    printf("  --test                 Run Kernel Test instead of solver\n\n");
     printf("\n");
   }
   MPI_Finalize();
@@ -236,9 +253,19 @@ int main(int argc, char **argv) {
     /* Print out a banner message along with a version number. */
     printf("\n");
     printf("---------------------------------------------------------\n");
-    printf("------------------- KRIPKE VERSION 1.0 ------------------\n");
+    printf("------------------- KRIPKE VERSION 1.1 ------------------\n");
     printf("---------------------------------------------------------\n");
-
+    printf("This work was produced at the Lawrence Livermore National\n");
+    printf("Laboratory (LLNL) under contract no. DE-AC-52-07NA27344\n");
+    printf("(Contract 44) between the U.S. Department of Energy (DOE)\n");
+    printf("and Lawrence Livermore National Security, LLC (LLNS) for\n");
+    printf("the operation of LLNL. The rights of the Federal\n");
+    printf("Government are reserved under Contract 44.\n");
+    printf("\n");
+    printf("Main Contact: Adam J. Kunen <kunen1@llnl.gov>\n");
+    printf("---------------------------------------------------------\n\n");
+   
+   
     /* Print out some information about how OpenMP threads are being mapped
      * to CPU cores.
      */
@@ -255,7 +282,6 @@ int main(int argc, char **argv) {
     }
 #endif
   }
-
 
   /*
    * Default input parameters
@@ -287,12 +313,7 @@ int main(int argc, char **argv) {
 
   std::vector<Nesting_Order> nest_list;
   nest_list.push_back(NEST_DGZ);
-  /*nest_list.push_back(NEST_DZG);
-  nest_list.push_back(NEST_GDZ);
-  nest_list.push_back(NEST_GZD);
-  nest_list.push_back(NEST_ZDG);
-  nest_list.push_back(NEST_ZGD);
-*/
+
   /*
    * Parse command line
    */
@@ -545,6 +566,7 @@ int main(int argc, char **argv) {
     ivars.sigt[mat] = sigt[mat];
     ivars.sigs[mat] = sigs[mat];
   }
+
   ivars.layout_pattern = layout;
   ivars.quad_num_polar = num_polar;
   ivars.quad_num_azimuthal = num_azimuthal;
