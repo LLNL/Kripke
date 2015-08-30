@@ -26,13 +26,13 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   kernel = createKernel(input_vars->nesting, 3);
 
   // Create quadrature set (for all directions)
-  int total_num_directions = input_vars->num_dirsets_per_octant * input_vars->num_dirs_per_dirset;
+  int total_num_directions = input_vars->num_directions;
   InitDirections(this, input_vars);
 
-  num_direction_sets = 8*input_vars->num_dirsets_per_octant;
-  num_directions_per_set = input_vars->num_dirs_per_dirset;
+  num_direction_sets = input_vars->num_dirsets;
+  num_directions_per_set = total_num_directions/num_direction_sets;
   num_group_sets = input_vars->num_groupsets;
-  num_groups_per_set = input_vars->num_groups_per_groupset;
+  num_groups_per_set = input_vars->num_groups/ num_group_sets;
   num_zone_sets = 1;
   for(int dim = 0;dim < 3;++ dim){
     num_zone_sets *= input_vars->num_zonesets_dim[dim];

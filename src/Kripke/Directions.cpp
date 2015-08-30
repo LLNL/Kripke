@@ -59,9 +59,8 @@ void InitDirections(Grid_Data *grid_data, Input_Variables *input_vars)
   std::vector<Directions> &directions = grid_data->directions;
 
   // Get set description from user
-  int num_directions_per_octant = input_vars->num_dirs_per_dirset *
-                                  input_vars->num_dirsets_per_octant;
-  int num_directions = 8*num_directions_per_octant;
+  int num_directions_per_octant = input_vars->num_directions/8;
+  int num_directions = input_vars->num_directions;
 
   // allocate storage
   directions.resize(num_directions);

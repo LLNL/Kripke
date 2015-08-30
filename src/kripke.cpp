@@ -34,12 +34,18 @@ void usage(void){
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   if(myid == 0){
+    // Get a new object with defaulted values
+    Input_Variables def;
+    
+    // Display command line
     printf("Usage:  [srun ...] kripke [options...]\n\n");
+    
+    // Display each option
     printf("Problem Size Options:\n");
     printf("---------------------\n");
     
     printf("  --groups <ngroups>     Number of energy groups\n");
-    printf("                         Default:  --groups 32\n\n");
+    printf("                         Default:  --groups %d\n\n", def.num_groups);
     
     printf("  --legendre <lorder>    Scattering Legendre Expansion Order (0, 1, ...)\n");
     printf("                         Default:  --legendre 4\n\n");
@@ -109,7 +115,6 @@ void usage(void){
 
     printf("  --out <OUTFILE>        Optional output file (default: none)\n\n");
     
-    printf("  --restart <point>      Restart at given point\n\n");
 #ifdef KRIPKE_USE_SILO
     printf("  --silo <BASENAME>      Create SILO output files\n\n");
 #endif
@@ -190,47 +195,6 @@ void runPoint(int point, int num_tasks, int num_threads, Input_Variables &input_
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   if(myid == 0){
-    std::vector<std::string> headers;
-    std::vector<std::string> values;
-
-    headers.push_back("run_name");
-    values.push_back(run_name);
-
-    headers.push_back("point");
-    values.push_back(toString(point));
-
-    headers.push_back("nesting");
-    values.push_back(nesting);
-
-    headers.push_back("num_tasks");
-    values.push_back(toString(num_tasks));
-
-    headers.push_back("num_threads");
-    values.push_back(toString(num_threads));
-
-    headers.push_back("D");
-    values.push_back(toString(input_variables.num_dirsets_per_octant));
-
-    headers.push_back("d");
-    values.push_back(toString(input_variables.num_dirs_per_dirset));
-
-    headers.push_back("dirs");
-    values.push_back(toString(8*input_variables.num_dirsets_per_octant*input_variables.num_dirs_per_dirset));
-
-    headers.push_back("G");
-    values.push_back(toString(input_variables.num_groupsets));
-
-    headers.push_back("g");
-    values.push_back(toString(input_variables.num_groups_per_groupset));
-
-    headers.push_back("groups");
-    values.push_back(toString(input_variables.num_groupsets * input_variables.num_groups_per_groupset));
-
-
-    if(out_fp != NULL){
-      grid_data->timing.printTabular(point == 1, headers, values, out_fp);
-      fflush(out_fp);
-    }
     grid_data->timing.print();
     printf("\n\n");
   }
@@ -252,18 +216,17 @@ int main(int argc, char **argv) {
   if (myid == 0) {
     /* Print out a banner message along with a version number. */
     printf("\n");
-    printf("---------------------------------------------------------\n");
-    printf("------------------- KRIPKE VERSION 1.1 ------------------\n");
-    printf("---------------------------------------------------------\n");
-    printf("This work was produced at the Lawrence Livermore National\n");
-    printf("Laboratory (LLNL) under contract no. DE-AC-52-07NA27344\n");
-    printf("(Contract 44) between the U.S. Department of Energy (DOE)\n");
-    printf("and Lawrence Livermore National Security, LLC (LLNS) for\n");
-    printf("the operation of LLNL. The rights of the Federal\n");
-    printf("Government are reserved under Contract 44.\n");
+    printf("----------------------------------------------------------------------\n");
+    printf("------------------------ KRIPKE VERSION 1.1 --------------------------\n");
+    printf("----------------------------------------------------------------------\n");
+    printf("This work was produced at the Lawrence Livermore National Laboratory\n");
+    printf("(LLNL) under contract no. DE-AC-52-07NA27344 (Contract 44) between the\n");
+    printf("U.S. Department of Energy (DOE) and Lawrence Livermore National\n");
+    printf("Security, LLC (LLNS) for the operation of LLNL. The rights of the\n");
+    printf("Federal Government are reserved under Contract 44.\n");
     printf("\n");
     printf("Main Contact: Adam J. Kunen <kunen1@llnl.gov>\n");
-    printf("---------------------------------------------------------\n\n");
+    printf("----------------------------------------------------------------------\n");
    
    
     /* Print out some information about how OpenMP threads are being mapped
@@ -286,34 +249,9 @@ int main(int argc, char **argv) {
   /*
    * Default input parameters
    */
-  std::string run_name = "kripke";
-  std::vector<IntPair> grp_list;
-  grp_list.push_back(IntPair(1,32));
-  std::vector<IntPair> dir_list;
-  dir_list.push_back(IntPair(1,8));
-  std::string outfile;
-  int nprocs[3] = {1, 1, 1};
-  int zset[3] = {1,1,1};
-  int layout = 0;
-  int nzones[3] = {16, 16, 16};
-  int lorder = 4;
-  int num_polar = 0;
-  int num_azimuthal = 0;
-  int niter = 10;
-  double sigt[3] = {0.10, 0.0001, 0.10};
-  double sigs[3] = {0.05, 0.00005, 0.05};
+  Input_Variables vars;
   bool test = false;
-  bool perf_tools = false;
-  int restart_point = 0;
-  ParallelMethod parallel_method = PMETHOD_SWEEP;
-#ifdef KRIPKE_USE_SILO
-  std::string silo_basename = "";
-#endif
-
-
-  std::vector<Nesting_Order> nest_list;
-  nest_list.push_back(NEST_DGZ);
-
+  
   /*
    * Parse command line
    */
@@ -321,105 +259,95 @@ int main(int argc, char **argv) {
   while(!cmd.atEnd()){
     std::string opt = cmd.pop();
     if(opt == "-h" || opt == "--help"){usage();}
-    else if(opt == "--out"){outfile = cmd.pop();}
-    else if(opt == "--name"){run_name = cmd.pop();}
+    else if(opt == "--out"){vars.outfile = cmd.pop();}
+    else if(opt == "--name"){vars.run_name = cmd.pop();}
+    else if(opt == "--dset"){
+      vars.num_dirsets = std::atoi(cmd.pop().c_str());      
+    }
+    else if(opt == "--gset"){
+      vars.num_groupsets = std::atoi(cmd.pop().c_str());      
+    }
     else if(opt == "--zset"){
       std::vector<std::string> nz = split(cmd.pop(), ':');
       if(nz.size() != 3) usage();
-      zset[0] = std::atoi(nz[0].c_str());
-      zset[1] = std::atoi(nz[1].c_str());
-      zset[2] = std::atoi(nz[2].c_str());
-      if(zset[0] <= 0 || zset[1] <= 0 || zset[2] <= 0){usage();}
+      vars.num_zonesets_dim[0] = std::atoi(nz[0].c_str());
+      vars.num_zonesets_dim[1] = std::atoi(nz[1].c_str());
+      vars.num_zonesets_dim[2] = std::atoi(nz[2].c_str());      
     }
     else if(opt == "--layout"){
-      layout = std::atoi(cmd.pop().c_str());
-      if(layout < 0 || layout > 1){usage();}
+      vars.layout_pattern = std::atoi(cmd.pop().c_str());      
     }
     else if(opt == "--zones"){
       std::vector<std::string> nz = split(cmd.pop(), ',');
       if(nz.size() != 3) usage();
-      nzones[0] = std::atoi(nz[0].c_str());
-      nzones[1] = std::atoi(nz[1].c_str());
-      nzones[2] = std::atoi(nz[2].c_str());
+      vars.nx = std::atoi(nz[0].c_str());
+      vars.ny = std::atoi(nz[1].c_str());
+      vars.nz = std::atoi(nz[2].c_str());
     }
     else if(opt == "--procs"){
       std::vector<std::string> np = split(cmd.pop(), ',');
       if(np.size() != 3) usage();
-      nprocs[0] = std::atoi(np[0].c_str());
-      nprocs[1] = std::atoi(np[1].c_str());
-      nprocs[2] = std::atoi(np[2].c_str());
+      vars.npx = std::atoi(np[0].c_str());
+      vars.npy = std::atoi(np[1].c_str());
+      vars.npz = std::atoi(np[2].c_str());
     }
     else if(opt == "--pmethod"){
       std::string method = cmd.pop();
       if(!strcasecmp(method.c_str(), "sweep")){
-        parallel_method = PMETHOD_SWEEP;
+        vars.parallel_method = PMETHOD_SWEEP;
       }
       else if(!strcasecmp(method.c_str(), "bj")){
-        parallel_method = PMETHOD_BJ;
+        vars.parallel_method = PMETHOD_BJ;
       }
       else{
         usage();
       }
     }
-    else if(opt == "--grp"){
-      std::vector<std::string> sets = split(cmd.pop(), ',');
-      if(sets.size() < 1)usage();
-      grp_list.clear();
-      for(int i = 0;i < sets.size();++ i){
-        std::vector<std::string> p = split(sets[i], ':');
-        if(p.size() != 2)usage();
-        grp_list.push_back(IntPair(std::atoi(p[0].c_str()), std::atoi(p[1].c_str())));
-      }
+    else if(opt == "--groups"){
+      vars.num_groups = std::atoi(cmd.pop().c_str());      
     }
-    else if(opt == "--dir"){
-      std::vector<std::string> sets = split(cmd.pop(), ',');
-      if(sets.size() < 1)usage();
-      dir_list.clear();
-      for(int i = 0;i < sets.size();++ i){
-        std::vector<std::string> p = split(sets[i], ':');
-        if(p.size() != 2)usage();
-        dir_list.push_back(IntPair(std::atoi(p[0].c_str()), std::atoi(p[1].c_str())));
+    else if(opt == "--quad"){
+      std::vector<std::string> p = split(cmd.pop(), ':');
+      if(p.size() == 1){
+        vars.num_directions = std::atoi(p[0].c_str());
+        vars.quad_num_polar = 0;
+        vars.quad_num_azimuthal = 0;
+      }
+      else if(p.size() == 2){
+        vars.quad_num_polar = std::atoi(p[0].c_str());
+        vars.quad_num_azimuthal = std::atoi(p[1].c_str());
+        vars.num_directions = vars.quad_num_polar * vars.quad_num_azimuthal;
+      }
+      else{
+        usage();
       }
     }
     else if(opt == "--legendre"){
-      lorder = std::atoi(cmd.pop().c_str());
-    }
-    else if(opt == "--quad"){
-      std::vector<std::string> values = split(cmd.pop(), ':');
-      if(values.size()!=2)usage();
-      num_polar = std::atoi(values[0].c_str());
-      num_azimuthal = std::atoi(values[1].c_str());
+      vars.legendre_order = std::atoi(cmd.pop().c_str());
     }
     else if(opt == "--sigs"){
       std::vector<std::string> values = split(cmd.pop(), ',');
       if(values.size()!=3)usage();
       for(int mat = 0;mat < 3;++ mat){
-        sigs[mat] = std::atof(values[mat].c_str());
+        vars.sigs[mat] = std::atof(values[mat].c_str());
       }
     }
     else if(opt == "--sigt"){
       std::vector<std::string> values = split(cmd.pop(), ',');
       if(values.size()!=3)usage();
       for(int mat = 0;mat < 3;++ mat){
-        sigt[mat] = std::atof(values[mat].c_str());
+        vars.sigt[mat] = std::atof(values[mat].c_str());
       }
     }
     else if(opt == "--niter"){
-      niter = std::atoi(cmd.pop().c_str());
+      vars.niter = std::atoi(cmd.pop().c_str());
     }
     else if(opt == "--nest"){
-      std::vector<std::string> sets = split(cmd.pop(), ',');
-      if(sets.size() < 1)usage();
-      nest_list.clear();
-      for(int i = 0;i < sets.size();++ i){
-        Nesting_Order n = nestingFromString(sets[i]);
-        if(n < 0)usage();
-        nest_list.push_back(n);
-      }
+      vars.nesting = nestingFromString(cmd.pop());     
     }
 #ifdef KRIPKE_USE_SILO
     else if(opt == "--silo"){
-      silo_basename = cmd.pop();
+      vars.silo_basename = cmd.pop();
     }
 #endif
     else if(opt == "--test"){
@@ -430,12 +358,9 @@ int main(int argc, char **argv) {
       papi_names = split(cmd.pop(), ',');
     }
 #endif
-    else if(opt == "--gperf"){
-      perf_tools = true;
-    }
-    else if(opt == "--restart"){
-      restart_point = std::atoi(cmd.pop().c_str());
-    }
+    //else if(opt == "--gperf"){
+    //  perf_tools = true;
+    //}
     else{
       printf("Unknwon options %s\n", opt.c_str());
       usage();
@@ -445,7 +370,6 @@ int main(int argc, char **argv) {
   /*
    * Display Options
    */
-  int nsearches = grp_list.size() * dir_list.size() * nest_list.size();
   int num_threads=1;
   if (myid == 0) {
     printf("Number of MPI tasks:   %d\n", num_tasks);
@@ -472,73 +396,46 @@ int main(int argc, char **argv) {
     }
     printf("\n");
 #endif
-    printf("Output File:           %s\n", outfile.c_str());
-    printf("Processors:            %d x %d x %d\n", nprocs[0], nprocs[1], nprocs[2]);
-    printf("Zones:                 %d x %d x %d\n", nzones[0], nzones[1], nzones[2]);
-    printf("Legendre Order:        %d\n", lorder);
-    printf("Total X-Sec:           sigt=[%lf, %lf, %lf]\n", sigt[0], sigt[1], sigt[2]);
-    printf("Scattering X-Sec:      sigs=[%lf, %lf, %lf]\n", sigs[0], sigs[1], sigs[2]);
+    printf("Output File:           %s\n", vars.outfile.c_str());
+    printf("Processors:            %d x %d x %d\n", vars.npx, vars.npy, vars.npz);
+    printf("Zones:                 %d x %d x %d\n", vars.nx, vars.ny, vars.nz);
+    printf("Legendre Order:        %d\n", vars.legendre_order);
+    printf("Total X-Sec:           sigt=[%lf, %lf, %lf]\n", vars.sigt[0], vars.sigt[1], vars.sigt[2]);
+    printf("Scattering X-Sec:      sigs=[%lf, %lf, %lf]\n", vars.sigs[0], vars.sigs[1], vars.sigs[2]);
     printf("Quadrature Set:        ");
-    if(num_polar == 0){
-      printf("Dummy S2\n");
+    if(vars.quad_num_polar == 0){
+      printf("Dummy S2 with %d points\n", vars.num_directions);
     }
     else {
-      printf("Gauss-Legendre, %d polar, %d azimuthal\n", num_polar, num_azimuthal);
+      printf("Gauss-Legendre, %d polar, %d azimuthal (%d points)\n", vars.quad_num_polar, vars.quad_num_azimuthal, vars.num_directions);
     }
     printf("Parallel method:       ");
-    if(parallel_method == PMETHOD_SWEEP){
+    if(vars.parallel_method == PMETHOD_SWEEP){
       printf("Sweep\n");
     }
-    else if(parallel_method == PMETHOD_BJ){
+    else if(vars.parallel_method == PMETHOD_BJ){
       printf("Block Jacobi\n");
     }
-    printf("Number iterations:     %d\n", niter);
+    printf("Number iterations:     %d\n", vars.niter);
+    
+    printf("GroupSet/Groups:       %d sets, %d groups/set\n", vars.num_groupsets, vars.num_groups/vars.num_groupsets);
+    printf("DirSets/Directions:    %d sets, %d directions/set\n", vars.num_dirsets, vars.num_directions/vars.num_dirsets);
 
-    if(grp_list.size() == 0){
-      printf("No GroupSet/Groups defined (--grp)\n");
-      usage();
-    }
-    printf("GroupSet/Groups:       ");
-    for(int i = 0;i < grp_list.size();++ i){
-      printf("%s%d:%d", (i==0 ? "" : ", "), grp_list[i].first, grp_list[i].second);
-    }
-    printf("\n");
+    printf("Zone Sets:             %d:%d:%d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
 
-    if(dir_list.size() == 0){
-      printf("No DirSets/Directions defined (--dir)\n");
-      usage();
-    }
-    printf("DirSets/Directions:    ");
-    for(int i = 0;i < dir_list.size();++ i){
-      printf("%s%d:%d", (i==0 ? "" : ", "), dir_list[i].first, dir_list[i].second);
-    }
-    printf("\n");
-
-    printf("Zone Sets:             ");
-    printf("%d:%d:%d\n", zset[0], zset[1], zset[2]);
-
-    printf("Nestings:              ");
-    for(int i = 0;i < nest_list.size();++ i){
-      printf("%s%s", (i==0 ? "" : ", "), nestingString(nest_list[i]).c_str());
-    }
-    printf("\n");
-    printf("Search space size:     %d points\n", nsearches);
-    if(perf_tools){
-      printf("Using Google Perftools\n");
-    }
+    printf("Loop Nesting Order     %s\n", nestingString(vars.nesting).c_str());
+        
+    //if(perf_tools){
+    //  printf("Using Google Perftools\n");
+    //}
   }
 
   /*
    * Execute the Search Space
    */
   FILE *outfp = NULL;
-  if(outfile != "" && myid == 0){
-    if(restart_point == 0){
-      outfp = fopen(outfile.c_str(), "wb");
-    }
-    else{
-      outfp = fopen(outfile.c_str(), "ab");
-    }
+  if(vars.outfile != "" && myid == 0){
+    outfp = fopen(vars.outfile.c_str(), "wb");
   }
 #ifdef KRIPKE_USE_PERFTOOLS
   if(perf_tools){
@@ -548,101 +445,49 @@ int main(int argc, char **argv) {
     ProfilerRegisterThread();
   }
 #endif
-  Input_Variables ivars;
-  ivars.nx = nzones[0];
-  ivars.ny = nzones[1];
-  ivars.nz = nzones[2];
-  ivars.npx = nprocs[0];
-  ivars.npy = nprocs[1];
-  ivars.npz = nprocs[2];
-  ivars.legendre_order = lorder;
-  ivars.niter = niter;
-  ivars.num_zonesets_dim[0] = zset[0];
-  ivars.num_zonesets_dim[1] = zset[1];
-  ivars.num_zonesets_dim[2] = zset[2];
-  ivars.parallel_method = parallel_method;
-
-  for(int mat = 0;mat < 3;++ mat){
-    ivars.sigt[mat] = sigt[mat];
-    ivars.sigs[mat] = sigs[mat];
+  
+  // Run the point
+  if(test){
+    // Invoke Kernel testing
+    testKernels(vars);
+  }
+  else{
+    // Just run the "solver"
+    runPoint(1, num_tasks, num_threads, vars, outfp, vars.run_name);
   }
 
-  ivars.layout_pattern = layout;
-  ivars.quad_num_polar = num_polar;
-  ivars.quad_num_azimuthal = num_azimuthal;
-#ifdef KRIPKE_USE_SILO
-  ivars.silo_basename = silo_basename;
-#endif
-  int point = 0;
-  for(int d = 0;d < dir_list.size();++ d){
-    for(int g = 0;g < grp_list.size();++ g){
-      for(int n = 0;n < nest_list.size();++ n){
-
-        if(restart_point <= point+1){
-          if(myid == 0){
-            printf("Running point %d/%d: D:d=%d:%d, G:g=%d:%d, Nest=%s\n",
-                point+1, nsearches,
-                dir_list[d].first,
-                dir_list[d].second,
-                grp_list[g].first,
-                grp_list[g].second,
-                nestingString(nest_list[n]).c_str());
-          }
-          // Setup Current Search Point
-          ivars.num_dirsets_per_octant = dir_list[d].first;
-          ivars.num_dirs_per_dirset = dir_list[d].second;
-          ivars.num_groupsets = grp_list[g].first;
-          ivars.num_groups_per_groupset = grp_list[g].second;
-          ivars.nesting = nest_list[n];
-
-          // Run the point
-          if(test){
-            // Invoke Kernel testing
-            testKernels(ivars);
-          }
-          else{
-            // Just run the "solver"
-            runPoint(point+1, num_tasks, num_threads, ivars, outfp, run_name);
-          }
-
-
-          // Gather post-point memory info
-          double heap_mb = -1.0;
-          double hwm_mb = -1.0;
+  // Gather post-point memory info
+  double heap_mb = -1.0;
+  double hwm_mb = -1.0;
 #ifdef KRIPKE_USE_TCMALLOC
-          // If we are using tcmalloc, we need to use it's interface
-          MallocExtension *mext = MallocExtension::instance();
-          size_t bytes;
+  // If we are using tcmalloc, we need to use it's interface
+  MallocExtension *mext = MallocExtension::instance();
+  size_t bytes;
 
-          mext->GetNumericProperty("generic.current_allocated_bytes", &bytes);
-          heap_mb = ((double)bytes)/1024.0/1024.0;
+  mext->GetNumericProperty("generic.current_allocated_bytes", &bytes);
+  heap_mb = ((double)bytes)/1024.0/1024.0;
 
-          mext->GetNumericProperty("generic.heap_size", &bytes);
-          hwm_mb = ((double)bytes)/1024.0/1024.0;
+  mext->GetNumericProperty("generic.heap_size", &bytes);
+  hwm_mb = ((double)bytes)/1024.0/1024.0;
 #else
 #ifdef __bgq__
-          // use BG/Q specific calls (if NOT using tcmalloc)
-          uint64_t bytes;
+  // use BG/Q specific calls (if NOT using tcmalloc)
+  uint64_t bytes;
 
-          int rc = Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &bytes);
-          heap_mb = ((double)bytes)/1024.0/1024.0;
+  int rc = Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &bytes);
+  heap_mb = ((double)bytes)/1024.0/1024.0;
 
-          rc = Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAPMAX, &bytes);
-          hwm_mb = ((double)bytes)/1024.0/1024.0;
+  rc = Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAPMAX, &bytes);
+  hwm_mb = ((double)bytes)/1024.0/1024.0;
 #endif
 #endif
-          // Print memory info
-          if(myid == 0 && heap_mb >= 0.0){
-            printf("Bytes allocated: %lf MB\n", heap_mb);
-            printf("Heap Size      : %lf MB\n", hwm_mb);
+  // Print memory info
+  if(myid == 0 && heap_mb >= 0.0){
+    printf("Bytes allocated: %lf MB\n", heap_mb);
+    printf("Heap Size      : %lf MB\n", hwm_mb);
 
-          }
-        }
-        point ++;
-
-      }
-    }
   }
+  
   if(outfp != NULL){
     fclose(outfp);
   }

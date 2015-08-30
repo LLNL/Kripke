@@ -96,11 +96,11 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   idx_dir_set = ds;
   idx_zone_set = zs;
 
-  num_groups = input_vars->num_groups_per_groupset;
-  group0 = gs * input_vars->num_groups_per_groupset;
+  num_groups = input_vars->num_groups / input_vars->num_groupsets;
+  group0 = gs * num_groups;
 
-  num_directions = input_vars->num_dirs_per_dirset;
-  direction0 = ds * input_vars->num_dirs_per_dirset;
+  num_directions = input_vars->num_directions / input_vars->num_dirsets;
+  direction0 = ds * num_directions;
   directions = &direction_list[direction0];
 
   num_zones = 1;

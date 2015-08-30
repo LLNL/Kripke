@@ -3,6 +3,7 @@ include_directories(..)
 add_library(lib_kripke  
   Directions.cpp  
   Grid.cpp  
+  Input_Variables.cpp
   Kernel.cpp  
   Layout.cpp
   Subdomain.cpp  

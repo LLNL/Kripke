@@ -38,7 +38,7 @@ namespace {
 
 Layout::Layout(Input_Variables *input_vars){
   num_group_sets = input_vars->num_groupsets;
-  num_direction_sets = input_vars->num_dirsets_per_octant * 8;
+  num_direction_sets = input_vars->num_dirsets;
   num_zone_sets = 1;
   for(int dim = 0;dim < 3;++ dim){
     num_zone_sets_dim[dim] = input_vars->num_zonesets_dim[dim];
