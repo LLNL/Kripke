@@ -251,9 +251,9 @@ void Kernel_3d_GZD::sweep(Subdomain *sdom) {
   int local_jmax = sdom->nzones[1];
   int local_kmax = sdom->nzones[2];
 
-  double *dx = &sdom->deltas[0][0];
-  double *dy = &sdom->deltas[1][0];
-  double *dz = &sdom->deltas[2][0];
+  double const * KRESTRICT dx = &sdom->deltas[0][0];
+  double const * KRESTRICT dy = &sdom->deltas[1][0];
+  double const * KRESTRICT dz = &sdom->deltas[2][0];
 
   // Upwind/Downwind face flux data
   SubTVec &i_plane = *sdom->plane_data[0];
@@ -290,15 +290,11 @@ void Kernel_3d_GZD::sweep(Subdomain *sdom) {
           double * KRESTRICT psi_fr_g_z = j_plane.ptr(group, 0, J_PLANE_INDEX(i, k));
           double * KRESTRICT psi_bo_g_z = k_plane.ptr(group, 0, K_PLANE_INDEX(i, j));
 
-          for (int d = 0; d < num_directions; ++d) {
-            double xcos = direction[d].xcos;
-            double ycos = direction[d].ycos;
-            double zcos = direction[d].zcos;
-
-            double zcos_dzk = zcos * two_dz;
-            double ycos_dyj = ycos * two_dy;
-            double xcos_dxi = xcos * two_dx;
-
+          for (int d = 0; d < num_directions; ++d) {            
+            double xcos_dxi = direction[d].xcos * two_dx;
+            double ycos_dyj = direction[d].ycos * two_dy;
+            double zcos_dzk = direction[d].zcos * two_dz;
+                       
             /* Calculate new zonal flux */
             double psi_g_z_d = (rhs_g_z[d] + psi_lf_g_z[d] * xcos_dxi
                 + psi_fr_g_z[d] * ycos_dyj + psi_bo_g_z[d] * zcos_dzk)

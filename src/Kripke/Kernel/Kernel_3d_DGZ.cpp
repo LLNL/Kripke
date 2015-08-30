@@ -266,29 +266,10 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
   // So pull that information out now
   Grid_Sweep_Block const &extent = sdom->sweep_block;
 
-  std::vector<double> xcos_dxi_all(local_imax);
-  std::vector<double> ycos_dyj_all(local_jmax);
-  std::vector<double> zcos_dzk_all(local_kmax);
-
   for (int d = 0; d < num_directions; ++d) {
     double xcos = direction[d].xcos;
     double ycos = direction[d].ycos;
     double zcos = direction[d].zcos;
-
-    for (int i = 0; i < local_imax; ++i) {
-      double dxi = dx[i + 1];
-      xcos_dxi_all[i] = 2.0 * xcos / dxi;
-    }
-
-    for (int j = 0; j < local_jmax; ++j) {
-      double dyj = dy[j + 1];
-      ycos_dyj_all[j] = 2.0 * ycos / dyj;
-    }
-
-    for (int k = 0; k < local_kmax; ++k) {
-      double dzk = dz[k + 1];
-      zcos_dzk_all[k] = 2.0 * zcos / dzk;
-    }
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
@@ -301,13 +282,19 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
       double * KRESTRICT k_plane_d_g = &k_plane(group, d, 0);
       double * KRESTRICT sigt_g = sdom->sigt->ptr(group, 0, 0);
 
-      for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
-        double zcos_dzk = zcos_dzk_all[k];
+      for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {       
+        double dzk = dz[k + 1];
+        double zcos_dzk = 2.0 * zcos / dzk;
+        
         for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {
-          double ycos_dyj = ycos_dyj_all[j];
-          int z_idx = Zonal_INDEX(extent.start_i, j, k);
+          double dyj = dy[j + 1];
+          double ycos_dyj = 2.0 * ycos / dyj;
+          
           for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
-            double xcos_dxi = xcos_dxi_all[i];
+            double dxi = dx[i + 1];
+            double xcos_dxi = 2.0 * xcos / dxi;
+            
+            int z_idx = Zonal_INDEX(i, j, k);
 
             /* Calculate new zonal flux */
             double psi_d_g_z = (rhs_d_g[z_idx]
@@ -326,8 +313,6 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
             k_plane_d_g[K_PLANE_INDEX(i, j)] = 2.0 * psi_d_g_z
                 - k_plane_d_g[K_PLANE_INDEX(i, j)];
 
-
-            z_idx += extent.inc_i;
           }
         }
       }

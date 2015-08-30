@@ -256,9 +256,9 @@ void Kernel_3d_ZDG::sweep(Subdomain *sdom) {
   int local_jmax = sdom->nzones[1];
   int local_kmax = sdom->nzones[2];
 
-  double * dx = &sdom->deltas[0][0];
-  double * dy = &sdom->deltas[1][0];
-  double * dz = &sdom->deltas[2][0];
+  double const * KRESTRICT dx = &sdom->deltas[0][0];
+  double const * KRESTRICT dy = &sdom->deltas[1][0];
+  double const * KRESTRICT dz = &sdom->deltas[2][0];
 
   // Upwind/Downwind face flux data
   SubTVec &i_plane = *sdom->plane_data[0];
@@ -277,22 +277,19 @@ void Kernel_3d_ZDG::sweep(Subdomain *sdom) {
         double dxi = dx[i + 1];
 
         int z = Zonal_INDEX(i, j, k);
-        double * KRESTRICT sigt_z = sdom->sigt->ptr(0, 0, z);
+        double const * KRESTRICT sigt_z = sdom->sigt->ptr(0, 0, z);
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
         for (int d = 0; d < num_directions; ++d) {
-          double xcos = direction[d].xcos;
-          double ycos = direction[d].ycos;
-          double zcos = direction[d].zcos;
-
-          double zcos_dzk = 2.0 * zcos / dzk;
-          double ycos_dyj = 2.0 * ycos / dyj;
-          double xcos_dxi = 2.0 * xcos / dxi;
+        
+          double xcos_dxi = 2.0 * direction[d].xcos / dxi;
+          double ycos_dyj = 2.0 * direction[d].ycos / dyj;          
+          double zcos_dzk = 2.0 * direction[d].zcos / dzk;
 
           double * KRESTRICT psi_z_d = sdom->psi->ptr(0, d, z);
-          double * KRESTRICT rhs_z_d = sdom->rhs->ptr(0, d, z);
+          double const * KRESTRICT rhs_z_d = sdom->rhs->ptr(0, d, z);
 
           double * KRESTRICT psi_lf_z_d = i_plane.ptr(0, d, I_PLANE_INDEX(j, k));
           double * KRESTRICT psi_fr_z_d = j_plane.ptr(0, d, J_PLANE_INDEX(i, k));

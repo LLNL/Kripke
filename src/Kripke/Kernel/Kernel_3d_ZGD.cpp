@@ -252,9 +252,9 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
   int local_jmax = sdom->nzones[1];
   int local_kmax = sdom->nzones[2];
 
-  double *dx = &sdom->deltas[0][0];
-  double *dy = &sdom->deltas[1][0];
-  double *dz = &sdom->deltas[2][0];
+  double const * KRESTRICT dx = &sdom->deltas[0][0];
+  double const * KRESTRICT dy = &sdom->deltas[1][0];
+  double const * KRESTRICT dz = &sdom->deltas[2][0];
 
   // Upwind/Downwind face flux data
   SubTVec &i_plane = *sdom->plane_data[0];
@@ -278,27 +278,22 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
         double two_dx = 2.0 / dxi;
 
         int z = Zonal_INDEX(i, j, k);
-        double * sigt_z = sdom->sigt->ptr(0, 0, z);
+        double const * KRESTRICT sigt_z = sdom->sigt->ptr(0, 0, z);
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
         for (int group = 0; group < num_groups; ++group) {
           double * KRESTRICT psi_z_g = sdom->psi->ptr(group, 0, z);
-          double * KRESTRICT rhs_z_g = sdom->rhs->ptr(group, 0, z);
+          double const * KRESTRICT rhs_z_g = sdom->rhs->ptr(group, 0, z);
 
           double * KRESTRICT psi_lf_z_g = i_plane.ptr(group, 0, I_PLANE_INDEX(j, k));
           double * KRESTRICT psi_fr_z_g = j_plane.ptr(group, 0, J_PLANE_INDEX(i, k));
           double * KRESTRICT psi_bo_z_g = k_plane.ptr(group, 0, K_PLANE_INDEX(i, j));
 
           for (int d = 0; d < num_directions; ++d) {
-
-            double xcos = direction[d].xcos;
-            double ycos = direction[d].ycos;
-            double zcos = direction[d].zcos;
-
-            double zcos_dzk = zcos * two_dz;
-            double ycos_dyj = ycos * two_dy;
-            double xcos_dxi = xcos * two_dx;
+            double xcos_dxi = direction[d].xcos * two_dx;
+            double ycos_dyj = direction[d].ycos * two_dy;
+            double zcos_dzk = direction[d].zcos * two_dz;
 
             /* Calculate new zonal flux */
             double psi_z_g_d = (rhs_z_g[d]
