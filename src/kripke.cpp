@@ -26,9 +26,6 @@
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/memory.h>
 #endif
 
-typedef std::pair<int, int> IntPair;
-
-std::vector<std::string> papi_names;
 
 void usage(void){
   int myid;
@@ -171,38 +168,6 @@ namespace {
   }
 }
 
-
-void runPoint(int point, int num_tasks, int num_threads, Input_Variables &input_variables, FILE *out_fp, std::string const &run_name){
-
-  /* Allocate problem */
-  Grid_Data *grid_data = new Grid_Data(&input_variables);
-
-  grid_data->timing.setPapiEvents(papi_names);
-
-  /* Run the solver */
-  SweepSolver(grid_data, input_variables.parallel_method == PMETHOD_BJ);
-
-#ifdef KRIPKE_USE_SILO
-  /* output silo data, if requested */
-  if(input_variables.silo_basename != ""){
-    std::string silo_name = input_variables.silo_basename + toString(point);
-    grid_data->writeSilo(silo_name);
-  }
-#endif
-
-  std::string nesting = nestingString(input_variables.nesting);
-
-  int myid;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  if(myid == 0){
-    grid_data->timing.print();
-    printf("\n\n");
-  }
-
-  /* Cleanup */
-  delete grid_data;
-}
-
 int main(int argc, char **argv) {
   /*
    * Initialize MPI
@@ -250,6 +215,7 @@ int main(int argc, char **argv) {
    * Default input parameters
    */
   Input_Variables vars;
+  std::vector<std::string> papi_names;
   bool test = false;
   
   /*
@@ -453,7 +419,32 @@ int main(int argc, char **argv) {
   }
   else{
     // Just run the "solver"
-    runPoint(1, num_tasks, num_threads, vars, outfp, vars.run_name);
+
+    /* Allocate problem */
+    Grid_Data *grid_data = new Grid_Data(&vars);
+
+    grid_data->timing.setPapiEvents(papi_names);
+
+    // Run the solver
+    SweepSolver(grid_data, vars.parallel_method == PMETHOD_BJ);
+
+#ifdef KRIPKE_USE_SILO
+    // Output silo data
+    if(vars.silo_basename != ""){
+      grid_data->writeSilo(vars.silo_basename + ".silo");
+    }
+#endif
+
+    // Print Timing Info
+    int myid;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+    if(myid == 0){
+      grid_data->timing.print();
+      printf("\n\n");
+    }
+
+    // Cleanup 
+    delete grid_data;
   }
 
   // Gather post-point memory info
