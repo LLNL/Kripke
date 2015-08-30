@@ -35,41 +35,68 @@ void usage(void){
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   if(myid == 0){
     printf("Usage:  [srun ...] kripke [options...]\n");
-    printf("Where options are:\n");
+    printf("Problem Size Options:\n");
+    
     printf("  --dir [D:d,D:d,...]    List of dirsets and dirs/set pairs\n");
-    printf("                         Default:  --dir 1:1\n");
+    printf("                         Default:  --dir 1:8\n");
     printf("                         Example:  --dir 1:4,2:2,4:1\n");
     printf("  --grp [G:g,G:g,...]    List of grpsets and groups/set pairs\n");
-    printf("                         Default:  --grp 1:1\n");
-    printf("  --layout <lout>        Layout of spatial subdomains and mpi ranks\n");
-    printf("                         0: Blocked layout, subdomains on local rank are adjacent\n");
-    printf("                         1: Scattered layout, ranks with same subdomain are adjacent\n");
-    printf("                         Default: --layout 0\n");
+    printf("                         Default:  --grp 1:32\n");
     printf("  --legendre <lorder>    Scattering Legendre Expansion Order (0, 1, ...)\n");
     printf("                         Default:  --legendre 2\n");
+    
+    printf("  --quad <polar:azim>    Use a Gauss-Legendre Product Quadrature\n");
+    printf("                         with the specified number of polar and azimuthal points\n");
+    printf("                         Default:  --quad 0,0  [disabled, use dummy S2]\n");
+    
+    
+    printf("  --zones <x,y,z>        Number of zones in x,y,z\n");
+    printf("                         Default:  --zones 16,16,16\n");
+    
+    
+    printf("\n");
+    printf("On-Node Options:\n");
     printf("  --nest [n,n,...]       List of data nestings\n");
-    printf("                         Default:  --nest DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
+    printf("                         Default:  --nest DGZ\n");
+    printf("                         Example:  --nest DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
+    
+    
+    printf("\n");
+    printf("Parallel Decomposition Options:\n");
+    printf("  --layout <lout>        Layout of spatial subdomains over mpi ranks\n");
+    printf("                         0: Blocked: local zone sets are adjacent\n");
+    printf("                         1: Scattered: adjacent zone sets are distributed\n");
+    printf("                         Default: --layout 0\n");
+    
+    
+    printf("  --procs <npx,npy,npz>  Number of MPI ranks in each spatial dimension\n");
+    printf("                         Default:  --procs 1,1,1\n");
+    
+    printf("  --zset [x:y:z, ...]    Number of zonesets in x:y:z\n");
+    printf("                         Default:  --zst 1:1:1\n");
+    
+    printf("\n");
+    printf("Solver Options:\n");
+    
     printf("  --niter <NITER>        Number of solver iterations to run (default: 10)\n");
-    printf("  --out <OUTFILE>        Optional output file (default: none)\n");
-    printf("  --gperf                Turn on Google Perftools profiling\n");
     printf("  --pmethod <method>     Parallel solver method\n");
     printf("                         sweep: Full up-wind sweep (wavefront algorithm)\n");
     printf("                         bj: Block Jacobi\n");
     printf("                         Default: --pmethod sweep\n");
-    printf("  --procs <npx,npy,npz>  MPI task spatial decomposition\n");
-    printf("                         Default:  --procs 1,1,1\n");
-    printf("  --quad <polar:azim>    Use a Gauss-Legendre Product Quadrature\n");
-    printf("                         with the specified number of polar and azimuthal points\n");
-    printf("                         Default:  --quad 0,0  [disabled, use dummy S2]\n");
+    
+    printf("\n");
+    printf("Output and Testing Options:\n");
+#ifdef KRIPKE_USE_PERFTOOLS    
+    printf("  --gperf                Turn on Google Perftools profiling\n");
+#endif
+
+    printf("  --out <OUTFILE>        Optional output file (default: none)\n");
+    
     printf("  --restart <point>      Restart at given point\n");
 #ifdef KRIPKE_USE_SILO
     printf("  --silo <BASENAME>      Create SILO output files\n");
 #endif
     printf("  --test                 Run Kernel Test instead of solver\n");
-    printf("  --zset [x:y:z, ...]    Number of zonesets in x:y:z\n");
-    printf("                         Default:  --zst 1:1:1\n");
-    printf("  --zones <x,y,z>        Number of zones in x,y,z\n");
-    printf("                         Default:  --zones 12,12,12\n");
     printf("\n");
   }
   MPI_Finalize();
@@ -235,14 +262,14 @@ int main(int argc, char **argv) {
    */
   std::string run_name = "kripke";
   std::vector<IntPair> grp_list;
-  grp_list.push_back(IntPair(1,1));
+  grp_list.push_back(IntPair(1,32));
   std::vector<IntPair> dir_list;
-  dir_list.push_back(IntPair(1,1));
+  dir_list.push_back(IntPair(1,8));
   std::string outfile;
   int nprocs[3] = {1, 1, 1};
   int zset[3] = {1,1,1};
   int layout = 0;
-  int nzones[3] = {12, 12, 12};
+  int nzones[3] = {16, 16, 16};
   int lorder = 4;
   int num_polar = 0;
   int num_azimuthal = 0;
@@ -260,12 +287,12 @@ int main(int argc, char **argv) {
 
   std::vector<Nesting_Order> nest_list;
   nest_list.push_back(NEST_DGZ);
-  nest_list.push_back(NEST_DZG);
+  /*nest_list.push_back(NEST_DZG);
   nest_list.push_back(NEST_GDZ);
   nest_list.push_back(NEST_GZD);
   nest_list.push_back(NEST_ZDG);
   nest_list.push_back(NEST_ZGD);
-
+*/
   /*
    * Parse command line
    */
