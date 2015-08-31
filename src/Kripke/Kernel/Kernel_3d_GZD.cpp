@@ -234,12 +234,12 @@ void Kernel_3d_GZD::source(Grid_Data *grid_data){
 
 /* Sweep routine for Diamond-Difference */
 /* Macros for offsets with fluxes on cell faces */
-#define I_PLANE_INDEX(j, k) (k)*(local_jmax) + (j)
-#define J_PLANE_INDEX(i, k) (k)*(local_imax) + (i)
-#define K_PLANE_INDEX(i, j) (j)*(local_imax) + (i)
-#define Zonal_INDEX(i, j, k) (i) + (local_imax)*(j) \
-  + (local_imax)*(local_jmax)*(k)
-
+#define I_PLANE_INDEX(j, k) ((k)*(local_jmax) + (j))
+#define J_PLANE_INDEX(i, k) ((k)*(local_imax) + (i))
+#define K_PLANE_INDEX(i, j) ((j)*(local_imax) + (i))
+#define Zonal_INDEX(i, j, k) ((i) + (local_imax)*(j) \
+  + (local_imax)*(local_jmax)*(k))
+  
 void Kernel_3d_GZD::sweep(Subdomain *sdom) {
   int num_directions = sdom->num_directions;
   int num_groups = sdom->num_groups;
@@ -254,12 +254,20 @@ void Kernel_3d_GZD::sweep(Subdomain *sdom) {
   double const * KRESTRICT dx = &sdom->deltas[0][0];
   double const * KRESTRICT dy = &sdom->deltas[1][0];
   double const * KRESTRICT dz = &sdom->deltas[2][0];
+  
+  double const * KRESTRICT sigt = sdom->sigt->ptr();
+  double       * KRESTRICT psi  = sdom->psi->ptr();
+  double const * KRESTRICT rhs  = sdom->rhs->ptr();
 
-  // Upwind/Downwind face flux data
-  SubTVec &i_plane = *sdom->plane_data[0];
-  SubTVec &j_plane = *sdom->plane_data[1];
-  SubTVec &k_plane = *sdom->plane_data[2];
-
+  double * KRESTRICT psi_lf = sdom->plane_data[0]->ptr();
+  double * KRESTRICT psi_fr = sdom->plane_data[1]->ptr();
+  double * KRESTRICT psi_bo = sdom->plane_data[2]->ptr();
+  
+  int num_zd = num_zones * num_directions;
+  int num_zd_i = local_jmax * local_kmax * num_directions;
+  int num_zd_j = local_imax * local_kmax * num_directions;
+  int num_zd_k = local_imax * local_jmax * num_directions;
+  
   // All directions have same id,jd,kd, since these are all one Direction Set
   // So pull that information out now
   Grid_Sweep_Block const &extent = sdom->sweep_block;
@@ -268,27 +276,31 @@ void Kernel_3d_GZD::sweep(Subdomain *sdom) {
 #pragma omp parallel for
 #endif
   for (int group = 0; group < num_groups; ++group) {
-    double *sigt_g = sdom->sigt->ptr(group, 0, 0);
+    double const * KRESTRICT sigt_g = sigt + num_zones*group;
+    double       * KRESTRICT psi_g  = psi  + group*num_zd;
+    double const * KRESTRICT rhs_g  = rhs  + group*num_zd;
+
+    double       * KRESTRICT psi_lf_g = psi_lf + group*num_zd_i;
+    double       * KRESTRICT psi_fr_g = psi_fr + group*num_zd_j;
+    double       * KRESTRICT psi_bo_g = psi_bo + group*num_zd_k;
 
     /*  Perform transport sweep of the grid 1 cell at a time.   */
     for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
-      double dzk = dz[k + 1];
-      double two_dz = 2.0 / dzk;
+      double two_dz = 2.0 / dz[k + 1];
       for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {
-        double dyj = dy[j + 1];
-        double two_dy = 2.0 / dyj;
+        double two_dy = 2.0 / dy[j + 1];
         for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
-          double dxi = dx[i + 1];
-          double two_dx = 2.0 / dxi;
+          double two_dx = 2.0 / dx[i + 1];
 
           int z = Zonal_INDEX(i, j, k);
 
-          double * KRESTRICT psi_g_z = sdom->psi->ptr(group, 0, z);
-          double * KRESTRICT rhs_g_z = sdom->rhs->ptr(group, 0, z);
+          double const sigt_g_z = sigt_g[z];
+          double       * KRESTRICT psi_g_z = psi_g + z*num_directions; 
+          double const * KRESTRICT rhs_g_z = rhs_g + z*num_directions;
 
-          double * KRESTRICT psi_lf_g_z = i_plane.ptr(group, 0, I_PLANE_INDEX(j, k));
-          double * KRESTRICT psi_fr_g_z = j_plane.ptr(group, 0, J_PLANE_INDEX(i, k));
-          double * KRESTRICT psi_bo_g_z = k_plane.ptr(group, 0, K_PLANE_INDEX(i, j));
+          double * KRESTRICT psi_lf_g_z = psi_lf_g + I_PLANE_INDEX(j, k)*num_directions;
+          double * KRESTRICT psi_fr_g_z = psi_fr_g + J_PLANE_INDEX(i, k)*num_directions;
+          double * KRESTRICT psi_bo_g_z = psi_bo_g + K_PLANE_INDEX(i, j)*num_directions;
 
           for (int d = 0; d < num_directions; ++d) {            
             double xcos_dxi = direction[d].xcos * two_dx;
@@ -298,8 +310,7 @@ void Kernel_3d_GZD::sweep(Subdomain *sdom) {
             /* Calculate new zonal flux */
             double psi_g_z_d = (rhs_g_z[d] + psi_lf_g_z[d] * xcos_dxi
                 + psi_fr_g_z[d] * ycos_dyj + psi_bo_g_z[d] * zcos_dzk)
-                / (xcos_dxi + ycos_dyj + zcos_dzk
-                    + sigt_g[Zonal_INDEX(i, j, k)]);
+                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt_g_z);
 
             psi_g_z[d] = psi_g_z_d;
 

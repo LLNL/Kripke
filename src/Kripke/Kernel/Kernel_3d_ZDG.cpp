@@ -239,11 +239,11 @@ void Kernel_3d_ZDG::source(Grid_Data *grid_data){
 
 /* Sweep routine for Diamond-Difference */
 /* Macros for offsets with fluxes on cell faces */
-#define I_PLANE_INDEX(j, k) (k)*(local_jmax) + (j)
-#define J_PLANE_INDEX(i, k) (k)*(local_imax) + (i)
-#define K_PLANE_INDEX(i, j) (j)*(local_imax) + (i)
-#define Zonal_INDEX(i, j, k) (i) + (local_imax)*(j) \
-  + (local_imax)*(local_jmax)*(k)
+#define I_PLANE_INDEX(j, k) ((k)*(local_jmax) + (j))
+#define J_PLANE_INDEX(i, k) ((k)*(local_imax) + (i))
+#define K_PLANE_INDEX(i, j) ((j)*(local_imax) + (i))
+#define Zonal_INDEX(i, j, k) ((i) + (local_imax)*(j) \
+  + (local_imax)*(local_jmax)*(k))
 
 void Kernel_3d_ZDG::sweep(Subdomain *sdom) {
   int num_directions = sdom->num_directions;
@@ -259,6 +259,16 @@ void Kernel_3d_ZDG::sweep(Subdomain *sdom) {
   double const * KRESTRICT dx = &sdom->deltas[0][0];
   double const * KRESTRICT dy = &sdom->deltas[1][0];
   double const * KRESTRICT dz = &sdom->deltas[2][0];
+  
+  double const * KRESTRICT sigt = sdom->sigt->ptr();
+  double       * KRESTRICT psi  = sdom->psi->ptr();
+  double const * KRESTRICT rhs  = sdom->rhs->ptr();
+
+  double * KRESTRICT psi_lf = sdom->plane_data[0]->ptr();
+  double * KRESTRICT psi_fr = sdom->plane_data[1]->ptr();
+  double * KRESTRICT psi_bo = sdom->plane_data[2]->ptr();
+  
+  int num_gd = num_groups * num_directions;
 
   // Upwind/Downwind face flux data
   SubTVec &i_plane = *sdom->plane_data[0];
@@ -270,30 +280,36 @@ void Kernel_3d_ZDG::sweep(Subdomain *sdom) {
   Grid_Sweep_Block const &extent = sdom->sweep_block;
 
   for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
-    double dzk = dz[k + 1];
+    double two_dz = 2.0 / dz[k + 1];
     for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {
-      double dyj = dy[j + 1];
+      double two_dy = 2.0 / dy[j + 1];
       for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
-        double dxi = dx[i + 1];
+        double two_dx = 2.0 / dx[i + 1];
 
         int z = Zonal_INDEX(i, j, k);
-        double const * KRESTRICT sigt_z = sdom->sigt->ptr(0, 0, z);
+        
+        double const * KRESTRICT sigt_z = sigt + z*num_groups;
+        double       * KRESTRICT psi_z  = psi  + z*num_gd;
+        double const * KRESTRICT rhs_z  = rhs  + z*num_gd;
 
+        double * KRESTRICT psi_lf_z = psi_lf + I_PLANE_INDEX(j, k) * num_gd;
+        double * KRESTRICT psi_fr_z = psi_fr + J_PLANE_INDEX(i, k) * num_gd;
+        double * KRESTRICT psi_bo_z = psi_bo + K_PLANE_INDEX(i, j) * num_gd;
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
         for (int d = 0; d < num_directions; ++d) {
         
-          double xcos_dxi = 2.0 * direction[d].xcos / dxi;
-          double ycos_dyj = 2.0 * direction[d].ycos / dyj;          
-          double zcos_dzk = 2.0 * direction[d].zcos / dzk;
+          double xcos_dxi = two_dx * direction[d].xcos;
+          double ycos_dyj = two_dy * direction[d].ycos;          
+          double zcos_dzk = two_dz * direction[d].zcos;
 
-          double * KRESTRICT psi_z_d = sdom->psi->ptr(0, d, z);
-          double const * KRESTRICT rhs_z_d = sdom->rhs->ptr(0, d, z);
+          double       * KRESTRICT psi_z_d = psi_z + d*num_groups;
+          double const * KRESTRICT rhs_z_d = rhs_z + d*num_groups;
 
-          double * KRESTRICT psi_lf_z_d = i_plane.ptr(0, d, I_PLANE_INDEX(j, k));
-          double * KRESTRICT psi_fr_z_d = j_plane.ptr(0, d, J_PLANE_INDEX(i, k));
-          double * KRESTRICT psi_bo_z_d = k_plane.ptr(0, d, K_PLANE_INDEX(i, j));
+          double * KRESTRICT psi_lf_z_d = psi_lf_z + d*num_groups;
+          double * KRESTRICT psi_fr_z_d = psi_fr_z + d*num_groups;
+          double * KRESTRICT psi_bo_z_d = psi_bo_z + d*num_groups;
 
           for (int group = 0; group < num_groups; ++group) {
             /* Calculate new zonal flux */
@@ -306,10 +322,9 @@ void Kernel_3d_ZDG::sweep(Subdomain *sdom) {
             psi_z_d[group] = psi_z_d_g;
 
             /* Apply diamond-difference relationships */
-            psi_z_d_g *= 2.0;
-            psi_lf_z_d[group] = psi_z_d_g - psi_lf_z_d[group];
-            psi_fr_z_d[group] = psi_z_d_g - psi_fr_z_d[group];
-            psi_bo_z_d[group] = psi_z_d_g - psi_bo_z_d[group];
+            psi_lf_z_d[group] = 2.0 * psi_z_d_g - psi_lf_z_d[group];
+            psi_fr_z_d[group] = 2.0 * psi_z_d_g - psi_fr_z_d[group];
+            psi_bo_z_d[group] = 2.0 * psi_z_d_g - psi_bo_z_d[group];
           }
         }
       }
