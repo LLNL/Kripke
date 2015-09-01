@@ -29,8 +29,9 @@ Nesting_Order Kernel_3d_DGZ::nestingSigs(void) const {
 
 void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
   // Outer parameters
-  int nidx = grid_data->total_num_moments;
+  int num_moments = grid_data->total_num_moments;
 
+  // Zero Phi
   for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
     grid_data->phi[ds]->clear(0.0);
   }
@@ -42,34 +43,40 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
 
     // Get dimensioning
     int num_zones = sdom.num_zones;
-    int num_local_groups = sdom.num_groups;
     int num_groups = sdom.phi->groups;
+    int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int num_groups_zones = num_local_groups*num_zones;
-
-    /* 3D Cartesian Geometry */
-    double const * KRESTRICT psi = sdom.psi->ptr();
+    int num_gz = num_groups*num_zones;
+    int num_locgz = num_local_groups*num_zones;
+    
+    // Get pointers
     double const * KRESTRICT ell = sdom.ell->ptr();
-    double       * KRESTRICT phi = sdom.phi->ptr() + group0*num_groups_zones;    
-
-    for(int nm_offset = 0;nm_offset < nidx;++nm_offset){      
-      double const * KRESTRICT ell_nm = ell + nm_offset*num_local_directions;
-      double       * KRESTRICT phi_nm = phi + nm_offset*num_groups_zones;
-
+    double const * KRESTRICT psi = sdom.psi->ptr();
+    double       * KRESTRICT phi = sdom.phi->ptr();
+    
+    for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
+      double const * KRESTRICT ell_nm = ell + nm_offset*num_local_directions;      
+      double       * KRESTRICT phi_nm = phi + nm_offset*num_gz;
+      
       for (int d = 0; d < num_local_directions; d++) {
-        double const ell_nm_d = ell_nm[d];
-        double const * KRESTRICT psi_d = psi + d*num_groups_zones;
+        double const * KRESTRICT psi_d = psi + d*num_locgz;
+        double const             ell_nm_d = ell_nm[d];
 
 #ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for
 #endif
-        for(int gz = 0;gz < num_groups_zones; ++ gz){
-          phi_nm[gz] += ell_nm_d * psi_d[gz];
+        for(int group = 0;group < num_local_groups; ++ group){
+          double const * KRESTRICT psi_d_g  = psi_d + group*num_zones;
+          double       * KRESTRICT phi_nm_g = phi_nm + (group+group0)*num_zones;
+          
+          for (int z = 0;z < num_zones;++ z){        
+            phi_nm_g[z] += ell_nm_d * psi_d_g[z];
+          }
         }
-      }
+      }     
     }
-  }
+  } 
 }
 
 void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {

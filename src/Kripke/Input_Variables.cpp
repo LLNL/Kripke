@@ -16,7 +16,7 @@ Input_Variables::Input_Variables() :
  
   npx(1), npy(1), npz(1),
   num_dirsets(8),
-  num_groupsets(1),
+  num_groupsets(2),
   layout_pattern(0),
   
   niter(10),

@@ -29,8 +29,9 @@ Nesting_Order Kernel_3d_DZG::nestingSigs(void) const {
 
 void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
   // Outer parameters
-  int nidx = grid_data->total_num_moments;
+  int num_moments = grid_data->total_num_moments;
 
+  // Zero Phi
   for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
     grid_data->phi[ds]->clear(0.0);
   }
@@ -46,36 +47,36 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-
-    /* 3D Cartesian Geometry */
-    double * KRESTRICT ell = sdom.ell->ptr();
-    double * KRESTRICT phi_ptr = sdom.phi->ptr(group0, 0, 0);
-    for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
-      double * KRESTRICT psi_ptr = sdom.psi->ptr();
-
+    int num_gz = num_groups*num_zones;
+    int num_locgz = num_local_groups*num_zones;
+    
+    // Get pointers
+    double const * KRESTRICT ell = sdom.ell->ptr();
+    double const * KRESTRICT psi = sdom.psi->ptr();
+    double       * KRESTRICT phi = sdom.phi->ptr();
+    
+    for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
+      double const * KRESTRICT ell_nm = ell + nm_offset*num_local_directions;      
+      double       * KRESTRICT phi_nm = phi + nm_offset*num_gz;
+      
       for (int d = 0; d < num_local_directions; d++) {
-        double ell_nm_d = ell[d];
-
+        double const * KRESTRICT psi_d = psi + d*num_locgz;
+        double const             ell_nm_d = ell_nm[d];
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-        for (int z = 0;z < num_zones;++ z){
-          double * KRESTRICT phi = phi_ptr + num_groups*z;
-          double * KRESTRICT psi = psi_ptr + num_local_groups*z;
-
-          for(int group = 0;group < num_local_groups; ++ group){
-            phi[group] += ell_nm_d * psi[group];
+        for (int z = 0;z < num_zones;++ z){               
+          double const * KRESTRICT psi_d_z  = psi_d + z*num_local_groups;
+          double       * KRESTRICT phi_nm_z = phi_nm + z*num_groups;
+          
+          for(int group = 0;group < num_local_groups; ++ group){  
+            phi_nm_z[group+group0] += ell_nm_d * psi_d_z[group];
           }
-
         }
-        psi_ptr += num_zones*num_local_groups;
       }
-      ell += num_local_directions;
-      phi_ptr += num_groups*num_zones;
     }
-
-  } // Subdomain
+  } 
 }
 
 void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
