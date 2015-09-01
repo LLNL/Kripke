@@ -81,7 +81,7 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
 
 void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
-  int nidx = grid_data->total_num_moments;
+  int num_moments = grid_data->total_num_moments;
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
@@ -94,38 +94,39 @@ void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int num_groups_zones = num_local_groups*num_zones;
+    int num_gz = num_groups*num_zones;
+    int num_locgz = num_local_groups*num_zones;
 
-    // Get Variables
+    // Zero RHS
     sdom.rhs->clear(0.0);
 
-    /* 3D Cartesian Geometry */
-    double * KRESTRICT ell_plus = sdom.ell_plus->ptr();
+    // Get pointers
+    double const * KRESTRICT phi_out = sdom.phi_out->ptr() + group0;
+    double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
+    double       * KRESTRICT rhs = sdom.rhs->ptr();
 
     for (int d = 0; d < num_local_directions; d++) {
-      double * KRESTRICT phi_out_ptr = sdom.phi_out->ptr(group0, 0, 0);
-      double * KRESTRICT rhs_ptr = sdom.rhs->ptr(0, d, 0);
+      double       * KRESTRICT rhs_d = rhs + d*num_locgz;
+      double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
 
-      for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
-        double ell_plus_d_nm = ell_plus[nm_offset];
+      for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
+        double const             ell_plus_d_nm = ell_plus_d[nm_offset];
+        double const * KRESTRICT phi_out_nm = phi_out + nm_offset*num_gz;
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
         for(int z = 0;z < num_zones;++ z){
-          double * KRESTRICT rhs = rhs_ptr + num_local_groups*z;
-          double * KRESTRICT phi_out = phi_out_ptr + num_groups*z;
-
+          double const * KRESTRICT phi_out_nm_z = phi_out_nm + z*num_groups;
+          double       * KRESTRICT rhs_d_z = rhs_d + z*num_local_groups;
 
           for(int group = 0;group < num_local_groups;++ group){
-            rhs[group] += ell_plus_d_nm * phi_out[group];
+            rhs_d_z[group] += ell_plus_d_nm * phi_out_nm_z[group];
           }
         }
-        phi_out_ptr += num_groups*num_zones;
       }
-      ell_plus += nidx;
     }
-  } // Subdomain
+  }
 }
 
 

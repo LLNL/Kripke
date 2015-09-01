@@ -96,7 +96,7 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
     int num_local_directions = sdom.num_directions;
     int num_groups_zones = num_local_groups*num_zones;
 
-    /* 3D Cartesian Geometry */
+    // Get pointers
     double const * KRESTRICT phi_out = sdom.phi_out->ptr() + group0*num_zones;
     double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
     double       * KRESTRICT rhs = sdom.rhs->ptr();
@@ -105,7 +105,10 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
       double       * KRESTRICT rhs_d = rhs + d*num_groups_zones;
       double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
       
-      // Clear rhs_d
+      // Zero RHS
+#ifdef KRIPKE_USE_OPENMP
+#pragma omp parallel for schedule(static)
+#endif
       for(int gz = 0;gz < num_groups_zones;++ gz){
         rhs_d[gz] = 0.0;
       }
@@ -122,8 +125,7 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
         }
       }
     }
-
-  } // Subdomains
+  }
 }
 
 /**

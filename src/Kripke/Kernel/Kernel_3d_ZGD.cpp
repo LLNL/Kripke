@@ -81,7 +81,7 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
 
 void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
-  int nidx = grid_data->total_num_moments;
+  int num_moments = grid_data->total_num_moments;
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
@@ -113,19 +113,18 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
         for (int d = 0; d < num_local_directions; d++) {
           double rhs_acc = 0.0;
 
-          for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+          for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
              rhs_acc += ell_plus_d[nm_offset] * phi_out[nm_offset];
           }
           rhs[d] += rhs_acc;
 
-          ell_plus_d += nidx;
+          ell_plus_d += num_moments;
         }
         rhs += num_local_directions;
-        phi_out += nidx;
+        phi_out += num_moments;
       }
     }
-
-  } // Subdomain
+  }
 }
 
 

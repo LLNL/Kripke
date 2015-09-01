@@ -81,7 +81,7 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
 
 void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
-  int nidx = grid_data->total_num_moments;
+  int num_moments = grid_data->total_num_moments;
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
@@ -112,7 +112,7 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
 
         double * KRESTRICT phi_out = sdom.phi_out->ptr(group0, 0, z);
 
-        for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+        for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
           double ell_plus_d_n_m = ell_plus_d[nm_offset];
 
           for (int group = 0; group < num_local_groups; ++group) {
@@ -121,10 +121,10 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
           phi_out += num_groups;
         }
         rhs += num_local_groups;
-        ell_plus_d += nidx;
+        ell_plus_d += num_moments;
       }
     }
-  } // Subdomain
+  }
 }
 
 
