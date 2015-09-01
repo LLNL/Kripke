@@ -129,11 +129,6 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
 /**
   Compute scattering source term phi_out from flux moments in phi.
   phi_out(gp,z,nm) = sum_g { sigs(g, n, gp) * phi(g,z,nm) }
-
-  we are mapping sigs(g,d,z) to mean:
-    g=source group
-    d=legendre coeff
-    z=destination group
 */
 void Kernel_3d_DGZ::scattering(Grid_Data *grid_data){
   // Loop over zoneset subdomains

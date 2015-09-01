@@ -15,7 +15,7 @@ Nesting_Order Kernel_3d_ZDG::nestingSigt(void) const {
 }
 
 Nesting_Order Kernel_3d_ZDG::nestingEll(void) const {
-  return NEST_ZDG;
+  return NEST_ZGD;
 }
 
 Nesting_Order Kernel_3d_ZDG::nestingEllPlus(void) const {
@@ -29,7 +29,7 @@ Nesting_Order Kernel_3d_ZDG::nestingSigs(void) const {
 
 void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
   // Outer parameters
-  int nidx = grid_data->total_num_moments;
+  int num_moments = grid_data->total_num_moments;
 
   // Clear phi
   for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
@@ -47,34 +47,36 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
+    int num_gnm = num_groups * num_moments;
+    int num_locgd = num_local_groups * num_local_directions;
 
-    /* 3D Cartesian Geometry */
-    double * KRESTRICT ell_d_ptr = sdom.ell->ptr();
+    // Get pointers
+    double const * KRESTRICT ell = sdom.ell->ptr();
+    double const * KRESTRICT psi = sdom.psi->ptr();
+    double       * KRESTRICT phi = sdom.phi->ptr();
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
     for (int z = 0; z < num_zones; z++) {
-      double * KRESTRICT psi = sdom.psi->ptr(0, 0, z);
-      double * KRESTRICT ell_d = ell_d_ptr;
+      double const * KRESTRICT psi_z = psi + z*num_locgd;
+      double       * KRESTRICT phi_z = phi + z*num_gnm;
 
-      for (int d = 0; d < num_local_directions; d++) {
-        double * KRESTRICT phi = sdom.phi->ptr(group0, 0, z);
+      for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
+        double const * KRESTRICT ell_nm = ell + nm_offset*num_local_directions;
+        double       * KRESTRICT phi_z_nm_g0 = phi_z + nm_offset*num_groups + group0;
 
-        for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
-          double ell_d_nm = ell_d[nm_offset];
+        for (int d = 0; d < num_local_directions; d++) {
+          double const             ell_nm_d = ell_nm[d];
+          double const * KRESTRICT psi_z_d = psi_z + d*num_local_groups;
 
           for (int group = 0; group < num_local_groups; ++group) {
-            phi[group] += ell_d_nm * psi[group];
+            phi_z_nm_g0[group] += ell_nm_d * psi_z_d[group];
           }
-          phi += num_groups;
         }
-        ell_d += nidx;
-        psi += num_local_groups;
       }
     }
-
-  } // Subdomain
+  }
 }
 
 void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
@@ -129,11 +131,6 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
 /**
   Compute scattering source term phi_out from flux moments in phi.
   phi_out(gp,z,nm) = sum_g { sigs(g, n, gp) * phi(g,z,nm) }
-
-  we are mapping sigs(g,d,z) to mean:
-    g=source group
-    d=legendre coeff
-    z=destination group
 */
 void Kernel_3d_ZDG::scattering(Grid_Data *grid_data){
   // Loop over zoneset subdomains
