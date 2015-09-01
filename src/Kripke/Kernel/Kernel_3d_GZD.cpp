@@ -125,67 +125,55 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
 void Kernel_3d_GZD::scattering(Grid_Data *grid_data){
   // Loop over zoneset subdomains
   for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
-    // get the phi and phi out references
-    SubTVec &phi = *grid_data->phi[zs];
-    SubTVec &phi_out = *grid_data->phi_out[zs];
-    SubTVec &sigs0 = *grid_data->sigs[0];
-    SubTVec &sigs1 = *grid_data->sigs[1];
-    SubTVec &sigs2 = *grid_data->sigs[2];
-
     // get material mix information
     int sdom_id = grid_data->zs_to_sdomid[zs];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
-    int const * KRESTRICT mixed_to_zones = &sdom.mixed_to_zones[0];
-    int const * KRESTRICT mixed_material = &sdom.mixed_material[0];
+    int    const * KRESTRICT mixed_to_zones = &sdom.mixed_to_zones[0];
+    int    const * KRESTRICT mixed_material = &sdom.mixed_material[0];
     double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
+    double const * KRESTRICT sigs = grid_data->sigs->ptr();
+
+    int    const * KRESTRICT moment_to_coeff = &grid_data->moment_to_coeff[0];
+    double const * KRESTRICT phi = grid_data->phi[zs]->ptr();
+    double       * KRESTRICT phi_out = grid_data->phi_out[zs]->ptr();
 
     // Zero out source terms
-    phi_out.clear(0.0);
+    grid_data->phi_out[zs]->clear(0.0);
 
     // grab dimensions
     int num_mixed = sdom.mixed_to_zones.size();
     int num_zones = sdom.num_zones;
-    int num_groups = phi.groups;
-    int num_coeff = grid_data->legendre_order+1;
+    int num_groups = grid_data->phi_out[zs]->groups;
     int num_moments = grid_data->total_num_moments;
-    int const * KRESTRICT moment_to_coeff = &grid_data->moment_to_coeff[0];
+    int num_coeff = grid_data->legendre_order+1;
+    int num_nmz = num_moments*num_zones;
 
-    double *phi_g = phi.ptr();
-    double *sigs0_g_gp = sigs0.ptr();
-    double *sigs1_g_gp = sigs1.ptr();
-    double *sigs2_g_gp = sigs2.ptr();
-    for(int g = 0;g < num_groups;++ g){
-
-      double *phi_out_gp = phi_out.ptr();
-      for(int gp = 0;gp < num_groups;++ gp){
-
-        double *sigs_g_gp[3] = {
-          sigs0_g_gp,
-          sigs1_g_gp,
-          sigs2_g_gp
-        };
+    for(int g = 0;g < num_groups;++ g){      
+      double const * KRESTRICT sigs_g = sigs + g*num_groups*num_coeff*3;
+      double const * KRESTRICT phi_g = phi + g*num_nmz;
+      
+              
+      for(int gp = 0;gp < num_groups;++ gp){           
+        double const * KRESTRICT sigs_g_gp = sigs_g + gp*num_coeff*3;
+        double       * KRESTRICT phi_out_gp = phi_out + gp*num_nmz;
 
         for(int mix = 0;mix < num_mixed;++ mix){
           int zone = mixed_to_zones[mix];
           int material = mixed_material[mix];
           double fraction = mixed_fraction[mix];
-          double *sigs_g_gp_mat = sigs_g_gp[material];
-          double *phi_g_z = phi_g + zone*num_moments;
-          double *phi_out_gp_z = phi_out_gp + zone*num_moments;
-
+          
+          double const * KRESTRICT sigs_g_gp_mat = sigs_g_gp + material*num_coeff;
+          double const * KRESTRICT phi_g_z = phi_g + zone*num_moments;
+          double       * KRESTRICT phi_out_gp_z = phi_out_gp + zone*num_moments;
+    
           for(int nm = 0;nm < num_moments;++ nm){
             // map nm to n
             int n = moment_to_coeff[nm];
-
+                                                                        
             phi_out_gp_z[nm] += sigs_g_gp_mat[n] * phi_g_z[nm] * fraction;
           }
-        }
-        sigs0_g_gp += num_coeff;
-        sigs1_g_gp += num_coeff;
-        sigs2_g_gp += num_coeff;
-        phi_out_gp += num_zones*num_moments;
+        }        
       }
-      phi_g += num_zones*num_moments;
     }
   }
 }

@@ -62,16 +62,16 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   int total_num_groups = num_group_sets*num_groups_per_set;
   sigma_tot.resize(total_num_groups, 0.0);
 
-  // Setup scattering transfer matrix for 3 materials
-  sigs.resize(3);
-  for(int mat = 0;mat < 3;++ mat){
-    // allocate transfer matrix
-    sigs[mat] = new SubTVec(kernel->nestingSigs(), total_num_groups, legendre_order+1, total_num_groups);
+  // Setup scattering transfer matrix for 3 materials  
 
-    // Set to isotropic scattering given user inputs
-    sigs[mat]->clear(0.0);
+  sigs = new SubTVec(kernel->nestingSigs(), total_num_groups*total_num_groups, legendre_order+1, 3);
+
+  // Set to isotropic scattering given user inputs
+  sigs->clear(0.0);
+  for(int mat = 0;mat < 3;++ mat){
     for(int g = 0;g < total_num_groups;++ g){
-      (*sigs[mat])(g, 0, g) = input_vars->sigs[mat];
+      int idx_g_gp = g*total_num_groups + g;
+      (*sigs)(idx_g_gp, 0, mat) = input_vars->sigs[mat];
     }
   }
 
@@ -172,9 +172,7 @@ Grid_Data::~Grid_Data(){
     delete ell[ds];
     delete ell_plus[ds];
   }
-  for(int mat = 0;mat < 3;++ mat){
-    delete sigs[mat];
-  }
+  delete sigs;
 }
 
 /**
@@ -206,9 +204,7 @@ void Grid_Data::randomizeData(void){
     ell_plus[ds]->randomizeData();
   }
 
-  for(int mat = 0;mat < 3;++ mat){
-    sigs[mat]->randomizeData();
-  }
+  sigs->randomizeData();
 }
 
 
@@ -268,9 +264,7 @@ void Grid_Data::copy(Grid_Data const &b){
     ell_plus[ds]->copy(*b.ell_plus[ds]);
   }
 
-  for(int mat = 0;mat < 3;++ mat){
-    sigs[mat]->copy(*b.sigs[mat]);
-  }
+  sigs->copy(*b.sigs);
 }
 
 /**
@@ -311,9 +305,7 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
     is_diff |= ell_plus[ds]->compare("ell_plus", *b.ell_plus[ds], tol, verbose);
   }
 
-  for(int mat = 0;mat < 3;++ mat){
-    is_diff |= sigs[mat]->compare("sigs", *b.sigs[mat], tol, verbose);
-  }
+  is_diff |= sigs->compare("sigs", *b.sigs, tol, verbose);
 
   return is_diff;
 }

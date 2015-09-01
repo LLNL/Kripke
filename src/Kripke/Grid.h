@@ -55,7 +55,8 @@ public:
   std::vector<int> zs_to_sdomid;            // map of zonesets to subdomains with ds=gs=0
 
   // Variables:
-  std::vector<SubTVec *> sigs;              // scattering lookup table for each material
+  SubTVec *sigs;                            // scattering lookup table for each material
+                                            // G=g->gp, D=legendre coeff, Z=matidx
 
   // Per directionset ell and ell_plus matrices (Subdomain point into these arrays)
   std::vector<SubTVec *> ell;               // L matrix in nm_offset coordinates
