@@ -201,24 +201,24 @@ void Kernel_3d_GDZ::scattering(Grid_Data *grid_data){
 void Kernel_3d_GDZ::source(Grid_Data *grid_data){
   // Loop over zoneset subdomains
   for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
-    // get the phi and phi out references
-    SubTVec &phi_out = *grid_data->phi_out[zs];
-
+  
     // get material mix information
     int sdom_id = grid_data->zs_to_sdomid[zs];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
-    int const * KRESTRICT mixed_to_zones = &sdom.mixed_to_zones[0];
-    int const * KRESTRICT mixed_material = &sdom.mixed_material[0];
+    int    const * KRESTRICT mixed_to_zones = &sdom.mixed_to_zones[0];
+    int    const * KRESTRICT mixed_material = &sdom.mixed_material[0];
     double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
+    double       * KRESTRICT phi_out = grid_data->phi_out[zs]->ptr();
 
     // grab dimensions
     int num_mixed = sdom.mixed_to_zones.size();
     int num_zones = sdom.num_zones;
-    int num_groups = phi_out.groups;
+    int num_groups = grid_data->phi_out[zs]->groups;
     int num_moments = grid_data->total_num_moments;
 
-    double *phi_out_g_nm0 = phi_out.ptr();
     for(int g = 0;g < num_groups;++ g){
+      double * KRESTRICT phi_out_g_nm0 = phi_out + g*num_zones*num_moments;
+      
       for(int mix = 0;mix < num_mixed;++ mix){
         int zone = mixed_to_zones[mix];
         int material = mixed_material[mix];
@@ -228,7 +228,6 @@ void Kernel_3d_GDZ::source(Grid_Data *grid_data){
           phi_out_g_nm0[zone] += 1.0 * fraction;
         }
       }
-      phi_out_g_nm0 += num_moments * num_zones;
     }
   }
 }
