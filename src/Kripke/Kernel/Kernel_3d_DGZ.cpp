@@ -55,9 +55,9 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
     double const * KRESTRICT psi = sdom.psi->ptr();
     double       * KRESTRICT phi = sdom.phi->ptr();
     
-    for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
-      double const * KRESTRICT ell_nm = ell + nm_offset*num_local_directions;      
-      double       * KRESTRICT phi_nm = phi + nm_offset*num_gz;
+    for(int nm = 0;nm < num_moments;++nm){
+      double const * KRESTRICT ell_nm = ell + nm*num_local_directions;      
+      double       * KRESTRICT phi_nm = phi + nm*num_gz;
       
       for (int d = 0; d < num_local_directions; d++) {
         double const * KRESTRICT psi_d = psi + d*num_locgz;
@@ -108,9 +108,9 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
       double       * KRESTRICT rhs_d = rhs + d*num_groups_zones;
       double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
       
-      for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
-        double const ell_plus_d_nm = ell_plus_d[nm_offset];
-        double const * KRESTRICT phi_out_nm = phi_out + nm_offset*num_groups*num_zones;
+      for(int nm = 0;nm < num_moments;++nm){
+        double const ell_plus_d_nm = ell_plus_d[nm];
+        double const * KRESTRICT phi_out_nm = phi_out + nm*num_groups*num_zones;
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for schedule(static)

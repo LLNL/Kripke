@@ -65,14 +65,14 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
         double const * KRESTRICT psi_z_g = psi_z + group*num_local_directions;
         double       * KRESTRICT phi_z_g = phi_z + (group0+group)*num_moments;
 
-        for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
-          double const * KRESTRICT ell_nm = ell + nm_offset*num_local_directions;
+        for(int nm = 0;nm < num_moments;++nm){
+          double const * KRESTRICT ell_nm = ell + nm*num_local_directions;
 
           double phi_z_g_nm = 0.0;
           for (int d = 0; d < num_local_directions; d++) {
             phi_z_g_nm += ell_nm[d] * psi_z_g[d];
           }
-          phi_z_g[nm_offset] += phi_z_g_nm;
+          phi_z_g[nm] += phi_z_g_nm;
         }
       }
     }
@@ -120,8 +120,8 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
           double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
                               
           double rhs_z_g_d = 0.0;
-          for(int nm_offset = 0;nm_offset < num_moments; ++nm_offset){
-            rhs_z_g_d += ell_plus_d[nm_offset] * phi_out_z_g[nm_offset];
+          for(int nm = 0;nm < num_moments; ++nm){
+            rhs_z_g_d += ell_plus_d[nm] * phi_out_z_g[nm];
           }                    
           rhs_z_g[d] = rhs_z_g_d;
         }        

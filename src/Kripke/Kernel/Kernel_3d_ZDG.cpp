@@ -62,9 +62,9 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
       double const * KRESTRICT psi_z = psi + z*num_locgd;
       double       * KRESTRICT phi_z = phi + z*num_gnm;
 
-      for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
-        double const * KRESTRICT ell_nm = ell + nm_offset*num_local_directions;
-        double       * KRESTRICT phi_z_nm_g0 = phi_z + nm_offset*num_groups + group0;
+      for(int nm = 0;nm < num_moments;++nm){
+        double const * KRESTRICT ell_nm = ell + nm*num_local_directions;
+        double       * KRESTRICT phi_z_nm_g0 = phi_z + nm*num_groups + group0;
 
         for (int d = 0; d < num_local_directions; d++) {
           double const             ell_nm_d = ell_nm[d];
@@ -116,9 +116,9 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
         double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
         double       * KRESTRICT rhs_z_d = rhs_z + d*num_local_groups;
         
-        for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
-          double const * KRESTRICT phi_out_z_nm = phi_out_z + nm_offset*num_groups + group0;
-          double const             ell_plus_d_nm = ell_plus_d[nm_offset];
+        for(int nm = 0;nm < num_moments;++nm){
+          double const * KRESTRICT phi_out_z_nm = phi_out_z + nm*num_groups + group0;
+          double const             ell_plus_d_nm = ell_plus_d[nm];
           
           for (int group = 0; group < num_local_groups; ++group) {
             rhs_z_d[group] += ell_plus_d_nm * phi_out_z_nm[group];

@@ -66,14 +66,14 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
         double const * KRESTRICT psi_g_z = psi_g + z*num_local_directions;
         double       * KRESTRICT phi_g_z = phi_g + z*num_moments;
 
-        for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
-          double const * KRESTRICT ell_nm = ell + nm_offset*num_local_directions;
+        for(int nm = 0;nm < num_moments;++nm){
+          double const * KRESTRICT ell_nm = ell + nm*num_local_directions;
 
           double phi_g_z_nm = 0.0;
           for (int d = 0; d < num_local_directions; d++) {
             phi_g_z_nm += ell_nm[d] * psi_g_z[d];
           }
-          phi_g_z[nm_offset] += phi_g_z_nm;
+          phi_g_z[nm] += phi_g_z_nm;
         }
       }
     }
@@ -120,8 +120,8 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
           double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
 
           double rhs_g_z_d = 0.0;
-          for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){            
-            rhs_g_z_d += ell_plus_d[nm_offset] * phi_out_g_z[nm_offset];
+          for(int nm = 0;nm < num_moments;++nm){            
+            rhs_g_z_d += ell_plus_d[nm] * phi_out_g_z[nm];
           }          
           rhs_g_z[d] += rhs_g_z_d;
         }        
