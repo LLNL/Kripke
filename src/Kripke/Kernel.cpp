@@ -32,5 +32,6 @@ Kernel *createKernel(Nesting_Order nest, int num_dims){
   }
 
   MPI_Abort(MPI_COMM_WORLD, 1);
+  return NULL;
 }
 

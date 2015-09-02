@@ -7,9 +7,14 @@ message(STATUS ${CMAKE_MODULE_PATH})
 
 
 # MPI Support (Required)
-find_package(MPI REQUIRED)
-include_directories(${MPI_INCLUDE_PATH})
-set(KRIPKE_LIBS ${KRIPKE_LIBS} ${MPI_LIBRARIES})
+# If the ENABLE_MPI is turned off, you must use the mpi* compiler wrappers, since
+# Kripke will not build without MPI support
+set(ENABLE_MPI On CACHE STRING "Turn this off if you are using mpi compiler wrappers")
+if(ENABLE_MPI)
+  find_package(MPI REQUIRED)
+  include_directories(${MPI_INCLUDE_PATH})
+  set(KRIPKE_LIBS ${KRIPKE_LIBS} ${MPI_LIBRARIES})
+endif()
 
 
 # OpenMP Support (Optional)
@@ -67,6 +72,19 @@ if(ENABLE_TCMALLOC)
 endif()
 
 
+# BG/Q Performance tools (BGPM) Support (Optional, only on BG/Q)
+if(ENABLED_BGPM)
+  find_package(TCMalloc)
+  if(TCMalloc_FOUND)
+    add_definitions(-DKRIPKE_USE_TCMALLOC)
+    include_directories(${TCMalloc_INCLUDE_DIRS})
+    set(KRIPKE_LIBS ${KRIPKE_LIBS} ${TCMalloc_LIBRARIES})
+    message(STATUS "TCMalloc Enabled")
+  else()
+    message(WARNING "TCMalloc NOT FOUND")
+  endif()
+endif()
+
 
 # Tarball Creation Support
 if(ENABLE_CPACK)
@@ -81,9 +99,6 @@ endif()
 
 # Optional 
 #bdiv_opt_pkg(perftools 0 OFF)
-
-# BG/Q Specific
-#bdiv_opt_pkg(BGPM 20030410 OFF)
 
 
 #
@@ -122,10 +137,10 @@ add_test(test_zset_zdg_block kripke --nest zdg --test --zset 2:3:5 --gset 3 --gr
 add_test(test_zset_zgd_block kripke --nest zgd --test --zset 2:3:5 --gset 3 --groups 6 --layout 0)
 
 # Also check with scattered layout (just checking parallel algo, so just 1 nesting)
-add_test(test_zset_dgz_scatter kripke --nest dgz --test --zset 2:3:5 --gset 3 --groups 6 --layout 1)
+add_test(test_zset_dgz_scatter kripke --nest dgz --zset 2:3:5 --gset 3 --groups 6 --layout 1)
 
 # Test the block-Jacobi parallel method
-add_test(test_bj_dgz kripke --nest dgz --test --pmethod bj)
+add_test(test_bj_dgz kripke --nest dgz --pmethod bj)
 
 
 

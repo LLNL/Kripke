@@ -336,4 +336,5 @@ Layout *createLayout(Input_Variables *input_vars){
   }
   printf("Unknown Layout patter\n");
   MPI_Abort(MPI_COMM_WORLD, 1);
+  return NULL;
 }
