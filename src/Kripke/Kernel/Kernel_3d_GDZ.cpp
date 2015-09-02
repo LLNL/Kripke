@@ -54,9 +54,9 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data) {
     double const * KRESTRICT psi = sdom.psi->ptr();
     double       * KRESTRICT phi = sdom.phi->ptr();
 
-    for (int group = 0; group < num_local_groups; ++group) {
-      double const * KRESTRICT psi_g = psi + group*num_dz;
-      double       * KRESTRICT phi_g = phi + (group0+group)*num_nmz;
+    for (int g = 0; g < num_local_groups; ++g) {
+      double const * KRESTRICT psi_g = psi + g*num_dz;
+      double       * KRESTRICT phi_g = phi + (group0+g)*num_nmz;
 
       for(int nm = 0;nm < num_moments;++nm){
         double const * KRESTRICT ell_nm = ell + nm*num_local_directions;
@@ -103,9 +103,9 @@ void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data) {
     double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
     double       * KRESTRICT rhs = sdom.rhs->ptr();
 
-    for (int group = 0; group < num_local_groups; ++group) {
-      double const * KRESTRICT phi_out_g = phi_out + (group0+group)*num_nmz;
-      double       * KRESTRICT rhs_g = rhs + group*num_dz;
+    for (int g = 0; g < num_local_groups; ++g) {
+      double const * KRESTRICT phi_out_g = phi_out + (group0+g)*num_nmz;
+      double       * KRESTRICT rhs_g = rhs + g*num_dz;
 
       for (int d = 0; d < num_local_directions; d++) {
         double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
@@ -228,8 +228,7 @@ void Kernel_3d_GDZ::source(Grid_Data *grid_data){
   }
 }
 
-/* Sweep routine for Diamond-Difference */
-/* Macros for offsets with fluxes on cell faces */
+// Macros for offsets with fluxes on cell faces 
 #define I_PLANE_INDEX(j, k) ((k)*(local_jmax) + (j))
 #define J_PLANE_INDEX(i, k) ((k)*(local_imax) + (i))
 #define K_PLANE_INDEX(i, j) ((j)*(local_imax) + (i))
@@ -274,15 +273,15 @@ void Kernel_3d_GDZ::sweep(Subdomain *sdom) {
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-  for (int group = 0; group < num_groups; ++group) {
+  for (int g = 0; g < num_groups; ++g) {
   
-    double const * KRESTRICT sigt_g = sigt + num_zones*group;
-    double       * KRESTRICT psi_g  = psi  + group*num_dz;
-    double const * KRESTRICT rhs_g  = rhs  + group*num_dz;
+    double const * KRESTRICT sigt_g = sigt + num_zones*g;
+    double       * KRESTRICT psi_g  = psi  + g*num_dz;
+    double const * KRESTRICT rhs_g  = rhs  + g*num_dz;
 
-    double       * KRESTRICT psi_lf_g = psi_lf + group*num_dz_i;
-    double       * KRESTRICT psi_fr_g = psi_fr + group*num_dz_j;
-    double       * KRESTRICT psi_bo_g = psi_bo + group*num_dz_k;
+    double       * KRESTRICT psi_lf_g = psi_lf + g*num_dz_i;
+    double       * KRESTRICT psi_fr_g = psi_fr + g*num_dz_j;
+    double       * KRESTRICT psi_bo_g = psi_bo + g*num_dz_k;
 
     for (int d = 0; d < num_directions; ++d) {
       double       * KRESTRICT psi_g_d = psi_g + d*num_zones;
@@ -295,7 +294,7 @@ void Kernel_3d_GDZ::sweep(Subdomain *sdom) {
       double ycos = 2.0 * direction[d].ycos;
       double zcos = 2.0 * direction[d].zcos;
 
-      /*  Perform transport sweep of the grid 1 cell at a time.   */
+      //  Perform transport sweep of the grid 1 cell at a time.
       for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
         double zcos_dzk = zcos / dz[k + 1];
         
@@ -310,7 +309,7 @@ void Kernel_3d_GDZ::sweep(Subdomain *sdom) {
             int z_j = J_PLANE_INDEX(i, k);
             int z_k = K_PLANE_INDEX(i, j);
 
-            /* Calculate new zonal flux */
+            // Calculate new zonal flux
             double psi_g_d_z = (rhs_g_d[z_idx]
                 + psi_lf_g_d[z_i] * xcos_dxi
                 + psi_fr_g_d[z_j] * ycos_dyj
@@ -319,7 +318,7 @@ void Kernel_3d_GDZ::sweep(Subdomain *sdom) {
                 
             psi_g_d[z_idx] = psi_g_d_z;
 
-            /* Apply diamond-difference relationships */
+            // Apply diamond-difference relationships
             psi_lf_g_d[z_i] = 2.0 * psi_g_d_z - psi_lf_g_d[z_i];
             psi_fr_g_d[z_j] = 2.0 * psi_g_d_z - psi_fr_g_d[z_j];
             psi_bo_g_d[z_k] = 2.0 * psi_g_d_z - psi_bo_g_d[z_k];

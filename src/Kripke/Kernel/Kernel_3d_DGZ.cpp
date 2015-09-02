@@ -66,9 +66,9 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-        for(int group = 0;group < num_local_groups; ++ group){
-          double const * KRESTRICT psi_d_g  = psi_d + group*num_zones;
-          double       * KRESTRICT phi_nm_g = phi_nm + (group+group0)*num_zones;
+        for(int g = 0;g < num_local_groups; ++ g){
+          double const * KRESTRICT psi_d_g  = psi_d + g*num_zones;
+          double       * KRESTRICT phi_nm_g = phi_nm + (group0+g)*num_zones;
           
           for (int z = 0;z < num_zones;++ z){        
             phi_nm_g[z] += ell_nm_d * psi_d_g[z];
@@ -223,8 +223,7 @@ void Kernel_3d_DGZ::source(Grid_Data *grid_data){
 }
 
 
-/* Sweep routine for Diamond-Difference */
-/* Macros for offsets with fluxes on cell faces */
+// Macros for offsets with fluxes on cell faces 
 #define I_PLANE_INDEX(j, k) ((k)*(local_jmax) + (j))
 #define J_PLANE_INDEX(i, k) ((k)*(local_imax) + (i))
 #define K_PLANE_INDEX(i, j) ((j)*(local_imax) + (i))
@@ -281,14 +280,14 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for (int group = 0; group < num_groups; ++group) {
-      double const * KRESTRICT sigt_g  = sigt + group*num_zones;
-      double       * KRESTRICT psi_d_g = psi_d + group*num_zones;
-      double const * KRESTRICT rhs_d_g = rhs_d + group*num_zones;
+    for (int g = 0; g < num_groups; ++g) {
+      double const * KRESTRICT sigt_g  = sigt + g*num_zones;
+      double       * KRESTRICT psi_d_g = psi_d + g*num_zones;
+      double const * KRESTRICT rhs_d_g = rhs_d + g*num_zones;
       
-      double       * KRESTRICT psi_lf_d_g = psi_lf_d + group*num_z_i;
-      double       * KRESTRICT psi_fr_d_g = psi_fr_d + group*num_z_j;
-      double       * KRESTRICT psi_bo_d_g = psi_bo_d + group*num_z_k;
+      double       * KRESTRICT psi_lf_d_g = psi_lf_d + g*num_z_i;
+      double       * KRESTRICT psi_fr_d_g = psi_fr_d + g*num_z_j;
+      double       * KRESTRICT psi_bo_d_g = psi_bo_d + g*num_z_k;
 
       for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {       
         double zcos_dzk = zcos / dz[k + 1];

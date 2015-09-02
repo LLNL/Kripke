@@ -70,8 +70,8 @@ void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
           double const             ell_nm_d = ell_nm[d];
           double const * KRESTRICT psi_z_d = psi_z + d*num_local_groups;
 
-          for (int group = 0; group < num_local_groups; ++group) {
-            phi_z_nm_g0[group] += ell_nm_d * psi_z_d[group];
+          for (int g = 0; g < num_local_groups; ++g) {
+            phi_z_nm_g0[g] += ell_nm_d * psi_z_d[g];
           }
         }
       }
@@ -120,8 +120,8 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
           double const * KRESTRICT phi_out_z_nm = phi_out_z + nm*num_groups + group0;
           double const             ell_plus_d_nm = ell_plus_d[nm];
           
-          for (int group = 0; group < num_local_groups; ++group) {
-            rhs_z_d[group] += ell_plus_d_nm * phi_out_z_nm[group];
+          for (int g = 0; g < num_local_groups; ++g) {
+            rhs_z_d[g] += ell_plus_d_nm * phi_out_z_nm[g];
           }                    
         }        
       }     
@@ -229,8 +229,7 @@ void Kernel_3d_ZDG::source(Grid_Data *grid_data){
   }
 }
 
-/* Sweep routine for Diamond-Difference */
-/* Macros for offsets with fluxes on cell faces */
+// Macros for offsets with fluxes on cell faces 
 #define I_PLANE_INDEX(j, k) ((k)*(local_jmax) + (j))
 #define J_PLANE_INDEX(i, k) ((k)*(local_imax) + (i))
 #define K_PLANE_INDEX(i, j) ((j)*(local_imax) + (i))
@@ -303,20 +302,20 @@ void Kernel_3d_ZDG::sweep(Subdomain *sdom) {
           double * KRESTRICT psi_fr_z_d = psi_fr_z + d*num_groups;
           double * KRESTRICT psi_bo_z_d = psi_bo_z + d*num_groups;
 
-          for (int group = 0; group < num_groups; ++group) {
-            /* Calculate new zonal flux */
-            double psi_z_d_g = (rhs_z_d[group]
-                + psi_lf_z_d[group] * xcos_dxi
-                + psi_fr_z_d[group] * ycos_dyj
-                + psi_bo_z_d[group] * zcos_dzk)
-                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt_z[group]);
+          for (int g = 0; g < num_groups; ++g) {
+            // Calculate new zonal flux 
+            double psi_z_d_g = (rhs_z_d[g]
+                + psi_lf_z_d[g] * xcos_dxi
+                + psi_fr_z_d[g] * ycos_dyj
+                + psi_bo_z_d[g] * zcos_dzk)
+                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt_z[g]);
 
-            psi_z_d[group] = psi_z_d_g;
+            psi_z_d[g] = psi_z_d_g;
 
-            /* Apply diamond-difference relationships */
-            psi_lf_z_d[group] = 2.0 * psi_z_d_g - psi_lf_z_d[group];
-            psi_fr_z_d[group] = 2.0 * psi_z_d_g - psi_fr_z_d[group];
-            psi_bo_z_d[group] = 2.0 * psi_z_d_g - psi_bo_z_d[group];
+            // Apply diamond-difference relationships 
+            psi_lf_z_d[g] = 2.0 * psi_z_d_g - psi_lf_z_d[g];
+            psi_fr_z_d[g] = 2.0 * psi_z_d_g - psi_fr_z_d[g];
+            psi_bo_z_d[g] = 2.0 * psi_z_d_g - psi_bo_z_d[g];
           }
         }
       }
