@@ -189,19 +189,25 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
         }
 
         // Add material to zone
-        for(int mat = 0;mat < 3;++ mat){
+        int nmixed = 0;
+        for(int mat = 0;mat < 3;++ mat){          
           if(frac[mat] > 0.0){
+            nmixed ++;
+            if(nmixed == 1){
+              zones_to_mixed.push_back(mixed_to_zones.size());
+            }
             mixed_to_zones.push_back(zone_id);
             mixed_material.push_back(mat);
             mixed_fraction.push_back(frac[mat]);
             reg_volume[mat] += frac[mat] * zone_volume;
-
+            
             // initialize background sigt
             for(int g = 0;g < num_groups;++ g){
               (*sigt)(g,0,zone_id) += frac[mat] * input_vars->sigt[mat];
             }
           }
         }
+        num_mixed.push_back(nmixed);
 
         // increment zone
         px += deltas[0][i+1];

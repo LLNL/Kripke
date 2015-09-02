@@ -84,6 +84,8 @@ struct Subdomain {
   double reg_volume[3];               // volume of each material region
   std::vector<double> volume;         // volume of each zone
   std::vector<int> mixed_to_zones;    // mapping from mixed slot to zones
+  std::vector<int> num_mixed;         // mapping from mixed slot to zones
+  std::vector<int> zones_to_mixed;    // mapping from zones to first mixed slot
   std::vector<int> mixed_material;    // material number for each mixed slot
   std::vector<double> mixed_fraction; // volume fraction each mixed slot
 };
