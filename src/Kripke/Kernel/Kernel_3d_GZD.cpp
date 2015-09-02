@@ -94,30 +94,40 @@ void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int num_groups_zones = num_local_groups*num_zones;
+    int num_nmz = num_moments*num_zones;
+    int num_dz = num_local_directions*num_zones;
 
+    // Zero RHS
     sdom.rhs->clear(0.0);
+    
+    // Get pointers
+    double const * KRESTRICT phi_out = sdom.phi_out->ptr();
+    double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
+    double       * KRESTRICT rhs = sdom.rhs->ptr();
 
-    /* 3D Cartesian Geometry */
-    double * KRESTRICT ell_plus_ptr = sdom.ell_plus->ptr();
+    for (int group = 0; group < num_local_groups; ++group) {
+      double const * KRESTRICT phi_out_g = phi_out + (group0+group)*num_nmz;
+      double       * KRESTRICT rhs_g = rhs + group*num_dz;
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for(int gz = 0;gz < num_groups_zones; ++ gz){
-      double * KRESTRICT rhs = sdom.rhs->ptr(0, 0, 0) + gz*num_local_directions;
-      double * KRESTRICT phi_out = sdom.phi_out->ptr(group0, 0, 0) + gz*num_moments;
-      double * KRESTRICT ell_plus_d = ell_plus_ptr;
+      for(int z = 0;z < num_zones; ++ z){
+        double const * KRESTRICT phi_out_g_z = phi_out_g + z*num_moments;
+        double       * KRESTRICT rhs_g_z = rhs_g + z*num_local_directions;
 
-      for (int d = 0; d < num_local_directions; d++) {
+        for (int d = 0; d < num_local_directions; d++) {
+          double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
 
-        for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
-          rhs[d] += ell_plus_d[nm_offset] * phi_out[nm_offset];
-        }
-        ell_plus_d += num_moments;
-      }
+          double rhs_g_z_d = 0.0;
+          for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){            
+            rhs_g_z_d += ell_plus_d[nm_offset] * phi_out_g_z[nm_offset];
+          }          
+          rhs_g_z[d] += rhs_g_z_d;
+        }        
+      }     
     }
-  }
+  } 
 }
 
 

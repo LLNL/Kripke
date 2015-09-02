@@ -90,39 +90,41 @@ void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
 
     // Get dimensioning
     int num_zones = sdom.num_zones;
-    int num_groups = sdom.phi_out->groups;
+    int num_groups = sdom.phi->groups;
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
+    int num_gnm = num_moments*num_groups;
+    int num_locgd = num_local_directions*num_local_groups;
 
-    // Get Variables
+    // Zero RHS
     sdom.rhs->clear(0.0);
-
-    /* 3D Cartesian Geometry */
-    double * KRESTRICT ell_plus_ptr = sdom.ell_plus->ptr();
+    
+    // Get pointers
+    double const * KRESTRICT phi_out = sdom.phi_out->ptr();
+    double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
+    double       * KRESTRICT rhs = sdom.rhs->ptr();
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for (int z = 0; z < num_zones; z++) {
-      double * KRESTRICT rhs = sdom.rhs->ptr(0, 0, z);
-
-      double * ell_plus_d = ell_plus_ptr;
+    for(int z = 0;z < num_zones; ++ z){    
+      double const * KRESTRICT phi_out_z = phi_out + z*num_gnm;
+      double       * KRESTRICT rhs_z = rhs + z*num_locgd;
+      
       for (int d = 0; d < num_local_directions; d++) {
-
-        double * KRESTRICT phi_out = sdom.phi_out->ptr(group0, 0, z);
-
+        double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
+        double       * KRESTRICT rhs_z_d = rhs_z + d*num_local_groups;
+        
         for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
-          double ell_plus_d_n_m = ell_plus_d[nm_offset];
-
+          double const * KRESTRICT phi_out_z_nm = phi_out_z + nm_offset*num_groups + group0;
+          double const             ell_plus_d_nm = ell_plus_d[nm_offset];
+          
           for (int group = 0; group < num_local_groups; ++group) {
-            rhs[group] += ell_plus_d_n_m * phi_out[group];
-          }
-          phi_out += num_groups;
-        }
-        rhs += num_local_groups;
-        ell_plus_d += num_moments;
-      }
+            rhs_z_d[group] += ell_plus_d_nm * phi_out_z_nm[group];
+          }                    
+        }        
+      }     
     }
   }
 }

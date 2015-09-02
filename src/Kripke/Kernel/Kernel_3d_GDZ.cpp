@@ -80,7 +80,7 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data) {
 
 void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters
-  int nidx = grid_data->total_num_moments;
+  int num_moments = grid_data->total_num_moments;
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
@@ -92,39 +92,39 @@ void Kernel_3d_GDZ::LPlusTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
+    int num_nmz = num_moments*num_zones;
+    int num_dz = num_local_directions*num_zones;
 
-    // Get Variables
+    // Zero RHS
     sdom.rhs->clear(0.0);
-
-    /* 3D Cartesian Geometry */
-    double *ell_plus_ptr = sdom.ell_plus->ptr();
-
-    double * KRESTRICT phi_out_ptr = sdom.phi_out->ptr(group0, 0, 0);
-    double * KRESTRICT rhs = sdom.rhs->ptr();
+    
+    // Get pointers
+    double const * KRESTRICT phi_out = sdom.phi_out->ptr();
+    double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
+    double       * KRESTRICT rhs = sdom.rhs->ptr();
 
     for (int group = 0; group < num_local_groups; ++group) {
-      double *ell_plus = ell_plus_ptr;
+      double const * KRESTRICT phi_out_g = phi_out + (group0+group)*num_nmz;
+      double       * KRESTRICT rhs_g = rhs + group*num_dz;
 
       for (int d = 0; d < num_local_directions; d++) {
-        double * KRESTRICT phi_out = phi_out_ptr;
+        double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
+        double       * KRESTRICT rhs_g_d = rhs_g + d*num_zones;
 
-        for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
-          double ell_plus_d_nm = ell_plus[nm_offset];
+        for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
+          double const * KRESTRICT phi_out_g_nm = phi_out_g + nm_offset*num_zones;
+          double const             ell_plus_d_nm = ell_plus_d[nm_offset];
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
           for(int z = 0;z < num_zones; ++ z){
-            rhs[z] += ell_plus_d_nm * phi_out[z];
-          }
-          phi_out += num_zones;
-        }
-        ell_plus += nidx;
-        rhs += num_zones;
-      }
-      phi_out_ptr += num_zones*nidx;
+            rhs_g_d[z] += ell_plus_d_nm * phi_out_g_nm[z];
+          }          
+        }        
+      }     
     }
-  } // Subdomain
+  } 
 }
 
 /**

@@ -90,39 +90,42 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
 
     // Get dimensioning
     int num_zones = sdom.num_zones;
+    int num_groups = sdom.phi->groups;
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
+    int num_gnm = num_moments*num_groups;
+    int num_locgd = num_local_directions*num_local_groups;
 
-    // Get Variables
+    // Zero RHS
     sdom.rhs->clear(0.0);
-
-    /* 3D Cartesian Geometry */
-    double * KRESTRICT ell_plus_ptr = sdom.ell_plus->ptr();
-
+    
+    // Get pointers
+    double const * KRESTRICT phi_out = sdom.phi_out->ptr();
+    double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
+    double       * KRESTRICT rhs = sdom.rhs->ptr();
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for(int z = 0;z < num_zones;++ z){
-      double * KRESTRICT rhs = sdom.rhs->ptr(0, 0, z);
-      double * KRESTRICT phi_out = sdom.phi_out->ptr(group0,0, z);
-      for(int group = 0;group < num_local_groups;++ group){
-        double * KRESTRICT ell_plus_d = ell_plus_ptr;
-
+    for(int z = 0;z < num_zones; ++ z){    
+      double const * KRESTRICT phi_out_z = phi_out + z*num_gnm;
+      double       * KRESTRICT rhs_z = rhs + z*num_locgd;
+      
+      for (int group = 0; group < num_local_groups; ++group) {
+        double const * KRESTRICT phi_out_z_g = phi_out_z + (group0+group)*num_moments;
+        double       * KRESTRICT rhs_z_g = rhs_z + group*num_local_directions;
+      
         for (int d = 0; d < num_local_directions; d++) {
-          double rhs_acc = 0.0;
-
-          for(int nm_offset = 0;nm_offset < num_moments;++nm_offset){
-             rhs_acc += ell_plus_d[nm_offset] * phi_out[nm_offset];
-          }
-          rhs[d] += rhs_acc;
-
-          ell_plus_d += num_moments;
-        }
-        rhs += num_local_directions;
-        phi_out += num_moments;
-      }
+          double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
+                              
+          double rhs_z_g_d = 0.0;
+          for(int nm_offset = 0;nm_offset < num_moments; ++nm_offset){
+            rhs_z_g_d += ell_plus_d[nm_offset] * phi_out_z_g[nm_offset];
+          }                    
+          rhs_z_g[d] = rhs_z_g_d;
+        }        
+      }     
     }
   }
 }
