@@ -17,10 +17,6 @@
 #include<gperftools/malloc_extension.h>
 #endif
 
-#ifdef KRIPKE_USE_PERFTOOLS
-#include<google/profiler.h>
-#endif
-
 #ifdef __bgq__
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/location.h>
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/memory.h>
@@ -106,10 +102,6 @@ void usage(void){
     printf("\n");
     printf("Output and Testing Options:\n");
     printf("---------------------------\n");
-#ifdef KRIPKE_USE_PERFTOOLS    
-    printf("  --gperf                Turn on Google Perftools profiling\n\n");
-#endif
-
     printf("  --out <OUTFILE>        Optional output file (default: none)\n\n");
     
 #ifdef KRIPKE_USE_SILO
@@ -324,9 +316,6 @@ int main(int argc, char **argv) {
       papi_names = split(cmd.pop(), ',');
     }
 #endif
-    //else if(opt == "--gperf"){
-    //  perf_tools = true;
-    //}
     else{
       printf("Unknwon options %s\n", opt.c_str());
       usage();
@@ -382,6 +371,7 @@ int main(int argc, char **argv) {
     else if(vars.parallel_method == PMETHOD_BJ){
       printf("Block Jacobi\n");
     }
+    printf("Loop Nesting Order     %s\n", nestingString(vars.nesting).c_str());        
     printf("Number iterations:     %d\n", vars.niter);
     
     printf("GroupSet/Groups:       %d sets, %d groups/set\n", vars.num_groupsets, vars.num_groups/vars.num_groupsets);
@@ -389,38 +379,16 @@ int main(int argc, char **argv) {
 
     printf("Zone Sets:             %d:%d:%d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
 
-    printf("Loop Nesting Order     %s\n", nestingString(vars.nesting).c_str());
-        
-    //if(perf_tools){
-    //  printf("Using Google Perftools\n");
-    //}
+    
   }
-
-  /*
-   * Execute the Search Space
-   */
-  FILE *outfp = NULL;
-  if(vars.outfile != "" && myid == 0){
-    outfp = fopen(vars.outfile.c_str(), "wb");
-  }
-#ifdef KRIPKE_USE_PERFTOOLS
-  if(perf_tools){
-    std::stringstream pfname;
-    pfname << "profile." << myid;
-    ProfilerStart(pfname.str().c_str());
-    ProfilerRegisterThread();
-  }
-#endif
   
-  // Run the point
+
   if(test){
     // Invoke Kernel testing
     testKernels(vars);
   }
   else{
-    // Just run the "solver"
-
-    /* Allocate problem */
+    // Allocate problem 
     Grid_Data *grid_data = new Grid_Data(&vars);
 
     grid_data->timing.setPapiEvents(papi_names);
@@ -479,19 +447,8 @@ int main(int argc, char **argv) {
 
   }
   
-  if(outfp != NULL){
-    fclose(outfp);
-  }
-
-  /*
-   * Cleanup and exit
-   */
+  // Cleanup and exit
   MPI_Finalize();
-#ifdef KRIPKE_USE_PERFTOOLS
-  if(perf_tools){
-    ProfilerFlush();
-    ProfilerStop();
-  }
-#endif
+
   return (0);
 }
