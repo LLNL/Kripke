@@ -8,7 +8,7 @@ Authors
 
 License
 =======
-See included file NOTICE
+See included file NOTICE.md
 
 
 Overview
