@@ -1,9 +1,9 @@
 Authors
 =======
-  * Adam J. Kunen <kunen1@llnl.gov>
-  * Peter N. Brown <brown42@llnl.gov>
-  * Teresa S. Bailey <bailey42@llnl.gov>
-  * Peter G. Maginot <maginot1@llnl.gov>
+  * Adam J. Kunen [kunen1@llnl.gov]{mailto:kunen1@llnl.gov} (Primary point of contact)
+  * Peter N. Brown [brown42@llnl.gov]{mailto:brown42@llnl.gov}
+  * Teresa S. Bailey [bailey42@llnl.gov]{mailto:bailey42@llnl.gov}
+  * Peter G. Maginot [maginot1@llnl.gov]{mailto:maginot1@llnl.gov}
 
 
 License
@@ -17,7 +17,7 @@ Kripke is a simple, scalable, 3D Sn deterministic particle transport code.  Its 
 
 Kripkie supports storage of angular fluxes (Psi) using all six striding orders (or "nestings") of Directions (D), Groups (G), and Zones (Z), and provides computational kernels specifically written for each of these nestings. Most Sn transport codes are designed around one of these nestings, which is an inflexibility that leads to software engineering compromises when porting to new architectures and programming paradigms.
 
-Early research has found that the problem dimensions (zones, groups, directions, scattering order) and the scaling (number of threads and MPI tasks), can make a profound difference in the performance of each of these nestings. To our knowledge this is a capability unique to Kripke, and should provide key insight into how data-layout effects Sn solver performance. An asynchronous MPI-based parallel sweep algorithm is provided, which employs the concepts of Group Sets (GS) Zone Sets (ZS), and Direction Sets (DS), borrowed from the Texas A&M code PDT.
+Early research has found that the problem dimensions (zones, groups, directions, scattering order) and the scaling (number of threads and MPI tasks), can make a profound difference in the performance of each of these nestings. To our knowledge this is a capability unique to Kripke, and should provide key insight into how data-layout effects Sn solver performance. An asynchronous MPI-based parallel sweep algorithm is provided, which employs the concepts of Group Sets (GS) Zone Sets (ZS), and Direction Sets (DS), borrowed from the [Texas A&M code PDT]{https://parasol.tamu.edu/asci/}.
 
 As we explore new architectures and programming paradigms with Kripke, we will be able to incorporate these findings and ideas into our larger codes. The main advantages of using Kripke for this exploration is that it's light-weight (ie. easily refactored and modified), and it gets us closer to the real question we want answered: "What is the best way to layout and implement an Sn code on a given architecture+programming-model?" instead of the more commonly asked question "What is the best way to map my existing Sn code to a given architecture+programming-model?".
 
@@ -98,28 +98,26 @@ Quick Start
 -----------
 The easiest way to get Kripke running, is to directly invoke CMake and take whatever system defaults you have for compilers and let CMake find MPI for you.
 
-*  Step 1:  Create a build space
-
-   > (assuming you are starting in the Kripke root directory)
-   > 
-	 > mkdir build
+*  Step 1:  Create a build space (assuming you are starting in the Kripke root directory)   
+        
+        mkdir build
 
 *  Step 2: Run CMake in that build space
-   
-   > cd kripke
-	 > cmake ..
+        
+        cd kripke
+        cmake ..
 
 *  Step 3: Now make Kripke:
-   
-   > make -j8
+         
+        make -j8
   
 *  Step 4: Run the test suite to make sure it works
    
-   > make test
+        make test
   
 *  Step 5: Run Kripke's default problem:
    
-   > ./kripke
+        ./kripke
   
 
 Building with setup.py
