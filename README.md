@@ -24,7 +24,7 @@ As we explore new architectures and programming paradigms with Kripke, we will b
 
 Mini App or Proxy App?
 ----------------------
-Kripke is a Mini-App since it has a very small code base consisting of 4178 lines of C++ code (generated using David A. Wheeler's SLOCCount v2.26).
+Kripke is a Mini-App since it has a very small code base consisting of 4184 lines of C++ code (generated using David A. Wheeler's SLOCCount v2.26).
 
 Kripke is also a Proxy-App since it is a proxy for the LLNL transport code ARDRA.
 
@@ -44,45 +44,37 @@ A simple timer infrastructure is provided that measure each compute kernels tota
 
 Physical Models
 ---------------
-THIS NEEDS A LOT OF WORK:
 
-Kripke solves the Discrete Ordinance and Diamond Difference discretized steady-state linear Boltzmann equation. The kernels LTimes and LPlusTimes provide the action of the matrices L and L+, respectively.
-One iteration of the MPI algorithm combined with the on-node sweep kernel solves one iteration of:
+Kripke solves the Discrete Ordinance and Diamond Difference discretized steady-state linear Boltzmann equation. 
 
+        H * Psi = (LPlus * S * L) * Psi + Q
 
-Implementation
---------------
-THIS IS ALL WRONG:
+Where:
 
-The source code is divided into individual ".cpp" files, roughly one per class or function.
-The file "src/Kripke/Kernel.h" defined the Kernel interface and defined a factory function for creating objects. The implemented kernels are in
-"src/Kripke/Kernel/*.cpp". This is where most of the optimizations and programming model changes will occur.
-The file "src/Kripke/Sweep_Solver.cpp" provides the MPI parallel sweep algorithm.
-The rest of the files define the data structures that support these kernels and algorithms.
-For a given problem, a single User_Data object is created, which contains everything: basic global parameters, quadrature set, MPI
-communicator object (for Sweep_Solver), and a Grid_Data object.
-The Grid_Data object contains L and L+ matrices, variables in moments space (phi), and a set of Group_Dir_Set objects for each <GS,DS> pair.
-It is the Group_Dir_Set objects which store the angular fluxes(psi) and right hand side (rhs). In our implementation, we always ensure that all
-directions contained in a single Group_Dir_Set object have the same sweeping order.
+*   **Psi** is the unknown angular flux discretized over zones, directions, and energy groups
+
+*   **H** is the "streaming-collision" operator.  (Couples zones)
+
+*   **L** is the "discrete-to-moments operator. (Couples directions and moments)
+
+*   **LPlus** is the "moment-to-discrete" operator. (Couples directions and moments)
+
+*   **S** is the (arbitrary) order scattering operator. (Couples groups)
+
+*   **Q** is an external source. In Kripke it is represented in moment space, so really "LPlus*Q"
 
 
+Kripke is hard-coded to setup and solve the [3D Kobayashi radiation benchmark, problem 3i](https://www.oecd-nea.org/science/docs/2000/nsc-doc2000-4.pdf).  Since Kripke does not have reflecting boundary conditions, the full-space model is solved. Command line arguments allow the user to modify the total and scattering cross-sections.  Since Kripke is a multi-group transport code and the Kobayashi problem is single-group, each energy group is setup to solve the same problem with no group-to-group coupling in the data.
 
-Inputs and Outputs
-------------------
-THIS IS ALL WRONG:
 
-The Kripke build system produces a single executable "kripke". All of the parameters are supplied via command line options.
-The number of GS and G (groups per groupset) are specified with "–grp <GS>:<G>". For example "–grp 16:2" specifies 16 groupsets and 2
-groups per set, for a total of 32 groups.
-Directions are specified almost the same way, with "–dir <DS>:<D>". However DS represents the number of direction sets PER octant.
-Therefore "–dir 2:4" represents 2 direction sets per octant, 4 directions per set, and a total of 64 directions.
-Nestings are selected with the "–nest DGZ" option, where any of the six DGZ, DZG, GDZ, GZD, ZDG, ZGD are allowed.
-Number of Legendre moments ("–legendre") are selectable from 0 up to specify the number of moments in L and L+.
-Number of zones (for the entire domain) are selected with "–zones X,Y,Z", number of MPI tasks are selected with "–procs X,Y,Z".
-Number of iterations can be selected with "–niter N".
-Search spaces can be specified by supplying lists to three arguments "–dir", "–grp", and "–nest". The product of these sets defines an entire
-search space, all combinations of which will be run.
-For example: "kripke --grp 1:4,2:2,4:1 --dir 16:1 --nest GDZ,ZDG" will run 6 different search points.
+The steady-state solution method uses the source-iteration technique, where each iteration is as follows:
+
+1.  Phi = LTimes(Psi)
+2.  PhiOut = Scattering(Phi)
+3.  PhiOut = PhiOut + Source()
+4.  Rhs = LPlusTimes(PhiOut)
+5.  Psi = Sweep(Rhs, Psi)  which is solving Psi=(Hinverse * Rhs) a.k.a _"Inverting H"_
+
 
 
 Building and Running
@@ -124,15 +116,14 @@ The easiest way to get Kripke running, is to directly invoke CMake and take what
         ./kripke
   
 
-Building with setup.py
-----------------------
-This needs to be written
-
-
-
 Running Kripke
 ==============
 
+Environment Variabes
+--------------------
+
+If Kripke is build with OpenMP support, then the environment variables ``OMP_NUM_THREADS`` is used to control the number of OpenMP threads.  Kripke does not attempt to modify the OpenMP runtime in anyway, so other ``OMP_*`` environment variables should also work as well.
+ 
 
 Command Line Options
 --------------------
@@ -140,88 +131,108 @@ Command line option help can also be viewed by running "./kripke --help"
 
 ### Problem Size Options:
 
-*   **--groups \<ngroups\>**     
+*   **``--groups <ngroups>``**     
 
     Number of energy groups. (Default: --groups 32)
 
-*   **--legendre \<lorder\>**    
+*   **``--legendre <lorder>``**    
 
     Scattering Legendre Expansion Order (0, 1, ...).  (Default: --legendre 4)
 
-*   **--quad \<ndirs\>**, or **--quad \<polar\>:\<azim\>**
+*   **``--quad <ndirs>``**, or **``--quad <polar>:<azim>``**
 
-    Define the quadrature set to use either a fake S2 with \<ndirs\> points, OR Gauss-Legendre with \<polar\> by \<azim\> points.   (Default: --quad 96)
+    Define the quadrature set to use either a fake S2 with <ndirs> points, OR Gauss-Legendre with <polar> by <azim> points.   (Default: --quad 96)
 
-*   **--zones \<x,y,z\>**
+*   **``--zones <x>,<y>,<z>``**
 
     Number of zones in x,y,z.  (Default: --zones 16,16,16)
 
 
+### Physics Parameters:
+
+*   **``--sigt <sigt0,sigt1,sigt2>``**
+ 
+    Total material cross-sections.  (Default:   --sigt 0.1,0.0001,0.1)
+
+*   **``--sigs <sigs0,sigs1,sigs2>``**
+ 
+    Total material cross-sections.  (Default:   --sigs 0.05,0.00005,0.05)
+
+
 ### On-Node Options:
 
-*   **--nest \<NEST\>**
+*   **``--nest <NEST>``**
 
-    Loop nesting order (and data layout), available are DGZ,DZG,GDZ,GZD,ZDG, and ZGD. (Default: --nest DGZ)
+    Loop nesting order (and data layout), available are DGZ, DZG, GDZ, GZD, ZDG, and ZGD. (Default: --nest DGZ)
 
 
 ###Parallel Decomposition Options:
 
-*   **--layout \<lout\>**        
+*   **``--layout <lout>``**        
     
     Layout of spatial subdomains over mpi ranks. 0 for "Blocked" where local zone sets represent adjacent regions of space. 1 for "Scattered" where adjacent regions of space are distributed to adjacent MPI ranks. (Default: --layout 0)
 
-*   **--procs \<npx,npy,npz\>**  
+*   **--procs <npx,npy,npz>**  
     
     Number of MPI ranks in each spatial dimension. (Default:  --procs 1,1,1)
 
-*   **--dset \<ds\>**
+*   **``--dset <ds>``**
 
     Number of direction-sets.  Must be a factor of 8, and divide evenly the number of quadrature points. (Default:  --dset 8)
 
-*   **--gset \<gs\>**            
+*   **``--gset <gs>``**            
     
     Number of energy group-sets.  Must divide evenly the number energy groups. (Default:  --gset 1)
 
-*   **--zset \<zx\>:\<zy\>:\<zz\>**  
+*   **``--zset <zx>,<zy>,<zz>``**  
     
     Number of zone-sets in x, y, and z.  (Default:  --zset 1:1:1)
 
 
 ###Solver Options:
 
-*   **--niter \<NITER\>**
+*   **``--niter <NITER>``**
 
     Number of solver iterations to run. (Default:  --niter 10)
 
-*   **--pmethod \<method\>**     
+*   **``--pmethod <method>``**     
 
     Parallel solver method. "sweep" for full up-wind sweep (wavefront algorithm). "bj" for Block Jacobi.  (Default: --pmethod sweep)
 
 
 ### Output and Testing Options:
 
-*   **--test**                 
+*   **``--test``**                 
 
     Run Kernel Test instead of solve
 
-*   **--silo \<siloname\>**                 
+*   **``--silo <siloname>``**                 
 
-    Write SILO output (requires building with LLNL's Silo Library)
+    Write SILO output (requires building with LLNL's Silo library)
 
+*   **``--papi <PAPI_XXX_XXX,...>``**
+
+    Track PAPI hardware counters for each timer. (requires building with PAPI library)
+    
 
 Test Suite
 ----------
 
-Some comments about testing CMAKE and --test
+Running with the ``--test`` command line argument will run a unit-testing frame work that will compare each kernel, using random input data, with the same kernel from a different nesting.  This is very useful for checking correctness of kernels after modification.
+
+Running ``make test`` will use the CMake testing framework, CTest, to run a series of tests outlined in the root ``CMakeLists.txt`` file.
 
 
 Future Plans
 ============
 
 Some ideas for future study:
-*  Block AMR.
-*  More FLOP intensive spatial discretizations such as DFEM's.
-*  Programming model abstractions
+
+*   Block AMR.
+
+*   More FLOP intensive spatial discretizations such as DFEM's.
+
+*   Programming model abstractions
 
 
 Retirement

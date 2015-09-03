@@ -88,12 +88,21 @@ void usage(void){
     
     
     printf("\n");
+    printf("Physics Parameters:\n");
+    printf("-------------------\n");
+    printf("  --sigt <st0,st1,st2>   Total material cross-sections\n");
+    printf("                         Default:   --sigt 0.1,0.0001,0.1\n\n");
+
+    printf("  --sigs <ss0,ss1,ss2>   Scattering material cross-sections\n");
+    printf("                         Default:   --sigs 0.05,0.00005,0.05\n\n");
+
+
+    printf("\n");
     printf("On-Node Options:\n");
     printf("----------------\n");
     printf("  --nest <NEST>          Loop nesting order (and data layout)\n");
     printf("                         Available: DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
     printf("                         Default:   --nest DGZ\n\n");
-    
     
     printf("\n");
     printf("Parallel Decomposition Options:\n");
@@ -116,8 +125,8 @@ void usage(void){
     printf("                         Must divide evenly the number energy groups\n");
     printf("                         Default:  --gset 1\n\n");
     
-    printf("  --zset <zx>:<zy>:<zz>  Number of zone-sets in x:y:z\n");
-    printf("                         Default:  --zset 1:1:1\n\n");
+    printf("  --zset <zx>,<zy>,<zz>  Number of zone-sets in x,y, and z\n");
+    printf("                         Default:  --zset 1,1,1\n\n");
     
     printf("\n");
     printf("Solver Options:\n");
@@ -135,6 +144,9 @@ void usage(void){
     printf("Output and Testing Options:\n");
     printf("---------------------------\n");
     
+#ifdef KRIPKE_USE_PAPI
+    printf("  --papi <PAPI_X_X,...>  Track PAPI hardware counters for each timer\n\n");
+#endif
 #ifdef KRIPKE_USE_SILO
     printf("  --silo <BASENAME>      Create SILO output files\n\n");
 #endif
@@ -256,7 +268,7 @@ int main(int argc, char **argv) {
       vars.num_groupsets = std::atoi(cmd.pop().c_str());      
     }
     else if(opt == "--zset"){
-      std::vector<std::string> nz = split(cmd.pop(), ':');
+      std::vector<std::string> nz = split(cmd.pop(), ',');
       if(nz.size() != 3) usage();
       vars.num_zonesets_dim[0] = std::atoi(nz[0].c_str());
       vars.num_zonesets_dim[1] = std::atoi(nz[1].c_str());
@@ -406,7 +418,7 @@ int main(int argc, char **argv) {
     printf("GroupSet/Groups:       %d sets, %d groups/set\n", vars.num_groupsets, vars.num_groups/vars.num_groupsets);
     printf("DirSets/Directions:    %d sets, %d directions/set\n", vars.num_dirsets, vars.num_directions/vars.num_dirsets);
 
-    printf("Zone Sets:             %d:%d:%d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
+    printf("Zone Sets:             %d,%d,%d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
 
     
   }
