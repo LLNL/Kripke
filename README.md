@@ -1,9 +1,9 @@
 Authors
 =======
-  * Adam J. Kunen [kunen1@llnl.gov]{mailto:kunen1@llnl.gov} (Primary point of contact)
-  * Peter N. Brown [brown42@llnl.gov]{mailto:brown42@llnl.gov}
-  * Teresa S. Bailey [bailey42@llnl.gov]{mailto:bailey42@llnl.gov}
-  * Peter G. Maginot [maginot1@llnl.gov]{mailto:maginot1@llnl.gov}
+  * Adam J. Kunen [kunen1@llnl.gov](mailto:kunen1@llnl.gov) (Primary point of contact)
+  * Peter N. Brown [brown42@llnl.gov](mailto:brown42@llnl.gov)
+  * Teresa S. Bailey [bailey42@llnl.gov](mailto:bailey42@llnl.gov)
+  * Peter G. Maginot [maginot1@llnl.gov](mailto:maginot1@llnl.gov)
 
 
 License
@@ -17,7 +17,7 @@ Kripke is a simple, scalable, 3D Sn deterministic particle transport code.  Its 
 
 Kripkie supports storage of angular fluxes (Psi) using all six striding orders (or "nestings") of Directions (D), Groups (G), and Zones (Z), and provides computational kernels specifically written for each of these nestings. Most Sn transport codes are designed around one of these nestings, which is an inflexibility that leads to software engineering compromises when porting to new architectures and programming paradigms.
 
-Early research has found that the problem dimensions (zones, groups, directions, scattering order) and the scaling (number of threads and MPI tasks), can make a profound difference in the performance of each of these nestings. To our knowledge this is a capability unique to Kripke, and should provide key insight into how data-layout effects Sn solver performance. An asynchronous MPI-based parallel sweep algorithm is provided, which employs the concepts of Group Sets (GS) Zone Sets (ZS), and Direction Sets (DS), borrowed from the [Texas A&M code PDT]{https://parasol.tamu.edu/asci/}.
+Early research has found that the problem dimensions (zones, groups, directions, scattering order) and the scaling (number of threads and MPI tasks), can make a profound difference in the performance of each of these nestings. To our knowledge this is a capability unique to Kripke, and should provide key insight into how data-layout effects Sn solver performance. An asynchronous MPI-based parallel sweep algorithm is provided, which employs the concepts of Group Sets (GS) Zone Sets (ZS), and Direction Sets (DS), borrowed from the [Texas A&M code PDT](https://parasol.tamu.edu/asci/).
 
 As we explore new architectures and programming paradigms with Kripke, we will be able to incorporate these findings and ideas into our larger codes. The main advantages of using Kripke for this exploration is that it's light-weight (ie. easily refactored and modified), and it gets us closer to the real question we want answered: "What is the best way to layout and implement an Sn code on a given architecture+programming-model?" instead of the more commonly asked question "What is the best way to map my existing Sn code to a given architecture+programming-model?".
 
@@ -26,7 +26,7 @@ Mini App or Proxy App?
 ----------------------
 Kripke is a Mini-App since it has a very small code base consisting of 4178 lines of C++ code (generated using David A. Wheeler's SLOCCount v2.26).
 
-Kripke is a Proxy-App since it is a proxy for the LLNL transport code ARDRA.
+Kripke is also a Proxy-App since it is a proxy for the LLNL transport code ARDRA.
 
 
 Analysis
@@ -44,14 +44,16 @@ A simple timer infrastructure is provided that measure each compute kernels tota
 
 Physical Models
 ---------------
-Kripke solves a simplification of the Discrete Ordinance and Diamond Difference discretized steady-state linear Boltzmann equation:
-where (in this case) S is the identity matrix, and the 3D Diamond-Difference is used for inverting the "streaming and collision" operator (omega dot
-grad + sigma). The kernels LTimes and LPlusTimes provide the action of the matrices L and L+, respectively.
+THIS NEEDS A LOT OF WORK:
+
+Kripke solves the Discrete Ordinance and Diamond Difference discretized steady-state linear Boltzmann equation. The kernels LTimes and LPlusTimes provide the action of the matrices L and L+, respectively.
 One iteration of the MPI algorithm combined with the on-node sweep kernel solves one iteration of:
 
 
 Implementation
 --------------
+THIS IS ALL WRONG:
+
 The source code is divided into individual ".cpp" files, roughly one per class or function.
 The file "src/Kripke/Kernel.h" defined the Kernel interface and defined a factory function for creating objects. The implemented kernels are in
 "src/Kripke/Kernel/*.cpp". This is where most of the optimizations and programming model changes will occur.
@@ -67,6 +69,8 @@ directions contained in a single Group_Dir_Set object have the same sweeping ord
 
 Inputs and Outputs
 ------------------
+THIS IS ALL WRONG:
+
 The Kripke build system produces a single executable "kripke". All of the parameters are supplied via command line options.
 The number of GS and G (groups per groupset) are specified with "–grp <GS>:<G>". For example "–grp 16:2" specifies 16 groupsets and 2
 groups per set, for a total of 32 groups.
@@ -136,17 +140,17 @@ Command line option help can also be viewed by running "./kripke --help"
 
 ### Problem Size Options:
 
-* --groups <ngroups>     Number of energy groups
-                         Default:  --groups 32
+*   **--groups <ngroups>**     
 
-* --legendre <lorder>    Scattering Legendre Expansion Order (0, 1, ...)
-                         Default:  --legendre 4
+    Number of energy groups. (Default: --groups 32)
 
-* --quad [<ndirs>|<polar>:<azim>]
-                         Define the quadrature set to use
-                         Either a fake S2 with <ndirs> points,
-                         OR Gauss-Legendre with <polar> by <azim> points
-                         Default:  --quad 96
+*   **--legendre <lorder>**    
+
+    Scattering Legendre Expansion Order (0, 1, ...).  Default: --legendre 4
+
+*   **--quad <ndirs>**, or **--quad <polar>:<azim>**
+
+    Define the quadrature set to use either a fake S2 with <ndirs> points, OR Gauss-Legendre with <polar> by <azim> points.   Default:  --quad 96
 
 * --zones <x,y,z>        Number of zones in x,y,z
                          Default:  --zones 16,16,16
@@ -201,11 +205,12 @@ Command line option help can also be viewed by running "./kripke --help"
 
 Test Suite
 ----------
-
+Some comments about testing CMAKE and --test
 
 
 Future Plans
 ============
+
 Some ideas for future study:
 *  Block AMR.
 *  More FLOP intensive spatial discretizations such as DFEM's.
@@ -214,7 +219,18 @@ Some ideas for future study:
 
 Retirement
 ==========
+
 Retirement of this Mini-App should be considered when it is no longer a representative of state-of-the-art transport codes, or when it becomes too cumbersome to adapt to advanced architectures. Also, at the point of retirement it should be clear how to design its successor.
+
+
+Publications, Presentations, Links
+==================================
+
+*  [LLNL Codesign Website](https://codesign.llnl.gov/index.php)
+
+*  A. J. Kunen, Kripke – [An Sn Transport Mini App](https://codesign.llnl.gov/pdfs/Kripke_NECDC2014_Present.pdf), NECDC, October 22, 2014 (LLNL-PRES-661866)
+
+*  A. J. Kunen, [RAJA-Like Transformations in Kripke](https://codesign.llnl.gov/pdfs/Kunen_JOWOG34.pdf), JOWOG34, February 5, 2015 (LLNL-PRES-666686)
 
 
 Release
