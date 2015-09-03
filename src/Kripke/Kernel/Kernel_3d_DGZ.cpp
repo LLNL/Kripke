@@ -258,53 +258,36 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
 #pragma omp parallel for
 #endif
   for (int d = 0; d < num_directions; ++d) {
-    double xcos = 2.0 * direction[d].xcos;
-    double ycos = 2.0 * direction[d].ycos;
-    double zcos = 2.0 * direction[d].zcos;
-    
-    double       * KRESTRICT psi_d  = psi  + d*num_gz;
-    double const * KRESTRICT rhs_d  = rhs  + d*num_gz;
-
-    double       * KRESTRICT psi_lf_d = psi_lf + d*num_gz_i;
-    double       * KRESTRICT psi_fr_d = psi_fr + d*num_gz_j;
-    double       * KRESTRICT psi_bo_d = psi_bo + d*num_gz_k;
-
     for (int g = 0; g < num_groups; ++g) {
-      double const * KRESTRICT sigt_g  = sigt + g*num_zones;
-      double       * KRESTRICT psi_d_g = psi_d + g*num_zones;
-      double const * KRESTRICT rhs_d_g = rhs_d + g*num_zones;
-      
-      double       * KRESTRICT psi_lf_d_g = psi_lf_d + g*num_z_i;
-      double       * KRESTRICT psi_fr_d_g = psi_fr_d + g*num_z_j;
-      double       * KRESTRICT psi_bo_d_g = psi_bo_d + g*num_z_k;
-
-      for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {       
-        double zcos_dzk = zcos / dz[k + 1];
-        
-        for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {
-          double ycos_dyj = ycos / dy[j + 1];
-          
+      for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {               
+        for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {          
           for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
-            double xcos_dxi = xcos / dx[i + 1];
+            double const xcos_dxi = 2.0 * direction[d].xcos / dx[i + 1];
+            double const ycos_dyj = 2.0 * direction[d].ycos / dy[j + 1];
+            double const zcos_dzk = 2.0 * direction[d].zcos / dz[k + 1];
             
-            int z_idx = Zonal_INDEX(i, j, k);
-            int z_i = I_PLANE_INDEX(j, k);
-            int z_j = J_PLANE_INDEX(i, k);
-            int z_k = K_PLANE_INDEX(i, j);
+            int const z_idx = Zonal_INDEX(i, j, k);
+            int const z_i = I_PLANE_INDEX(j, k);
+            int const z_j = J_PLANE_INDEX(i, k);
+            int const z_k = K_PLANE_INDEX(i, j);
 
             /* Calculate new zonal flux */
-            double psi_d_g_z = (rhs_d_g[z_idx]
-                + psi_lf_d_g[z_i] * xcos_dxi
-                + psi_fr_d_g[z_j] * ycos_dyj
-                + psi_bo_d_g[z_k] * zcos_dzk)
-                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt_g[z_idx]);
+            double const psi_d_g_z = (
+                  rhs[d*num_gz + g*num_zones + z_idx]
+                + psi_lf[d*num_gz_i + g*num_z_i + z_i] * xcos_dxi
+                + psi_fr[d*num_gz_j + g*num_z_j + z_j] * ycos_dyj
+                + psi_bo[d*num_gz_k + g*num_z_k + z_k] * zcos_dzk)
+                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt[g*num_zones + z_idx]);
 
-            psi_d_g[z_idx] = psi_d_g_z;
+            psi[d*num_gz + g*num_zones + z_idx] = psi_d_g_z;
             
             /* Apply diamond-difference relationships */
-            psi_lf_d_g[z_i] = 2.0 * psi_d_g_z - psi_lf_d_g[z_i];
-            psi_fr_d_g[z_j] = 2.0 * psi_d_g_z - psi_fr_d_g[z_j];
-            psi_bo_d_g[z_k] = 2.0 * psi_d_g_z - psi_bo_d_g[z_k];
+            psi_lf[d*num_gz_i + g*num_z_i + z_i] = 
+              2.0 * psi_d_g_z - psi_lf[d*num_gz_i + g*num_z_i + z_i];
+            psi_fr[d*num_gz_j + g*num_z_j + z_j] = 
+              2.0 * psi_d_g_z - psi_fr[d*num_gz_j + g*num_z_j + z_j];
+            psi_bo[d*num_gz_k + g*num_z_k + z_k] = 
+              2.0 * psi_d_g_z - psi_bo[d*num_gz_k + g*num_z_k + z_k];
           }
         }
       }
