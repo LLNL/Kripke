@@ -140,71 +140,78 @@ Command line option help can also be viewed by running "./kripke --help"
 
 ### Problem Size Options:
 
-*   **--groups <ngroups>**     
+*   **--groups \<ngroups\>**     
 
     Number of energy groups. (Default: --groups 32)
 
-*   **--legendre <lorder>**    
+*   **--legendre \<lorder\>**    
 
-    Scattering Legendre Expansion Order (0, 1, ...).  Default: --legendre 4
+    Scattering Legendre Expansion Order (0, 1, ...).  (Default: --legendre 4)
 
-*   **--quad <ndirs>**, or **--quad <polar>:<azim>**
+*   **--quad \<ndirs\>**, or **--quad \<polar\>:\<azim\>**
 
-    Define the quadrature set to use either a fake S2 with <ndirs> points, OR Gauss-Legendre with <polar> by <azim> points.   Default:  --quad 96
+    Define the quadrature set to use either a fake S2 with \<ndirs\> points, OR Gauss-Legendre with \<polar\> by \<azim\> points.   (Default: --quad 96)
 
-* --zones <x,y,z>        Number of zones in x,y,z
-                         Default:  --zones 16,16,16
+*   **--zones \<x,y,z\>**
+
+    Number of zones in x,y,z.  (Default: --zones 16,16,16)
 
 
 ### On-Node Options:
 
-* --nest <NEST>          Loop nesting order (and data layout)
-                         Available: DGZ,DZG,GDZ,GZD,ZDG,ZGD
-                         Default:   --nest DGZ
+*   **--nest \<NEST\>**
+
+    Loop nesting order (and data layout), available are DGZ,DZG,GDZ,GZD,ZDG, and ZGD. (Default: --nest DGZ)
+
 
 ###Parallel Decomposition Options:
 
-* --layout <lout>        Layout of spatial subdomains over mpi ranks
-                         0: Blocked: local zone sets are adjacent
-                         1: Scattered: adjacent zone sets are distributed
-                         Default: --layout 0
+*   **--layout \<lout\>**        
+    
+    Layout of spatial subdomains over mpi ranks. 0 for "Blocked" where local zone sets represent adjacent regions of space. 1 for "Scattered" where adjacent regions of space are distributed to adjacent MPI ranks. (Default: --layout 0)
 
-* --procs <npx,npy,npz>  Number of MPI ranks in each spatial dimension
-                         Default:  --procs 1,1,1
+*   **--procs \<npx,npy,npz\>**  
+    
+    Number of MPI ranks in each spatial dimension. (Default:  --procs 1,1,1)
 
-* --dset <ds>            Number of direction-sets
-                         Must be a factor of 8, and divide evenly the number
-                         of quadrature points
-                         Default:  --dset 8
+*   **--dset \<ds\>**
 
-* --gset <gs>            Number of energy group-sets
-                         Must divide evenly the number energy groups
-                         Default:  --gset 1
+    Number of direction-sets.  Must be a factor of 8, and divide evenly the number of quadrature points. (Default:  --dset 8)
 
-* --zset <zx>:<zy>:<zz>  Number of zone-sets in x:y:z
-                         Default:  --zset 1:1:1
+*   **--gset \<gs\>**            
+    
+    Number of energy group-sets.  Must divide evenly the number energy groups. (Default:  --gset 1)
+
+*   **--zset \<zx\>:\<zy\>:\<zz\>**  
+    
+    Number of zone-sets in x, y, and z.  (Default:  --zset 1:1:1)
+
 
 ###Solver Options:
 
-* --niter <NITER>        Number of solver iterations to run
-                         Default:  --niter 10
+*   **--niter \<NITER\>**
 
-* --pmethod <method>     Parallel solver method
-                         sweep: Full up-wind sweep (wavefront algorithm)
-                         bj: Block Jacobi
-                         Default: --pmethod sweep
+    Number of solver iterations to run. (Default:  --niter 10)
+
+*   **--pmethod \<method\>**     
+
+    Parallel solver method. "sweep" for full up-wind sweep (wavefront algorithm). "bj" for Block Jacobi.  (Default: --pmethod sweep)
 
 
 ### Output and Testing Options:
 
-* --out <OUTFILE>        Optional output file (default: none)
+*   **--test**                 
 
-* --test                 Run Kernel Test instead of solve
+    Run Kernel Test instead of solve
 
+*   **--silo \<siloname\>**                 
+
+    Write SILO output (requires building with LLNL's Silo Library)
 
 
 Test Suite
 ----------
+
 Some comments about testing CMAKE and --test
 
 

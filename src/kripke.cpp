@@ -134,7 +134,6 @@ void usage(void){
     printf("\n");
     printf("Output and Testing Options:\n");
     printf("---------------------------\n");
-    printf("  --out <OUTFILE>        Optional output file (default: none)\n\n");
     
 #ifdef KRIPKE_USE_SILO
     printf("  --silo <BASENAME>      Create SILO output files\n\n");
@@ -249,7 +248,6 @@ int main(int argc, char **argv) {
   while(!cmd.atEnd()){
     std::string opt = cmd.pop();
     if(opt == "-h" || opt == "--help"){usage();}
-    else if(opt == "--out"){vars.outfile = cmd.pop();}
     else if(opt == "--name"){vars.run_name = cmd.pop();}
     else if(opt == "--dset"){
       vars.num_dirsets = std::atoi(cmd.pop().c_str());      
@@ -383,7 +381,6 @@ int main(int argc, char **argv) {
     }
     printf("\n");
 #endif
-    printf("Output File:           %s\n", vars.outfile.c_str());
     printf("Processors:            %d x %d x %d\n", vars.npx, vars.npy, vars.npz);
     printf("Zones:                 %d x %d x %d\n", vars.nx, vars.ny, vars.nz);
     printf("Legendre Order:        %d\n", vars.legendre_order);

@@ -70,7 +70,6 @@ struct Input_Variables {
   
   // Output Options
   std::string run_name;         // Name to use when generating output files
-  std::string outfile;          // name of output file
 #ifdef KRIPKE_USE_SILO
   std::string silo_basename;    // name prefix for silo output files
 #endif
