@@ -56,18 +56,13 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
     double       * KRESTRICT phi = sdom.phi->ptr();
     
     for(int nm = 0;nm < num_moments;++nm){
-      double const * KRESTRICT ell_nm = ell + nm*num_local_directions;      
-      double       * KRESTRICT phi_nm = phi + nm*num_gz + group0*num_zones;
-      
       for (int d = 0; d < num_local_directions; d++) {
-        double const * KRESTRICT psi_d = psi + d*num_locgz;
-        double const             ell_nm_d = ell_nm[d];
-
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
         for(int gz = 0;gz < num_locgz; ++ gz){
-          phi_nm[gz] += ell_nm_d * psi_d[gz];
+          phi[nm*num_gz + group0*num_zones + gz] += 
+            ell[nm*num_local_directions + d] * psi[d*num_locgz + gz];
         }
       }     
     }
@@ -100,18 +95,13 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
     double       * KRESTRICT rhs = sdom.rhs->ptr();
 
     for (int d = 0; d < num_local_directions; d++) {      
-      double       * KRESTRICT rhs_d = rhs + d*num_groups_zones;
-      double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
-      
       for(int nm = 0;nm < num_moments;++nm){
-        double const ell_plus_d_nm = ell_plus_d[nm];
-        double const * KRESTRICT phi_out_nm = phi_out + nm*num_groups*num_zones;
-
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
         for(int gz = 0;gz < num_groups_zones; ++ gz){
-          rhs_d[gz] += ell_plus_d_nm * phi_out_nm[gz];
+          rhs[d*num_groups_zones + gz] +=
+            ell_plus[d*num_moments + nm] * phi_out[nm*num_groups*num_zones + gz];
         }
       }
     }
@@ -151,18 +141,9 @@ void Kernel_3d_DGZ::scattering(Grid_Data *grid_data){
     for(int nm = 0;nm < num_moments;++ nm){
       // map nm to n
       int n = moment_to_coeff[nm];
-      double const * KRESTRICT sigs_n = sigs + n*3*num_groups*num_groups;
-      double const * KRESTRICT phi_nm = phi + nm*num_gz;
-      double       * KRESTRICT phi_out_nm = phi_out + nm*num_gz;
 
       for(int g = 0;g < num_groups;++ g){      
-        double const * KRESTRICT sigs_n_g = sigs_n + g*3*num_groups;
-        double const * KRESTRICT phi_nm_g = phi_nm + g*num_zones;
-                
         for(int gp = 0;gp < num_groups;++ gp){
-          double const * KRESTRICT sigs_n_g_gp = sigs_n_g + gp*3;
-          double       * KRESTRICT phi_out_nm_gp = phi_out_nm + gp*num_zones;
-
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
@@ -175,9 +156,9 @@ void Kernel_3d_DGZ::scattering(Grid_Data *grid_data){
               int material = mixed_material[mix];
               double fraction = mixed_fraction[mix];
 
-              phi_out_nm_gp_z += sigs_n_g_gp[material] * phi_nm_g[zone] * fraction;
+              phi_out_nm_gp_z += sigs[n*3*num_groups*num_groups + g*3*num_groups + gp*3 + material] * phi[nm*num_gz + g*num_zones + zone] * fraction;
             }
-            phi_out_nm_gp[zone] += phi_out_nm_gp_z;
+            phi_out[nm*num_gz + gp*num_zones + zone] += phi_out_nm_gp_z;
           }
         }        
       }
