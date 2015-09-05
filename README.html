@@ -92,7 +92,7 @@
 <p>The easiest way to get Kripke running, is to directly invoke CMake and take whatever system defaults you have for compilers and let CMake find MPI for you.</p>
 
 <ul>
-<li><p>Step 1:  Create a build space (assuming you are starting in the Kripke root directory)   </p>
+<li><p>Step 1:  Create a build space (assuming you are starting in the Kripke root directory)</p>
 
 <pre><code>mkdir build
 </code></pre></li>
@@ -128,10 +128,10 @@ cmake ..
 <h3>Problem Size Options:</h3>
 
 <ul>
-<li><p><strong><code>--groups &lt;ngroups&gt;</code></strong>     </p>
+<li><p><strong><code>--groups &lt;ngroups&gt;</code></strong></p>
 
 <p>Number of energy groups. (Default: --groups 32)</p></li>
-<li><p><strong><code>--legendre &lt;lorder&gt;</code></strong>    </p>
+<li><p><strong><code>--legendre &lt;lorder&gt;</code></strong></p>
 
 <p>Scattering Legendre Expansion Order (0, 1, ...).  (Default: --legendre 4)</p></li>
 <li><p><strong><code>--quad &lt;ndirs&gt;</code></strong>, or <strong><code>--quad &lt;polar&gt;:&lt;azim&gt;</code></strong></p>
@@ -164,19 +164,19 @@ cmake ..
 <h3>Parallel Decomposition Options:</h3>
 
 <ul>
-<li><p><strong><code>--layout &lt;lout&gt;</code></strong>        </p>
+<li><p><strong><code>--layout &lt;lout&gt;</code></strong></p>
 
 <p>Layout of spatial subdomains over mpi ranks. 0 for "Blocked" where local zone sets represent adjacent regions of space. 1 for "Scattered" where adjacent regions of space are distributed to adjacent MPI ranks. (Default: --layout 0)</p></li>
-<li><p><strong>--procs <npx,npy,npz></strong>  </p>
+<li><p><strong><code>--procs &lt;npx,npy,npz&gt;</code></strong></p>
 
 <p>Number of MPI ranks in each spatial dimension. (Default:  --procs 1,1,1)</p></li>
 <li><p><strong><code>--dset &lt;ds&gt;</code></strong></p>
 
 <p>Number of direction-sets.  Must be a factor of 8, and divide evenly the number of quadrature points. (Default:  --dset 8)</p></li>
-<li><p><strong><code>--gset &lt;gs&gt;</code></strong>            </p>
+<li><p><strong><code>--gset &lt;gs&gt;</code></strong></p>
 
 <p>Number of energy group-sets.  Must divide evenly the number energy groups. (Default:  --gset 1)</p></li>
-<li><p><strong><code>--zset &lt;zx&gt;,&lt;zy&gt;,&lt;zz&gt;</code></strong>  </p>
+<li><p><strong><code>--zset &lt;zx&gt;,&lt;zy&gt;,&lt;zz&gt;</code></strong></p>
 
 <p>Number of zone-sets in x, y, and z.  (Default:  --zset 1:1:1)</p></li>
 </ul>
@@ -187,7 +187,7 @@ cmake ..
 <li><p><strong><code>--niter &lt;NITER&gt;</code></strong></p>
 
 <p>Number of solver iterations to run. (Default:  --niter 10)</p></li>
-<li><p><strong><code>--pmethod &lt;method&gt;</code></strong>     </p>
+<li><p><strong><code>--pmethod &lt;method&gt;</code></strong></p>
 
 <p>Parallel solver method. "sweep" for full up-wind sweep (wavefront algorithm). "bj" for Block Jacobi.  (Default: --pmethod sweep)</p></li>
 </ul>
@@ -195,10 +195,10 @@ cmake ..
 <h3>Output and Testing Options:</h3>
 
 <ul>
-<li><p><strong><code>--test</code></strong>                 </p>
+<li><p><strong><code>--test</code></strong></p>
 
 <p>Run Kernel Test instead of solve</p></li>
-<li><p><strong><code>--silo &lt;siloname&gt;</code></strong>                 </p>
+<li><p><strong><code>--silo &lt;siloname&gt;</code></strong></p>
 
 <p>Write SILO output (requires building with LLNL's Silo library)</p></li>
 <li><p><strong><code>--papi &lt;PAPI_XXX_XXX,...&gt;</code></strong></p>
@@ -226,12 +226,10 @@ cmake ..
 
 <p>Retirement of this Mini-App should be considered when it is no longer a representative of state-of-the-art transport codes, or when it becomes too cumbersome to adapt to advanced architectures. Also, at the point of retirement it should be clear how to design its successor.</p>
 
-<h1>Publications, Presentations, Links</h1>
+<h1>Links</h1>
 
 <ul>
-<li><p><a href="https://codesign.llnl.gov/index.php">LLNL Codesign Website</a></p></li>
-<li><p>A. J. Kunen, Kripke – <a href="https://codesign.llnl.gov/pdfs/Kripke_NECDC2014_Present.pdf">An Sn Transport Mini App</a>, NECDC, October 22, 2014 (LLNL-PRES-661866)</p></li>
-<li><p>A. J. Kunen, <a href="https://codesign.llnl.gov/pdfs/Kunen_JOWOG34.pdf">RAJA-Like Transformations in Kripke</a>, JOWOG34, February 5, 2015 (LLNL-PRES-666686)</p></li>
+<li><a href="https://codesign.llnl.gov/index.php">LLNL Codesign Website</a></li>
 </ul>
 
 <h1>Release</h1>

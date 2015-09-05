@@ -102,7 +102,7 @@ Quick Start
 -----------
 The easiest way to get Kripke running, is to directly invoke CMake and take whatever system defaults you have for compilers and let CMake find MPI for you.
 
-*  Step 1:  Create a build space (assuming you are starting in the Kripke root directory)   
+*  Step 1:  Create a build space (assuming you are starting in the Kripke root directory)
         
         mkdir build
 
@@ -139,11 +139,11 @@ Command line option help can also be viewed by running "./kripke --help"
 
 ### Problem Size Options:
 
-*   **``--groups <ngroups>``**     
+*   **``--groups <ngroups>``**
 
     Number of energy groups. (Default: --groups 32)
 
-*   **``--legendre <lorder>``**    
+*   **``--legendre <lorder>``**
 
     Scattering Legendre Expansion Order (0, 1, ...).  (Default: --legendre 4)
 
@@ -176,11 +176,11 @@ Command line option help can also be viewed by running "./kripke --help"
 
 ###Parallel Decomposition Options:
 
-*   **``--layout <lout>``**        
+*   **``--layout <lout>``**
     
     Layout of spatial subdomains over mpi ranks. 0 for "Blocked" where local zone sets represent adjacent regions of space. 1 for "Scattered" where adjacent regions of space are distributed to adjacent MPI ranks. (Default: --layout 0)
 
-*   **--procs <npx,npy,npz>**  
+*   **``--procs <npx,npy,npz>``**
     
     Number of MPI ranks in each spatial dimension. (Default:  --procs 1,1,1)
 
@@ -188,11 +188,11 @@ Command line option help can also be viewed by running "./kripke --help"
 
     Number of direction-sets.  Must be a factor of 8, and divide evenly the number of quadrature points. (Default:  --dset 8)
 
-*   **``--gset <gs>``**            
+*   **``--gset <gs>``**
     
     Number of energy group-sets.  Must divide evenly the number energy groups. (Default:  --gset 1)
 
-*   **``--zset <zx>,<zy>,<zz>``**  
+*   **``--zset <zx>,<zy>,<zz>``**
     
     Number of zone-sets in x, y, and z.  (Default:  --zset 1:1:1)
 
@@ -203,18 +203,18 @@ Command line option help can also be viewed by running "./kripke --help"
 
     Number of solver iterations to run. (Default:  --niter 10)
 
-*   **``--pmethod <method>``**     
+*   **``--pmethod <method>``**
 
     Parallel solver method. "sweep" for full up-wind sweep (wavefront algorithm). "bj" for Block Jacobi.  (Default: --pmethod sweep)
 
 
 ### Output and Testing Options:
 
-*   **``--test``**                 
+*   **``--test``**
 
     Run Kernel Test instead of solve
 
-*   **``--silo <siloname>``**                 
+*   **``--silo <siloname>``**
 
     Write SILO output (requires building with LLNL's Silo library)
 
@@ -249,14 +249,10 @@ Retirement
 Retirement of this Mini-App should be considered when it is no longer a representative of state-of-the-art transport codes, or when it becomes too cumbersome to adapt to advanced architectures. Also, at the point of retirement it should be clear how to design its successor.
 
 
-Publications, Presentations, Links
-==================================
+Links
+=====
 
 *  [LLNL Codesign Website](https://codesign.llnl.gov/index.php)
-
-*  A. J. Kunen, Kripke – [An Sn Transport Mini App](https://codesign.llnl.gov/pdfs/Kripke_NECDC2014_Present.pdf), NECDC, October 22, 2014 (LLNL-PRES-661866)
-
-*  A. J. Kunen, [RAJA-Like Transformations in Kripke](https://codesign.llnl.gov/pdfs/Kunen_JOWOG34.pdf), JOWOG34, February 5, 2015 (LLNL-PRES-666686)
 
 
 Release
