@@ -1,3 +1,35 @@
+/*
+ * NOTICE
+ *
+ * This work was produced at the Lawrence Livermore National Laboratory (LLNL)
+ * under contract no. DE-AC-52-07NA27344 (Contract 44) between the U.S.
+ * Department of Energy (DOE) and Lawrence Livermore National Security, LLC
+ * (LLNS) for the operation of LLNL. The rights of the Federal Government are
+ * reserved under Contract 44.
+ *
+ * DISCLAIMER
+ *
+ * This work was prepared as an account of work sponsored by an agency of the
+ * United States Government. Neither the United States Government nor Lawrence
+ * Livermore National Security, LLC nor any of their employees, makes any
+ * warranty, express or implied, or assumes any liability or responsibility
+ * for the accuracy, completeness, or usefulness of any information, apparatus,
+ * product, or process disclosed, or represents that its use would not infringe
+ * privately-owned rights. Reference herein to any specific commercial products,
+ * process, or service by trade name, trademark, manufacturer or otherwise does
+ * not necessarily constitute or imply its endorsement, recommendation, or
+ * favoring by the United States Government or Lawrence Livermore National
+ * Security, LLC. The views and opinions of authors expressed herein do not
+ * necessarily state or reflect those of the United States Government or
+ * Lawrence Livermore National Security, LLC, and shall not be used for
+ * advertising or product endorsement purposes.
+ *
+ * NOTIFICATION OF COMMERCIAL USE
+ *
+ * Commercialization of this product is prohibited without notifying the
+ * Department of Energy (DOE) or Lawrence Livermore National Security.
+ */
+
 #include<Kripke.h>
 #include<Kripke/Input_Variables.h>
 #include<Kripke/Grid.h>
@@ -41,27 +73,36 @@ void usage(void){
     printf("                         Default:  --groups %d\n\n", def.num_groups);
     
     printf("  --legendre <lorder>    Scattering Legendre Expansion Order (0, 1, ...)\n");
-    printf("                         Default:  --legendre 4\n\n");
+    printf("                         Default:  --legendre %d\n\n", def.legendre_order);
     
     printf("  --quad [<ndirs>|<polar>:<azim>]\n");
     printf("                         Define the quadrature set to use\n");
     printf("                         Either a fake S2 with <ndirs> points,\n");
     printf("                         OR Gauss-Legendre with <polar> by <azim> points\n");
-    printf("                         Default:  --quad 96\n\n");
+    printf("                         Default:  --quad %d\n\n", def.num_directions);
     
     
     
     printf("  --zones <x,y,z>        Number of zones in x,y,z\n");
-    printf("                         Default:  --zones 16,16,16\n\n");
+    printf("                         Default:  --zones %d,%d,%d\n\n", def.nx, def.ny, def.nz);
     
     
+    printf("\n");
+    printf("Physics Parameters:\n");
+    printf("-------------------\n");
+    printf("  --sigt <st0,st1,st2>   Total material cross-sections\n");
+    printf("                         Default:   --sigt %lf,%lf,%lf\n\n", def.sigt[0], def.sigt[1], def.sigt[2]);
+
+    printf("  --sigs <ss0,ss1,ss2>   Scattering material cross-sections\n");
+    printf("                         Default:   --sigs %lf,%lf,%lf\n\n", def.sigs[0], def.sigs[1], def.sigs[2]);
+
+
     printf("\n");
     printf("On-Node Options:\n");
     printf("----------------\n");
     printf("  --nest <NEST>          Loop nesting order (and data layout)\n");
     printf("                         Available: DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
-    printf("                         Default:   --nest DGZ\n\n");
-    
+    printf("                         Default:   --nest %s\n\n", nestingString(def.nesting).c_str());
     
     printf("\n");
     printf("Parallel Decomposition Options:\n");
@@ -69,30 +110,30 @@ void usage(void){
     printf("  --layout <lout>        Layout of spatial subdomains over mpi ranks\n");
     printf("                         0: Blocked: local zone sets are adjacent\n");
     printf("                         1: Scattered: adjacent zone sets are distributed\n");
-    printf("                         Default: --layout 0\n\n");
+    printf("                         Default: --layout %d\n\n", def.layout_pattern);
     
     
     printf("  --procs <npx,npy,npz>  Number of MPI ranks in each spatial dimension\n");
-    printf("                         Default:  --procs 1,1,1\n\n");
+    printf("                         Default:  --procs %d,%d,%d\n\n", def.npx, def.npy, def.npz);
     
     printf("  --dset <ds>            Number of direction-sets\n");
     printf("                         Must be a factor of 8, and divide evenly the number\n");
     printf("                         of quadrature points\n");
-    printf("                         Default:  --dset 8\n\n");
+    printf("                         Default:  --dset %d\n\n", def.num_dirsets);
     
     printf("  --gset <gs>            Number of energy group-sets\n");
     printf("                         Must divide evenly the number energy groups\n");
-    printf("                         Default:  --gset 1\n\n");
+    printf("                         Default:  --gset %d\n\n", def.num_groupsets);
     
-    printf("  --zset <zx>:<zy>:<zz>  Number of zone-sets in x:y:z\n");
-    printf("                         Default:  --zset 1:1:1\n\n");
+    printf("  --zset <zx>,<zy>,<zz>  Number of zone-sets in x,y, and z\n");
+    printf("                         Default:  --zset %d,%d,%d\n\n", def.num_zonesets_dim[0], def.num_zonesets_dim[1], def.num_zonesets_dim[2]);
     
     printf("\n");
     printf("Solver Options:\n");
     printf("---------------\n");
     
     printf("  --niter <NITER>        Number of solver iterations to run\n");
-    printf("                         Default:  --niter 10\n\n");
+    printf("                         Default:  --niter %d\n\n", def.niter);
     
     printf("  --pmethod <method>     Parallel solver method\n");
     printf("                         sweep: Full up-wind sweep (wavefront algorithm)\n");
@@ -102,8 +143,10 @@ void usage(void){
     printf("\n");
     printf("Output and Testing Options:\n");
     printf("---------------------------\n");
-    printf("  --out <OUTFILE>        Optional output file (default: none)\n\n");
     
+#ifdef KRIPKE_USE_PAPI
+    printf("  --papi <PAPI_X_X,...>  Track PAPI hardware counters for each timer\n\n");
+#endif
 #ifdef KRIPKE_USE_SILO
     printf("  --silo <BASENAME>      Create SILO output files\n\n");
 #endif
@@ -217,7 +260,6 @@ int main(int argc, char **argv) {
   while(!cmd.atEnd()){
     std::string opt = cmd.pop();
     if(opt == "-h" || opt == "--help"){usage();}
-    else if(opt == "--out"){vars.outfile = cmd.pop();}
     else if(opt == "--name"){vars.run_name = cmd.pop();}
     else if(opt == "--dset"){
       vars.num_dirsets = std::atoi(cmd.pop().c_str());      
@@ -226,7 +268,7 @@ int main(int argc, char **argv) {
       vars.num_groupsets = std::atoi(cmd.pop().c_str());      
     }
     else if(opt == "--zset"){
-      std::vector<std::string> nz = split(cmd.pop(), ':');
+      std::vector<std::string> nz = split(cmd.pop(), ',');
       if(nz.size() != 3) usage();
       vars.num_zonesets_dim[0] = std::atoi(nz[0].c_str());
       vars.num_zonesets_dim[1] = std::atoi(nz[1].c_str());
@@ -321,6 +363,11 @@ int main(int argc, char **argv) {
       usage();
     }
   }
+  
+  // Check that the input arguments are valid
+  if(vars.checkValues()){
+    exit(1);
+  }
 
   /*
    * Display Options
@@ -351,7 +398,6 @@ int main(int argc, char **argv) {
     }
     printf("\n");
 #endif
-    printf("Output File:           %s\n", vars.outfile.c_str());
     printf("Processors:            %d x %d x %d\n", vars.npx, vars.npy, vars.npz);
     printf("Zones:                 %d x %d x %d\n", vars.nx, vars.ny, vars.nz);
     printf("Legendre Order:        %d\n", vars.legendre_order);
@@ -377,7 +423,7 @@ int main(int argc, char **argv) {
     printf("GroupSet/Groups:       %d sets, %d groups/set\n", vars.num_groupsets, vars.num_groups/vars.num_groupsets);
     printf("DirSets/Directions:    %d sets, %d directions/set\n", vars.num_dirsets, vars.num_directions/vars.num_dirsets);
 
-    printf("Zone Sets:             %d:%d:%d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
+    printf("Zone Sets:             %d,%d,%d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
 
     
   }
@@ -399,7 +445,7 @@ int main(int argc, char **argv) {
 #ifdef KRIPKE_USE_SILO
     // Output silo data
     if(vars.silo_basename != ""){
-      grid_data->writeSilo(vars.silo_basename + ".silo");
+      grid_data->writeSilo(vars.silo_basename);
     }
 #endif
 

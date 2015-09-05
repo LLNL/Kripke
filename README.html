@@ -1,0 +1,237 @@
+<h1>KRIPKE</h1>
+
+<p>Version 1.1</p>
+
+<p>Release Date 9/13/2015 </p>
+
+<h1>Authors</h1>
+
+<ul>
+<li>Adam J. Kunen <a href="mailto:kunen1@llnl.gov">kunen1@llnl.gov</a> (Primary point of contact)</li>
+<li>Peter N. Brown <a href="mailto:brown42@llnl.gov">brown42@llnl.gov</a></li>
+<li>Teresa S. Bailey <a href="mailto:bailey42@llnl.gov">bailey42@llnl.gov</a></li>
+<li>Peter G. Maginot <a href="mailto:maginot1@llnl.gov">maginot1@llnl.gov</a></li>
+</ul>
+
+<h1>License</h1>
+
+<p>See included file NOTICE.md</p>
+
+<h1>Overview</h1>
+
+<p>Kripke is a simple, scalable, 3D Sn deterministic particle transport code.  Its primary purpose is to research how data layout, programming paradigms and architectures effect the implementation and performance of Sn transport.  A main goal of Kripke is investigating how different data-layouts affect instruction, thread and task level parallelism, and what the implications are on overall solver performance.</p>
+
+<p>Kripkie supports storage of angular fluxes (Psi) using all six striding orders (or "nestings") of Directions (D), Groups (G), and Zones (Z), and provides computational kernels specifically written for each of these nestings. Most Sn transport codes are designed around one of these nestings, which is an inflexibility that leads to software engineering compromises when porting to new architectures and programming paradigms.</p>
+
+<p>Early research has found that the problem dimensions (zones, groups, directions, scattering order) and the scaling (number of threads and MPI tasks), can make a profound difference in the performance of each of these nestings. To our knowledge this is a capability unique to Kripke, and should provide key insight into how data-layout effects Sn solver performance. An asynchronous MPI-based parallel sweep algorithm is provided, which employs the concepts of Group Sets (GS) Zone Sets (ZS), and Direction Sets (DS), borrowed from the <a href="https://parasol.tamu.edu/asci/">Texas A&amp;M code PDT</a>.</p>
+
+<p>As we explore new architectures and programming paradigms with Kripke, we will be able to incorporate these findings and ideas into our larger codes. The main advantages of using Kripke for this exploration is that it's light-weight (ie. easily refactored and modified), and it gets us closer to the real question we want answered: "What is the best way to layout and implement an Sn code on a given architecture+programming-model?" instead of the more commonly asked question "What is the best way to map my existing Sn code to a given architecture+programming-model?".</p>
+
+<h2>Mini App or Proxy App?</h2>
+
+<p>Kripke is a Mini-App since it has a very small code base consisting of 4184 lines of C++ code (generated using David A. Wheeler's SLOCCount v2.26).</p>
+
+<p>Kripke is also a Proxy-App since it is a proxy for the LLNL transport code ARDRA.</p>
+
+<h2>Analysis</h2>
+
+<p>A major challenge of achieving high-performance in an Sn transport (or any physics) code is choosing a data-layout and a parallel decomposition that lends itself to the targeted architecture. Often the data-layout determines the most efficient nesting of loops in computational kernels, which then determines how well your inner-most-loop SIMDizes, how you add threading (pthreads, OpenMP, etc.), and the efficiency and design of your parallel algorithms. Therefore, each nesting produces different loop nesting orders, which provides substantially different performance characteristics. We want to explore how easily and efficiently these different nestings map to different architectures. In particular, we are interested in how we can achieve good parallel efficiency while also achieving efficient use of node resources (such as SIMD units, memory systems, and accelerators).</p>
+
+<p>Parallel sweep algorithms can be explored with Kripke in multiple ways. The core MPI algorithm could be modified or rewritten to explore other approaches, domain overloading, or alternate programming models (such as Charm++). The effect of load-imbalance is an understudied aspect of Sn transport sweeps, and could easily be studied with Kripke by artificially adding more work (ie unknowns) to a subset of MPI tasks. Block-AMR could be added to Kripke, which would be a useful way to explore the cost-benefit analysis of adding AMR to an Sn code, and would be a way to further study load imbalances and AMR effects on sweeps.</p>
+
+<p>The coupling of on-node sweep kernel, the parallel sweep algorithm, and the choices of decomposing the problem phase space into GS's, ZS's and DS's impact the performance of the overall sweep. The tradeoff between large and small "units of work" can be studied. Larger "units of work" provide more opportunity for on-node parallelism, while creating larger messages, less "sends", and less efficient parallel sweeps. Smaller "units of work" make for less efficient on-node kernels, but more efficient parallel sweeps. </p>
+
+<p>We can also study trading MPI tasks for threads, and the effects this has on our programming models and cache efficiency.</p>
+
+<p>A simple timer infrastructure is provided that measure each compute kernels total time.</p>
+
+<h2>Physical Models</h2>
+
+<p>Kripke solves the Discrete Ordinance and Diamond Difference discretized steady-state linear Boltzmann equation. </p>
+
+<pre><code>    H * Psi = (LPlus * S * L) * Psi + Q
+</code></pre>
+
+<p>Where:</p>
+
+<ul>
+<li><p><strong>Psi</strong> is the unknown angular flux discretized over zones, directions, and energy groups</p></li>
+<li><p><strong>H</strong> is the "streaming-collision" operator.  (Couples zones)</p></li>
+<li><p><strong>L</strong> is the "discrete-to-moments operator. (Couples directions and moments)</p></li>
+<li><p><strong>LPlus</strong> is the "moment-to-discrete" operator. (Couples directions and moments)</p></li>
+<li><p><strong>S</strong> is the (arbitrary) order scattering operator. (Couples groups)</p></li>
+<li><p><strong>Q</strong> is an external source. In Kripke it is represented in moment space, so really "LPlus*Q"</p></li>
+</ul>
+
+<p>Kripke is hard-coded to setup and solve the <a href="https://www.oecd-nea.org/science/docs/2000/nsc-doc2000-4.pdf">3D Kobayashi radiation benchmark, problem 3i</a>.  Since Kripke does not have reflecting boundary conditions, the full-space model is solved. Command line arguments allow the user to modify the total and scattering cross-sections.  Since Kripke is a multi-group transport code and the Kobayashi problem is single-group, each energy group is setup to solve the same problem with no group-to-group coupling in the data.</p>
+
+<p>The steady-state solution method uses the source-iteration technique, where each iteration is as follows:</p>
+
+<ol>
+<li>Phi = LTimes(Psi)</li>
+<li>PhiOut = Scattering(Phi)</li>
+<li>PhiOut = PhiOut + Source()</li>
+<li>Rhs = LPlusTimes(PhiOut)</li>
+<li>Psi = Sweep(Rhs, Psi)  which is solving Psi=(Hinverse * Rhs) a.k.a <em>"Inverting H"</em></li>
+</ol>
+
+<h1>Building and Running</h1>
+
+<p>Kripke comes with a simple CMake based build system.</p>
+
+<h2>Requirements</h2>
+
+<ul>
+<li>CMake 3.0 or later</li>
+<li>C++ Compiler (g++, icpc, etc.)</li>
+<li>MPI 1.0 or later</li>
+</ul>
+
+<h2>Quick Start</h2>
+
+<p>The easiest way to get Kripke running, is to directly invoke CMake and take whatever system defaults you have for compilers and let CMake find MPI for you.</p>
+
+<ul>
+<li><p>Step 1:  Create a build space (assuming you are starting in the Kripke root directory)</p>
+
+<pre><code>mkdir build
+</code></pre></li>
+<li><p>Step 2: Run CMake in that build space</p>
+
+<pre><code>cd kripke
+cmake ..
+</code></pre></li>
+<li><p>Step 3: Now make Kripke:</p>
+
+<pre><code>make -j8
+</code></pre></li>
+<li><p>Step 4: Run the test suite to make sure it works</p>
+
+<pre><code>make test
+</code></pre></li>
+<li><p>Step 5: Run Kripke's default problem:</p>
+
+<pre><code>./kripke
+</code></pre></li>
+</ul>
+
+<h1>Running Kripke</h1>
+
+<h2>Environment Variabes</h2>
+
+<p>If Kripke is build with OpenMP support, then the environment variables <code>OMP_NUM_THREADS</code> is used to control the number of OpenMP threads.  Kripke does not attempt to modify the OpenMP runtime in anyway, so other <code>OMP_*</code> environment variables should also work as well.</p>
+
+<h2>Command Line Options</h2>
+
+<p>Command line option help can also be viewed by running "./kripke --help"</p>
+
+<h3>Problem Size Options:</h3>
+
+<ul>
+<li><p><strong><code>--groups &lt;ngroups&gt;</code></strong></p>
+
+<p>Number of energy groups. (Default: --groups 32)</p></li>
+<li><p><strong><code>--legendre &lt;lorder&gt;</code></strong></p>
+
+<p>Scattering Legendre Expansion Order (0, 1, ...).  (Default: --legendre 4)</p></li>
+<li><p><strong><code>--quad &lt;ndirs&gt;</code></strong>, or <strong><code>--quad &lt;polar&gt;:&lt;azim&gt;</code></strong></p>
+
+<p>Define the quadrature set to use either a fake S2 with <ndirs> points, OR Gauss-Legendre with <polar> by <azim> points.   (Default: --quad 96)</p></li>
+<li><p><strong><code>--zones &lt;x&gt;,&lt;y&gt;,&lt;z&gt;</code></strong></p>
+
+<p>Number of zones in x,y,z.  (Default: --zones 16,16,16)</p></li>
+</ul>
+
+<h3>Physics Parameters:</h3>
+
+<ul>
+<li><p><strong><code>--sigt &lt;sigt0,sigt1,sigt2&gt;</code></strong></p>
+
+<p>Total material cross-sections.  (Default:   --sigt 0.1,0.0001,0.1)</p></li>
+<li><p><strong><code>--sigs &lt;sigs0,sigs1,sigs2&gt;</code></strong></p>
+
+<p>Total material cross-sections.  (Default:   --sigs 0.05,0.00005,0.05)</p></li>
+</ul>
+
+<h3>On-Node Options:</h3>
+
+<ul>
+<li><p><strong><code>--nest &lt;NEST&gt;</code></strong></p>
+
+<p>Loop nesting order (and data layout), available are DGZ, DZG, GDZ, GZD, ZDG, and ZGD. (Default: --nest DGZ)</p></li>
+</ul>
+
+<h3>Parallel Decomposition Options:</h3>
+
+<ul>
+<li><p><strong><code>--layout &lt;lout&gt;</code></strong></p>
+
+<p>Layout of spatial subdomains over mpi ranks. 0 for "Blocked" where local zone sets represent adjacent regions of space. 1 for "Scattered" where adjacent regions of space are distributed to adjacent MPI ranks. (Default: --layout 0)</p></li>
+<li><p><strong><code>--procs &lt;npx,npy,npz&gt;</code></strong></p>
+
+<p>Number of MPI ranks in each spatial dimension. (Default:  --procs 1,1,1)</p></li>
+<li><p><strong><code>--dset &lt;ds&gt;</code></strong></p>
+
+<p>Number of direction-sets.  Must be a factor of 8, and divide evenly the number of quadrature points. (Default:  --dset 8)</p></li>
+<li><p><strong><code>--gset &lt;gs&gt;</code></strong></p>
+
+<p>Number of energy group-sets.  Must divide evenly the number energy groups. (Default:  --gset 1)</p></li>
+<li><p><strong><code>--zset &lt;zx&gt;,&lt;zy&gt;,&lt;zz&gt;</code></strong></p>
+
+<p>Number of zone-sets in x, y, and z.  (Default:  --zset 1:1:1)</p></li>
+</ul>
+
+<h3>Solver Options:</h3>
+
+<ul>
+<li><p><strong><code>--niter &lt;NITER&gt;</code></strong></p>
+
+<p>Number of solver iterations to run. (Default:  --niter 10)</p></li>
+<li><p><strong><code>--pmethod &lt;method&gt;</code></strong></p>
+
+<p>Parallel solver method. "sweep" for full up-wind sweep (wavefront algorithm). "bj" for Block Jacobi.  (Default: --pmethod sweep)</p></li>
+</ul>
+
+<h3>Output and Testing Options:</h3>
+
+<ul>
+<li><p><strong><code>--test</code></strong></p>
+
+<p>Run Kernel Test instead of solve</p></li>
+<li><p><strong><code>--silo &lt;siloname&gt;</code></strong></p>
+
+<p>Write SILO output (requires building with LLNL's Silo library)</p></li>
+<li><p><strong><code>--papi &lt;PAPI_XXX_XXX,...&gt;</code></strong></p>
+
+<p>Track PAPI hardware counters for each timer. (requires building with PAPI library)</p></li>
+</ul>
+
+<h2>Test Suite</h2>
+
+<p>Running with the <code>--test</code> command line argument will run a unit-testing frame work that will compare each kernel, using random input data, with the same kernel from a different nesting.  This is very useful for checking correctness of kernels after modification.</p>
+
+<p>Running <code>make test</code> will use the CMake testing framework, CTest, to run a series of tests outlined in the root <code>CMakeLists.txt</code> file.</p>
+
+<h1>Future Plans</h1>
+
+<p>Some ideas for future study:</p>
+
+<ul>
+<li><p>Block AMR.</p></li>
+<li><p>More FLOP intensive spatial discretizations such as DFEM's.</p></li>
+<li><p>Programming model abstractions</p></li>
+</ul>
+
+<h1>Retirement</h1>
+
+<p>Retirement of this Mini-App should be considered when it is no longer a representative of state-of-the-art transport codes, or when it becomes too cumbersome to adapt to advanced architectures. Also, at the point of retirement it should be clear how to design its successor.</p>
+
+<h1>Links</h1>
+
+<ul>
+<li><a href="https://codesign.llnl.gov/index.php">LLNL Codesign Website</a></li>
+</ul>
+
+<h1>Release</h1>
+
+<p>LLNL-CODE-658597</p>
