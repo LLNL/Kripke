@@ -299,28 +299,25 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
             double const ycos_dyj = 2.0 * direction[d].ycos / dy[j + 1];
             double const zcos_dzk = 2.0 * direction[d].zcos / dz[k + 1];
             
-            int const z_idx = Zonal_INDEX(i, j, k);
-            int const z_i = I_PLANE_INDEX(j, k);
-            int const z_j = J_PLANE_INDEX(i, k);
-            int const z_k = K_PLANE_INDEX(i, j);
+            int const z_idx = Zonal_INDEX(i, j, k);            
+            int const lf_idx = d*num_gz_i + g*num_z_i + I_PLANE_INDEX(j, k);
+            int const fr_idx = d*num_gz_j + g*num_z_j + J_PLANE_INDEX(i, k);
+            int const bo_idx = d*num_gz_k + g*num_z_k + K_PLANE_INDEX(i, j);
 
             /* Calculate new zonal flux */
             double const psi_d_g_z = (
                   rhs[d*num_gz + g*num_zones + z_idx]
-                + psi_lf[d*num_gz_i + g*num_z_i + z_i] * xcos_dxi
-                + psi_fr[d*num_gz_j + g*num_z_j + z_j] * ycos_dyj
-                + psi_bo[d*num_gz_k + g*num_z_k + z_k] * zcos_dzk)
+                + psi_lf[lf_idx] * xcos_dxi
+                + psi_fr[fr_idx] * ycos_dyj
+                + psi_bo[bo_idx] * zcos_dzk)
                 / (xcos_dxi + ycos_dyj + zcos_dzk + sigt[g*num_zones + z_idx]);
 
             psi[d*num_gz + g*num_zones + z_idx] = psi_d_g_z;
             
             /* Apply diamond-difference relationships */
-            psi_lf[d*num_gz_i + g*num_z_i + z_i] = 
-              2.0 * psi_d_g_z - psi_lf[d*num_gz_i + g*num_z_i + z_i];
-            psi_fr[d*num_gz_j + g*num_z_j + z_j] = 
-              2.0 * psi_d_g_z - psi_fr[d*num_gz_j + g*num_z_j + z_j];
-            psi_bo[d*num_gz_k + g*num_z_k + z_k] = 
-              2.0 * psi_d_g_z - psi_bo[d*num_gz_k + g*num_z_k + z_k];
+            psi_lf[lf_idx] = 2.0 * psi_d_g_z - psi_lf[lf_idx];
+            psi_fr[fr_idx] = 2.0 * psi_d_g_z - psi_fr[fr_idx];
+            psi_bo[bo_idx] = 2.0 * psi_d_g_z - psi_bo[bo_idx];
           }
         }
       }

@@ -303,19 +303,18 @@ void Kernel_3d_DZG::sweep(Subdomain *sdom) {
     for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {            
       for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {                
         for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
-          for (int g = 0; g < num_groups; ++g) {
-            int z = Zonal_INDEX(i, j, k);
-          
-            double xcos_dxi = 2.0 * direction[d].xcos / dx[i + 1];
-            double ycos_dyj = 2.0 * direction[d].ycos / dy[j + 1];
-            double zcos_dzk = 2.0 * direction[d].zcos / dz[k + 1];
+          for (int g = 0; g < num_groups; ++g) {                      
+            double const xcos_dxi = 2.0 * direction[d].xcos / dx[i + 1];
+            double const ycos_dyj = 2.0 * direction[d].ycos / dy[j + 1];
+            double const zcos_dzk = 2.0 * direction[d].zcos / dz[k + 1];
             
-            int lf_idx = d*num_zg_i + I_PLANE_INDEX(j, k)*num_groups + g;
-            int fr_idx = d*num_zg_j + J_PLANE_INDEX(i, k)*num_groups + g;
-            int bo_idx = d*num_zg_k + K_PLANE_INDEX(i, j)*num_groups + g;
+            int const z = Zonal_INDEX(i, j, k);
+            int const lf_idx = d*num_zg_i + I_PLANE_INDEX(j, k)*num_groups + g;
+            int const fr_idx = d*num_zg_j + J_PLANE_INDEX(i, k)*num_groups + g;
+            int const bo_idx = d*num_zg_k + K_PLANE_INDEX(i, j)*num_groups + g;
             
             // Calculate new zonal flux 
-            double psi_d_z_g = (
+            double const psi_d_z_g = (
                 rhs[d*num_zg + z*num_groups + g]
                 + psi_lf[lf_idx] * xcos_dxi
                 + psi_fr[fr_idx] * ycos_dyj
