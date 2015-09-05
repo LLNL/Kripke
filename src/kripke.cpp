@@ -363,6 +363,11 @@ int main(int argc, char **argv) {
       usage();
     }
   }
+  
+  // Check that the input arguments are valid
+  if(vars.checkValues()){
+    exit(1);
+  }
 
   /*
    * Display Options
