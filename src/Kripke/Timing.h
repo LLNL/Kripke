@@ -81,11 +81,6 @@ class Timing {
     void clear(void);
 
     void print(void) const;
-    void printTabular(bool print_header,
-        std::vector<std::string> const &headers,
-        std::vector<std::string> const &values,
-        FILE *fp = stdout) const;
-
     double getTotal(std::string const &name) const;
 
     void setPapiEvents(std::vector<std::string> names);
