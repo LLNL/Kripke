@@ -73,28 +73,28 @@ void usage(void){
     printf("                         Default:  --groups %d\n\n", def.num_groups);
     
     printf("  --legendre <lorder>    Scattering Legendre Expansion Order (0, 1, ...)\n");
-    printf("                         Default:  --legendre 4\n\n");
+    printf("                         Default:  --legendre %d\n\n", def.legendre_order);
     
     printf("  --quad [<ndirs>|<polar>:<azim>]\n");
     printf("                         Define the quadrature set to use\n");
     printf("                         Either a fake S2 with <ndirs> points,\n");
     printf("                         OR Gauss-Legendre with <polar> by <azim> points\n");
-    printf("                         Default:  --quad 96\n\n");
+    printf("                         Default:  --quad %d\n\n", def.num_directions);
     
     
     
     printf("  --zones <x,y,z>        Number of zones in x,y,z\n");
-    printf("                         Default:  --zones 16,16,16\n\n");
+    printf("                         Default:  --zones %d,%d,%d\n\n", def.nx, def.ny, def.nz);
     
     
     printf("\n");
     printf("Physics Parameters:\n");
     printf("-------------------\n");
     printf("  --sigt <st0,st1,st2>   Total material cross-sections\n");
-    printf("                         Default:   --sigt 0.1,0.0001,0.1\n\n");
+    printf("                         Default:   --sigt %lf,%lf,%lf\n\n", def.sigt[0], def.sigt[1], def.sigt[2]);
 
     printf("  --sigs <ss0,ss1,ss2>   Scattering material cross-sections\n");
-    printf("                         Default:   --sigs 0.05,0.00005,0.05\n\n");
+    printf("                         Default:   --sigs %lf,%lf,%lf\n\n", def.sigs[0], def.sigs[1], def.sigs[2]);
 
 
     printf("\n");
@@ -102,7 +102,7 @@ void usage(void){
     printf("----------------\n");
     printf("  --nest <NEST>          Loop nesting order (and data layout)\n");
     printf("                         Available: DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
-    printf("                         Default:   --nest DGZ\n\n");
+    printf("                         Default:   --nest %s\n\n", nestingString(def.nesting).c_str());
     
     printf("\n");
     printf("Parallel Decomposition Options:\n");
@@ -110,30 +110,30 @@ void usage(void){
     printf("  --layout <lout>        Layout of spatial subdomains over mpi ranks\n");
     printf("                         0: Blocked: local zone sets are adjacent\n");
     printf("                         1: Scattered: adjacent zone sets are distributed\n");
-    printf("                         Default: --layout 0\n\n");
+    printf("                         Default: --layout %d\n\n", def.layout_pattern);
     
     
     printf("  --procs <npx,npy,npz>  Number of MPI ranks in each spatial dimension\n");
-    printf("                         Default:  --procs 1,1,1\n\n");
+    printf("                         Default:  --procs %d,%d,%d\n\n", def.npx, def.npy, def.npz);
     
     printf("  --dset <ds>            Number of direction-sets\n");
     printf("                         Must be a factor of 8, and divide evenly the number\n");
     printf("                         of quadrature points\n");
-    printf("                         Default:  --dset 8\n\n");
+    printf("                         Default:  --dset %d\n\n", def.num_dirsets);
     
     printf("  --gset <gs>            Number of energy group-sets\n");
     printf("                         Must divide evenly the number energy groups\n");
-    printf("                         Default:  --gset 1\n\n");
+    printf("                         Default:  --gset %d\n\n", def.num_groupsets);
     
     printf("  --zset <zx>,<zy>,<zz>  Number of zone-sets in x,y, and z\n");
-    printf("                         Default:  --zset 1,1,1\n\n");
+    printf("                         Default:  --zset %d,%d,%d\n\n", def.num_zonesets_dim[0], def.num_zonesets_dim[1], def.num_zonesets_dim[2]);
     
     printf("\n");
     printf("Solver Options:\n");
     printf("---------------\n");
     
     printf("  --niter <NITER>        Number of solver iterations to run\n");
-    printf("                         Default:  --niter 10\n\n");
+    printf("                         Default:  --niter %d\n\n", def.niter);
     
     printf("  --pmethod <method>     Parallel solver method\n");
     printf("                         sweep: Full up-wind sweep (wavefront algorithm)\n");
