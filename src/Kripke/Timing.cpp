@@ -186,12 +186,20 @@ void Timing::print(void) const {
   
   // Now display timers in machine readable format
   printf("\n");
-  printf("TIMERS:");
+  printf("TIMER_NAMES:");
   for(int i = 0;i < names.size();++ i){
     if(i > 0){
       printf(",");
     }
-    printf("%s=%lf", names[i].c_str(), ord_timers[i]->total_time);    
+    printf("%s", names[i].c_str());
+  }
+  printf("\n");
+  printf("TIMER_DATA:");
+  for(int i = 0;i < names.size();++ i){
+    if(i > 0){
+      printf(",");
+    }
+    printf("%lf", ord_timers[i]->total_time);    
   }
   printf("\n");
 }
