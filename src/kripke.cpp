@@ -445,7 +445,7 @@ int main(int argc, char **argv) {
 #ifdef KRIPKE_USE_SILO
     // Output silo data
     if(vars.silo_basename != ""){
-      grid_data->writeSilo(vars.silo_basename + ".silo");
+      grid_data->writeSilo(vars.silo_basename);
     }
 #endif
 
