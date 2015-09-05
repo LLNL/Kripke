@@ -109,6 +109,11 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
   int num_subdomains = grid_data->subdomains.size();
   for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
     Subdomain &sdom = grid_data->subdomains[sdom_id];
+    // Zero RHS
+    sdom.rhs->clear(0.0);
+  }
+  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
 
     // Get dimensioning
     int num_zones = sdom.num_zones;
@@ -118,9 +123,6 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
     int num_local_directions = sdom.num_directions;
     int num_groups_zones = num_local_groups*num_zones;
     
-    // Zero RHS
-    sdom.rhs->clear(0.0);
-
     // Get pointers
     double const * KRESTRICT phi_out = sdom.phi_out->ptr() + group0*num_zones;
     double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
@@ -145,6 +147,11 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
   phi_out(gp,z,nm) = sum_g { sigs(g, n, gp) * phi(g,z,nm) }
 */
 void Kernel_3d_DGZ::scattering(Grid_Data *grid_data){
+  // Zero zone sets
+  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
+    grid_data->phi_out[zs]->clear(0.0);
+  }
+
   // Loop over zoneset subdomains
   for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
     // get material mix information
@@ -160,37 +167,31 @@ void Kernel_3d_DGZ::scattering(Grid_Data *grid_data){
     double const * KRESTRICT phi = grid_data->phi[zs]->ptr();
     double       * KRESTRICT phi_out = grid_data->phi_out[zs]->ptr();
 
-    // Zero out source terms
-    grid_data->phi_out[zs]->clear(0.0);
-
     // grab dimensions
-    //int num_mixed = sdom.mixed_to_zones.size();
     int num_zones = sdom.num_zones;
     int num_groups = grid_data->phi_out[zs]->groups;
     int num_moments = grid_data->total_num_moments;
     int num_gz = num_groups*num_zones;
 
     for(int nm = 0;nm < num_moments;++ nm){
-      // map nm to n
       int n = moment_to_coeff[nm];
-
       for(int g = 0;g < num_groups;++ g){      
         for(int gp = 0;gp < num_groups;++ gp){
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-          for(int zone = 0;zone < num_zones;++ zone){
-            double phi_out_nm_gp_z = 0.0;
+          for(int zone = 0;zone < num_zones;++ zone){            
             int mix_start = zones_to_mixed[zone];
             int mix_stop = mix_start + num_mixed[zone];
 
             for(int mix = mix_start;mix < mix_stop;++ mix){
               int material = mixed_material[mix];
-              double fraction = mixed_fraction[mix];
+              double fraction = mixed_fraction[mix];              
 
-              phi_out_nm_gp_z += sigs[n*3*num_groups*num_groups + g*3*num_groups + gp*3 + material] * phi[nm*num_gz + g*num_zones + zone] * fraction;
+              phi_out[nm*num_gz + gp*num_zones + zone] += 
+                sigs[n*3*num_groups*num_groups + g*3*num_groups + gp*3 + material] * 
+                phi[nm*num_gz + g*num_zones + zone] * fraction;
             }
-            phi_out[nm*num_gz + gp*num_zones + zone] += phi_out_nm_gp_z;
           }
         }        
       }

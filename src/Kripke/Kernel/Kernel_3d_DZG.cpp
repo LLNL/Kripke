@@ -87,23 +87,16 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
     double const * KRESTRICT psi = sdom.psi->ptr();
     double       * KRESTRICT phi = sdom.phi->ptr();
     
-    for(int nm = 0;nm < num_moments;++nm){
-      double const * KRESTRICT ell_nm = ell + nm*num_local_directions;      
-      double       * KRESTRICT phi_nm = phi + nm*num_gz;
-      
+    for(int nm = 0;nm < num_moments;++nm){     
       for (int d = 0; d < num_local_directions; d++) {
-        double const * KRESTRICT psi_d = psi + d*num_locgz;
-        double const             ell_nm_d = ell_nm[d];
-
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-        for (int z = 0;z < num_zones;++ z){               
-          double const * KRESTRICT psi_d_z  = psi_d + z*num_local_groups;
-          double       * KRESTRICT phi_nm_z = phi_nm + z*num_groups + group0;
-          
+        for (int z = 0;z < num_zones;++ z){                         
           for(int g = 0;g < num_local_groups; ++ g){  
-            phi_nm_z[g] += ell_nm_d * psi_d_z[g];
+            phi[nm*num_gz + z*num_groups + group0 + g] += 
+              ell[nm*num_local_directions + d] * 
+              psi[d*num_locgz + z*num_local_groups + g];
           }
         }
       }
@@ -119,6 +112,12 @@ void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
   int num_subdomains = grid_data->subdomains.size();
   for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
     Subdomain &sdom = grid_data->subdomains[sdom_id];
+    
+    // Zero RHS
+    sdom.rhs->clear(0.0);
+  }
+  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
 
     // Get dimensioning
     int num_zones = sdom.num_zones;
@@ -129,31 +128,21 @@ void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
     int num_gz = num_groups*num_zones;
     int num_locgz = num_local_groups*num_zones;
 
-    // Zero RHS
-    sdom.rhs->clear(0.0);
-
     // Get pointers
     double const * KRESTRICT phi_out = sdom.phi_out->ptr() + group0;
     double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
     double       * KRESTRICT rhs = sdom.rhs->ptr();
 
     for (int d = 0; d < num_local_directions; d++) {
-      double       * KRESTRICT rhs_d = rhs + d*num_locgz;
-      double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
-
       for(int nm = 0;nm < num_moments;++nm){
-        double const             ell_plus_d_nm = ell_plus_d[nm];
-        double const * KRESTRICT phi_out_nm = phi_out + nm*num_gz;
-
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
         for(int z = 0;z < num_zones;++ z){
-          double const * KRESTRICT phi_out_nm_z = phi_out_nm + z*num_groups;
-          double       * KRESTRICT rhs_d_z = rhs_d + z*num_local_groups;
-
           for(int g = 0;g < num_local_groups;++ g){
-            rhs_d_z[g] += ell_plus_d_nm * phi_out_nm_z[g];
+            rhs[d*num_locgz + z*num_local_groups + g] += 
+              ell_plus[d*num_moments + nm] * 
+              phi_out[nm*num_gz + z*num_groups + g];
           }
         }
       }
@@ -168,6 +157,11 @@ void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
 
 */
 void Kernel_3d_DZG::scattering(Grid_Data *grid_data){
+  // Zero out source terms
+  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
+    grid_data->phi_out[zs]->clear(0.0);
+  }
+  
   // Loop over zoneset subdomains
   for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
     // get material mix information
@@ -183,9 +177,6 @@ void Kernel_3d_DZG::scattering(Grid_Data *grid_data){
     double const * KRESTRICT phi = grid_data->phi[zs]->ptr();
     double       * KRESTRICT phi_out = grid_data->phi_out[zs]->ptr();
 
-    // Zero out source terms
-    grid_data->phi_out[zs]->clear(0.0);
-
     // grab dimensions
     int num_zones = sdom.num_zones;
     int num_groups = grid_data->phi_out[zs]->groups;
@@ -193,12 +184,7 @@ void Kernel_3d_DZG::scattering(Grid_Data *grid_data){
     int num_gz = num_groups*num_zones;
 
     for(int nm = 0;nm < num_moments;++ nm){
-      // map nm to n
       int n = moment_to_coeff[nm];
-      double const * KRESTRICT sigs_n = sigs + n*3*num_groups*num_groups;
-      double const * KRESTRICT phi_nm = phi + nm*num_gz;
-      double       * KRESTRICT phi_out_nm = phi_out + nm*num_gz;
-
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
@@ -208,18 +194,14 @@ void Kernel_3d_DZG::scattering(Grid_Data *grid_data){
 
         for(int mix = mix_start;mix < mix_stop;++ mix){
           int material = mixed_material[mix];
-          double fraction = mixed_fraction[mix];
-
-          double const * KRESTRICT sigs_n_mat = sigs_n + material*num_groups*num_groups;
-          double const * KRESTRICT phi_nm_z = phi_nm + zone*num_groups;
-          double       * KRESTRICT phi_out_nm_z = phi_out_nm + zone*num_groups;
-
-          for(int g = 0;g < num_groups;++ g){      
-            double const * KRESTRICT sigs_n_mat_g = sigs_n_mat + g*num_groups;
-            double const             phi_nm_z_g = phi_nm_z[g];
-                    
+          double fraction = mixed_fraction[mix];       
+          for(int g = 0;g < num_groups;++ g){                          
             for(int gp = 0;gp < num_groups;++ gp){           
-              phi_out_nm_z[gp] += sigs_n_mat_g[gp] * phi_nm_z_g * fraction;
+                                                      
+              phi_out[nm*num_gz + zone*num_groups + gp] += 
+                sigs[n*3*num_groups*num_groups + material*num_groups*num_groups + g*num_groups + gp] * 
+                phi[nm*num_gz + zone*num_groups + g] * 
+                fraction;
             }
           }        
         }
@@ -237,9 +219,6 @@ void Kernel_3d_DZG::scattering(Grid_Data *grid_data){
 void Kernel_3d_DZG::source(Grid_Data *grid_data){
   // Loop over zoneset subdomains
   for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
-    // get the phi and phi out references
-    SubTVec &phi_out = *grid_data->phi_out[zs];
-
     // get material mix information
     int sdom_id = grid_data->zs_to_sdomid[zs];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
@@ -247,11 +226,11 @@ void Kernel_3d_DZG::source(Grid_Data *grid_data){
     int    const * KRESTRICT num_mixed = &sdom.num_mixed[0];
     int    const * KRESTRICT mixed_material = &sdom.mixed_material[0];
     double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
-    double       * KRESTRICT phi_out_nm0 = phi_out.ptr();
+    double       * KRESTRICT phi_out = grid_data->phi_out[zs]->ptr();
 
     // grab dimensions
     int num_zones = sdom.num_zones;
-    int num_groups = phi_out.groups;
+    int num_groups = grid_data->phi_out[zs]->groups;
     int num_moments = grid_data->total_num_moments;
     
 #ifdef KRIPKE_USE_OPENMP
@@ -264,11 +243,11 @@ void Kernel_3d_DZG::source(Grid_Data *grid_data){
       for(int mix = mix_start;mix < mix_stop;++ mix){
         int material = mixed_material[mix];
         double fraction = mixed_fraction[mix];
-        double * KRESTRICT phi_out_nm0_z = phi_out_nm0 + zone*num_groups;
-
-        if(material == 0){
-          for(int g = 0;g < num_groups;++ g){
-            phi_out_nm0_z[g] += 1.0 * fraction;
+        
+        for(int g = 0;g < num_groups;++ g){
+          if(material == 0){
+          
+            phi_out[zone*num_groups + g] += 1.0 * fraction;
           }
         }
       }
@@ -301,7 +280,7 @@ void Kernel_3d_DZG::sweep(Subdomain *sdom) {
   double const * KRESTRICT dz = &sdom->deltas[2][0];
   
   double const * KRESTRICT sigt = sdom->sigt->ptr();
-  double       * KRESTRICT psi  = sdom->psi->ptr();
+  double       * KRESTRICT psi  = sdom->psi->ptr();   
   double const * KRESTRICT rhs  = sdom->rhs->ptr();
 
   double * KRESTRICT psi_lf = sdom->plane_data[0]->ptr();
@@ -321,50 +300,34 @@ void Kernel_3d_DZG::sweep(Subdomain *sdom) {
 #pragma omp parallel for
 #endif
   for (int d = 0; d < num_directions; ++d) {
-    double xcos = 2.0 * direction[d].xcos;
-    double ycos = 2.0 * direction[d].ycos;
-    double zcos = 2.0 * direction[d].zcos;
-
-    double       * KRESTRICT psi_d  = psi  + d*num_zg;
-    double const * KRESTRICT rhs_d  = rhs  + d*num_zg;
-
-    double       * KRESTRICT psi_lf_d = psi_lf + d*num_zg_i;
-    double       * KRESTRICT psi_fr_d = psi_fr + d*num_zg_j;
-    double       * KRESTRICT psi_bo_d = psi_bo + d*num_zg_k;
-
-    //  Perform transport sweep of the grid 1 cell at a time.
-    for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
-      double zcos_dzk = zcos / dz[k + 1];
-      
-      for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {
-        double ycos_dyj = ycos / dy[j + 1];
-        
+    for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {            
+      for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {                
         for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
-          double xcos_dxi = xcos / dx[i + 1];
-
-          int z = Zonal_INDEX(i, j, k);
-          double const * KRESTRICT sigt_z = sigt + z*num_groups;
-          double       * KRESTRICT psi_d_z = psi_d + z*num_groups;
-          double const * KRESTRICT rhs_d_z = rhs_d + z*num_groups;
-
-          double * KRESTRICT psi_lf_d_z = psi_lf_d + I_PLANE_INDEX(j, k)*num_groups;
-          double * KRESTRICT psi_fr_d_z = psi_fr_d + J_PLANE_INDEX(i, k)*num_groups;
-          double * KRESTRICT psi_bo_d_z = psi_bo_d + K_PLANE_INDEX(i, j)*num_groups;
-
           for (int g = 0; g < num_groups; ++g) {
+            int z = Zonal_INDEX(i, j, k);
+          
+            double xcos_dxi = 2.0 * direction[d].xcos / dx[i + 1];
+            double ycos_dyj = 2.0 * direction[d].ycos / dy[j + 1];
+            double zcos_dzk = 2.0 * direction[d].zcos / dz[k + 1];
+            
+            int lf_idx = d*num_zg_i + I_PLANE_INDEX(j, k)*num_groups + g;
+            int fr_idx = d*num_zg_j + J_PLANE_INDEX(i, k)*num_groups + g;
+            int bo_idx = d*num_zg_k + K_PLANE_INDEX(i, j)*num_groups + g;
+            
             // Calculate new zonal flux 
-            double psi_d_z_g = (rhs_d_z[g]
-                + psi_lf_d_z[g] * xcos_dxi
-                + psi_fr_d_z[g] * ycos_dyj
-                + psi_bo_d_z[g] * zcos_dzk)
-                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt_z[g]);
+            double psi_d_z_g = (
+                rhs[d*num_zg + z*num_groups + g]
+                + psi_lf[lf_idx] * xcos_dxi
+                + psi_fr[fr_idx] * ycos_dyj
+                + psi_bo[bo_idx] * zcos_dzk)
+                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt[z*num_groups + g]);
 
-            psi_d_z[g] = psi_d_z_g;
+            psi[d*num_zg + z*num_groups + g] = psi_d_z_g;
 
             // Apply diamond-difference relationships 
-            psi_lf_d_z[g] = 2.0 * psi_d_z_g - psi_lf_d_z[g];
-            psi_fr_d_z[g] = 2.0 * psi_d_z_g - psi_fr_d_z[g];
-            psi_bo_d_z[g] = 2.0 * psi_d_z_g - psi_bo_d_z[g];
+            psi_lf[lf_idx] = 2.0 * psi_d_z_g - psi_lf[lf_idx];
+            psi_fr[fr_idx] = 2.0 * psi_d_z_g - psi_fr[fr_idx];
+            psi_bo[bo_idx] = 2.0 * psi_d_z_g - psi_bo[bo_idx];
           }
         }
       }

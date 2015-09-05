@@ -5,8 +5,6 @@ project(KRIPKE)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules" ${CMAKE_MODULE_PATH})
 message(STATUS ${CMAKE_MODULE_PATH})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
 # MPI Support (Required)
 # If the ENABLE_MPI is turned off, you must use the mpi* compiler wrappers, since
 # Kripke will not build without MPI support
