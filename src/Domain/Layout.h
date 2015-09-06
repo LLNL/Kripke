@@ -93,6 +93,46 @@
         int const size_l;
     };
 
+    template<typename T, LAYOUT1D L>
+    struct View1d {
+        inline View1d(T *data_ptr, int ni);
+        inline T const &operator()(int i) const;
+        inline T &operator()(int i);
+
+        Layout1d<L> const layout;
+        T *data;
+    };
+
+    template<typename T, LAYOUT2D L>
+    struct View2d {
+        inline View2d(T *data_ptr, int ni, int nj);
+        inline T const &operator()(int i, int j) const;
+        inline T &operator()(int i, int j);
+
+        Layout2d<L> const layout;
+        T * __restrict__ data;
+    };
+
+    template<typename T, LAYOUT3D L>
+    struct View3d {
+        inline View3d(T *data_ptr, int ni, int nj, int nk);
+        inline T const &operator()(int i, int j, int k) const;
+        inline T &operator()(int i, int j, int k);
+
+        Layout3d<L> const layout;
+        T * __restrict__ data;
+    };
+
+    template<typename T, LAYOUT4D L>
+    struct View4d {
+        inline View4d(T *data_ptr, int ni, int nj, int nk, int nl);
+        inline T const &operator()(int i, int j, int k, int l) const;
+        inline T &operator()(int i, int j, int k, int l);
+
+        Layout4d<L> const layout;
+        T *data;
+    };
+
 
 /******************************************************************
  *  Implementation for Layout1D
@@ -811,6 +851,94 @@
         j = linear / (size_i);
         linear -= j*(size_i);
         i = linear;
+      }
+
+
+/******************************************************************
+ *  Implementation for View1D
+ ******************************************************************/
+
+      template<typename T, LAYOUT1D L>
+      inline View1d<T,L>::View1d(T *data_ptr, int ni):
+        layout(ni),
+        data(data_ptr)
+      {
+      }
+
+      template<typename T, LAYOUT1D L>
+      inline T const &View1d<T,L>::operator()(int i) const {
+        return(data[layout(i)]);
+      }
+
+      template<typename T, LAYOUT1D L>
+      inline T &View1d<T,L>::operator()(int i){
+        return(data[layout(i)]);
+      }
+
+
+/******************************************************************
+ *  Implementation for View2D
+ ******************************************************************/
+
+      template<typename T, LAYOUT2D L>
+      inline View2d<T,L>::View2d(T *data_ptr, int ni, int nj):
+        layout(ni, nj),
+        data(data_ptr)
+      {
+      }
+
+      template<typename T, LAYOUT2D L>
+      inline T const &View2d<T,L>::operator()(int i, int j) const {
+        return(data[layout(i, j)]);
+      }
+
+      template<typename T, LAYOUT2D L>
+      inline T &View2d<T,L>::operator()(int i, int j){
+        return(data[layout(i, j)]);
+      }
+
+
+/******************************************************************
+ *  Implementation for View3D
+ ******************************************************************/
+
+      template<typename T, LAYOUT3D L>
+      inline View3d<T,L>::View3d(T *data_ptr, int ni, int nj, int nk):
+        layout(ni, nj, nk),
+        data(data_ptr)
+      {
+      }
+
+      template<typename T, LAYOUT3D L>
+      inline T const &View3d<T,L>::operator()(int i, int j, int k) const {
+        return(data[layout(i, j, k)]);
+      }
+
+      template<typename T, LAYOUT3D L>
+      inline T &View3d<T,L>::operator()(int i, int j, int k){
+        return(data[layout(i, j, k)]);
+      }
+
+
+/******************************************************************
+ *  Implementation for View4D
+ ******************************************************************/
+
+      template<typename T, LAYOUT4D L>
+      inline View4d<T,L>::View4d(T *data_ptr, int ni, int nj, int nk, int nl):
+        layout(ni, nj, nk, nl),
+        data(data_ptr)
+      {
+      }
+
+      template<typename T, LAYOUT4D L>
+      inline T const &View4d<T,L>::operator()(int i, int j, int k, int l) const {
+        return(data[layout(i, j, k, l)]);
+      }
+
+      template<typename T, LAYOUT4D L>
+      inline T &View4d<T,L>::operator()(int i, int j, int k, int l){
+        return(data[layout(i, j, k, l)]);
       }
 
 

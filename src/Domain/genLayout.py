@@ -79,7 +79,7 @@ def writeLayoutDecl(ndims_list):
     print "    };"
     print ""
   
-  
+ 
   
 def writeLayoutImpl(ndims_list):
 
@@ -149,6 +149,82 @@ def writeLayoutImpl(ndims_list):
       print ""          
 
 
+def writeViewDecl(ndims_list):
+
+  for ndims in ndims_list:
+    dim_names = getDimNames(ndims)
+  
+    print "    template<typename T, LAYOUT%dD L>" % ndims
+    print "    struct View%dd {" % ndims
+    
+    # Define constructor
+    args = map(lambda a: "int n"+a, dim_names)
+    argstr = ", ".join(args)
+    print "        inline View%dd(T *data_ptr, %s);" % (ndims, argstr)
+    
+    # Define () Operator (const)
+    args = map(lambda a: "int "+a, dim_names)
+    argstr = ", ".join(args)
+    print "        inline T const &operator()(%s) const;" % argstr
+    
+    # Define () Operator
+    args = map(lambda a: "int "+a, dim_names)
+    argstr = ", ".join(args)
+    print "        inline T &operator()(%s);" % argstr
+            
+    # Add local variables
+    print ""
+    print "        Layout%dd<L> const layout;" % ndims
+    print "        T *data;"
+    print "    };"
+    print ""
+
+
+def writeViewImpl(ndims_list):
+
+  for ndims in ndims_list:
+    dim_names = getDimNames(ndims)
+    
+    print ""
+    print "/******************************************************************"
+    print " *  Implementation for View%dD" % ndims
+    print " ******************************************************************/"
+    print ""
+                
+    # Define constructor
+    args = map(lambda a: "int n"+a, dim_names)
+    argstr = ", ".join(args)    
+    print "      template<typename T, LAYOUT%dD L>" % (ndims)
+    print "      inline View%dd<T,L>::View%dd(T *data_ptr, %s):" % (ndims, ndims, argstr)    
+    args = map(lambda a: "n"+a, dim_names)
+    argstr = ", ".join(args)
+    print "        layout(%s)," % argstr
+    print "        data(data_ptr)"
+    print "      {"
+    print "      }"
+    print ""
+
+    # Define () Operator (const)
+    args = map(lambda a: "int "+a, dim_names)
+    argstr = ", ".join(args)      
+    print "      template<typename T, LAYOUT%dD L>" % ndims
+    print "      inline T const &View%dd<T,L>::operator()(%s) const {" % (ndims, argstr)
+    argstr = ", ".join(dim_names)
+    print "        return(data[layout(%s)]);" % argstr
+    print "      }"
+    print ""
+
+    # Define () Operator   
+    args = map(lambda a: "int "+a, dim_names)
+    argstr = ", ".join(args)      
+    print "      template<typename T, LAYOUT%dD L>" % ndims
+    print "      inline T &View%dd<T,L>::operator()(%s){" % (ndims, argstr)
+    argstr = ", ".join(dim_names)
+    print "        return(data[layout(%s)]);" % argstr
+    print "      }"
+    print ""
+               
+  
  
 
 
@@ -166,10 +242,12 @@ ndims_list = range(1,4+1)
 # Dump all declarations (with documentation, etc)
 writeEnumDecl(ndims_list)
 writeLayoutDecl(ndims_list)
+writeViewDecl(ndims_list)
 #writeTLayoutDecl(ndims_list)
 
 # Dump all implementations and specializations
 writeLayoutImpl(ndims_list)
+writeViewImpl(ndims_list)
 #writeTLayoutImpl(ndims_list)
 
 print """
