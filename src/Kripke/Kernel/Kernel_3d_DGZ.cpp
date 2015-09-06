@@ -248,14 +248,6 @@ void Kernel_3d_DGZ::source(Grid_Data *grid_data){
   }
 }
 
-
-// Macros for offsets with fluxes on cell faces 
-#define I_PLANE_INDEX(j, k) ((k)*(local_jmax) + (j))
-#define J_PLANE_INDEX(i, k) ((k)*(local_imax) + (i))
-#define K_PLANE_INDEX(i, j) ((j)*(local_imax) + (i))
-#define Zonal_INDEX(i, j, k) ((i) + (local_imax)*(j) \
-  + (local_imax)*(local_jmax)*(k))
-
 void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
   int num_directions = sdom->num_directions;
   int num_groups = sdom->num_groups;
@@ -275,15 +267,6 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
   double const * KRESTRICT dy = &sdom->deltas[1][0];
   double const * KRESTRICT dz = &sdom->deltas[2][0];
   
-
-  //double * KRESTRICT psi_lf = sdom->plane_data[0]->ptr();
-  //double * KRESTRICT psi_fr = sdom->plane_data[1]->ptr();
-  //double * KRESTRICT psi_bo = sdom->plane_data[2]->ptr();
-  
-  //int num_gz = num_groups * num_zones;
-  //int num_gz_i = local_jmax * local_kmax * num_groups;
-  //int num_gz_j = local_imax * local_kmax * num_groups;
-  //int num_gz_k = local_imax * local_jmax * num_groups;
   int num_z_i = local_jmax * local_kmax;
   int num_z_j = local_imax * local_kmax;
   int num_z_k = local_imax * local_jmax;
@@ -291,6 +274,11 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
   View3d<double, LAYOUT_IJK> psi_lf(sdom->plane_data[0]->ptr(), num_directions, num_groups, num_z_i);
   View3d<double, LAYOUT_IJK> psi_fr(sdom->plane_data[1]->ptr(), num_directions, num_groups, num_z_j);
   View3d<double, LAYOUT_IJK> psi_bo(sdom->plane_data[2]->ptr(), num_directions, num_groups, num_z_k);
+  
+  Layout3d<LAYOUT_KJI> zone_layout(local_imax, local_jmax, local_kmax);
+  Layout2d<LAYOUT_JI> i_layout(local_jmax, local_kmax);
+  Layout2d<LAYOUT_JI> j_layout(local_imax, local_kmax);
+  Layout2d<LAYOUT_JI> k_layout(local_imax, local_jmax);
 
   // All directions have same id,jd,kd, since these are all one Direction Set
   // So pull that information out now
@@ -308,10 +296,10 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
             double const ycos_dyj = 2.0 * direction[d].ycos / dy[j + 1];
             double const zcos_dzk = 2.0 * direction[d].zcos / dz[k + 1];
             
-            int const z_idx = Zonal_INDEX(i, j, k);            
-            int const lf_idx = I_PLANE_INDEX(j, k);
-            int const fr_idx = J_PLANE_INDEX(i, k);
-            int const bo_idx = K_PLANE_INDEX(i, j);            
+            int const z_idx = zone_layout(i,j,k);            
+            int const lf_idx = i_layout(j,k);
+            int const fr_idx = j_layout(i,k);
+            int const bo_idx = k_layout(i,j);
 
             /* Calculate new zonal flux */
             double const psi_d_g_z = (
@@ -332,7 +320,6 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
       }
     } // group
   } // direction
-
 }
 
 
