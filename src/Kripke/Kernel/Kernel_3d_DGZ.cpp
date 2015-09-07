@@ -160,16 +160,7 @@ void Kernel_3d_DGZ::scattering(Grid_Data *grid_data){
     // get material mix information
     int sdom_id = grid_data->zs_to_sdomid[zs];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
-    int    const * KRESTRICT zones_to_mixed = &sdom.zones_to_mixed[0];
-    int    const * KRESTRICT num_mixed = &sdom.num_mixed[0];
-    int    const * KRESTRICT mixed_material = &sdom.mixed_material[0];
-    double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
-    //double const * KRESTRICT sigs = grid_data->sigs->ptr(); 
-
-    int    const * KRESTRICT moment_to_coeff = &grid_data->moment_to_coeff[0];
-    //double const * KRESTRICT phi = grid_data->phi[zs]->ptr();
-    //double       * KRESTRICT phi_out = grid_data->phi_out[zs]->ptr();
-
+        
     // grab dimensions
     int num_zones = sdom.num_zones;
     int num_groups = grid_data->phi_out[zs]->groups;
@@ -177,24 +168,31 @@ void Kernel_3d_DGZ::scattering(Grid_Data *grid_data){
     int legendre_order = grid_data->legendre_order;
     int num_gz = num_groups*num_zones;
 
-    View3d<double, LAYOUT_IJK> phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
     View3d<double, LAYOUT_IJK> phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
-    View4d<double, LAYOUT_IJKL> sigs(grid_data->sigs->ptr(), legendre_order+1, num_groups, num_groups, 3);
+    View3d<double, LAYOUT_IJK> const phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);  
+    View4d<double, LAYOUT_IJKL> const sigs(grid_data->sigs->ptr(), legendre_order+1, num_groups, num_groups, 3);
+
+    View1d<int, LAYOUT_I> const zones_to_mixed(&sdom.zones_to_mixed[0], 1);
+    View1d<int, LAYOUT_I> const num_mixed(&sdom.num_mixed[0], 1);
+    View1d<int, LAYOUT_I> const mixed_material(&sdom.mixed_material[0], 1);
+    View1d<double, LAYOUT_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
+    View1d<int, LAYOUT_I> const moment_to_coeff(&grid_data->moment_to_coeff[0], 1);
+    
 
     for(int nm = 0;nm < num_moments;++ nm){
-      int n = moment_to_coeff[nm];
+      int n = moment_to_coeff(nm);
       for(int g = 0;g < num_groups;++ g){      
         for(int gp = 0;gp < num_groups;++ gp){
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
           for(int zone = 0;zone < num_zones;++ zone){            
-            int mix_start = zones_to_mixed[zone];
-            int mix_stop = mix_start + num_mixed[zone];
+            int mix_start = zones_to_mixed(zone);
+            int mix_stop = mix_start + num_mixed(zone);
 
             for(int mix = mix_start;mix < mix_stop;++ mix){
-              int material = mixed_material[mix];
-              double fraction = mixed_fraction[mix];              
+              int material = mixed_material(mix);
+              double fraction = mixed_fraction(mix);              
 
               phi_out(nm, gp, zone) += 
                 sigs(n, g, gp, material) * phi(nm, g, zone) * fraction;                     
@@ -219,9 +217,7 @@ void Kernel_3d_DGZ::source(Grid_Data *grid_data){
     // get material mix information
     int sdom_id = grid_data->zs_to_sdomid[zs];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
-    int    const * KRESTRICT mixed_to_zones = &sdom.mixed_to_zones[0];
-    int    const * KRESTRICT mixed_material = &sdom.mixed_material[0];
-    double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
+    
     
     // grab dimensions
     int num_mixed = sdom.mixed_to_zones.size();
@@ -230,15 +226,18 @@ void Kernel_3d_DGZ::source(Grid_Data *grid_data){
     int num_moments = grid_data->total_num_moments;
     
     View3d<double, LAYOUT_IJK> phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
+    View1d<int,    LAYOUT_I> const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
+    View1d<int,    LAYOUT_I> const mixed_material(&sdom.mixed_material[0], 1);
+    View1d<double, LAYOUT_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
     for(int g = 0;g < num_groups;++ g){      
       for(int mix = 0;mix < num_mixed;++ mix){
-        int zone = mixed_to_zones[mix];
-        int material = mixed_material[mix];
-        double fraction = mixed_fraction[mix];
+        int zone = mixed_to_zones(mix);
+        int material = mixed_material(mix);
+        double fraction = mixed_fraction(mix);
 
         if(material == 0){
           phi_out(0, g, zone) += 1.0 * fraction;
@@ -259,13 +258,13 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
   int local_jmax = sdom->nzones[1];
   int local_kmax = sdom->nzones[2];
 
-  View3d<double, LAYOUT_IJK> rhs(sdom->rhs->ptr(), num_directions, num_groups, num_zones);
+  View3d<double, LAYOUT_IJK> const rhs(sdom->rhs->ptr(), num_directions, num_groups, num_zones);
   View3d<double, LAYOUT_IJK> psi(sdom->psi->ptr(), num_directions, num_groups, num_zones);
-  View2d<double, LAYOUT_IJ>  sigt(sdom->sigt->ptr(), num_groups, num_zones);
+  View2d<double, LAYOUT_IJ>  const sigt(sdom->sigt->ptr(), num_groups, num_zones);
   
-  double const * KRESTRICT dx = &sdom->deltas[0][0];
-  double const * KRESTRICT dy = &sdom->deltas[1][0];
-  double const * KRESTRICT dz = &sdom->deltas[2][0];
+  View1d<double, LAYOUT_I> const dx(&sdom->deltas[0][0], local_imax+2);
+  View1d<double, LAYOUT_I> const dy(&sdom->deltas[1][0], local_jmax+2);
+  View1d<double, LAYOUT_I> const dz(&sdom->deltas[2][0], local_kmax+2);
   
   int num_z_i = local_jmax * local_kmax;
   int num_z_j = local_imax * local_kmax;
@@ -292,9 +291,9 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
       for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {               
         for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {          
           for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
-            double const xcos_dxi = 2.0 * direction[d].xcos / dx[i + 1];
-            double const ycos_dyj = 2.0 * direction[d].ycos / dy[j + 1];
-            double const zcos_dzk = 2.0 * direction[d].zcos / dz[k + 1];
+            double const xcos_dxi = 2.0 * direction[d].xcos / dx(i + 1);
+            double const ycos_dyj = 2.0 * direction[d].ycos / dy(j + 1);
+            double const zcos_dzk = 2.0 * direction[d].zcos / dz(k + 1);
             
             int const z_idx = zone_layout(i,j,k);            
             int const lf_idx = i_layout(j,k);
