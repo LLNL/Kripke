@@ -33,6 +33,8 @@
 #include<Kripke/Kernel/Kernel_3d_DZG.h>
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
+#include<Domain/Layout.h>
+
 
 Nesting_Order Kernel_3d_DZG::nestingPsi(void) const {
   return NEST_DZG;
@@ -83,9 +85,10 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
     int num_locgz = num_local_groups*num_zones;
     
     // Get pointers
-    double const * KRESTRICT ell = sdom.ell->ptr();
-    double const * KRESTRICT psi = sdom.psi->ptr();
-    double       * KRESTRICT phi = sdom.phi->ptr();
+    // Get pointers    
+    View3d<double, LAYOUT_IKJ> psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
+    View3d<double, LAYOUT_IKJ> phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
+    View2d<double, LAYOUT_JI>  ell(sdom.ell->ptr(), num_local_directions, num_moments);
     
     for(int nm = 0;nm < num_moments;++nm){     
       for (int d = 0; d < num_local_directions; d++) {
@@ -94,9 +97,7 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
 #endif
         for (int z = 0;z < num_zones;++ z){                         
           for(int g = 0;g < num_local_groups; ++ g){  
-            phi[nm*num_gz + z*num_groups + group0 + g] += 
-              ell[nm*num_local_directions + d] * 
-              psi[d*num_locgz + z*num_local_groups + g];
+            phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
           }
         }
       }
@@ -129,9 +130,9 @@ void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
     int num_locgz = num_local_groups*num_zones;
 
     // Get pointers
-    double const * KRESTRICT phi_out = sdom.phi_out->ptr() + group0;
-    double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
-    double       * KRESTRICT rhs = sdom.rhs->ptr();
+    View3d<double, LAYOUT_IKJ> rhs(sdom.rhs->ptr(), num_local_directions, num_local_groups, num_zones);
+    View3d<double, LAYOUT_IKJ> phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
+    View2d<double, LAYOUT_IJ>  ell_plus(sdom.ell_plus->ptr(), num_local_directions, num_moments);
 
     for (int d = 0; d < num_local_directions; d++) {
       for(int nm = 0;nm < num_moments;++nm){
@@ -140,9 +141,7 @@ void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
 #endif
         for(int z = 0;z < num_zones;++ z){
           for(int g = 0;g < num_local_groups;++ g){
-            rhs[d*num_locgz + z*num_local_groups + g] += 
-              ell_plus[d*num_moments + nm] * 
-              phi_out[nm*num_gz + z*num_groups + g];
+            rhs(d,g,z) += ell_plus(d,nm) * phi_out(nm,g+group0,z);
           }
         }
       }
@@ -167,41 +166,42 @@ void Kernel_3d_DZG::scattering(Grid_Data *grid_data){
     // get material mix information
     int sdom_id = grid_data->zs_to_sdomid[zs];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
-    int    const * KRESTRICT zones_to_mixed = &sdom.zones_to_mixed[0];
-    int    const * KRESTRICT num_mixed = &sdom.num_mixed[0];
-    int    const * KRESTRICT mixed_material = &sdom.mixed_material[0];
-    double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
-    double const * KRESTRICT sigs = grid_data->sigs->ptr(); 
-
-    int    const * KRESTRICT moment_to_coeff = &grid_data->moment_to_coeff[0];
-    double const * KRESTRICT phi = grid_data->phi[zs]->ptr();
-    double       * KRESTRICT phi_out = grid_data->phi_out[zs]->ptr();
 
     // grab dimensions
     int num_zones = sdom.num_zones;
     int num_groups = grid_data->phi_out[zs]->groups;
     int num_moments = grid_data->total_num_moments;
+    int legendre_order = grid_data->legendre_order;
     int num_gz = num_groups*num_zones;
 
+    View3d<double, LAYOUT_IKJ> phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
+    View3d<double, LAYOUT_IKJ> const phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);  
+    View4d<double, LAYOUT_ILJK> const sigs(grid_data->sigs->ptr(), legendre_order+1, num_groups, num_groups, 3);
+
+    View1d<int, LAYOUT_I> const zones_to_mixed(&sdom.zones_to_mixed[0], 1);
+    View1d<int, LAYOUT_I> const num_mixed(&sdom.num_mixed[0], 1);
+    View1d<int, LAYOUT_I> const mixed_material(&sdom.mixed_material[0], 1);
+    View1d<double, LAYOUT_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
+    View1d<int, LAYOUT_I> const moment_to_coeff(&grid_data->moment_to_coeff[0], 1);
+
+
     for(int nm = 0;nm < num_moments;++ nm){
-      int n = moment_to_coeff[nm];
+      int n = moment_to_coeff(nm);
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
       for(int zone = 0;zone < num_zones;++ zone){
-        int mix_start = zones_to_mixed[zone];
-        int mix_stop = mix_start + num_mixed[zone];
+        int mix_start = zones_to_mixed(zone);
+        int mix_stop = mix_start + num_mixed(zone);
 
         for(int mix = mix_start;mix < mix_stop;++ mix){
-          int material = mixed_material[mix];
-          double fraction = mixed_fraction[mix];       
+          int material = mixed_material(mix);
+          double fraction = mixed_fraction(mix);       
           for(int g = 0;g < num_groups;++ g){                          
             for(int gp = 0;gp < num_groups;++ gp){           
                                                       
-              phi_out[nm*num_gz + zone*num_groups + gp] += 
-                sigs[n*3*num_groups*num_groups + material*num_groups*num_groups + g*num_groups + gp] * 
-                phi[nm*num_gz + zone*num_groups + g] * 
-                fraction;
+              phi_out(nm, gp, zone) += 
+                sigs(n, g, gp, material) * phi(nm, g, zone) * fraction;                     
             }
           }        
         }
@@ -222,36 +222,33 @@ void Kernel_3d_DZG::source(Grid_Data *grid_data){
     // get material mix information
     int sdom_id = grid_data->zs_to_sdomid[zs];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
-    int    const * KRESTRICT zones_to_mixed = &sdom.zones_to_mixed[0];
-    int    const * KRESTRICT num_mixed = &sdom.num_mixed[0];
-    int    const * KRESTRICT mixed_material = &sdom.mixed_material[0];
-    double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
-    double       * KRESTRICT phi_out = grid_data->phi_out[zs]->ptr();
 
     // grab dimensions
+    int num_mixed = sdom.mixed_to_zones.size();
     int num_zones = sdom.num_zones;
     int num_groups = grid_data->phi_out[zs]->groups;
     int num_moments = grid_data->total_num_moments;
     
+    View3d<double, LAYOUT_IKJ> phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
+    View1d<int,    LAYOUT_I> const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
+    View1d<int,    LAYOUT_I> const mixed_material(&sdom.mixed_material[0], 1);
+    View1d<double, LAYOUT_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
+    
+    
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-    for(int zone = 0;zone < num_zones;++ zone){
-      int mix_start = zones_to_mixed[zone];
-      int mix_stop = mix_start + num_mixed[zone];
-
-      for(int mix = mix_start;mix < mix_stop;++ mix){
-        int material = mixed_material[mix];
-        double fraction = mixed_fraction[mix];
-        
-        for(int g = 0;g < num_groups;++ g){
-          if(material == 0){
-          
-            phi_out[zone*num_groups + g] += 1.0 * fraction;
-          }
+    for(int mix = 0;mix < num_mixed;++ mix){
+      int zone = mixed_to_zones(mix);
+      int material = mixed_material(mix);
+      double fraction = mixed_fraction(mix);
+      
+      for(int g = 0;g < num_groups;++ g){
+        if(material == 0){
+          phi_out(0, g, zone) += 1.0 * fraction;        
         }
       }
-    }
+    }   
   }
 }
 
@@ -275,22 +272,27 @@ void Kernel_3d_DZG::sweep(Subdomain *sdom) {
   int local_jmax = sdom->nzones[1];
   int local_kmax = sdom->nzones[2];
 
-  double const * KRESTRICT dx = &sdom->deltas[0][0];
-  double const * KRESTRICT dy = &sdom->deltas[1][0];
-  double const * KRESTRICT dz = &sdom->deltas[2][0];
+  View1d<double, LAYOUT_I> const dx(&sdom->deltas[0][0], local_imax+2);
+  View1d<double, LAYOUT_I> const dy(&sdom->deltas[1][0], local_jmax+2);
+  View1d<double, LAYOUT_I> const dz(&sdom->deltas[2][0], local_kmax+2);
   
-  double const * KRESTRICT sigt = sdom->sigt->ptr();
-  double       * KRESTRICT psi  = sdom->psi->ptr();   
-  double const * KRESTRICT rhs  = sdom->rhs->ptr();
+  View3d<double, LAYOUT_IKJ> const rhs(sdom->rhs->ptr(), num_directions, num_groups, num_zones);
+  View3d<double, LAYOUT_IKJ> psi(sdom->psi->ptr(), num_directions, num_groups, num_zones);
+  View2d<double, LAYOUT_JI>  const sigt(sdom->sigt->ptr(), num_groups, num_zones);
 
-  double * KRESTRICT psi_lf = sdom->plane_data[0]->ptr();
-  double * KRESTRICT psi_fr = sdom->plane_data[1]->ptr();
-  double * KRESTRICT psi_bo = sdom->plane_data[2]->ptr();
+  int num_z_i = local_jmax * local_kmax;
+  int num_z_j = local_imax * local_kmax;
+  int num_z_k = local_imax * local_jmax;  
   
-  int num_zg = num_zones * num_groups;
-  int num_zg_i = local_jmax * local_kmax * num_groups;
-  int num_zg_j = local_imax * local_kmax * num_groups;
-  int num_zg_k = local_imax * local_jmax * num_groups;
+  View3d<double, LAYOUT_IKJ> psi_lf(sdom->plane_data[0]->ptr(), num_directions, num_groups, num_z_i);
+  View3d<double, LAYOUT_IKJ> psi_fr(sdom->plane_data[1]->ptr(), num_directions, num_groups, num_z_j);
+  View3d<double, LAYOUT_IKJ> psi_bo(sdom->plane_data[2]->ptr(), num_directions, num_groups, num_z_k);
+  
+  Layout3d<LAYOUT_KJI> zone_layout(local_imax, local_jmax, local_kmax);
+  Layout2d<LAYOUT_JI> i_layout(local_jmax, local_kmax);
+  Layout2d<LAYOUT_JI> j_layout(local_imax, local_kmax);
+  Layout2d<LAYOUT_JI> k_layout(local_imax, local_jmax);
+  
 
   // All directions have same id,jd,kd, since these are all one Direction Set
   // So pull that information out now
@@ -304,29 +306,29 @@ void Kernel_3d_DZG::sweep(Subdomain *sdom) {
       for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {                
         for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
           for (int g = 0; g < num_groups; ++g) {                      
-            double const xcos_dxi = 2.0 * direction[d].xcos / dx[i + 1];
-            double const ycos_dyj = 2.0 * direction[d].ycos / dy[j + 1];
-            double const zcos_dzk = 2.0 * direction[d].zcos / dz[k + 1];
+            double const xcos_dxi = 2.0 * direction[d].xcos / dx(i + 1);
+            double const ycos_dyj = 2.0 * direction[d].ycos / dy(j + 1);
+            double const zcos_dzk = 2.0 * direction[d].zcos / dz(k + 1);
             
-            int const z = Zonal_INDEX(i, j, k);
-            int const lf_idx = d*num_zg_i + I_PLANE_INDEX(j, k)*num_groups + g;
-            int const fr_idx = d*num_zg_j + J_PLANE_INDEX(i, k)*num_groups + g;
-            int const bo_idx = d*num_zg_k + K_PLANE_INDEX(i, j)*num_groups + g;
+            int const z_idx = zone_layout(i,j,k);            
+            int const lf_idx = i_layout(j,k);
+            int const fr_idx = j_layout(i,k);
+            int const bo_idx = k_layout(i,j);
+
+            /* Calculate new zonal flux */
+            double const psi_d_g_z = (
+                  rhs(d,g,z_idx)                  
+                + psi_lf(d,g,lf_idx) * xcos_dxi
+                + psi_fr(d,g,fr_idx) * ycos_dyj
+                + psi_bo(d,g,bo_idx) * zcos_dzk)
+                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt(g,z_idx) );
+
+            psi(d,g,z_idx) = psi_d_g_z;
             
-            // Calculate new zonal flux 
-            double const psi_d_z_g = (
-                rhs[d*num_zg + z*num_groups + g]
-                + psi_lf[lf_idx] * xcos_dxi
-                + psi_fr[fr_idx] * ycos_dyj
-                + psi_bo[bo_idx] * zcos_dzk)
-                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt[z*num_groups + g]);
-
-            psi[d*num_zg + z*num_groups + g] = psi_d_z_g;
-
-            // Apply diamond-difference relationships 
-            psi_lf[lf_idx] = 2.0 * psi_d_z_g - psi_lf[lf_idx];
-            psi_fr[fr_idx] = 2.0 * psi_d_z_g - psi_fr[fr_idx];
-            psi_bo[bo_idx] = 2.0 * psi_d_z_g - psi_bo[bo_idx];
+            /* Apply diamond-difference relationships */
+            psi_lf(d,g,lf_idx) = 2.0 * psi_d_g_z - psi_lf(d,g,lf_idx);
+            psi_fr(d,g,fr_idx) = 2.0 * psi_d_g_z - psi_fr(d,g,fr_idx);
+            psi_bo(d,g,bo_idx) = 2.0 * psi_d_g_z - psi_bo(d,g,bo_idx);
           }
         }
       }

@@ -95,7 +95,7 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
 #endif
         for(int g = 0;g < num_local_groups;++ g){
           for(int z = 0;z < num_zones;++ z){
-            phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);              
+            phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
           }
         }
       }     
