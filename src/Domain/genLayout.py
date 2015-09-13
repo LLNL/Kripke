@@ -76,6 +76,14 @@ def writeLayoutDecl(ndims_list):
     args = map(lambda a: "int const size_"+a, dim_names)
     for arg in args:
       print "        %s;" % arg
+      
+    # Add stride variables
+    print ""
+    args = map(lambda a: "int const stride_"+a, dim_names)
+    for arg in args:
+      print "        %s;" % arg
+      
+    # Close out struct decl
     print "    };"
     print ""
   
@@ -104,10 +112,22 @@ def writeLayoutImpl(ndims_list):
       print "      template<>"
       print "      inline Layout%dd<%s>::Layout%dd(%s):" % (ndims, enum, ndims, argstr)    
       
+      # initialize size of each dim
       args = map(lambda a: "size_%s(n%s)"%(a,a), dim_names)
-      argstr = ", ".join(args)
-      print "        %s" % argstr
       
+      # initialize stride of each dim      
+      for i in range(0,ndims):
+        remain = perm[i+1:]
+        if len(remain) > 0:
+          remain = map(lambda a: "n"+a, remain)
+          stride = "stride_%s(%s)" % ( perm[i],  "*".join(remain) )          
+        else:
+          stride = "stride_%s(1)" % ( perm[i] )
+        args.append(stride)
+          
+      # output all initializers
+      argstr = ", ".join(args)
+      print "        %s" % argstr                    
       print "      {"
       print "      }"
       print ""
@@ -117,13 +137,11 @@ def writeLayoutImpl(ndims_list):
       argstr = ", ".join(args)   
       idxparts = []
       for i in range(0,ndims):
-        remain = perm[i+1:]
-        part = perm[i]
+        remain = perm[i+1:]        
         if len(remain) > 0:
-          remain = map(lambda a: "size_"+a, remain)
-          part += "*(" + "*".join(remain) + ")"
-        
-        idxparts.append(part)
+          idxparts.append("%s*stride_%s" % (perm[i], perm[i]))
+        else:
+          idxparts.append(perm[i])
       idx = " + ".join(idxparts)  
 
       print "      template<>"

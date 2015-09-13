@@ -58,6 +58,8 @@
         inline void toIndices(int linear, int &i) const;
 
         int const size_i;
+
+        int const stride_i;
     };
 
     template<LAYOUT2D L>
@@ -68,6 +70,9 @@
 
         int const size_i;
         int const size_j;
+
+        int const stride_i;
+        int const stride_j;
     };
 
     template<LAYOUT3D L>
@@ -79,6 +84,10 @@
         int const size_i;
         int const size_j;
         int const size_k;
+
+        int const stride_i;
+        int const stride_j;
+        int const stride_k;
     };
 
     template<LAYOUT4D L>
@@ -91,6 +100,11 @@
         int const size_j;
         int const size_k;
         int const size_l;
+
+        int const stride_i;
+        int const stride_j;
+        int const stride_k;
+        int const stride_l;
     };
 
     template<typename T, LAYOUT1D L>
@@ -110,7 +124,7 @@
         inline T &operator()(int i, int j);
 
         Layout2d<L> const layout;
-        T * __restrict__ data;
+        T *data;
     };
 
     template<typename T, LAYOUT3D L>
@@ -120,7 +134,7 @@
         inline T &operator()(int i, int j, int k);
 
         Layout3d<L> const layout;
-        T * __restrict__ data;
+        T *data;
     };
 
     template<typename T, LAYOUT4D L>
@@ -140,7 +154,7 @@
 
       template<>
       inline Layout1d<LAYOUT_I>::Layout1d(int ni):
-        size_i(ni)
+        size_i(ni), stride_i(1)
       {
       }
 
@@ -161,13 +175,13 @@
 
       template<>
       inline Layout2d<LAYOUT_IJ>::Layout2d(int ni, int nj):
-        size_i(ni), size_j(nj)
+        size_i(ni), size_j(nj), stride_i(nj), stride_j(1)
       {
       }
 
       template<>
       inline int Layout2d<LAYOUT_IJ>::operator()(int i, int j) const {
-        return(i*(size_j) + j);
+        return(i*stride_i + j);
       }
 
       template<>
@@ -179,13 +193,13 @@
 
       template<>
       inline Layout2d<LAYOUT_JI>::Layout2d(int ni, int nj):
-        size_i(ni), size_j(nj)
+        size_i(ni), size_j(nj), stride_j(ni), stride_i(1)
       {
       }
 
       template<>
       inline int Layout2d<LAYOUT_JI>::operator()(int i, int j) const {
-        return(j*(size_i) + i);
+        return(j*stride_j + i);
       }
 
       template<>
@@ -202,13 +216,13 @@
 
       template<>
       inline Layout3d<LAYOUT_IJK>::Layout3d(int ni, int nj, int nk):
-        size_i(ni), size_j(nj), size_k(nk)
+        size_i(ni), size_j(nj), size_k(nk), stride_i(nj*nk), stride_j(nk), stride_k(1)
       {
       }
 
       template<>
       inline int Layout3d<LAYOUT_IJK>::operator()(int i, int j, int k) const {
-        return(i*(size_j*size_k) + j*(size_k) + k);
+        return(i*stride_i + j*stride_j + k);
       }
 
       template<>
@@ -222,13 +236,13 @@
 
       template<>
       inline Layout3d<LAYOUT_IKJ>::Layout3d(int ni, int nj, int nk):
-        size_i(ni), size_j(nj), size_k(nk)
+        size_i(ni), size_j(nj), size_k(nk), stride_i(nk*nj), stride_k(nj), stride_j(1)
       {
       }
 
       template<>
       inline int Layout3d<LAYOUT_IKJ>::operator()(int i, int j, int k) const {
-        return(i*(size_k*size_j) + k*(size_j) + j);
+        return(i*stride_i + k*stride_k + j);
       }
 
       template<>
@@ -242,13 +256,13 @@
 
       template<>
       inline Layout3d<LAYOUT_JIK>::Layout3d(int ni, int nj, int nk):
-        size_i(ni), size_j(nj), size_k(nk)
+        size_i(ni), size_j(nj), size_k(nk), stride_j(ni*nk), stride_i(nk), stride_k(1)
       {
       }
 
       template<>
       inline int Layout3d<LAYOUT_JIK>::operator()(int i, int j, int k) const {
-        return(j*(size_i*size_k) + i*(size_k) + k);
+        return(j*stride_j + i*stride_i + k);
       }
 
       template<>
@@ -262,13 +276,13 @@
 
       template<>
       inline Layout3d<LAYOUT_JKI>::Layout3d(int ni, int nj, int nk):
-        size_i(ni), size_j(nj), size_k(nk)
+        size_i(ni), size_j(nj), size_k(nk), stride_j(nk*ni), stride_k(ni), stride_i(1)
       {
       }
 
       template<>
       inline int Layout3d<LAYOUT_JKI>::operator()(int i, int j, int k) const {
-        return(j*(size_k*size_i) + k*(size_i) + i);
+        return(j*stride_j + k*stride_k + i);
       }
 
       template<>
@@ -282,13 +296,13 @@
 
       template<>
       inline Layout3d<LAYOUT_KIJ>::Layout3d(int ni, int nj, int nk):
-        size_i(ni), size_j(nj), size_k(nk)
+        size_i(ni), size_j(nj), size_k(nk), stride_k(ni*nj), stride_i(nj), stride_j(1)
       {
       }
 
       template<>
       inline int Layout3d<LAYOUT_KIJ>::operator()(int i, int j, int k) const {
-        return(k*(size_i*size_j) + i*(size_j) + j);
+        return(k*stride_k + i*stride_i + j);
       }
 
       template<>
@@ -302,13 +316,13 @@
 
       template<>
       inline Layout3d<LAYOUT_KJI>::Layout3d(int ni, int nj, int nk):
-        size_i(ni), size_j(nj), size_k(nk)
+        size_i(ni), size_j(nj), size_k(nk), stride_k(nj*ni), stride_j(ni), stride_i(1)
       {
       }
 
       template<>
       inline int Layout3d<LAYOUT_KJI>::operator()(int i, int j, int k) const {
-        return(k*(size_j*size_i) + j*(size_i) + i);
+        return(k*stride_k + j*stride_j + i);
       }
 
       template<>
@@ -327,13 +341,13 @@
 
       template<>
       inline Layout4d<LAYOUT_IJKL>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj*nk*nl), stride_j(nk*nl), stride_k(nl), stride_l(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_IJKL>::operator()(int i, int j, int k, int l) const {
-        return(i*(size_j*size_k*size_l) + j*(size_k*size_l) + k*(size_l) + l);
+        return(i*stride_i + j*stride_j + k*stride_k + l);
       }
 
       template<>
@@ -349,13 +363,13 @@
 
       template<>
       inline Layout4d<LAYOUT_IJLK>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj*nl*nk), stride_j(nl*nk), stride_l(nk), stride_k(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_IJLK>::operator()(int i, int j, int k, int l) const {
-        return(i*(size_j*size_l*size_k) + j*(size_l*size_k) + l*(size_k) + k);
+        return(i*stride_i + j*stride_j + l*stride_l + k);
       }
 
       template<>
@@ -371,13 +385,13 @@
 
       template<>
       inline Layout4d<LAYOUT_IKJL>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk*nj*nl), stride_k(nj*nl), stride_j(nl), stride_l(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_IKJL>::operator()(int i, int j, int k, int l) const {
-        return(i*(size_k*size_j*size_l) + k*(size_j*size_l) + j*(size_l) + l);
+        return(i*stride_i + k*stride_k + j*stride_j + l);
       }
 
       template<>
@@ -393,13 +407,13 @@
 
       template<>
       inline Layout4d<LAYOUT_IKLJ>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk*nl*nj), stride_k(nl*nj), stride_l(nj), stride_j(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_IKLJ>::operator()(int i, int j, int k, int l) const {
-        return(i*(size_k*size_l*size_j) + k*(size_l*size_j) + l*(size_j) + j);
+        return(i*stride_i + k*stride_k + l*stride_l + j);
       }
 
       template<>
@@ -415,13 +429,13 @@
 
       template<>
       inline Layout4d<LAYOUT_ILJK>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl*nj*nk), stride_l(nj*nk), stride_j(nk), stride_k(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_ILJK>::operator()(int i, int j, int k, int l) const {
-        return(i*(size_l*size_j*size_k) + l*(size_j*size_k) + j*(size_k) + k);
+        return(i*stride_i + l*stride_l + j*stride_j + k);
       }
 
       template<>
@@ -437,13 +451,13 @@
 
       template<>
       inline Layout4d<LAYOUT_ILKJ>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl*nk*nj), stride_l(nk*nj), stride_k(nj), stride_j(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_ILKJ>::operator()(int i, int j, int k, int l) const {
-        return(i*(size_l*size_k*size_j) + l*(size_k*size_j) + k*(size_j) + j);
+        return(i*stride_i + l*stride_l + k*stride_k + j);
       }
 
       template<>
@@ -459,13 +473,13 @@
 
       template<>
       inline Layout4d<LAYOUT_JIKL>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_j(ni*nk*nl), stride_i(nk*nl), stride_k(nl), stride_l(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_JIKL>::operator()(int i, int j, int k, int l) const {
-        return(j*(size_i*size_k*size_l) + i*(size_k*size_l) + k*(size_l) + l);
+        return(j*stride_j + i*stride_i + k*stride_k + l);
       }
 
       template<>
@@ -481,13 +495,13 @@
 
       template<>
       inline Layout4d<LAYOUT_JILK>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_j(ni*nl*nk), stride_i(nl*nk), stride_l(nk), stride_k(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_JILK>::operator()(int i, int j, int k, int l) const {
-        return(j*(size_i*size_l*size_k) + i*(size_l*size_k) + l*(size_k) + k);
+        return(j*stride_j + i*stride_i + l*stride_l + k);
       }
 
       template<>
@@ -503,13 +517,13 @@
 
       template<>
       inline Layout4d<LAYOUT_JKIL>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_j(nk*ni*nl), stride_k(ni*nl), stride_i(nl), stride_l(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_JKIL>::operator()(int i, int j, int k, int l) const {
-        return(j*(size_k*size_i*size_l) + k*(size_i*size_l) + i*(size_l) + l);
+        return(j*stride_j + k*stride_k + i*stride_i + l);
       }
 
       template<>
@@ -525,13 +539,13 @@
 
       template<>
       inline Layout4d<LAYOUT_JKLI>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_j(nk*nl*ni), stride_k(nl*ni), stride_l(ni), stride_i(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_JKLI>::operator()(int i, int j, int k, int l) const {
-        return(j*(size_k*size_l*size_i) + k*(size_l*size_i) + l*(size_i) + i);
+        return(j*stride_j + k*stride_k + l*stride_l + i);
       }
 
       template<>
@@ -547,13 +561,13 @@
 
       template<>
       inline Layout4d<LAYOUT_JLIK>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_j(nl*ni*nk), stride_l(ni*nk), stride_i(nk), stride_k(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_JLIK>::operator()(int i, int j, int k, int l) const {
-        return(j*(size_l*size_i*size_k) + l*(size_i*size_k) + i*(size_k) + k);
+        return(j*stride_j + l*stride_l + i*stride_i + k);
       }
 
       template<>
@@ -569,13 +583,13 @@
 
       template<>
       inline Layout4d<LAYOUT_JLKI>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_j(nl*nk*ni), stride_l(nk*ni), stride_k(ni), stride_i(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_JLKI>::operator()(int i, int j, int k, int l) const {
-        return(j*(size_l*size_k*size_i) + l*(size_k*size_i) + k*(size_i) + i);
+        return(j*stride_j + l*stride_l + k*stride_k + i);
       }
 
       template<>
@@ -591,13 +605,13 @@
 
       template<>
       inline Layout4d<LAYOUT_KIJL>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_k(ni*nj*nl), stride_i(nj*nl), stride_j(nl), stride_l(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_KIJL>::operator()(int i, int j, int k, int l) const {
-        return(k*(size_i*size_j*size_l) + i*(size_j*size_l) + j*(size_l) + l);
+        return(k*stride_k + i*stride_i + j*stride_j + l);
       }
 
       template<>
@@ -613,13 +627,13 @@
 
       template<>
       inline Layout4d<LAYOUT_KILJ>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_k(ni*nl*nj), stride_i(nl*nj), stride_l(nj), stride_j(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_KILJ>::operator()(int i, int j, int k, int l) const {
-        return(k*(size_i*size_l*size_j) + i*(size_l*size_j) + l*(size_j) + j);
+        return(k*stride_k + i*stride_i + l*stride_l + j);
       }
 
       template<>
@@ -635,13 +649,13 @@
 
       template<>
       inline Layout4d<LAYOUT_KJIL>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_k(nj*ni*nl), stride_j(ni*nl), stride_i(nl), stride_l(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_KJIL>::operator()(int i, int j, int k, int l) const {
-        return(k*(size_j*size_i*size_l) + j*(size_i*size_l) + i*(size_l) + l);
+        return(k*stride_k + j*stride_j + i*stride_i + l);
       }
 
       template<>
@@ -657,13 +671,13 @@
 
       template<>
       inline Layout4d<LAYOUT_KJLI>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_k(nj*nl*ni), stride_j(nl*ni), stride_l(ni), stride_i(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_KJLI>::operator()(int i, int j, int k, int l) const {
-        return(k*(size_j*size_l*size_i) + j*(size_l*size_i) + l*(size_i) + i);
+        return(k*stride_k + j*stride_j + l*stride_l + i);
       }
 
       template<>
@@ -679,13 +693,13 @@
 
       template<>
       inline Layout4d<LAYOUT_KLIJ>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_k(nl*ni*nj), stride_l(ni*nj), stride_i(nj), stride_j(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_KLIJ>::operator()(int i, int j, int k, int l) const {
-        return(k*(size_l*size_i*size_j) + l*(size_i*size_j) + i*(size_j) + j);
+        return(k*stride_k + l*stride_l + i*stride_i + j);
       }
 
       template<>
@@ -701,13 +715,13 @@
 
       template<>
       inline Layout4d<LAYOUT_KLJI>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_k(nl*nj*ni), stride_l(nj*ni), stride_j(ni), stride_i(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_KLJI>::operator()(int i, int j, int k, int l) const {
-        return(k*(size_l*size_j*size_i) + l*(size_j*size_i) + j*(size_i) + i);
+        return(k*stride_k + l*stride_l + j*stride_j + i);
       }
 
       template<>
@@ -723,13 +737,13 @@
 
       template<>
       inline Layout4d<LAYOUT_LIJK>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_l(ni*nj*nk), stride_i(nj*nk), stride_j(nk), stride_k(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_LIJK>::operator()(int i, int j, int k, int l) const {
-        return(l*(size_i*size_j*size_k) + i*(size_j*size_k) + j*(size_k) + k);
+        return(l*stride_l + i*stride_i + j*stride_j + k);
       }
 
       template<>
@@ -745,13 +759,13 @@
 
       template<>
       inline Layout4d<LAYOUT_LIKJ>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_l(ni*nk*nj), stride_i(nk*nj), stride_k(nj), stride_j(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_LIKJ>::operator()(int i, int j, int k, int l) const {
-        return(l*(size_i*size_k*size_j) + i*(size_k*size_j) + k*(size_j) + j);
+        return(l*stride_l + i*stride_i + k*stride_k + j);
       }
 
       template<>
@@ -767,13 +781,13 @@
 
       template<>
       inline Layout4d<LAYOUT_LJIK>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_l(nj*ni*nk), stride_j(ni*nk), stride_i(nk), stride_k(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_LJIK>::operator()(int i, int j, int k, int l) const {
-        return(l*(size_j*size_i*size_k) + j*(size_i*size_k) + i*(size_k) + k);
+        return(l*stride_l + j*stride_j + i*stride_i + k);
       }
 
       template<>
@@ -789,13 +803,13 @@
 
       template<>
       inline Layout4d<LAYOUT_LJKI>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_l(nj*nk*ni), stride_j(nk*ni), stride_k(ni), stride_i(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_LJKI>::operator()(int i, int j, int k, int l) const {
-        return(l*(size_j*size_k*size_i) + j*(size_k*size_i) + k*(size_i) + i);
+        return(l*stride_l + j*stride_j + k*stride_k + i);
       }
 
       template<>
@@ -811,13 +825,13 @@
 
       template<>
       inline Layout4d<LAYOUT_LKIJ>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_l(nk*ni*nj), stride_k(ni*nj), stride_i(nj), stride_j(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_LKIJ>::operator()(int i, int j, int k, int l) const {
-        return(l*(size_k*size_i*size_j) + k*(size_i*size_j) + i*(size_j) + j);
+        return(l*stride_l + k*stride_k + i*stride_i + j);
       }
 
       template<>
@@ -833,13 +847,13 @@
 
       template<>
       inline Layout4d<LAYOUT_LKJI>::Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_l(nk*nj*ni), stride_k(nj*ni), stride_j(ni), stride_i(1)
       {
       }
 
       template<>
       inline int Layout4d<LAYOUT_LKJI>::operator()(int i, int j, int k, int l) const {
-        return(l*(size_k*size_j*size_i) + k*(size_j*size_i) + j*(size_i) + i);
+        return(l*stride_l + k*stride_k + j*stride_j + i);
       }
 
       template<>
