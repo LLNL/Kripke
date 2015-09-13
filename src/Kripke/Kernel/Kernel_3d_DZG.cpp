@@ -81,11 +81,8 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int num_gz = num_groups*num_zones;
-    int num_locgz = num_local_groups*num_zones;
     
     // Get pointers
-    // Get pointers    
     View3d<double, LAYOUT_IKJ> psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
     View3d<double, LAYOUT_IKJ> phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
     View2d<double, LAYOUT_JI>  ell(sdom.ell->ptr(), num_local_directions, num_moments);
@@ -122,12 +119,10 @@ void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
 
     // Get dimensioning
     int num_zones = sdom.num_zones;
-    int num_groups = sdom.phi_out->groups;
     int num_local_groups = sdom.num_groups;
+    int num_groups = sdom.phi_out->groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int num_gz = num_groups*num_zones;
-    int num_locgz = num_local_groups*num_zones;
 
     // Get pointers
     View3d<double, LAYOUT_IKJ> rhs(sdom.rhs->ptr(), num_local_directions, num_local_groups, num_zones);
@@ -172,7 +167,6 @@ void Kernel_3d_DZG::scattering(Grid_Data *grid_data){
     int num_groups = grid_data->phi_out[zs]->groups;
     int num_moments = grid_data->total_num_moments;
     int legendre_order = grid_data->legendre_order;
-    int num_gz = num_groups*num_zones;
 
     View3d<double, LAYOUT_IKJ> phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
     View3d<double, LAYOUT_IKJ> const phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);  
@@ -253,14 +247,6 @@ void Kernel_3d_DZG::source(Grid_Data *grid_data){
 }
 
 
-
-// Macros for offsets with fluxes on cell faces 
-#define I_PLANE_INDEX(j, k) ((k)*(local_jmax) + (j))
-#define J_PLANE_INDEX(i, k) ((k)*(local_imax) + (i))
-#define K_PLANE_INDEX(i, j) ((j)*(local_imax) + (i))
-#define Zonal_INDEX(i, j, k) ((i) + (local_imax)*(j) \
-  + (local_imax)*(local_jmax)*(k))
-  
 void Kernel_3d_DZG::sweep(Subdomain *sdom) {
   int num_directions = sdom->num_directions;
   int num_groups = sdom->num_groups;

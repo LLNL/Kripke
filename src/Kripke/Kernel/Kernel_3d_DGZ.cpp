@@ -80,8 +80,6 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int num_gz = num_groups*num_zones;
-    int num_locgz = num_local_groups*num_zones;
     
     // Get pointers    
     View3d<double, LAYOUT_IJK> psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
@@ -123,7 +121,6 @@ void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {
     int num_groups = sdom.phi_out->groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    int num_groups_zones = num_local_groups*num_zones;
     
     // Get pointers
     View3d<double, LAYOUT_IJK> rhs(sdom.rhs->ptr(), num_local_directions, num_local_groups, num_zones);
@@ -166,7 +163,6 @@ void Kernel_3d_DGZ::scattering(Grid_Data *grid_data){
     int num_groups = grid_data->phi_out[zs]->groups;
     int num_moments = grid_data->total_num_moments;
     int legendre_order = grid_data->legendre_order;
-    int num_gz = num_groups*num_zones;
 
     View3d<double, LAYOUT_IJK> phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
     View3d<double, LAYOUT_IJK> const phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);  
