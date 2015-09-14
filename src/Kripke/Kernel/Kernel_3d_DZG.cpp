@@ -34,7 +34,7 @@
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 #include<Domain/Layout.h>
-
+#include<Domain/Forall.h>
 
 Nesting_Order Kernel_3d_DZG::nestingPsi(void) const {
   return NEST_DZG;
@@ -59,6 +59,15 @@ Nesting_Order Kernel_3d_DZG::nestingEllPlus(void) const {
 Nesting_Order Kernel_3d_DZG::nestingSigs(void) const {
   return NEST_DZG;
 }
+
+
+struct ltimes_dzg_pol {
+  typedef LAYOUT_IJLK layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+  typedef omp_pol pol_l;
+};
 
 
 void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
@@ -86,19 +95,12 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
     View3d<double, LAYOUT_IKJ> psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
     View3d<double, LAYOUT_IKJ> phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
     View2d<double, LAYOUT_JI>  ell(sdom.ell->ptr(), num_local_directions, num_moments);
-    
-    for(int nm = 0;nm < num_moments;++nm){     
-      for (int d = 0; d < num_local_directions; d++) {
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
-        for (int z = 0;z < num_zones;++ z){                         
-          for(int g = 0;g < num_local_groups; ++ g){  
-            phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
-          }
-        }
-      }
-    }
+
+//omp on zones      
+    forall4<ltimes_dzg_pol>(num_moments, num_local_directions, num_local_groups, num_zones,
+      [&](int nm, int d, int g, int z){
+        phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
+      });
   } 
 }
 
