@@ -5,86 +5,41 @@
 
 
 
-    struct LAYOUT_I_t {};
-    enum LAYOUT1D {
-      LAYOUT_I
-    };
+    struct LAYOUT_I {};
+    struct LAYOUT_IJ {};
+    struct LAYOUT_JI {};
+    struct LAYOUT_IJK {};
+    struct LAYOUT_IKJ {};
+    struct LAYOUT_JIK {};
+    struct LAYOUT_JKI {};
+    struct LAYOUT_KIJ {};
+    struct LAYOUT_KJI {};
+    struct LAYOUT_IJKL {};
+    struct LAYOUT_IJLK {};
+    struct LAYOUT_IKJL {};
+    struct LAYOUT_IKLJ {};
+    struct LAYOUT_ILJK {};
+    struct LAYOUT_ILKJ {};
+    struct LAYOUT_JIKL {};
+    struct LAYOUT_JILK {};
+    struct LAYOUT_JKIL {};
+    struct LAYOUT_JKLI {};
+    struct LAYOUT_JLIK {};
+    struct LAYOUT_JLKI {};
+    struct LAYOUT_KIJL {};
+    struct LAYOUT_KILJ {};
+    struct LAYOUT_KJIL {};
+    struct LAYOUT_KJLI {};
+    struct LAYOUT_KLIJ {};
+    struct LAYOUT_KLJI {};
+    struct LAYOUT_LIJK {};
+    struct LAYOUT_LIKJ {};
+    struct LAYOUT_LJIK {};
+    struct LAYOUT_LJKI {};
+    struct LAYOUT_LKIJ {};
+    struct LAYOUT_LKJI {};
 
-    struct LAYOUT_IJ_t {};
-    struct LAYOUT_JI_t {};
-    enum LAYOUT2D {
-      LAYOUT_IJ,
-      LAYOUT_JI
-    };
-
-    struct LAYOUT_IJK_t {};
-    struct LAYOUT_IKJ_t {};
-    struct LAYOUT_JIK_t {};
-    struct LAYOUT_JKI_t {};
-    struct LAYOUT_KIJ_t {};
-    struct LAYOUT_KJI_t {};
-    enum LAYOUT3D {
-      LAYOUT_IJK,
-      LAYOUT_IKJ,
-      LAYOUT_JIK,
-      LAYOUT_JKI,
-      LAYOUT_KIJ,
-      LAYOUT_KJI
-    };
-
-    struct LAYOUT_IJKL_t {};
-    struct LAYOUT_IJLK_t {};
-    struct LAYOUT_IKJL_t {};
-    struct LAYOUT_IKLJ_t {};
-    struct LAYOUT_ILJK_t {};
-    struct LAYOUT_ILKJ_t {};
-    struct LAYOUT_JIKL_t {};
-    struct LAYOUT_JILK_t {};
-    struct LAYOUT_JKIL_t {};
-    struct LAYOUT_JKLI_t {};
-    struct LAYOUT_JLIK_t {};
-    struct LAYOUT_JLKI_t {};
-    struct LAYOUT_KIJL_t {};
-    struct LAYOUT_KILJ_t {};
-    struct LAYOUT_KJIL_t {};
-    struct LAYOUT_KJLI_t {};
-    struct LAYOUT_KLIJ_t {};
-    struct LAYOUT_KLJI_t {};
-    struct LAYOUT_LIJK_t {};
-    struct LAYOUT_LIKJ_t {};
-    struct LAYOUT_LJIK_t {};
-    struct LAYOUT_LJKI_t {};
-    struct LAYOUT_LKIJ_t {};
-    struct LAYOUT_LKJI_t {};
-    enum LAYOUT4D {
-      LAYOUT_IJKL,
-      LAYOUT_IJLK,
-      LAYOUT_IKJL,
-      LAYOUT_IKLJ,
-      LAYOUT_ILJK,
-      LAYOUT_ILKJ,
-      LAYOUT_JIKL,
-      LAYOUT_JILK,
-      LAYOUT_JKIL,
-      LAYOUT_JKLI,
-      LAYOUT_JLIK,
-      LAYOUT_JLKI,
-      LAYOUT_KIJL,
-      LAYOUT_KILJ,
-      LAYOUT_KJIL,
-      LAYOUT_KJLI,
-      LAYOUT_KLIJ,
-      LAYOUT_KLJI,
-      LAYOUT_LIJK,
-      LAYOUT_LIKJ,
-      LAYOUT_LJIK,
-      LAYOUT_LJKI,
-      LAYOUT_LKIJ,
-      LAYOUT_LKJI
-    };
-
-
-    template<LAYOUT1D L>
+    template<typename L>
     struct Layout1d {
         inline explicit Layout1d(int ni);
         inline int operator()(int i) const;
@@ -95,7 +50,7 @@
         int const stride_i;
     };
 
-    template<LAYOUT2D L>
+    template<typename L>
     struct Layout2d {
         inline Layout2d(int ni, int nj);
         inline int operator()(int i, int j) const;
@@ -108,7 +63,7 @@
         int const stride_j;
     };
 
-    template<LAYOUT3D L>
+    template<typename L>
     struct Layout3d {
         inline Layout3d(int ni, int nj, int nk);
         inline int operator()(int i, int j, int k) const;
@@ -123,7 +78,7 @@
         int const stride_k;
     };
 
-    template<LAYOUT4D L>
+    template<typename L>
     struct Layout4d {
         inline Layout4d(int ni, int nj, int nk, int nl);
         inline int operator()(int i, int j, int k, int l) const;
@@ -140,7 +95,7 @@
         int const stride_l;
     };
 
-    template<typename T, LAYOUT1D L>
+    template<typename T, typename L>
     struct View1d {
         inline View1d(T *data_ptr, int ni);
         inline T const &operator()(int i) const;
@@ -150,7 +105,7 @@
         T *data;
     };
 
-    template<typename T, LAYOUT2D L>
+    template<typename T, typename L>
     struct View2d {
         inline View2d(T *data_ptr, int ni, int nj);
         inline T const &operator()(int i, int j) const;
@@ -160,7 +115,7 @@
         T *data;
     };
 
-    template<typename T, LAYOUT3D L>
+    template<typename T, typename L>
     struct View3d {
         inline View3d(T *data_ptr, int ni, int nj, int nk);
         inline T const &operator()(int i, int j, int k) const;
@@ -170,7 +125,7 @@
         T *data;
     };
 
-    template<typename T, LAYOUT4D L>
+    template<typename T, typename L>
     struct View4d {
         inline View4d(T *data_ptr, int ni, int nj, int nk, int nl);
         inline T const &operator()(int i, int j, int k, int l) const;
@@ -905,19 +860,19 @@
  *  Implementation for View1D
  ******************************************************************/
 
-      template<typename T, LAYOUT1D L>
+      template<typename T, typename L>
       inline View1d<T,L>::View1d(T *data_ptr, int ni):
         layout(ni),
         data(data_ptr)
       {
       }
 
-      template<typename T, LAYOUT1D L>
+      template<typename T, typename L>
       inline T const &View1d<T,L>::operator()(int i) const {
         return(data[layout(i)]);
       }
 
-      template<typename T, LAYOUT1D L>
+      template<typename T, typename L>
       inline T &View1d<T,L>::operator()(int i){
         return(data[layout(i)]);
       }
@@ -927,19 +882,19 @@
  *  Implementation for View2D
  ******************************************************************/
 
-      template<typename T, LAYOUT2D L>
+      template<typename T, typename L>
       inline View2d<T,L>::View2d(T *data_ptr, int ni, int nj):
         layout(ni, nj),
         data(data_ptr)
       {
       }
 
-      template<typename T, LAYOUT2D L>
+      template<typename T, typename L>
       inline T const &View2d<T,L>::operator()(int i, int j) const {
         return(data[layout(i, j)]);
       }
 
-      template<typename T, LAYOUT2D L>
+      template<typename T, typename L>
       inline T &View2d<T,L>::operator()(int i, int j){
         return(data[layout(i, j)]);
       }
@@ -949,19 +904,19 @@
  *  Implementation for View3D
  ******************************************************************/
 
-      template<typename T, LAYOUT3D L>
+      template<typename T, typename L>
       inline View3d<T,L>::View3d(T *data_ptr, int ni, int nj, int nk):
         layout(ni, nj, nk),
         data(data_ptr)
       {
       }
 
-      template<typename T, LAYOUT3D L>
+      template<typename T, typename L>
       inline T const &View3d<T,L>::operator()(int i, int j, int k) const {
         return(data[layout(i, j, k)]);
       }
 
-      template<typename T, LAYOUT3D L>
+      template<typename T, typename L>
       inline T &View3d<T,L>::operator()(int i, int j, int k){
         return(data[layout(i, j, k)]);
       }
@@ -971,19 +926,19 @@
  *  Implementation for View4D
  ******************************************************************/
 
-      template<typename T, LAYOUT4D L>
+      template<typename T, typename L>
       inline View4d<T,L>::View4d(T *data_ptr, int ni, int nj, int nk, int nl):
         layout(ni, nj, nk, nl),
         data(data_ptr)
       {
       }
 
-      template<typename T, LAYOUT4D L>
+      template<typename T, typename L>
       inline T const &View4d<T,L>::operator()(int i, int j, int k, int l) const {
         return(data[layout(i, j, k, l)]);
       }
 
-      template<typename T, LAYOUT4D L>
+      template<typename T, typename L>
       inline T &View4d<T,L>::operator()(int i, int j, int k, int l){
         return(data[layout(i, j, k, l)]);
       }

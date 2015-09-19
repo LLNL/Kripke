@@ -61,17 +61,16 @@ Nesting_Order Kernel_3d_DGZ::nestingSigs(void) const {
 }
 
 struct dgz_pol{
-  static const LAYOUT3D layout_psi = LAYOUT_IJK;
-  static const LAYOUT3D layout_phi = LAYOUT_IJK;
-  static const LAYOUT2D layout_ell = LAYOUT_JI;
+  typedef LAYOUT_IJK layout_psi;
+  typedef LAYOUT_IJK layout_phi;
+  typedef LAYOUT_JI layout_ell;
   
   typedef View3d<double, layout_psi> View3d_Psi;
   typedef View3d<double, layout_psi> View3d_Phi;
   typedef View2d<double, layout_ell> View2d_Ell;
   
   struct ltimes_pol {
-    static const LAYOUT4D layout = LAYOUT_IJKL;
-    typedef LAYOUT_IJKL_t layout_t;
+    typedef LAYOUT_IJKL layout;
     typedef seq_pol pol_i;
     typedef seq_pol pol_j;
     typedef omp_pol pol_k;
@@ -84,8 +83,68 @@ struct ltimes_pol;
 
 template<>
 struct ltimes_pol<NEST_DGZ> {
-  static const LAYOUT4D layout = LAYOUT_IJKL;
-  typedef LAYOUT_IJKL_t layout_t;
+  typedef LAYOUT_IJKL layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef omp_pol pol_k;
+  typedef seq_pol pol_l;
+};
+
+struct LTIMES_TAG{};
+
+struct TEST_POLICY{
+  template<typename LOOP_TAG, Nesting_Order NEST>
+  struct kernel_policy;
+};
+
+template<>
+struct forall_policy4<LTIMES_TAG, NEST_DGZ>{
+  typedef LAYOUT_IJKL layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef omp_pol pol_k;
+  typedef seq_pol pol_l;
+};
+
+template<>
+struct forall_policy4<LTIMES_TAG, NEST_DZG>{
+  typedef LAYOUT_IJLK layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef omp_pol pol_k;
+  typedef seq_pol pol_l;
+};
+
+template<>
+struct forall_policy4<LTIMES_TAG, NEST_GDZ>{
+  typedef LAYOUT_IJKL layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef omp_pol pol_k;
+  typedef seq_pol pol_l;
+};
+
+template<>
+struct forall_policy4<LTIMES_TAG, NEST_GZD>{
+  typedef LAYOUT_IJLK layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef omp_pol pol_k;
+  typedef seq_pol pol_l;
+};
+
+template<>
+struct forall_policy4<LTIMES_TAG, NEST_ZDG>{
+  typedef LAYOUT_IJKL layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef omp_pol pol_k;
+  typedef seq_pol pol_l;
+};
+
+template<>
+struct forall_policy4<LTIMES_TAG, NEST_ZGD>{
+  typedef LAYOUT_IJLK layout;
   typedef seq_pol pol_i;
   typedef seq_pol pol_j;
   typedef omp_pol pol_k;
@@ -94,8 +153,8 @@ struct ltimes_pol<NEST_DGZ> {
 
 
 
-template<typename POL>
-void genLTimes(Grid_Data *grid_data){
+void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
+  typedef dgz_pol POL;
 
   // Outer parameters
   int num_moments = grid_data->total_num_moments;
@@ -122,21 +181,12 @@ void genLTimes(Grid_Data *grid_data){
     typename POL::View3d_Phi phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
     typename POL::View2d_Ell ell(sdom.ell->ptr(), num_local_directions, num_moments);
     
-    forall4<typename POL::ltimes_pol>(num_moments, num_local_directions, num_local_groups, num_zones,
+    //forall4<typename POL::ltimes_pol>(num_moments, num_local_directions, num_local_groups, num_zones,
+    forall4<LTIMES_TAG>(NEST_DGZ, num_moments, num_local_directions, num_local_groups, num_zones,
       [&](int nm, int d, int g, int z){
         phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
       });
   }
-}
-
-void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
-
-  
-  Nesting_Order nest = NEST_DGZ;
-  
-  // TODO:  How do we map runtime nest order to template parameters, and not have to 
-  // write map functions for every kernel?
-  genLTimes<dgz_pol>(grid_data);
 }
 
 void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {

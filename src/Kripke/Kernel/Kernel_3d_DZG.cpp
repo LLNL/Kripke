@@ -62,17 +62,16 @@ Nesting_Order Kernel_3d_DZG::nestingSigs(void) const {
 
 
 struct dzg_pol{
-  static const LAYOUT3D layout_psi = LAYOUT_IKJ;
-  static const LAYOUT3D layout_phi = LAYOUT_IKJ;
-  static const LAYOUT2D layout_ell = LAYOUT_JI;
-  
+  typedef LAYOUT_IKJ layout_psi;
+  typedef LAYOUT_IKJ layout_phi;
+  typedef LAYOUT_JI layout_ell;
+
   typedef View3d<double, layout_psi> View3d_Psi;
   typedef View3d<double, layout_psi> View3d_Phi;
   typedef View2d<double, layout_ell> View2d_Ell;
-  
+
   struct ltimes_pol {
-    static const LAYOUT4D layout = LAYOUT_IJLK;
-    typedef LAYOUT_IJLK_t layout_t;
+    typedef LAYOUT_IJLK layout;
     typedef seq_pol pol_i;
     typedef seq_pol pol_j;
     typedef omp_pol pol_k;
@@ -100,18 +99,18 @@ void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
-    
+
     // Get pointers
     View3d<double, LAYOUT_IKJ> psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
     View3d<double, LAYOUT_IKJ> phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
     View2d<double, LAYOUT_JI>  ell(sdom.ell->ptr(), num_local_directions, num_moments);
 
-//omp on zones      
+//omp on zones
     forall4<dzg_pol::ltimes_pol >(num_moments, num_local_directions, num_local_groups, num_zones,
       [&](int nm, int d, int g, int z){
         phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
       });
-  } 
+  }
 }
 
 void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
