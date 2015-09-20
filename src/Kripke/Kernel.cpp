@@ -46,7 +46,6 @@
 #include<Kripke/Kernel/Kernel_3d_GZD.h>
 
 #include<Kripke/Kernel/VariablePolicy.h>
-#include<Kripke/Kernel/LTimesPolicy.h>
 
 /**
  * Factory to create a kernel object for the specified nesting
@@ -84,10 +83,10 @@ Kernel::~Kernel(){
 
 
 
-
+#include<Kripke/Kernel/LTimesPolicy.h>
 void Kernel::LTimes(Grid_Data *grid_data) {
 
-  getNestType(nesting_order, nest_type, ([=](){
+  getNestType(nesting_order, nest_type, [=](){
     typedef VariablePolicy<nest_type> VPOL;
     typedef VariableView<VPOL> VIEW;
  
@@ -124,13 +123,13 @@ void Kernel::LTimes(Grid_Data *grid_data) {
  
         });
     }
-  }));
+  });
 }
 
-
+#include<Kripke/Kernel/LPlusTimesPolicy.h>
 void Kernel::LPlusTimes(Grid_Data *grid_data) {
 
-  getNestType(nesting_order, nest_type, ([=](){
+  getNestType(nesting_order, nest_type, [&](){
     typedef VariablePolicy<nest_type> VPOL;
     typedef VariableView<VPOL> VIEW;
  
@@ -159,7 +158,7 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
       VIEW::View3d_Phi     phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
       VIEW::View2d_EllPlus ell_plus(sdom.ell_plus->ptr(), num_local_directions, num_moments);
 
-      forall4<LTimesPolicy<nest_type> >(
+      forall4<LPlusTimesPolicy<nest_type> >(
         num_moments, num_local_directions, num_local_groups, num_zones, 
         [&](int nm, int d, int g, int z){
  
@@ -167,7 +166,8 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
  
         });
     }
-  }));
+  });
 }
+
 
 

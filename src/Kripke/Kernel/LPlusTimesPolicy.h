@@ -30,26 +30,70 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_KERNEL_3D_GZD_H__
-#define KRIPKE_KERNEL_3D_GZD_H__
+#ifndef KERNEL_LPLUSTIMES_POLICY_H__
+#define KERNEL_LPLUSTIMES_POLICY_H__
 
-#include<Kripke/Kernel.h>
+#include<Kripke.h>
+#include<Domain/Layout.h>
+#include<Domain/Forall.h>
 
-class Kernel_3d_GZD : public Kernel {
-  public:
-    Kernel_3d_GZD();
-    virtual ~Kernel_3d_GZD();
-    
-    virtual Nesting_Order nestingPsi(void) const;
-    virtual Nesting_Order nestingPhi(void) const;
-    virtual Nesting_Order nestingSigt(void) const;
-    virtual Nesting_Order nestingEll(void) const;
-    virtual Nesting_Order nestingEllPlus(void) const;
-    virtual Nesting_Order nestingSigs(void) const;
 
-    virtual void scattering(Grid_Data *grid_data);
-    virtual void source(Grid_Data *grid_data);
-    virtual void sweep(Subdomain *ga_set);
+template<typename T>
+struct LPlusTimesPolicy{};
+
+template<>
+struct LPlusTimesPolicy<NEST_DGZ_T>{ // nm, d, g, z
+  typedef LAYOUT_JIKL layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef omp_pol pol_k;
+  typedef seq_pol pol_l;
 };
+
+template<>
+struct LPlusTimesPolicy<NEST_DZG_T>{ // nm, d, g, z
+  typedef LAYOUT_JILK layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+  typedef omp_pol pol_l;
+};
+
+template<>
+struct LPlusTimesPolicy<NEST_GDZ_T>{ // nm, d, g, z
+  typedef LAYOUT_KJIL layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef omp_pol pol_k;
+  typedef seq_pol pol_l;
+};
+
+template<>
+struct LPlusTimesPolicy<NEST_GZD_T>{ // nm, d, g, z
+  typedef LAYOUT_KLJI layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef omp_pol pol_k;
+  typedef seq_pol pol_l;
+};
+
+template<>
+struct LPlusTimesPolicy<NEST_ZDG_T>{ // nm, d, g, z
+  typedef LAYOUT_LJIK layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+  typedef omp_pol pol_l;
+};
+
+template<>
+struct LPlusTimesPolicy<NEST_ZGD_T>{ // nm, d, g, z
+  typedef LAYOUT_LKJI layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+  typedef omp_pol pol_l;
+};
+
 
 #endif

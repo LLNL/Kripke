@@ -67,49 +67,6 @@ Nesting_Order Kernel_3d_ZDG::nestingSigs(void) const {
 }
 
 
-void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
-  // Outer parameters
-  int num_moments = grid_data->total_num_moments;
-
-  // Zero RHS
-  int num_subdomains = grid_data->subdomains.size();
-  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
-    sdom.rhs->clear(0.0);
-  }
-  
-  // Loop over Subdomains
-  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
-
-    // Get dimensioning
-    int num_zones = sdom.num_zones;
-    int num_local_groups = sdom.num_groups;
-    int num_groups = sdom.phi_out->groups;
-    int group0 = sdom.group0;
-    int num_local_directions = sdom.num_directions;
-    
-    // Get pointers
-    View3d<double, LAYOUT_KIJ> rhs(sdom.rhs->ptr(), num_local_directions, num_local_groups, num_zones);
-    View3d<double, LAYOUT_KIJ> phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
-    View2d<double, LAYOUT_IJ>  ell_plus(sdom.ell_plus->ptr(), num_local_directions, num_moments);
-
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
-    for(int z = 0;z < num_zones; ++ z){    
-      for (int d = 0; d < num_local_directions; d++) {
-        for(int nm = 0;nm < num_moments;++nm){
-          for (int g = 0; g < num_local_groups; ++g) {
-            rhs(d,g,z) += ell_plus(d,nm) * phi_out(nm,g+group0,z);
-          }                    
-        }        
-      }     
-    }
-  }
-}
-
-
 /**
   Compute scattering source term phi_out from flux moments in phi.
   phi_out(gp,z,nm) = sum_g { sigs(g, n, gp) * phi(g,z,nm) }
