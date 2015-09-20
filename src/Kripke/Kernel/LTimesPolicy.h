@@ -39,10 +39,10 @@
 
 
 template<typename T>
-struct ltimes_policy{};
+struct LTimesPolicy{};
 
 template<>
-struct ltimes_policy<NEST_DGZ_T>{
+struct LTimesPolicy<NEST_DGZ_T>{
   typedef LAYOUT_IJKL layout;
   typedef seq_pol pol_i;
   typedef seq_pol pol_j;
@@ -51,7 +51,7 @@ struct ltimes_policy<NEST_DGZ_T>{
 };
 
 template<>
-struct ltimes_policy<NEST_DZG_T>{
+struct LTimesPolicy<NEST_DZG_T>{
   typedef LAYOUT_IJLK layout;
   typedef seq_pol pol_i;
   typedef seq_pol pol_j;
@@ -60,7 +60,7 @@ struct ltimes_policy<NEST_DZG_T>{
 };
 
 template<>
-struct ltimes_policy<NEST_GDZ_T>{
+struct LTimesPolicy<NEST_GDZ_T>{
   typedef LAYOUT_KIJL layout;
   typedef seq_pol pol_i;
   typedef seq_pol pol_j;
@@ -69,7 +69,7 @@ struct ltimes_policy<NEST_GDZ_T>{
 };
 
 template<>
-struct ltimes_policy<NEST_GZD_T>{ 
+struct LTimesPolicy<NEST_GZD_T>{ 
   typedef LAYOUT_KLIJ layout;
   typedef seq_pol pol_i;
   typedef seq_pol pol_j;
@@ -78,7 +78,7 @@ struct ltimes_policy<NEST_GZD_T>{
 };
 
 template<>
-struct ltimes_policy<NEST_ZDG_T>{ 
+struct LTimesPolicy<NEST_ZDG_T>{ 
   typedef LAYOUT_LIJK layout;
   typedef seq_pol pol_i;
   typedef seq_pol pol_j;
@@ -87,7 +87,7 @@ struct ltimes_policy<NEST_ZDG_T>{
 };
 
 template<>
-struct ltimes_policy<NEST_ZGD_T>{ 
+struct LTimesPolicy<NEST_ZGD_T>{ 
   typedef LAYOUT_LKIJ layout;
   typedef seq_pol pol_i;
   typedef seq_pol pol_j;

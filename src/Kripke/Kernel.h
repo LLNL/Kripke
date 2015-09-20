@@ -56,8 +56,8 @@ class Kernel {
     virtual Nesting_Order nestingSigs(void) const = 0;
 
     // Computational Kernels
-    virtual void LTimes(Grid_Data *grid_data);
-    virtual void LPlusTimes(Grid_Data *grid_data) = 0;
+    void LTimes(Grid_Data *grid_data);
+    virtual void LPlusTimes(Grid_Data *grid_data);
     virtual void scattering(Grid_Data *grid_data) = 0;
     virtual void source(Grid_Data *grid_data) = 0;
     virtual void sweep(Subdomain *ga_set) = 0;

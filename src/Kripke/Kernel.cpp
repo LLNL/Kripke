@@ -88,7 +88,8 @@ Kernel::~Kernel(){
 void Kernel::LTimes(Grid_Data *grid_data) {
 
   getNestType(nesting_order, nest_type, ([=](){
-    typedef VariablePolicy<nest_type> POL;
+    typedef VariablePolicy<nest_type> VPOL;
+    typedef VariableView<VPOL> VIEW;
  
     // Outer parameters
     int num_moments = grid_data->total_num_moments;
@@ -111,11 +112,11 @@ void Kernel::LTimes(Grid_Data *grid_data) {
       int num_local_directions = sdom.num_directions;
                    
       // Get pointers    
-      typename POL::View3d_Psi psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
-      typename POL::View3d_Phi phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
-      typename POL::View2d_Ell ell(sdom.ell->ptr(), num_local_directions, num_moments);
+      typename VIEW::View3d_Psi psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
+      typename VIEW::View3d_Phi phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
+      typename VIEW::View2d_Ell ell(sdom.ell->ptr(), num_local_directions, num_moments);
             
-      forall4<ltimes_policy<nest_type> >(
+      forall4<LTimesPolicy<nest_type> >(
         num_moments, num_local_directions, num_local_groups, num_zones, 
         [&](int nm, int d, int g, int z){
  
@@ -125,3 +126,48 @@ void Kernel::LTimes(Grid_Data *grid_data) {
     }
   }));
 }
+
+
+void Kernel::LPlusTimes(Grid_Data *grid_data) {
+
+  getNestType(nesting_order, nest_type, ([=](){
+    typedef VariablePolicy<nest_type> VPOL;
+    typedef VariableView<VPOL> VIEW;
+ 
+    // Outer parameters
+    int num_moments = grid_data->total_num_moments;
+
+    // Loop over Subdomains
+    int num_subdomains = grid_data->subdomains.size();
+    for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
+      Subdomain &sdom = grid_data->subdomains[sdom_id];
+      // Zero RHS
+      sdom.rhs->clear(0.0);
+    }
+    for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
+      Subdomain &sdom = grid_data->subdomains[sdom_id];
+
+      // Get dimensioning
+      int num_zones = sdom.num_zones;
+      int num_local_groups = sdom.num_groups;
+      int num_groups = sdom.phi_out->groups;
+      int group0 = sdom.group0;
+      int num_local_directions = sdom.num_directions;
+      
+      // Get pointers
+      VIEW::View3d_Psi     rhs(sdom.rhs->ptr(), num_local_directions, num_local_groups, num_zones);
+      VIEW::View3d_Phi     phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
+      VIEW::View2d_EllPlus ell_plus(sdom.ell_plus->ptr(), num_local_directions, num_moments);
+
+      forall4<LTimesPolicy<nest_type> >(
+        num_moments, num_local_directions, num_local_groups, num_zones, 
+        [&](int nm, int d, int g, int z){
+ 
+          rhs(d,g,z) += ell_plus(d,nm) * phi_out(nm,g+group0,z);
+ 
+        });
+    }
+  }));
+}
+
+

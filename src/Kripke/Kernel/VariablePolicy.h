@@ -37,74 +37,57 @@
 #include<Domain/Layout.h>
 #include<Domain/Forall.h>
 
+struct FixedVariablePolicy {
+  typedef LAYOUT_JI layout_ell;
+  typedef LAYOUT_IJ layout_ell_plus;
+};
+
 
 template<typename T>
 struct VariablePolicy{};
 
 template<>
-struct VariablePolicy<NEST_DGZ_T>{
+struct VariablePolicy<NEST_DGZ_T> : public FixedVariablePolicy {
   typedef LAYOUT_IJK layout_psi;
   typedef LAYOUT_IJK layout_phi;
-  typedef LAYOUT_JI layout_ell;
-  
-  typedef View3d<double, layout_psi> View3d_Psi;
-  typedef View3d<double, layout_psi> View3d_Phi;
-  typedef View2d<double, layout_ell> View2d_Ell;  
 };
 
 template<>
-struct VariablePolicy<NEST_DZG_T>{
+struct VariablePolicy<NEST_DZG_T> : public FixedVariablePolicy {
   typedef LAYOUT_IKJ layout_psi;
   typedef LAYOUT_IKJ layout_phi;
-  typedef LAYOUT_JI layout_ell;
-  
-  typedef View3d<double, layout_psi> View3d_Psi;
-  typedef View3d<double, layout_psi> View3d_Phi;
-  typedef View2d<double, layout_ell> View2d_Ell;  
 };
 
 template<>
-struct VariablePolicy<NEST_GDZ_T>{
+struct VariablePolicy<NEST_GDZ_T> : public FixedVariablePolicy {
   typedef LAYOUT_JIK layout_psi;
   typedef LAYOUT_JIK layout_phi;
-  typedef LAYOUT_JI layout_ell;
-  
-  typedef View3d<double, layout_psi> View3d_Psi;
-  typedef View3d<double, layout_psi> View3d_Phi;
-  typedef View2d<double, layout_ell> View2d_Ell;  
 };
 
 template<>
-struct VariablePolicy<NEST_GZD_T>{
+struct VariablePolicy<NEST_GZD_T> : public FixedVariablePolicy {
   typedef LAYOUT_JKI layout_psi;
   typedef LAYOUT_JKI layout_phi;
-  typedef LAYOUT_JI layout_ell;
-  
-  typedef View3d<double, layout_psi> View3d_Psi;
-  typedef View3d<double, layout_psi> View3d_Phi;
-  typedef View2d<double, layout_ell> View2d_Ell;  
 };
 
 template<>
-struct VariablePolicy<NEST_ZDG_T>{
+struct VariablePolicy<NEST_ZDG_T> : public FixedVariablePolicy {
   typedef LAYOUT_KIJ layout_psi;
   typedef LAYOUT_KIJ layout_phi;
-  typedef LAYOUT_JI layout_ell;
-  
-  typedef View3d<double, layout_psi> View3d_Psi;
-  typedef View3d<double, layout_psi> View3d_Phi;
-  typedef View2d<double, layout_ell> View2d_Ell;  
 };
 
 template<>
-struct VariablePolicy<NEST_ZGD_T>{
+struct VariablePolicy<NEST_ZGD_T> : public FixedVariablePolicy {
   typedef LAYOUT_KJI layout_psi;
-  typedef LAYOUT_KJI layout_phi;
-  typedef LAYOUT_JI layout_ell;
-  
-  typedef View3d<double, layout_psi> View3d_Psi;
-  typedef View3d<double, layout_psi> View3d_Phi;
-  typedef View2d<double, layout_ell> View2d_Ell;  
+  typedef LAYOUT_KJI layout_phi;  
+};
+
+template<typename T>
+struct VariableView {
+  typedef View3d<double, typename T::layout_psi> View3d_Psi;
+  typedef View3d<double, typename T::layout_psi> View3d_Phi;
+  typedef View2d<double, typename T::layout_ell> View2d_Ell;  
+  typedef View2d<double, typename T::layout_ell_plus> View2d_EllPlus;  
 };
 
 #endif
