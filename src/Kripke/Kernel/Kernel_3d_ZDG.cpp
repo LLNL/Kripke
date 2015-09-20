@@ -35,6 +35,12 @@
 #include<Kripke/SubTVec.h>
 #include<Domain/Layout.h>
 
+Kernel_3d_ZDG::Kernel_3d_ZDG() :
+  Kernel(NEST_ZDG)
+{}
+
+Kernel_3d_ZDG::~Kernel_3d_ZDG()
+{}
 
 Nesting_Order Kernel_3d_ZDG::nestingPsi(void) const {
   return NEST_ZDG;
@@ -60,47 +66,6 @@ Nesting_Order Kernel_3d_ZDG::nestingSigs(void) const {
   return NEST_ZDG;
 }
 
-
-void Kernel_3d_ZDG::LTimes(Grid_Data *grid_data) {
-  // Outer parameters
-  int num_moments = grid_data->total_num_moments;
-
-  // Clear phi
-  for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
-    grid_data->phi[ds]->clear(0.0);
-  }
-
-  // Loop over Subdomains
-  int num_subdomains = grid_data->subdomains.size();
-  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
-
-    // Get dimensioning
-    int num_zones = sdom.num_zones;
-    int num_groups = sdom.phi->groups;
-    int num_local_groups = sdom.num_groups;
-    int group0 = sdom.group0;
-    int num_local_directions = sdom.num_directions;
-
-    // Get pointers
-    View3d<double, LAYOUT_KIJ> psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
-    View3d<double, LAYOUT_KIJ> phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
-    View2d<double, LAYOUT_JI>  ell(sdom.ell->ptr(), num_local_directions, num_moments);
-
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
-    for (int z = 0; z < num_zones; z++) {
-      for(int nm = 0;nm < num_moments;++nm){
-        for (int d = 0; d < num_local_directions; d++) {
-          for (int g = 0; g < num_local_groups; ++g) {
-            phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
-          }
-        }
-      }
-    }
-  }
-}
 
 void Kernel_3d_ZDG::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters

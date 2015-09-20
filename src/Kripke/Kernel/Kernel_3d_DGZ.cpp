@@ -36,6 +36,13 @@
 #include<Domain/Layout.h>
 #include<Domain/Forall.h>
 
+Kernel_3d_DGZ::Kernel_3d_DGZ() :
+  Kernel(NEST_DGZ)
+{}
+
+Kernel_3d_DGZ::~Kernel_3d_DGZ()
+{}
+
 Nesting_Order Kernel_3d_DGZ::nestingPsi(void) const {
   return NEST_DGZ;
 }
@@ -58,135 +65,6 @@ Nesting_Order Kernel_3d_DGZ::nestingEllPlus(void) const {
 
 Nesting_Order Kernel_3d_DGZ::nestingSigs(void) const {
   return NEST_DGZ;
-}
-
-struct dgz_pol{
-  typedef LAYOUT_IJK layout_psi;
-  typedef LAYOUT_IJK layout_phi;
-  typedef LAYOUT_JI layout_ell;
-  
-  typedef View3d<double, layout_psi> View3d_Psi;
-  typedef View3d<double, layout_psi> View3d_Phi;
-  typedef View2d<double, layout_ell> View2d_Ell;
-  
-  struct ltimes_pol {
-    typedef LAYOUT_IJKL layout;
-    typedef seq_pol pol_i;
-    typedef seq_pol pol_j;
-    typedef omp_pol pol_k;
-    typedef seq_pol pol_l;
-  };
-};
-
-template<Nesting_Order N>
-struct ltimes_pol;
-
-template<>
-struct ltimes_pol<NEST_DGZ> {
-  typedef LAYOUT_IJKL layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
-
-struct LTIMES_TAG{};
-
-struct TEST_POLICY{
-  template<typename LOOP_TAG, Nesting_Order NEST>
-  struct kernel_policy;
-};
-
-template<>
-struct forall_policy4<LTIMES_TAG, NEST_DGZ>{
-  typedef LAYOUT_IJKL layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
-
-template<>
-struct forall_policy4<LTIMES_TAG, NEST_DZG>{
-  typedef LAYOUT_IJLK layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
-
-template<>
-struct forall_policy4<LTIMES_TAG, NEST_GDZ>{
-  typedef LAYOUT_IJKL layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
-
-template<>
-struct forall_policy4<LTIMES_TAG, NEST_GZD>{
-  typedef LAYOUT_IJLK layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
-
-template<>
-struct forall_policy4<LTIMES_TAG, NEST_ZDG>{
-  typedef LAYOUT_IJKL layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
-
-template<>
-struct forall_policy4<LTIMES_TAG, NEST_ZGD>{
-  typedef LAYOUT_IJLK layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
-
-
-
-void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
-  typedef dgz_pol POL;
-
-  // Outer parameters
-  int num_moments = grid_data->total_num_moments;
-
-  // Zero Phi
-  for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
-    grid_data->phi[ds]->clear(0.0);
-  }
-
-  // Loop over Subdomains
-  int num_subdomains = grid_data->subdomains.size();
-  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
-  
-    // Get dimensioning
-    int num_zones = sdom.num_zones;
-    int num_groups = sdom.phi->groups;
-    int num_local_groups = sdom.num_groups;
-    int group0 = sdom.group0;
-    int num_local_directions = sdom.num_directions;
-    
-    // Get pointers    
-    typename POL::View3d_Psi psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
-    typename POL::View3d_Phi phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
-    typename POL::View2d_Ell ell(sdom.ell->ptr(), num_local_directions, num_moments);
-    
-    //forall4<typename POL::ltimes_pol>(num_moments, num_local_directions, num_local_groups, num_zones,
-    forall4<LTIMES_TAG>(NEST_DGZ, num_moments, num_local_directions, num_local_groups, num_zones,
-      [&](int nm, int d, int g, int z){
-        phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
-      });
-  }
 }
 
 void Kernel_3d_DGZ::LPlusTimes(Grid_Data *grid_data) {

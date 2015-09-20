@@ -45,6 +45,9 @@
 #include<Kripke/Kernel/Kernel_3d_ZGD.h>
 #include<Kripke/Kernel/Kernel_3d_GZD.h>
 
+#include<Kripke/Kernel/VariablePolicy.h>
+#include<Kripke/Kernel/LTimesPolicy.h>
+
 /**
  * Factory to create a kernel object for the specified nesting
  */
@@ -70,96 +73,55 @@ Kernel *createKernel(Nesting_Order nest, int num_dims){
   return NULL;
 }
 
-/*
-struct LTIMES_TAG{};
 
-template<>
-struct forall_policy4<LTIMES_TAG, NEST_DGZ>{
-  typedef LAYOUT_IJKL layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
+Kernel::Kernel(Nesting_Order nest) :
+  nesting_order(nest)
+{}
 
-template<>
-struct forall_policy4<LTIMES_TAG, NEST_DZG>{
-  typedef LAYOUT_IJLK layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
+Kernel::~Kernel(){
+}
 
-template<>
-struct forall_policy4<LTIMES_TAG, NEST_GDZ>{
-  typedef LAYOUT_IJKL layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
 
-template<>
-struct forall_policy4<LTIMES_TAG, NEST_GZD>{
-  typedef LAYOUT_IJLK layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
-
-template<>
-struct forall_policy4<LTIMES_TAG, NEST_ZDG>{
-  typedef LAYOUT_IJKL layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
-
-template<>
-struct forall_policy4<LTIMES_TAG, NEST_ZGD>{
-  typedef LAYOUT_IJLK layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
 
 
 
 void Kernel::LTimes(Grid_Data *grid_data) {
 
-  // Outer parameters
-  int num_moments = grid_data->total_num_moments;
+  getNestType(nesting_order, nest_type, ([=](){
+    typedef VariablePolicy<nest_type> POL;
+ 
+    // Outer parameters
+    int num_moments = grid_data->total_num_moments;
 
-  // Zero Phi
-  for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
-    grid_data->phi[ds]->clear(0.0);
-  }
+    // Zero Phi
+    for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
+      grid_data->phi[ds]->clear(0.0);
+    }
 
-  // Loop over Subdomains
-  int num_subdomains = grid_data->subdomains.size();
-  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
-
-    // Get dimensioning
-    int num_zones = sdom.num_zones;
-    int num_groups = sdom.phi->groups;
-    int num_local_groups = sdom.num_groups;
-    int group0 = sdom.group0;
-    int num_local_directions = sdom.num_directions;
-
-    // Get pointers
-    typename POL::View3d_Psi psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
-    typename POL::View3d_Phi phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
-    typename POL::View2d_Ell ell(sdom.ell->ptr(), num_local_directions, num_moments);
-
-    //forall4<typename POL::ltimes_pol>(num_moments, num_local_directions, num_local_groups, num_zones,
-    forall4<LTIMES_TAG>(NEST_DGZ, num_moments, num_local_directions, num_local_groups, num_zones,
-      [&](int nm, int d, int g, int z){
-        phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
-      });
-  }
-}*/
+    // Loop over Subdomains
+    int num_subdomains = grid_data->subdomains.size();
+    for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
+      Subdomain &sdom = grid_data->subdomains[sdom_id];
+    
+      // Get dimensioning
+      int num_zones = sdom.num_zones;
+      int num_groups = sdom.phi->groups;
+      int num_local_groups = sdom.num_groups;
+      int group0 = sdom.group0;
+      int num_local_directions = sdom.num_directions;
+                   
+      // Get pointers    
+      typename POL::View3d_Psi psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
+      typename POL::View3d_Phi phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
+      typename POL::View2d_Ell ell(sdom.ell->ptr(), num_local_directions, num_moments);
+            
+      forall4<ltimes_policy<nest_type> >(
+        num_moments, num_local_directions, num_local_groups, num_zones, 
+        [&](int nm, int d, int g, int z){
+ 
+          phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
+ 
+        });
+    }
+  }));
+}

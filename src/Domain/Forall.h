@@ -56,6 +56,58 @@ inline void forall4(LAYOUT_IJLK const, int end_i, int end_j, int end_k, int end_
 }
 
 template<typename POL, typename BODY>
+inline void forall4(LAYOUT_KIJL const, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+  forall<typename POL::pol_k>(0, end_k, [&](int k){
+    forall<typename POL::pol_i>(0, end_i, [&](int i){
+      forall<typename POL::pol_j>(0, end_j, [&](int j){          
+        forall<typename POL::pol_l>(0, end_l, [&](int l){        
+          body(i,j,k,l);  
+        });
+      });
+    });
+  });
+}
+
+template<typename POL, typename BODY>
+inline void forall4(LAYOUT_KLIJ const, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+  forall<typename POL::pol_k>(0, end_k, [&](int k){
+    forall<typename POL::pol_l>(0, end_l, [&](int l){        
+      forall<typename POL::pol_i>(0, end_i, [&](int i){
+        forall<typename POL::pol_j>(0, end_j, [&](int j){                  
+          body(i,j,k,l);  
+        });
+      });
+    });
+  });
+}
+
+template<typename POL, typename BODY>
+inline void forall4(LAYOUT_LIJK const, int end_i, int end_j, int end_k, int end_l, BODY const &body){  
+  forall<typename POL::pol_l>(0, end_l, [&](int l){        
+    forall<typename POL::pol_i>(0, end_i, [&](int i){
+      forall<typename POL::pol_j>(0, end_j, [&](int j){
+        forall<typename POL::pol_k>(0, end_k, [&](int k){
+          body(i,j,k,l);  
+        });
+      });
+    });
+  });
+}
+
+template<typename POL, typename BODY>
+inline void forall4(LAYOUT_LKIJ const, int end_i, int end_j, int end_k, int end_l, BODY const &body){  
+  forall<typename POL::pol_l>(0, end_l, [&](int l){  
+    forall<typename POL::pol_k>(0, end_k, [&](int k){
+      forall<typename POL::pol_i>(0, end_i, [&](int i){
+        forall<typename POL::pol_j>(0, end_j, [&](int j){        
+          body(i,j,k,l);  
+        });
+      });
+    });
+  });
+}
+
+template<typename POL, typename BODY>
 inline void forall4(int end_i, int end_j, int end_k, int end_l, BODY const &body){
   typedef typename POL::layout L;
   forall4<POL, BODY>(L(), end_i, end_j, end_k, end_l, body);

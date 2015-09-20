@@ -37,6 +37,9 @@
 
 class Kernel_3d_ZDG : public Kernel {
   public:
+    Kernel_3d_ZDG();
+    virtual ~Kernel_3d_ZDG();
+    
     virtual Nesting_Order nestingPsi(void) const;
     virtual Nesting_Order nestingPhi(void) const;
     virtual Nesting_Order nestingSigt(void) const;
@@ -44,7 +47,6 @@ class Kernel_3d_ZDG : public Kernel {
     virtual Nesting_Order nestingEllPlus(void) const;
     virtual Nesting_Order nestingSigs(void) const;
 
-    virtual void LTimes(Grid_Data *grid_data);
     virtual void LPlusTimes(Grid_Data *grid_data);
     virtual void scattering(Grid_Data *grid_data);
     virtual void source(Grid_Data *grid_data);

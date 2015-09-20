@@ -30,43 +30,70 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_KERNEL_H__
-#define KRIPKE_KERNEL_H__
+#ifndef KERNEL_LTIMES_POLICY_H__
+#define KERNEL_LTIMES_POLICY_H__
 
-#include <Kripke.h>
+#include<Kripke.h>
+#include<Domain/Layout.h>
+#include<Domain/Forall.h>
 
-struct Grid_Data;
-struct SubTVec;
-struct Subdomain;
 
-/**
- * This is the Kernel base-class and interface definition.
- * This abstracts the storage of Psi, Phi, L, L+ from the rest of the code,
- * providing data-layout specific routines.
- */
-class Kernel {
-  public:
-    explicit Kernel(Nesting_Order nest);
-    virtual ~Kernel();
-    virtual Nesting_Order nestingPsi(void) const = 0;
-    virtual Nesting_Order nestingPhi(void) const = 0;
-    virtual Nesting_Order nestingSigt(void) const = 0;
-    virtual Nesting_Order nestingEll(void) const = 0;
-    virtual Nesting_Order nestingEllPlus(void) const = 0;
-    virtual Nesting_Order nestingSigs(void) const = 0;
+template<typename T>
+struct ltimes_policy{};
 
-    // Computational Kernels
-    virtual void LTimes(Grid_Data *grid_data);
-    virtual void LPlusTimes(Grid_Data *grid_data) = 0;
-    virtual void scattering(Grid_Data *grid_data) = 0;
-    virtual void source(Grid_Data *grid_data) = 0;
-    virtual void sweep(Subdomain *ga_set) = 0;
-  private:
-    Nesting_Order nesting_order;
+template<>
+struct ltimes_policy<NEST_DGZ_T>{
+  typedef LAYOUT_IJKL layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef omp_pol pol_k;
+  typedef seq_pol pol_l;
 };
 
+template<>
+struct ltimes_policy<NEST_DZG_T>{
+  typedef LAYOUT_IJLK layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+  typedef omp_pol pol_l;
+};
 
-// Factory to create correct kernel object
-Kernel *createKernel(Nesting_Order, int num_dims);
+template<>
+struct ltimes_policy<NEST_GDZ_T>{
+  typedef LAYOUT_KIJL layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef omp_pol pol_k;
+  typedef seq_pol pol_l;
+};
+
+template<>
+struct ltimes_policy<NEST_GZD_T>{ 
+  typedef LAYOUT_KLIJ layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef omp_pol pol_k;
+  typedef seq_pol pol_l;
+};
+
+template<>
+struct ltimes_policy<NEST_ZDG_T>{ 
+  typedef LAYOUT_LIJK layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+  typedef omp_pol pol_l;
+};
+
+template<>
+struct ltimes_policy<NEST_ZGD_T>{ 
+  typedef LAYOUT_LKIJ layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+  typedef omp_pol pol_l;
+};
+
 
 #endif

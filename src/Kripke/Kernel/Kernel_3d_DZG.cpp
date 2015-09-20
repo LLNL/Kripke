@@ -36,6 +36,13 @@
 #include<Domain/Layout.h>
 #include<Domain/Forall.h>
 
+Kernel_3d_DZG::Kernel_3d_DZG() :
+  Kernel(NEST_DZG)
+{}
+
+Kernel_3d_DZG::~Kernel_3d_DZG()
+{}
+
 Nesting_Order Kernel_3d_DZG::nestingPsi(void) const {
   return NEST_DZG;
 }
@@ -60,58 +67,6 @@ Nesting_Order Kernel_3d_DZG::nestingSigs(void) const {
   return NEST_DZG;
 }
 
-
-struct dzg_pol{
-  typedef LAYOUT_IKJ layout_psi;
-  typedef LAYOUT_IKJ layout_phi;
-  typedef LAYOUT_JI layout_ell;
-
-  typedef View3d<double, layout_psi> View3d_Psi;
-  typedef View3d<double, layout_psi> View3d_Phi;
-  typedef View2d<double, layout_ell> View2d_Ell;
-
-  struct ltimes_pol {
-    typedef LAYOUT_IJLK layout;
-    typedef seq_pol pol_i;
-    typedef seq_pol pol_j;
-    typedef omp_pol pol_k;
-    typedef seq_pol pol_l;
-  };
-};
-
-void Kernel_3d_DZG::LTimes(Grid_Data *grid_data) {
-  // Outer parameters
-  int num_moments = grid_data->total_num_moments;
-
-  // Zero Phi
-  for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
-    grid_data->phi[ds]->clear(0.0);
-  }
-
-  // Loop over Subdomains
-  int num_subdomains = grid_data->subdomains.size();
-  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
-
-    // Get dimensioning
-    int num_zones = sdom.num_zones;
-    int num_groups = sdom.phi->groups;
-    int num_local_groups = sdom.num_groups;
-    int group0 = sdom.group0;
-    int num_local_directions = sdom.num_directions;
-
-    // Get pointers
-    View3d<double, LAYOUT_IKJ> psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
-    View3d<double, LAYOUT_IKJ> phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
-    View2d<double, LAYOUT_JI>  ell(sdom.ell->ptr(), num_local_directions, num_moments);
-
-//omp on zones
-    forall4<dzg_pol::ltimes_pol >(num_moments, num_local_directions, num_local_groups, num_zones,
-      [&](int nm, int d, int g, int z){
-        phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
-      });
-  }
-}
 
 void Kernel_3d_DZG::LPlusTimes(Grid_Data *grid_data) {
   // Outer parameters

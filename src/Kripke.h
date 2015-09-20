@@ -70,6 +70,51 @@ enum Nesting_Order {
   NEST_ZGD
 };
 
+/** 
+ *Tags corresponding Nesting_Order's, as types
+ */
+struct NEST_DGZ_T {};
+struct NEST_DZG_T {};
+struct NEST_GDZ_T {};
+struct NEST_GZD_T {};
+struct NEST_ZDG_T {};
+struct NEST_ZGD_T {};
+
+/**
+ * Converts run-time nesting to static type for a given lambda scope.
+ * This could be done w/o a macro in C++14 with polymorphic lambdas
+ */
+#define getNestType(GNT_NEST__, GNT_TYPE__, GNT_LAMBDA__) \
+  {\
+    switch(GNT_NEST__){\
+      case NEST_DGZ: {\
+        typedef NEST_DGZ_T GNT_TYPE__;\
+        GNT_LAMBDA__();\
+      } break; \
+      case NEST_DZG: {\
+        typedef NEST_DZG_T GNT_TYPE__;\
+        GNT_LAMBDA__();\
+      } break; \
+      case NEST_GDZ: {\
+        typedef NEST_GDZ_T GNT_TYPE__;\
+        GNT_LAMBDA__();\
+      } break; \
+      case NEST_GZD: {\
+        typedef NEST_GZD_T GNT_TYPE__;\
+        GNT_LAMBDA__();\
+      } break; \
+      case NEST_ZDG: {\
+        typedef NEST_ZDG_T GNT_TYPE__;\
+        GNT_LAMBDA__();\
+      } break; \
+      case NEST_ZGD: {\
+        typedef NEST_ZGD_T GNT_TYPE__;\
+        GNT_LAMBDA__();\
+      } break; \
+    }\
+  }
+
+
 
 /**
   Tags for which parallel algorithm to use.
