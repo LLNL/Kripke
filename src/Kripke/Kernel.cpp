@@ -84,32 +84,31 @@ Kernel::~Kernel(){
 
 
 #include<Kripke/Kernel/LTimesPolicy.h>
-void Kernel::LTimes(Grid_Data *grid_data) {
+void Kernel::LTimes(Grid_Data *grid_data) { 
+  // Outer parameters
+  int num_moments = grid_data->total_num_moments;
 
-  getNestType(nesting_order, nest_type, [=](){
-    typedef VariablePolicy<nest_type> VPOL;
-    typedef VariableView<VPOL> VIEW;
- 
-    // Outer parameters
-    int num_moments = grid_data->total_num_moments;
+  // Zero Phi
+  for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
+    grid_data->phi[ds]->clear(0.0);
+  }
 
-    // Zero Phi
-    for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
-      grid_data->phi[ds]->clear(0.0);
-    }
+  // Loop over Subdomains
+  int num_subdomains = grid_data->subdomains.size();
+  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
+  
+    // Get dimensioning
+    int num_zones = sdom.num_zones;
+    int num_groups = sdom.phi->groups;
+    int num_local_groups = sdom.num_groups;
+    int group0 = sdom.group0;
+    int num_local_directions = sdom.num_directions;
 
-    // Loop over Subdomains
-    int num_subdomains = grid_data->subdomains.size();
-    for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-      Subdomain &sdom = grid_data->subdomains[sdom_id];
-    
-      // Get dimensioning
-      int num_zones = sdom.num_zones;
-      int num_groups = sdom.phi->groups;
-      int num_local_groups = sdom.num_groups;
-      int group0 = sdom.group0;
-      int num_local_directions = sdom.num_directions;
-                   
+    getNestType(nesting_order, nest_type, [&](){
+      typedef VariablePolicy<nest_type> VPOL;
+      typedef VariableView<VPOL> VIEW;
+                 
       // Get pointers    
       typename VIEW::View3d_Psi psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
       typename VIEW::View3d_Phi phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
@@ -122,42 +121,42 @@ void Kernel::LTimes(Grid_Data *grid_data) {
           phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
  
         });
-    }
-  });
+    });
+  }
+
 }
 
 #include<Kripke/Kernel/LPlusTimesPolicy.h>
 void Kernel::LPlusTimes(Grid_Data *grid_data) {
 
-  getNestType(nesting_order, nest_type, [&](){
-    typedef VariablePolicy<nest_type> VPOL;
-    typedef VariableView<VPOL> VIEW;
- 
-    // Outer parameters
-    int num_moments = grid_data->total_num_moments;
+  // Outer parameters
+  int num_moments = grid_data->total_num_moments;
 
-    // Loop over Subdomains
-    int num_subdomains = grid_data->subdomains.size();
-    for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-      Subdomain &sdom = grid_data->subdomains[sdom_id];
-      // Zero RHS
-      sdom.rhs->clear(0.0);
-    }
-    for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-      Subdomain &sdom = grid_data->subdomains[sdom_id];
+  // Loop over Subdomains
+  int num_subdomains = grid_data->subdomains.size();
+  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
+    // Zero RHS
+    sdom.rhs->clear(0.0);
+  }
+  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
 
-      // Get dimensioning
-      int num_zones = sdom.num_zones;
-      int num_local_groups = sdom.num_groups;
-      int num_groups = sdom.phi_out->groups;
-      int group0 = sdom.group0;
-      int num_local_directions = sdom.num_directions;
-      
+    // Get dimensioning
+    int num_zones = sdom.num_zones;
+    int num_local_groups = sdom.num_groups;
+    int num_groups = sdom.phi_out->groups;
+    int group0 = sdom.group0;
+    int num_local_directions = sdom.num_directions;
+
+    getNestType(nesting_order, nest_type, ([&](){
+      typedef VariablePolicy<nest_type> VPOL;
+      typedef VariableView<VPOL> VIEW;      
       // Get pointers
       VIEW::View3d_Psi     rhs(sdom.rhs->ptr(), num_local_directions, num_local_groups, num_zones);
       VIEW::View3d_Phi     phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
       VIEW::View2d_EllPlus ell_plus(sdom.ell_plus->ptr(), num_local_directions, num_moments);
-
+      
       forall4<LPlusTimesPolicy<nest_type> >(
         num_moments, num_local_directions, num_local_groups, num_zones, 
         [&](int nm, int d, int g, int z){
@@ -165,9 +164,65 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
           rhs(d,g,z) += ell_plus(d,nm) * phi_out(nm,g+group0,z);
  
         });
-    }
-  });
+    }));
+  }
+  
 }
 
 
+/**
+  Compute scattering source term phi_out from flux moments in phi.
+  phi_out(gp,z,nm) = sum_g { sigs(g, n, gp) * phi(g,z,nm) }
+*/
+#include<Kripke/Kernel/ScatteringPolicy.h>
+void Kernel::scattering(Grid_Data *grid_data){
 
+  // Zero out source terms
+  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
+    grid_data->phi_out[zs]->clear(0.0);
+  }
+  
+  // Loop over zoneset subdomains
+  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
+    // get material mix information
+    int sdom_id = grid_data->zs_to_sdomid[zs];
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
+
+    // grab dimensions
+    int num_zones = sdom.num_zones;
+    int num_mixed = sdom.mixed_to_zones.size();
+    int num_groups = grid_data->phi_out[zs]->groups;
+    int num_moments = grid_data->total_num_moments;
+    int legendre_order = grid_data->legendre_order;
+
+    getNestType(nesting_order, nest_type, ([&](){
+        typedef VariablePolicy<nest_type> VPOL;
+        typedef VariableView<VPOL> VIEW;
+
+        VIEW::View3d_Phi phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
+        VIEW::View3d_Phi const phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);  
+        VIEW::View4d_SigS const sigs(grid_data->sigs->ptr(), legendre_order+1, num_groups, num_groups, 3);
+
+        View1d<int>    const mixed_to_zones(&sdom.mixed_to_zones[0], 1);    
+        View1d<int>    const mixed_material(&sdom.mixed_material[0], 1);
+        View1d<double> const mixed_fraction(&sdom.mixed_fraction[0], 1);
+        View1d<int>    const moment_to_coeff(&grid_data->moment_to_coeff[0], 1);
+            
+        forall4<ScatteringPolicy<nest_type> >(
+          num_moments, num_groups, num_groups, num_mixed,
+          [&](int nm, int g, int gp, int mix){
+          
+            int n = moment_to_coeff(nm);
+            int zone = mixed_to_zones(mix);
+            int material = mixed_material(mix);
+            double fraction = mixed_fraction(mix);
+
+            phi_out(nm, gp, zone) += 
+              sigs(n, g, gp, material) * phi(nm, g, zone) * fraction;                     
+                               
+          });      
+    }));
+  }  
+  
+}
+  

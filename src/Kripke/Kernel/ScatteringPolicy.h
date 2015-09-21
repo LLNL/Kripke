@@ -30,73 +30,70 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KERNEL_VARIABLE_POLICY_H__
-#define KERNEL_VARIABLE_POLICY_H__
+#ifndef KERNEL_SCATTERING_POLICY_H__
+#define KERNEL_SCATTERING_POLICY_H__
 
 #include<Kripke.h>
 #include<Domain/Layout.h>
 #include<Domain/Forall.h>
 
-struct FixedVariablePolicy {
-  typedef LAYOUT_JI LayoutEll;
-  typedef LAYOUT_IJ LayoutEllPlus;
-};
-
 
 template<typename T>
-struct VariablePolicy{};
+struct ScatteringPolicy{};
 
 template<>
-struct VariablePolicy<NEST_DGZ_T> : public FixedVariablePolicy {
-  typedef LAYOUT_IJK LayoutPsi;
-  typedef LAYOUT_IJK LayoutPhi;
-  typedef LAYOUT_IJKL LayoutSigS;
-};
-
-template<>
-struct VariablePolicy<NEST_DZG_T> : public FixedVariablePolicy {
-  typedef LAYOUT_IKJ LayoutPsi;
-  typedef LAYOUT_IKJ LayoutPhi;
-  typedef LAYOUT_ILJK LayoutSigS;
+struct ScatteringPolicy<NEST_DGZ_T>{ // nm, g, gp, mat
+  typedef LAYOUT_IJKL layout;
+  typedef seq_pol pol_i;
+  typedef omp_pol pol_j;
+  typedef seq_pol pol_k;
+  typedef seq_pol pol_l;
 };
 
 template<>
-struct VariablePolicy<NEST_GDZ_T> : public FixedVariablePolicy {
-  typedef LAYOUT_JIK LayoutPsi;
-  typedef LAYOUT_JIK LayoutPhi;
-  typedef LAYOUT_JKIL LayoutSigS;
+struct ScatteringPolicy<NEST_DZG_T>{ // nm, g, gp, mat
+  typedef LAYOUT_ILJK layout;
+  typedef omp_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+  typedef seq_pol pol_l;
 };
 
 template<>
-struct VariablePolicy<NEST_GZD_T> : public FixedVariablePolicy {
-  typedef LAYOUT_JKI LayoutPsi;
-  typedef LAYOUT_JKI LayoutPhi;
-  typedef LAYOUT_JKLI LayoutSigS;
+struct ScatteringPolicy<NEST_GDZ_T>{ // nm, g, gp, mat
+  typedef LAYOUT_JKIL layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+  typedef seq_pol pol_l;
 };
 
 template<>
-struct VariablePolicy<NEST_ZDG_T> : public FixedVariablePolicy {
-  typedef LAYOUT_KIJ LayoutPsi;
-  typedef LAYOUT_KIJ LayoutPhi;
-  typedef LAYOUT_LIJK LayoutSigS;
+struct ScatteringPolicy<NEST_GZD_T>{ // nm, g, gp, mat
+  typedef LAYOUT_JKLI layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+  typedef seq_pol pol_l;
 };
 
 template<>
-struct VariablePolicy<NEST_ZGD_T> : public FixedVariablePolicy {
-  typedef LAYOUT_KJI LayoutPsi;
-  typedef LAYOUT_KJI LayoutPhi;
-  typedef LAYOUT_LJKI LayoutSigS;  
+struct ScatteringPolicy<NEST_ZDG_T>{ // nm, g, gp, mat
+  typedef LAYOUT_LIJK layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+  typedef seq_pol pol_l;
 };
 
-template<typename T>
-struct VariableView {
-  typedef View3d<double, typename T::LayoutPsi> View3d_Psi; // D, G, Z
-  typedef View3d<double, typename T::LayoutPsi> View3d_Phi; // NM, G, Z
-  typedef View2d<double, typename T::LayoutEll> View2d_Ell; // D, NM
-  typedef View2d<double, typename T::LayoutEllPlus> View2d_EllPlus; // D, NM  
-  typedef View4d<double, typename T::LayoutSigS> View4d_SigS; // N, G, Gp, material
-  typedef View1d<int> View1d_Int;
-  typedef View1d<double> View1d_Double;
+template<>
+struct ScatteringPolicy<NEST_ZGD_T>{ // nm, g, gp, mat
+  typedef LAYOUT_LJKI layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+  typedef omp_pol pol_l;
 };
+
 
 #endif

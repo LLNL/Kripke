@@ -39,7 +39,7 @@
     struct LAYOUT_LKIJ {};
     struct LAYOUT_LKJI {};
 
-    template<typename L>
+    template<typename L = LAYOUT_I>
     struct Layout1d {
         inline explicit Layout1d(int ni);
         inline int operator()(int i) const;
@@ -95,7 +95,7 @@
         int const stride_l;
     };
 
-    template<typename T, typename L>
+    template<typename T, typename L=LAYOUT_I>
     struct View1d {
         inline View1d(T *data_ptr, int ni);
         inline T const &operator()(int i) const;

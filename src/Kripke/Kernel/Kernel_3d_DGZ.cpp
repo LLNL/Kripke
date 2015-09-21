@@ -67,64 +67,6 @@ Nesting_Order Kernel_3d_DGZ::nestingSigs(void) const {
   return NEST_DGZ;
 }
 
-/**
-  Compute scattering source term phi_out from flux moments in phi.
-  phi_out(gp,z,nm) = sum_g { sigs(g, n, gp) * phi(g,z,nm) }
-*/
-void Kernel_3d_DGZ::scattering(Grid_Data *grid_data){
-  // Zero zone sets
-  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
-    grid_data->phi_out[zs]->clear(0.0);
-  }
-
-  // Loop over zoneset subdomains
-  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
-    // get material mix information
-    int sdom_id = grid_data->zs_to_sdomid[zs];
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
-        
-    // grab dimensions
-    int num_zones = sdom.num_zones;
-    int num_groups = grid_data->phi_out[zs]->groups;
-    int num_moments = grid_data->total_num_moments;
-    int legendre_order = grid_data->legendre_order;
-
-    View3d<double, LAYOUT_IJK> phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
-    View3d<double, LAYOUT_IJK> const phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);  
-    View4d<double, LAYOUT_IJKL> const sigs(grid_data->sigs->ptr(), legendre_order+1, num_groups, num_groups, 3);
-
-    View1d<int, LAYOUT_I> const zones_to_mixed(&sdom.zones_to_mixed[0], 1);
-    View1d<int, LAYOUT_I> const num_mixed(&sdom.num_mixed[0], 1);
-    View1d<int, LAYOUT_I> const mixed_material(&sdom.mixed_material[0], 1);
-    View1d<double, LAYOUT_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
-    View1d<int, LAYOUT_I> const moment_to_coeff(&grid_data->moment_to_coeff[0], 1);
-    
-
-    for(int nm = 0;nm < num_moments;++ nm){
-      int n = moment_to_coeff(nm);
-      for(int g = 0;g < num_groups;++ g){      
-        for(int gp = 0;gp < num_groups;++ gp){
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
-          for(int zone = 0;zone < num_zones;++ zone){            
-            int mix_start = zones_to_mixed(zone);
-            int mix_stop = mix_start + num_mixed(zone);
-
-            for(int mix = mix_start;mix < mix_stop;++ mix){
-              int material = mixed_material(mix);
-              double fraction = mixed_fraction(mix);              
-
-              phi_out(nm, gp, zone) += 
-                sigs(n, g, gp, material) * phi(nm, g, zone) * fraction;                     
-            }
-          }
-        }        
-      }
-    }
-  }
-}
-
 
 /**
  * Add an isotropic source, with flux of 1, to every zone with Region 1

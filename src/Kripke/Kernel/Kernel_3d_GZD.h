@@ -47,7 +47,6 @@ class Kernel_3d_GZD : public Kernel {
     virtual Nesting_Order nestingEllPlus(void) const;
     virtual Nesting_Order nestingSigs(void) const;
 
-    virtual void scattering(Grid_Data *grid_data);
     virtual void source(Grid_Data *grid_data);
     virtual void sweep(Subdomain *ga_set);
 };
