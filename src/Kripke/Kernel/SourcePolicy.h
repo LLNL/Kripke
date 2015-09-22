@@ -30,24 +30,58 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_KERNEL_3D_ZGD_H__
-#define KRIPKE_KERNEL_3D_ZGD_H__
+#ifndef KERNEL_SOURCE_POLICY_H__
+#define KERNEL_SOURCE_POLICY_H__
 
-#include<Kripke/Kernel.h>
+#include<Kripke.h>
+#include<Domain/Layout.h>
+#include<Domain/Forall.h>
 
-class Kernel_3d_ZGD : public Kernel {
-  public:
-    Kernel_3d_ZGD();
-    virtual ~Kernel_3d_ZGD();
 
-    virtual Nesting_Order nestingPsi(void) const;
-    virtual Nesting_Order nestingPhi(void) const;
-    virtual Nesting_Order nestingSigt(void) const;
-    virtual Nesting_Order nestingEll(void) const;
-    virtual Nesting_Order nestingEllPlus(void) const;
-    virtual Nesting_Order nestingSigs(void) const;
+template<typename T>
+struct SourcePolicy{};
 
-    virtual void sweep(Subdomain *ga_set);
+template<>
+struct SourcePolicy<NEST_DGZ_T>{ // g,mix
+  typedef LAYOUT_IJ layout;
+  typedef omp_pol pol_i;
+  typedef seq_pol pol_j;
 };
+
+template<>
+struct SourcePolicy<NEST_DZG_T>{ // g,mix
+  typedef LAYOUT_JI layout;
+  typedef omp_pol pol_i;
+  typedef seq_pol pol_j;
+};
+
+template<>
+struct SourcePolicy<NEST_GDZ_T>{ // g,mix
+  typedef LAYOUT_IJ layout;
+  typedef omp_pol pol_i;
+  typedef seq_pol pol_j;
+};
+
+template<>
+struct SourcePolicy<NEST_GZD_T>{ // g,mix
+  typedef LAYOUT_IJ layout;
+  typedef omp_pol pol_i;
+  typedef seq_pol pol_j;
+};
+
+template<>
+struct SourcePolicy<NEST_ZDG_T>{ // g,mix
+  typedef LAYOUT_JI layout;
+  typedef omp_pol pol_i;
+  typedef seq_pol pol_j;
+};
+
+template<>
+struct SourcePolicy<NEST_ZGD_T>{ // g,mix
+  typedef LAYOUT_JI layout;
+  typedef omp_pol pol_i;
+  typedef seq_pol pol_j;
+};
+
 
 #endif

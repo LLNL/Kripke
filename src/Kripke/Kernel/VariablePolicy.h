@@ -95,8 +95,8 @@ struct VariableView {
   typedef View2d<double, typename T::LayoutEll> View2d_Ell; // D, NM
   typedef View2d<double, typename T::LayoutEllPlus> View2d_EllPlus; // D, NM  
   typedef View4d<double, typename T::LayoutSigS> View4d_SigS; // N, G, Gp, material
-  typedef View1d<int> View1d_Int;
-  typedef View1d<double> View1d_Double;
+  typedef View1d<int, LAYOUT_I> View1d_Int;
+  typedef View1d<double, LAYOUT_I> View1d_Double;
 };
 
 #endif

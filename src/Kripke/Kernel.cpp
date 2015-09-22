@@ -116,7 +116,7 @@ void Kernel::LTimes(Grid_Data *grid_data) {
             
       forall4<LTimesPolicy<nest_type> >(
         num_moments, num_local_directions, num_local_groups, num_zones, 
-        [&](int nm, int d, int g, int z){
+        [=](int nm, int d, int g, int z){
  
           phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
  
@@ -159,7 +159,7 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
       
       forall4<LPlusTimesPolicy<nest_type> >(
         num_moments, num_local_directions, num_local_groups, num_zones, 
-        [&](int nm, int d, int g, int z){
+        [=](int nm, int d, int g, int z){
  
           rhs(d,g,z) += ell_plus(d,nm) * phi_out(nm,g+group0,z);
  
@@ -196,33 +196,78 @@ void Kernel::scattering(Grid_Data *grid_data){
     int legendre_order = grid_data->legendre_order;
 
     getNestType(nesting_order, nest_type, ([&](){
-        typedef VariablePolicy<nest_type> VPOL;
-        typedef VariableView<VPOL> VIEW;
+      typedef VariablePolicy<nest_type> VPOL;
+      typedef VariableView<VPOL> VIEW;
 
-        VIEW::View3d_Phi phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
-        VIEW::View3d_Phi const phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);  
-        VIEW::View4d_SigS const sigs(grid_data->sigs->ptr(), legendre_order+1, num_groups, num_groups, 3);
+      VIEW::View3d_Phi phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
+      VIEW::View3d_Phi const phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);  
+      VIEW::View4d_SigS const sigs(grid_data->sigs->ptr(), legendre_order+1, num_groups, num_groups, 3);
 
-        View1d<int>    const mixed_to_zones(&sdom.mixed_to_zones[0], 1);    
-        View1d<int>    const mixed_material(&sdom.mixed_material[0], 1);
-        View1d<double> const mixed_fraction(&sdom.mixed_fraction[0], 1);
-        View1d<int>    const moment_to_coeff(&grid_data->moment_to_coeff[0], 1);
-            
-        forall4<ScatteringPolicy<nest_type> >(
-          num_moments, num_groups, num_groups, num_mixed,
-          [&](int nm, int g, int gp, int mix){
+      View1d<int, LAYOUT_I>    const mixed_to_zones(&sdom.mixed_to_zones[0], 1);    
+      View1d<int, LAYOUT_I>    const mixed_material(&sdom.mixed_material[0], 1);
+      View1d<double, LAYOUT_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
+      View1d<int, LAYOUT_I>    const moment_to_coeff(&grid_data->moment_to_coeff[0], 1);
           
-            int n = moment_to_coeff(nm);
-            int zone = mixed_to_zones(mix);
-            int material = mixed_material(mix);
-            double fraction = mixed_fraction(mix);
+      forall4<ScatteringPolicy<nest_type> >(
+        num_moments, num_groups, num_groups, num_mixed,
+        [=](int nm, int g, int gp, int mix){
+        
+          int n = moment_to_coeff(nm);
+          int zone = mixed_to_zones(mix);
+          int material = mixed_material(mix);
+          double fraction = mixed_fraction(mix);
 
-            phi_out(nm, gp, zone) += 
-              sigs(n, g, gp, material) * phi(nm, g, zone) * fraction;                     
-                               
-          });      
+          phi_out(nm, gp, zone) += 
+            sigs(n, g, gp, material) * phi(nm, g, zone) * fraction;                     
+                             
+        });      
     }));
   }  
   
 }
+
   
+/**
+ * Add an isotropic source, with flux of 1, to every zone with Region 1
+ * (or material 0).
+ *
+ * Since it's isotropic, we're just adding this to nm=0.
+ */
+#include<Kripke/Kernel/SourcePolicy.h>
+void Kernel::source(Grid_Data *grid_data){
+  // Loop over zoneset subdomains
+  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
+    // get material mix information
+    int sdom_id = grid_data->zs_to_sdomid[zs];
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
+       
+    // grab dimensions
+    int num_mixed = sdom.mixed_to_zones.size();
+    int num_zones = sdom.num_zones;
+    int num_groups = sdom.phi_out->groups;
+    int num_moments = grid_data->total_num_moments;
+    
+    getNestType(nesting_order, nest_type, ([&](){
+      typedef VariablePolicy<nest_type> VPOL;
+      typedef VariableView<VPOL> VIEW;
+    
+      VIEW::View3d_Phi phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
+      
+      View1d<int,    LAYOUT_I> const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
+      View1d<int,    LAYOUT_I> const mixed_material(&sdom.mixed_material[0], 1);
+      View1d<double, LAYOUT_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
+
+      forall2<SourcePolicy<nest_type> >(num_groups, num_mixed,
+        [=](int g, int mix){
+          int zone = mixed_to_zones(mix);
+          int material = mixed_material(mix);
+          double fraction = mixed_fraction(mix);
+
+          if(material == 0){
+            phi_out(0, g, zone) += 1.0 * fraction;
+          }
+        });
+        
+    }));
+  }
+}

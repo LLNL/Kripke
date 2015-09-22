@@ -30,6 +30,32 @@ inline void forall(int start, int end, BODY const &body){
 
 
 template<typename POL, typename BODY>
+inline void forall2(LAYOUT_IJ const, int end_i, int end_j, BODY const &body){  
+  forall<typename POL::pol_i>(0, end_i, [&](int i){
+    forall<typename POL::pol_j>(0, end_j, [&](int j){
+      body(i,j);
+    });
+  });
+}
+
+template<typename POL, typename BODY>
+inline void forall2(LAYOUT_JI const, int end_i, int end_j, BODY const &body){  
+  forall<typename POL::pol_j>(0, end_j, [&](int j){
+    forall<typename POL::pol_i>(0, end_i, [&](int i){
+      body(i,j);
+    });
+  });
+}
+
+template<typename POL, typename BODY>
+inline void forall2(int end_i, int end_j, BODY const &body){
+  typedef typename POL::layout L;
+  forall2<POL, BODY>(L(), end_i, end_j, body);
+}
+
+
+
+template<typename POL, typename BODY>
 inline void forall4(LAYOUT_IJKL const, int end_i, int end_j, int end_k, int end_l, BODY const &body){
   forall<typename POL::pol_i>(0, end_i, [&](int i){
     forall<typename POL::pol_j>(0, end_j, [&](int j){
@@ -249,49 +275,6 @@ inline void forall4(int end_i, int end_j, int end_k, int end_l, BODY const &body
 }
 
 
-template<typename LOOP_TAG, Nesting_Order NEST>
-struct forall_policy4{};
-
-
-template<typename LOOP_TAG, typename BODY>
-inline void forall4(Nesting_Order nest, int end_i, int end_j, int end_k, int end_l, BODY const &body){
-
-  switch(nest){
-    case NEST_DGZ:
-      forall4<forall_policy4<LOOP_TAG,NEST_DGZ>, BODY>
-        (end_i, end_j, end_k, end_l, body);
-      break;
-
-    case NEST_DZG:
-      forall4<forall_policy4<LOOP_TAG,NEST_DZG>, BODY>
-        (end_i, end_j, end_k, end_l, body);
-      break;
-
-    case NEST_GDZ:
-      forall4<forall_policy4<LOOP_TAG,NEST_GDZ>, BODY>
-        (end_i, end_j, end_k, end_l, body);
-      break;
-
-    case NEST_GZD:
-      forall4<forall_policy4<LOOP_TAG,NEST_GZD>, BODY>
-        (end_i, end_j, end_k, end_l, body);
-      break;
-
-    case NEST_ZDG:
-      forall4<forall_policy4<LOOP_TAG,NEST_ZDG>, BODY>
-        (end_i, end_j, end_k, end_l, body);
-      break;
-
-    case NEST_ZGD:
-      forall4<forall_policy4<LOOP_TAG,NEST_ZGD>, BODY>
-        (end_i, end_j, end_k, end_l, body);
-      break;
-
-    default:
-      throw ("NO!!!!");
-  }
-
-}
 
 
 #endif

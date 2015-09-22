@@ -67,48 +67,6 @@ Nesting_Order Kernel_3d_GZD::nestingSigs(void) const {
 }
 
 
-/**
- * Add an isotropic source, with flux of 1, to every zone with Region 1
- * (or material 0).
- *
- * Since it's isotropic, we're just adding this to nm=0.
- */
-void Kernel_3d_GZD::source(Grid_Data *grid_data){
-  // Loop over zoneset subdomains
-  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
-  
-    // get material mix information
-    int sdom_id = grid_data->zs_to_sdomid[zs];
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
-
-    // grab dimensions
-    int num_mixed = sdom.mixed_to_zones.size();
-    int num_zones = sdom.num_zones;
-    int num_groups = grid_data->phi_out[zs]->groups;
-    int num_moments = grid_data->total_num_moments;
-    
-    View3d<double, LAYOUT_JKI> phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
-    View1d<int,    LAYOUT_I> const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
-    View1d<int,    LAYOUT_I> const mixed_material(&sdom.mixed_material[0], 1);
-    View1d<double, LAYOUT_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
-
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
-    for(int g = 0;g < num_groups;++ g){
-      for(int mix = 0;mix < num_mixed;++ mix){
-        int zone = mixed_to_zones(mix);
-        int material = mixed_material(mix);
-        double fraction = mixed_fraction(mix);
-
-        if(material == 0){
-          phi_out(0, g, zone) += 1.0 * fraction;        
-        }
-      }
-    }
-  }
-}
-
 
 void Kernel_3d_GZD::sweep(Subdomain *sdom) {
   int num_directions = sdom->num_directions;
