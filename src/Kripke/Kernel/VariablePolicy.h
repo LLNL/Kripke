@@ -90,13 +90,11 @@ struct VariablePolicy<NEST_ZGD_T> : public FixedVariablePolicy {
 
 template<typename T>
 struct VariableView {
-  typedef View3d<double, typename T::LayoutPsi> View3d_Psi; // D, G, Z
-  typedef View3d<double, typename T::LayoutPsi> View3d_Phi; // NM, G, Z
-  typedef View2d<double, typename T::LayoutEll> View2d_Ell; // D, NM
-  typedef View2d<double, typename T::LayoutEllPlus> View2d_EllPlus; // D, NM  
-  typedef View4d<double, typename T::LayoutSigS> View4d_SigS; // N, G, Gp, material
-  typedef View1d<int, LAYOUT_I> View1d_Int;
-  typedef View1d<double, LAYOUT_I> View1d_Double;
+  typedef View3d<double, typename T::LayoutPsi> Psi; // D, G, Z
+  typedef View3d<double, typename T::LayoutPsi> Phi; // NM, G, Z
+  typedef View2d<double, typename T::LayoutEll> Ell; // D, NM
+  typedef View2d<double, typename T::LayoutEllPlus> EllPlus; // D, NM  
+  typedef View4d<double, typename T::LayoutSigS> SigS; // N, G, Gp, material  
 };
 
 #endif

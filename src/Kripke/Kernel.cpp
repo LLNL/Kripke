@@ -110,9 +110,9 @@ void Kernel::LTimes(Grid_Data *grid_data) {
       typedef VariableView<VPOL> VIEW;
                  
       // Get pointers    
-      typename VIEW::View3d_Psi psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
-      typename VIEW::View3d_Phi phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
-      typename VIEW::View2d_Ell ell(sdom.ell->ptr(), num_local_directions, num_moments);
+      typename VIEW::Psi psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
+      typename VIEW::Phi phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
+      typename VIEW::Ell ell(sdom.ell->ptr(), num_local_directions, num_moments);
             
       forall4<LTimesPolicy<nest_type> >(
         num_moments, num_local_directions, num_local_groups, num_zones, 
@@ -153,9 +153,9 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
       typedef VariablePolicy<nest_type> VPOL;
       typedef VariableView<VPOL> VIEW;      
       // Get pointers
-      VIEW::View3d_Psi     rhs(sdom.rhs->ptr(), num_local_directions, num_local_groups, num_zones);
-      VIEW::View3d_Phi     phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
-      VIEW::View2d_EllPlus ell_plus(sdom.ell_plus->ptr(), num_local_directions, num_moments);
+      VIEW::Psi     rhs(sdom.rhs->ptr(), num_local_directions, num_local_groups, num_zones);
+      VIEW::Phi     phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
+      VIEW::EllPlus ell_plus(sdom.ell_plus->ptr(), num_local_directions, num_moments);
       
       forall4<LPlusTimesPolicy<nest_type> >(
         num_moments, num_local_directions, num_local_groups, num_zones, 
@@ -199,9 +199,9 @@ void Kernel::scattering(Grid_Data *grid_data){
       typedef VariablePolicy<nest_type> VPOL;
       typedef VariableView<VPOL> VIEW;
 
-      VIEW::View3d_Phi phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
-      VIEW::View3d_Phi const phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);  
-      VIEW::View4d_SigS const sigs(grid_data->sigs->ptr(), legendre_order+1, num_groups, num_groups, 3);
+      VIEW::Phi  phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
+      VIEW::Phi  const phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);  
+      VIEW::SigS const sigs(grid_data->sigs->ptr(), legendre_order+1, num_groups, num_groups, 3);
 
       View1d<int, LAYOUT_I>    const mixed_to_zones(&sdom.mixed_to_zones[0], 1);    
       View1d<int, LAYOUT_I>    const mixed_material(&sdom.mixed_material[0], 1);
@@ -251,7 +251,7 @@ void Kernel::source(Grid_Data *grid_data){
       typedef VariablePolicy<nest_type> VPOL;
       typedef VariableView<VPOL> VIEW;
     
-      VIEW::View3d_Phi phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
+      VIEW::Phi phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
       
       View1d<int,    LAYOUT_I> const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
       View1d<int,    LAYOUT_I> const mixed_material(&sdom.mixed_material[0], 1);
