@@ -106,8 +106,8 @@ void Kernel::LTimes(Grid_Data *grid_data) {
     int num_local_directions = sdom.num_directions;
 
     policyScope(nesting_order, nest_type, [&](){
-      typedef VariablePolicy<nest_type> VPOL;
-      typedef VariableView<VPOL> VIEW;
+      typedef LayoutPolicy<nest_type> LAYOUT;
+      typedef ViewPolicy<LAYOUT> VIEW;
                  
       // Get pointers    
       typename VIEW::Psi psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
@@ -150,8 +150,8 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
     int num_local_directions = sdom.num_directions;
 
     policyScope(nesting_order, nest_type, ([&](){
-      typedef VariablePolicy<nest_type> VPOL;
-      typedef VariableView<VPOL> VIEW;      
+      typedef LayoutPolicy<nest_type> LAYOUT;
+      typedef ViewPolicy<LAYOUT> VIEW;      
       // Get pointers
       VIEW::Psi     rhs(sdom.rhs->ptr(), num_local_directions, num_local_groups, num_zones);
       VIEW::Phi     phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
@@ -196,8 +196,8 @@ void Kernel::scattering(Grid_Data *grid_data){
     int legendre_order = grid_data->legendre_order;
 
     policyScope(nesting_order, nest_type, ([&](){
-      typedef VariablePolicy<nest_type> VPOL;
-      typedef VariableView<VPOL> VIEW;
+      typedef LayoutPolicy<nest_type> LAYOUT;
+      typedef ViewPolicy<LAYOUT> VIEW;
 
       VIEW::Phi  phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
       VIEW::Phi  const phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);  
@@ -248,8 +248,8 @@ void Kernel::source(Grid_Data *grid_data){
     int num_moments = grid_data->total_num_moments;
     
     policyScope(nesting_order, nest_type, ([&](){
-      typedef VariablePolicy<nest_type> VPOL;
-      typedef VariableView<VPOL> VIEW;
+      typedef LayoutPolicy<nest_type> LAYOUT;
+      typedef ViewPolicy<LAYOUT> VIEW;
     
       VIEW::Phi phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
       
@@ -271,3 +271,86 @@ void Kernel::source(Grid_Data *grid_data){
     }));
   }
 }
+
+
+#include<Kripke/Kernel/SweepPolicy.h>
+void Kernel::sweep(Subdomain *sdom) {
+  int num_directions = sdom->num_directions;
+  int num_groups = sdom->num_groups;
+  int num_zones = sdom->num_zones;
+
+  Directions *direction = sdom->directions;
+
+  int local_imax = sdom->nzones[0];
+  int local_jmax = sdom->nzones[1];
+  int local_kmax = sdom->nzones[2];
+  
+  int num_z_i = local_jmax * local_kmax;
+  int num_z_j = local_imax * local_kmax;
+  int num_z_k = local_imax * local_jmax;
+    
+  policyScope(nesting_order, nest_type, ([&](){
+    typedef LayoutPolicy<nest_type> LAYOUT;
+    typedef ViewPolicy<LAYOUT> VIEW;
+
+    VIEW::Psi const rhs(sdom->rhs->ptr(), num_directions, num_groups, num_zones);
+    VIEW::Psi psi(sdom->psi->ptr(), num_directions, num_groups, num_zones);
+    VIEW::SigT const sigt(sdom->sigt->ptr(), num_groups, num_zones);
+    
+    View1d<double, LAYOUT_I> const dx(&sdom->deltas[0][0], local_imax+2);
+    View1d<double, LAYOUT_I> const dy(&sdom->deltas[1][0], local_jmax+2);
+    View1d<double, LAYOUT_I> const dz(&sdom->deltas[2][0], local_kmax+2);
+            
+    VIEW::Face psi_lf(sdom->plane_data[0]->ptr(), num_directions, num_groups, num_z_i);
+    VIEW::Face psi_fr(sdom->plane_data[1]->ptr(), num_directions, num_groups, num_z_j);
+    VIEW::Face psi_bo(sdom->plane_data[2]->ptr(), num_directions, num_groups, num_z_k);
+    
+    LAYOUT::Zone zone_layout(local_imax, local_jmax, local_kmax);
+    LAYOUT::Face i_layout(local_jmax, local_kmax);
+    LAYOUT::Face j_layout(local_imax, local_kmax);
+    LAYOUT::Face k_layout(local_imax, local_jmax);
+
+    // All directions have same id,jd,kd, since these are all one Direction Set
+    // So pull that information out now
+    Grid_Sweep_Block const &extent = sdom->sweep_block;
+
+    // TODO: We really need the RAJA::IndexSet concept to deal with zone iteration pattern
+///    forall3<SweepPolicy<nest_type> >(num_directions, num_groups, num_zones,
+//        [=](int d, int g, int z_idz){
+    for (int d = 0; d < num_directions; ++d) {
+      for (int g = 0; g < num_groups; ++g) {
+        for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {               
+          for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {          
+            for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
+              double const xcos_dxi = 2.0 * direction[d].xcos / dx(i + 1);
+              double const ycos_dyj = 2.0 * direction[d].ycos / dy(j + 1);
+              double const zcos_dzk = 2.0 * direction[d].zcos / dz(k + 1);
+              
+              int const z_idx = zone_layout(i,j,k);            
+              int const lf_idx = i_layout(j,k);
+              int const fr_idx = j_layout(i,k);
+              int const bo_idx = k_layout(i,j);
+
+              /* Calculate new zonal flux */
+              double const psi_d_g_z = (
+                    rhs(d,g,z_idx)                  
+                  + psi_lf(d,g,lf_idx) * xcos_dxi
+                  + psi_fr(d,g,fr_idx) * ycos_dyj
+                  + psi_bo(d,g,bo_idx) * zcos_dzk)
+                  / (xcos_dxi + ycos_dyj + zcos_dzk + sigt(g,z_idx) );
+
+              psi(d,g,z_idx) = psi_d_g_z;
+              
+              /* Apply diamond-difference relationships */
+              psi_lf(d,g,lf_idx) = 2.0 * psi_d_g_z - psi_lf(d,g,lf_idx);
+              psi_fr(d,g,fr_idx) = 2.0 * psi_d_g_z - psi_fr(d,g,fr_idx);
+              psi_bo(d,g,bo_idx) = 2.0 * psi_d_g_z - psi_bo(d,g,bo_idx);
+            }
+          }
+        }
+      } // group
+    } // direction
+  })); // policy
+}
+
+

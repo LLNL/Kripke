@@ -37,64 +37,76 @@
 #include<Domain/Layout.h>
 #include<Domain/Forall.h>
 
-struct FixedVariablePolicy {
-  typedef LAYOUT_JI LayoutEll;
-  typedef LAYOUT_IJ LayoutEllPlus;
+struct FixedLayoutPolicy {
+  typedef LAYOUT_JI Ell;
+  typedef LAYOUT_IJ EllPlus;
+  
+  typedef Layout3d<LAYOUT_KJI> Zone;
+  typedef Layout2d<LAYOUT_JI> Face;
 };
 
 
 template<typename T>
-struct VariablePolicy{};
+struct LayoutPolicy{};
 
 template<>
-struct VariablePolicy<NEST_DGZ_T> : public FixedVariablePolicy {
-  typedef LAYOUT_IJK LayoutPsi;
-  typedef LAYOUT_IJK LayoutPhi;
-  typedef LAYOUT_IJKL LayoutSigS;
+struct LayoutPolicy<NEST_DGZ_T> : public FixedLayoutPolicy {
+  typedef LAYOUT_IJK Psi;
+  typedef LAYOUT_IJK Phi;
+  typedef LAYOUT_IJKL SigS;
+  typedef LAYOUT_IJ SigT;
 };
 
 template<>
-struct VariablePolicy<NEST_DZG_T> : public FixedVariablePolicy {
-  typedef LAYOUT_IKJ LayoutPsi;
-  typedef LAYOUT_IKJ LayoutPhi;
-  typedef LAYOUT_ILJK LayoutSigS;
+struct LayoutPolicy<NEST_DZG_T> : public FixedLayoutPolicy {
+  typedef LAYOUT_IKJ Psi;
+  typedef LAYOUT_IKJ Phi;
+  typedef LAYOUT_ILJK SigS;
+  typedef LAYOUT_JI SigT;
 };
 
 template<>
-struct VariablePolicy<NEST_GDZ_T> : public FixedVariablePolicy {
-  typedef LAYOUT_JIK LayoutPsi;
-  typedef LAYOUT_JIK LayoutPhi;
-  typedef LAYOUT_JKIL LayoutSigS;
+struct LayoutPolicy<NEST_GDZ_T> : public FixedLayoutPolicy {
+  typedef LAYOUT_JIK Psi;
+  typedef LAYOUT_JIK Phi;
+  typedef LAYOUT_JKIL SigS;
+  typedef LAYOUT_IJ SigT;
 };
 
 template<>
-struct VariablePolicy<NEST_GZD_T> : public FixedVariablePolicy {
-  typedef LAYOUT_JKI LayoutPsi;
-  typedef LAYOUT_JKI LayoutPhi;
-  typedef LAYOUT_JKLI LayoutSigS;
+struct LayoutPolicy<NEST_GZD_T> : public FixedLayoutPolicy {
+  typedef LAYOUT_JKI Psi;
+  typedef LAYOUT_JKI Phi;
+  typedef LAYOUT_JKLI SigS;
+  typedef LAYOUT_IJ SigT;
 };
 
 template<>
-struct VariablePolicy<NEST_ZDG_T> : public FixedVariablePolicy {
-  typedef LAYOUT_KIJ LayoutPsi;
-  typedef LAYOUT_KIJ LayoutPhi;
-  typedef LAYOUT_LIJK LayoutSigS;
+struct LayoutPolicy<NEST_ZDG_T> : public FixedLayoutPolicy {
+  typedef LAYOUT_KIJ Psi;
+  typedef LAYOUT_KIJ Phi;
+  typedef LAYOUT_LIJK SigS;
+  typedef LAYOUT_JI SigT;
 };
 
 template<>
-struct VariablePolicy<NEST_ZGD_T> : public FixedVariablePolicy {
-  typedef LAYOUT_KJI LayoutPsi;
-  typedef LAYOUT_KJI LayoutPhi;
-  typedef LAYOUT_LJKI LayoutSigS;  
+struct LayoutPolicy<NEST_ZGD_T> : public FixedLayoutPolicy {
+  typedef LAYOUT_KJI Psi;
+  typedef LAYOUT_KJI Phi;
+  typedef LAYOUT_LJKI SigS;
+  typedef LAYOUT_JI SigT;  
 };
+
 
 template<typename T>
-struct VariableView {
-  typedef View3d<double, typename T::LayoutPsi> Psi; // D, G, Z
-  typedef View3d<double, typename T::LayoutPsi> Phi; // NM, G, Z
-  typedef View2d<double, typename T::LayoutEll> Ell; // D, NM
-  typedef View2d<double, typename T::LayoutEllPlus> EllPlus; // D, NM  
-  typedef View4d<double, typename T::LayoutSigS> SigS; // N, G, Gp, material  
+struct ViewPolicy {
+  typedef View3d<double, typename T::Psi> Psi; // D, G, Z
+  typedef View3d<double, typename T::Psi> Face; // D, G, Z
+  typedef View3d<double, typename T::Phi> Phi; // NM, G, Z  
+  typedef View2d<double, typename T::Ell> Ell; // D, NM
+  typedef View2d<double, typename T::EllPlus> EllPlus; // D, NM  
+  typedef View4d<double, typename T::SigS> SigS; // N, G, Gp, material  
+  typedef View2d<double, typename T::SigT> SigT; // G, Z
 };
 
 #endif

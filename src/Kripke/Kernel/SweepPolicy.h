@@ -30,43 +30,64 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_KERNEL_H__
-#define KRIPKE_KERNEL_H__
+#ifndef KERNEL_SWEEP_POLICY_H__
+#define KERNEL_SWEEP_POLICY_H__
 
-#include <Kripke.h>
+#include<Kripke.h>
+#include<Domain/Layout.h>
+#include<Domain/Forall.h>
 
-struct Grid_Data;
-struct SubTVec;
-struct Subdomain;
 
-/**
- * This is the Kernel base-class and interface definition.
- * This abstracts the storage of Psi, Phi, L, L+ from the rest of the code,
- * providing data-layout specific routines.
- */
-class Kernel {
-  public:
-    explicit Kernel(Nesting_Order nest);
-    virtual ~Kernel();
-    virtual Nesting_Order nestingPsi(void) const = 0;
-    virtual Nesting_Order nestingPhi(void) const = 0;
-    virtual Nesting_Order nestingSigt(void) const = 0;
-    virtual Nesting_Order nestingEll(void) const = 0;
-    virtual Nesting_Order nestingEllPlus(void) const = 0;
-    virtual Nesting_Order nestingSigs(void) const = 0;
+template<typename T>
+struct SweepPolicy{};
 
-    // Computational Kernels
-    void LTimes(Grid_Data *grid_data);
-    void LPlusTimes(Grid_Data *grid_data);
-    void scattering(Grid_Data *grid_data);
-    void source(Grid_Data *grid_data);
-    virtual void sweep(Subdomain *ga_set);
-  private:
-    Nesting_Order nesting_order;
+template<>
+struct SweepPolicy<NEST_DGZ_T>{ // g, d, z
+  typedef LAYOUT_IJK layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
 };
 
+template<>
+struct SweepPolicy<NEST_DZG_T>{ // g, d, z
+  typedef LAYOUT_IKJ layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+};
 
-// Factory to create correct kernel object
-Kernel *createKernel(Nesting_Order, int num_dims);
+template<>
+struct SweepPolicy<NEST_GDZ_T>{ // g, d, z
+  typedef LAYOUT_JIK layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+};
+
+template<>
+struct SweepPolicy<NEST_GZD_T>{ // g, d, z
+  typedef LAYOUT_JKI layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+};
+
+template<>
+struct SweepPolicy<NEST_ZDG_T>{ // g, d, z
+  typedef LAYOUT_KIJ layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+};
+
+template<>
+struct SweepPolicy<NEST_ZGD_T>{ // g, d, z
+  typedef LAYOUT_KJI layout;
+  typedef seq_pol pol_i;
+  typedef seq_pol pol_j;
+  typedef seq_pol pol_k;
+};
+
 
 #endif
