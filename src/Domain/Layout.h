@@ -98,8 +98,7 @@
     template<typename T, typename L>
     struct View1d {
         inline View1d(T *data_ptr, int ni);
-        inline T const &operator()(int i) const;
-        inline T &operator()(int i);
+        inline T &operator()(int i) const;
 
         Layout1d<L> const layout;
         T *data;
@@ -108,8 +107,7 @@
     template<typename T, typename L>
     struct View2d {
         inline View2d(T *data_ptr, int ni, int nj);
-        inline T const &operator()(int i, int j) const;
-        inline T &operator()(int i, int j);
+        inline T &operator()(int i, int j) const;
 
         Layout2d<L> const layout;
         T *data;
@@ -118,8 +116,7 @@
     template<typename T, typename L>
     struct View3d {
         inline View3d(T *data_ptr, int ni, int nj, int nk);
-        inline T const &operator()(int i, int j, int k) const;
-        inline T &operator()(int i, int j, int k);
+        inline T &operator()(int i, int j, int k) const;
 
         Layout3d<L> const layout;
         T *data;
@@ -128,8 +125,7 @@
     template<typename T, typename L>
     struct View4d {
         inline View4d(T *data_ptr, int ni, int nj, int nk, int nl);
-        inline T const &operator()(int i, int j, int k, int l) const;
-        inline T &operator()(int i, int j, int k, int l);
+        inline T &operator()(int i, int j, int k, int l) const;
 
         Layout4d<L> const layout;
         T *data;
@@ -868,12 +864,7 @@
       }
 
       template<typename T, typename L>
-      inline T const &View1d<T,L>::operator()(int i) const {
-        return(data[layout(i)]);
-      }
-
-      template<typename T, typename L>
-      inline T &View1d<T,L>::operator()(int i){
+      inline T &View1d<T,L>::operator()(int i) const {
         return(data[layout(i)]);
       }
 
@@ -890,12 +881,7 @@
       }
 
       template<typename T, typename L>
-      inline T const &View2d<T,L>::operator()(int i, int j) const {
-        return(data[layout(i, j)]);
-      }
-
-      template<typename T, typename L>
-      inline T &View2d<T,L>::operator()(int i, int j){
+      inline T &View2d<T,L>::operator()(int i, int j) const {
         return(data[layout(i, j)]);
       }
 
@@ -912,12 +898,7 @@
       }
 
       template<typename T, typename L>
-      inline T const &View3d<T,L>::operator()(int i, int j, int k) const {
-        return(data[layout(i, j, k)]);
-      }
-
-      template<typename T, typename L>
-      inline T &View3d<T,L>::operator()(int i, int j, int k){
+      inline T &View3d<T,L>::operator()(int i, int j, int k) const {
         return(data[layout(i, j, k)]);
       }
 
@@ -934,12 +915,7 @@
       }
 
       template<typename T, typename L>
-      inline T const &View4d<T,L>::operator()(int i, int j, int k, int l) const {
-        return(data[layout(i, j, k, l)]);
-      }
-
-      template<typename T, typename L>
-      inline T &View4d<T,L>::operator()(int i, int j, int k, int l){
+      inline T &View4d<T,L>::operator()(int i, int j, int k, int l) const {
         return(data[layout(i, j, k, l)]);
       }
 

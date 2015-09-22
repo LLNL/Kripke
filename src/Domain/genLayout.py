@@ -37,11 +37,6 @@ def writeEnumDecl(ndims_list):
       print "    struct %s {};" % enum    
     continue
     
-    #print "    enum LAYOUT%dD {"%ndims
-    #print "      " + ",\n      ".join(enum_names)
-    #print "    };"
-    #print ""
-
   print ""
 
 def writeLayoutDecl(ndims_list):
@@ -182,13 +177,8 @@ def writeViewDecl(ndims_list):
     # Define () Operator (const)
     args = map(lambda a: "int "+a, dim_names)
     argstr = ", ".join(args)
-    print "        inline T const &operator()(%s) const;" % argstr
+    print "        inline T &operator()(%s) const;" % argstr
     
-    # Define () Operator
-    args = map(lambda a: "int "+a, dim_names)
-    argstr = ", ".join(args)
-    print "        inline T &operator()(%s);" % argstr
-            
     # Add local variables
     print ""
     print "        Layout%dd<L> const layout;" % ndims
@@ -222,21 +212,10 @@ def writeViewImpl(ndims_list):
     print ""
 
     # Define () Operator (const)
-    if True:
-      args = map(lambda a: "int "+a, dim_names)
-      argstr = ", ".join(args)      
-      print "      template<typename T, typename L>"
-      print "      inline T const &View%dd<T,L>::operator()(%s) const {" % (ndims, argstr)
-      argstr = ", ".join(dim_names)
-      print "        return(data[layout(%s)]);" % argstr
-      print "      }"
-      print ""
-
-    # Define () Operator   
     args = map(lambda a: "int "+a, dim_names)
     argstr = ", ".join(args)      
     print "      template<typename T, typename L>"
-    print "      inline T &View%dd<T,L>::operator()(%s){" % (ndims, argstr)
+    print "      inline T &View%dd<T,L>::operator()(%s) const {" % (ndims, argstr)
     argstr = ", ".join(dim_names)
     print "        return(data[layout(%s)]);" % argstr
     print "      }"
