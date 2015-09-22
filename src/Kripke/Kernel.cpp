@@ -105,7 +105,7 @@ void Kernel::LTimes(Grid_Data *grid_data) {
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
 
-    getNestType(nesting_order, nest_type, [&](){
+    policyScope(nesting_order, nest_type, [&](){
       typedef VariablePolicy<nest_type> VPOL;
       typedef VariableView<VPOL> VIEW;
                  
@@ -149,7 +149,7 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
 
-    getNestType(nesting_order, nest_type, ([&](){
+    policyScope(nesting_order, nest_type, ([&](){
       typedef VariablePolicy<nest_type> VPOL;
       typedef VariableView<VPOL> VIEW;      
       // Get pointers
@@ -195,7 +195,7 @@ void Kernel::scattering(Grid_Data *grid_data){
     int num_moments = grid_data->total_num_moments;
     int legendre_order = grid_data->legendre_order;
 
-    getNestType(nesting_order, nest_type, ([&](){
+    policyScope(nesting_order, nest_type, ([&](){
       typedef VariablePolicy<nest_type> VPOL;
       typedef VariableView<VPOL> VIEW;
 
@@ -247,7 +247,7 @@ void Kernel::source(Grid_Data *grid_data){
     int num_groups = sdom.phi_out->groups;
     int num_moments = grid_data->total_num_moments;
     
-    getNestType(nesting_order, nest_type, ([&](){
+    policyScope(nesting_order, nest_type, ([&](){
       typedef VariablePolicy<nest_type> VPOL;
       typedef VariableView<VPOL> VIEW;
     
