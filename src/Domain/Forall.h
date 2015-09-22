@@ -1,6 +1,9 @@
 #ifndef DOMAIN_FORALL_H__
 #define DOMAIN_FORALL_H__
 
+#include<Domain/Layout.h>
+#include<Domain/View.h>
+
 struct seq_pol{};
 struct omp_pol{};
 

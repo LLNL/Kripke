@@ -33,8 +33,7 @@
 #include<Kripke/Kernel/Kernel_3d_DGZ.h>
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
-#include<Domain/Layout.h>
-#include<Domain/Forall.h>
+#include<Domain/View.h>
 
 Kernel_3d_DGZ::Kernel_3d_DGZ() :
   Kernel(NEST_DGZ)

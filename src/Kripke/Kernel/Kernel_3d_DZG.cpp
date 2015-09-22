@@ -33,8 +33,7 @@
 #include<Kripke/Kernel/Kernel_3d_DZG.h>
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
-#include<Domain/Layout.h>
-#include<Domain/Forall.h>
+#include<Domain/View.h>
 
 Kernel_3d_DZG::Kernel_3d_DZG() :
   Kernel(NEST_DZG)

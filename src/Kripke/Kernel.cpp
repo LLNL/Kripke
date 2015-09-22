@@ -34,8 +34,9 @@
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 
-#include<Domain/Layout.h>
+#include<Domain/View.h>
 #include<Domain/Forall.h>
+
 
 
 #include<Kripke/Kernel/Kernel_3d_GDZ.h>
