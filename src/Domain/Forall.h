@@ -7,6 +7,12 @@
 struct seq_pol{};
 struct omp_pol{};
 
+
+template<typename POL, typename BODY>
+inline void forall(int start, int end, BODY const &body){
+  forall(POL(), start, end, body);
+}
+
 template<typename BODY>
 inline void forall(seq_pol const &pol, int start, int end, BODY const &body){
   for(int i = start;i < end;++ i){
@@ -24,11 +30,7 @@ inline void forall(omp_pol const &pol, int start, int end, BODY const &body){
   }
 }
 
-// TODO: How does Kokkos deal with capture by value and constness of Views?
-template<typename POL, typename BODY>
-inline void forall(int start, int end, BODY const &body){
-  forall(POL(), start, end, body);
-} 
+
 
 
 
