@@ -7,9 +7,16 @@
 
     template<typename POLICY, typename BODY>
     inline void forall2(int end_i, int end_j, BODY const &body){
-      typedef typename POLICY::layout L;
+      typedef typename POLICY::LoopOrder L;
       forall2<POLICY, BODY>(L(), end_i, end_j, body);
     }
+    template<typename LOOP_ORDER, typename POL_I, typename POL_J>
+    struct ForallPolicy2 {
+      typedef LOOP_ORDER LoopOrder;
+      typedef POL_I pol_i;
+      typedef POL_J pol_j;
+    };
+
 
 /******************************************************************
  *  Implementation for permutations of forall2()

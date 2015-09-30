@@ -39,61 +39,31 @@
 
 
 template<typename T>
-struct ScatteringPolicy{};
+struct ScatteringPolicy{}; // nm, g, gp, mat
 
 template<>
-struct ScatteringPolicy<NEST_DGZ_T>{ // nm, g, gp, mat
-  typedef LAYOUT_IJKL layout;
-  typedef seq_pol pol_i;
-  typedef omp_pol pol_j;
-  typedef seq_pol pol_k;
-  typedef seq_pol pol_l;
-};
+struct ScatteringPolicy<NEST_DGZ_T> : ForallPolicy4<LAYOUT_IJKL, seq_pol, omp_pol, seq_pol, seq_pol> 
+{};
 
 template<>
-struct ScatteringPolicy<NEST_DZG_T>{ // nm, g, gp, mat
-  typedef LAYOUT_ILJK layout;
-  typedef omp_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-  typedef seq_pol pol_l;
-};
+struct ScatteringPolicy<NEST_DZG_T> : ForallPolicy4<LAYOUT_ILJK, omp_pol, seq_pol, seq_pol, seq_pol> 
+{};
 
 template<>
-struct ScatteringPolicy<NEST_GDZ_T>{ // nm, g, gp, mat
-  typedef LAYOUT_JKIL layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-  typedef seq_pol pol_l;
-};
+struct ScatteringPolicy<NEST_GDZ_T> : ForallPolicy4<LAYOUT_JKIL, seq_pol, seq_pol, seq_pol, seq_pol> 
+{};
 
 template<>
-struct ScatteringPolicy<NEST_GZD_T>{ // nm, g, gp, mat
-  typedef LAYOUT_JKLI layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-  typedef seq_pol pol_l;
-};
+struct ScatteringPolicy<NEST_GZD_T> : ForallPolicy4<LAYOUT_JKLI, seq_pol, seq_pol, seq_pol, seq_pol> 
+{};
 
 template<>
-struct ScatteringPolicy<NEST_ZDG_T>{ // nm, g, gp, mat
-  typedef LAYOUT_LIJK layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-  typedef seq_pol pol_l;
-};
+struct ScatteringPolicy<NEST_ZDG_T> : ForallPolicy4<LAYOUT_LIJK, seq_pol, seq_pol, seq_pol, seq_pol> 
+{};
 
 template<>
-struct ScatteringPolicy<NEST_ZGD_T>{ // nm, g, gp, mat
-  typedef LAYOUT_LJKI layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-  typedef omp_pol pol_l;
-};
+struct ScatteringPolicy<NEST_ZGD_T> : ForallPolicy4<LAYOUT_LJKI, seq_pol, omp_pol, seq_pol, omp_pol> 
+{};
 
 
 #endif

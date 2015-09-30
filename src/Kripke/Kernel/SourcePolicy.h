@@ -39,49 +39,30 @@
 
 
 template<typename T>
-struct SourcePolicy{};
+struct SourcePolicy{}; // g,mix
 
 template<>
-struct SourcePolicy<NEST_DGZ_T>{ // g,mix
-  typedef LAYOUT_IJ layout;
-  typedef omp_pol pol_i;
-  typedef seq_pol pol_j;
-};
+struct SourcePolicy<NEST_DGZ_T> : ForallPolicy2<LAYOUT_IJ, omp_pol, seq_pol>
+{};
 
 template<>
-struct SourcePolicy<NEST_DZG_T>{ // g,mix
-  typedef LAYOUT_JI layout;
-  typedef omp_pol pol_i;
-  typedef seq_pol pol_j;
-};
+struct SourcePolicy<NEST_DZG_T> : ForallPolicy2<LAYOUT_JI, omp_pol, seq_pol>
+{};
 
 template<>
-struct SourcePolicy<NEST_GDZ_T>{ // g,mix
-  typedef LAYOUT_IJ layout;
-  typedef omp_pol pol_i;
-  typedef seq_pol pol_j;
-};
+struct SourcePolicy<NEST_GDZ_T> : ForallPolicy2<LAYOUT_IJ, omp_pol, seq_pol>
+{};
 
 template<>
-struct SourcePolicy<NEST_GZD_T>{ // g,mix
-  typedef LAYOUT_IJ layout;
-  typedef omp_pol pol_i;
-  typedef seq_pol pol_j;
-};
+struct SourcePolicy<NEST_GZD_T> : ForallPolicy2<LAYOUT_IJ, omp_pol, seq_pol>
+{};
 
 template<>
-struct SourcePolicy<NEST_ZDG_T>{ // g,mix
-  typedef LAYOUT_JI layout;
-  typedef omp_pol pol_i;
-  typedef seq_pol pol_j;
-};
+struct SourcePolicy<NEST_ZDG_T> : ForallPolicy2<LAYOUT_JI, omp_pol, seq_pol>
+{};
 
 template<>
-struct SourcePolicy<NEST_ZGD_T>{ // g,mix
-  typedef LAYOUT_JI layout;
-  typedef omp_pol pol_i;
-  typedef seq_pol pol_j;
-};
-
+struct SourcePolicy<NEST_ZGD_T> : ForallPolicy2<LAYOUT_JI, omp_pol, seq_pol>
+{};
 
 #endif

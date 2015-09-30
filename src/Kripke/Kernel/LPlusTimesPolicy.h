@@ -39,61 +39,31 @@
 
 
 template<typename T>
-struct LPlusTimesPolicy{};
+struct LPlusTimesPolicy{}; // nm, d, g, z
 
 template<>
-struct LPlusTimesPolicy<NEST_DGZ_T>{ // nm, d, g, z
-  typedef LAYOUT_JIKL layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
+struct LPlusTimesPolicy<NEST_DGZ_T> : ForallPolicy4<LAYOUT_JIKL, seq_pol, seq_pol, omp_pol, seq_pol> 
+{};
 
 template<>
-struct LPlusTimesPolicy<NEST_DZG_T>{ // nm, d, g, z
-  typedef LAYOUT_JILK layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-  typedef omp_pol pol_l;
-};
+struct LPlusTimesPolicy<NEST_DZG_T> : ForallPolicy4<LAYOUT_JILK, seq_pol, seq_pol, seq_pol, omp_pol> 
+{};
 
 template<>
-struct LPlusTimesPolicy<NEST_GDZ_T>{ // nm, d, g, z
-  typedef LAYOUT_KJIL layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
+struct LPlusTimesPolicy<NEST_GDZ_T> : ForallPolicy4<LAYOUT_KJIL, seq_pol, seq_pol, omp_pol, seq_pol> 
+{};
 
 template<>
-struct LPlusTimesPolicy<NEST_GZD_T>{ // nm, d, g, z
-  typedef LAYOUT_KLJI layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef omp_pol pol_k;
-  typedef seq_pol pol_l;
-};
+struct LPlusTimesPolicy<NEST_GZD_T> : ForallPolicy4<LAYOUT_KLJI, seq_pol, seq_pol, omp_pol, seq_pol> 
+{};
 
 template<>
-struct LPlusTimesPolicy<NEST_ZDG_T>{ // nm, d, g, z
-  typedef LAYOUT_LJIK layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-  typedef omp_pol pol_l;
-};
+struct LPlusTimesPolicy<NEST_ZDG_T> : ForallPolicy4<LAYOUT_LJIK, seq_pol, seq_pol, seq_pol, omp_pol> 
+{};
 
 template<>
-struct LPlusTimesPolicy<NEST_ZGD_T>{ // nm, d, g, z
-  typedef LAYOUT_LKJI layout;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-  typedef omp_pol pol_l;
-};
+struct LPlusTimesPolicy<NEST_ZGD_T> : ForallPolicy4<LAYOUT_LKJI, seq_pol, seq_pol, seq_pol, omp_pol> 
+{};
 
 
 #endif
