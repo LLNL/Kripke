@@ -15,8 +15,8 @@ typedef seq_pol omp_pol;
 
 // Include nested forall's
 #include<Domain/Forall2.h>
+#include<Domain/Forall3.h>
 #include<Domain/Forall4.h>
-
 
 #endif
 
