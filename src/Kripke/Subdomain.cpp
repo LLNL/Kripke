@@ -347,6 +347,88 @@ void Subdomain::computeSweepIndexSet(void){
     sweep_block.end_k = -1;
     sweep_block.inc_k = -1;
   }
+
+  sweep_block.indexset_sweep = RAJA::IndexSet();
+  int N = nzones[0];
+  if (nzones[1] > N) N=nzones[1];
+  if (nzones[2] > N) N=nzones[2];
+
+  int i_inc = sweep_block.inc_i;
+  int j_inc = sweep_block.inc_j;
+  int k_inc = sweep_block.inc_k;
+  int i_min, i_max, j_min, j_max, k_min, k_max;
+  int counter = 0;
+  int Nslices = 0;
+  int offset[3*N+4];
+  offset[0] = 0;
+
+  if ( i_inc == 1){
+    i_min = sweep_block.start_i;
+    i_max = sweep_block.end_i-1;
+  }
+  else{
+    i_min = sweep_block.end_i+1;
+    i_max = sweep_block.start_i;
+  }
+  if ( j_inc == 1){
+    j_min = sweep_block.start_j;
+    j_max = sweep_block.end_j-1;
+  }
+  else{
+    j_min = sweep_block.end_j+1;
+    j_max = sweep_block.start_j;
+  }
+  if ( k_inc == 1){
+    k_min = sweep_block.start_k;
+    k_max = sweep_block.end_k-1;
+  }
+  else{
+    k_min = sweep_block.end_k+1;
+    k_max = sweep_block.start_k;
+  }
+  int ii_tmp = (1 - i_inc)/2*i_max;
+  int jj_tmp = (1 - j_inc)/2*j_max;
+  int kk_tmp = (1 - k_inc)/2*k_max;
+
+
+  //sweep_block.ii_jj_kk_z_idx = new int[nzones[0]*nzones[1]*nzones[2]*4];
+  sweep_block.idx_to_i = new int[nzones[0]*nzones[1]*nzones[2]];
+  sweep_block.idx_to_j = new int[nzones[0]*nzones[1]*nzones[2]];
+  sweep_block.idx_to_k = new int[nzones[0]*nzones[1]*nzones[2]];
+  sweep_block.idx_to_z = new int[nzones[0]*nzones[1]*nzones[2]];
+
+  for (int C = 0; C <=(3*N); ++C){   //for each C we can touch zone["i","j","k"]  as well as "d" and "group"    in parallel
+   int FLAG=0;
+   RAJA::IndexSet slice_index_set;
+   for (int i = 0; i <= C; ++i){
+     for (int j = 0; j <= C; ++j){
+        int k = C - i - j; // surface equation i+j+j=C
+        //flip if needed
+
+        int ii = ii_tmp + i*i_inc;
+        int jj = jj_tmp + j*j_inc;
+        int kk = kk_tmp + k*k_inc;
+
+        if (ii <= i_max && jj <= j_max && kk <= k_max && ii >= i_min && jj >= j_min && kk >= k_min){
+
+          sweep_block.idx_to_i[counter] = ii;
+          sweep_block.idx_to_j[counter] = jj;
+          sweep_block.idx_to_k[counter] = kk;
+          sweep_block.idx_to_z[counter] = ii + nzones[0]*jj + nzones[0]*nzones[1]*kk;//  Zonal_INDEX(ii, jj, kk);
+          counter++; //counts all elements
+          FLAG++;   //counts elements per slice
+       }
+     }
+   }
+   if (FLAG){
+      Nslices++;
+      offset[Nslices] = offset[Nslices-1] + FLAG;
+
+      // an index set which describes each hyperplane as a RangeSegment
+      sweep_block.indexset_sweep.push_back(
+          RAJA::RangeSegment(offset[Nslices-1], offset[Nslices]));
+   }
+ }
 }
 
 namespace {

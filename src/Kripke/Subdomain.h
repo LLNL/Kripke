@@ -35,6 +35,7 @@
 
 #include <vector>
 #include <Kripke/Layout.h>
+#include <RAJA/IndexSet.hxx>
 
 // Foreward Decl
 struct Directions;
@@ -51,6 +52,15 @@ struct Grid_Sweep_Block {
   int start_i, start_j, start_k; // starting index
   int end_i, end_j, end_k; // termination conditon (one past)
   int inc_i, inc_j, inc_k; // increment
+
+  // Index set to describe sweep iteration pattern
+  RAJA::IndexSet indexset_sweep;
+
+  // mappings from index set back to zones and i,j,k
+  int *idx_to_i;
+  int *idx_to_j;
+  int *idx_to_k;
+  int *idx_to_z;
 };
 
 

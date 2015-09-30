@@ -60,7 +60,7 @@ class Kernel {
     void LPlusTimes(Grid_Data *grid_data);
     void scattering(Grid_Data *grid_data);
     void source(Grid_Data *grid_data);
-    virtual void sweep(Subdomain *ga_set);
+    void sweep(Subdomain *ga_set);
   private:
     Nesting_Order nesting_order;
 };

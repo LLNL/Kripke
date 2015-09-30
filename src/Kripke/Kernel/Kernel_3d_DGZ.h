@@ -46,8 +46,6 @@ class Kernel_3d_DGZ : public Kernel {
     virtual Nesting_Order nestingEll(void) const;
     virtual Nesting_Order nestingEllPlus(void) const;
     virtual Nesting_Order nestingSigs(void) const;
-        
-    virtual void sweep(Subdomain *ga_set);
 };
 
 #endif

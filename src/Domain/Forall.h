@@ -12,6 +12,8 @@ typedef RAJA::seq_exec seq_pol;
 
 typedef seq_pol omp_pol;
 
+typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::seq_exec> sweep_seq_pol;
+
 
 // Include nested forall's
 #include<Domain/Forall2.h>

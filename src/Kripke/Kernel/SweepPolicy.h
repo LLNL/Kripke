@@ -39,55 +39,31 @@
 
 
 template<typename T>
-struct SweepPolicy{};
+struct SweepPolicy{}; // d, g, z
 
 template<>
-struct SweepPolicy<NEST_DGZ_T>{ // g, d, z
-  typedef PERM_IJK LoopOrder;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-};
+struct SweepPolicy<NEST_DGZ_T> : ForallPolicy3<PERM_IJK, seq_pol, seq_pol, sweep_seq_pol>
+{};
 
 template<>
-struct SweepPolicy<NEST_DZG_T>{ // g, d, z
-  typedef PERM_IKJ LoopOrder;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-};
+struct SweepPolicy<NEST_DZG_T> : ForallPolicy3<PERM_IKJ, seq_pol, seq_pol, sweep_seq_pol>
+{};
 
 template<>
-struct SweepPolicy<NEST_GDZ_T>{ // g, d, z
-  typedef PERM_JIK LoopOrder;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-};
+struct SweepPolicy<NEST_GDZ_T> : ForallPolicy3<PERM_JIK, seq_pol, seq_pol, sweep_seq_pol>
+{};
 
 template<>
-struct SweepPolicy<NEST_GZD_T>{ // g, d, z
-  typedef PERM_JKI LoopOrder;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-};
+struct SweepPolicy<NEST_GZD_T> : ForallPolicy3<PERM_JKI, seq_pol, seq_pol, sweep_seq_pol>
+{};
 
 template<>
-struct SweepPolicy<NEST_ZDG_T>{ // g, d, z
-  typedef PERM_KIJ LoopOrder;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-};
+struct SweepPolicy<NEST_ZDG_T> : ForallPolicy3<PERM_KIJ, seq_pol, seq_pol, sweep_seq_pol>
+{};
 
 template<>
-struct SweepPolicy<NEST_ZGD_T>{ // g, d, z
-  typedef PERM_KJI LoopOrder;
-  typedef seq_pol pol_i;
-  typedef seq_pol pol_j;
-  typedef seq_pol pol_k;
-};
+struct SweepPolicy<NEST_ZGD_T> : ForallPolicy3<PERM_KJI, seq_pol, seq_pol, sweep_seq_pol>
+{};
 
 
 #endif

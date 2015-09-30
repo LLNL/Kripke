@@ -327,41 +327,40 @@ void Kernel::sweep(Subdomain *sdom) {
     Grid_Sweep_Block const &extent = sdom->sweep_block;
 
     // TODO: We really need the RAJA::IndexSet concept to deal with zone iteration pattern
-///    forall3<SweepPolicy<nest_type> >(num_directions, num_groups, num_zones,
-//        [=](int d, int g, int z_idz){
-    for (int d = 0; d < num_directions; ++d) {
-      for (int g = 0; g < num_groups; ++g) {
-        for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {               
-          for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {          
-            for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
-              double const xcos_dxi = 2.0 * direction[d].xcos / dx(i + 1);
-              double const ycos_dyj = 2.0 * direction[d].ycos / dy(j + 1);
-              double const zcos_dzk = 2.0 * direction[d].zcos / dz(k + 1);
-              
-              int const z_idx = zone_layout(i,j,k);            
-              int const lf_idx = i_layout(j,k);
-              int const fr_idx = j_layout(i,k);
-              int const bo_idx = k_layout(i,j);
+    forall3<SweepPolicy<nest_type> >(
+      RAJA::RangeSegment(0, num_directions),
+      RAJA::RangeSegment(0, num_groups),
+      extent.indexset_sweep,
+      [=](int d, int g, int zone_idx){
 
-              /* Calculate new zonal flux */
-              double const psi_d_g_z = (
-                    rhs(d,g,z_idx)                  
-                  + psi_lf(d,g,lf_idx) * xcos_dxi
-                  + psi_fr(d,g,fr_idx) * ycos_dyj
-                  + psi_bo(d,g,bo_idx) * zcos_dzk)
-                  / (xcos_dxi + ycos_dyj + zcos_dzk + sigt(g,z_idx) );
+        int i = extent.idx_to_i[zone_idx];
+        int j = extent.idx_to_j[zone_idx];
+        int k = extent.idx_to_k[zone_idx];
 
-              psi(d,g,z_idx) = psi_d_g_z;
-              
-              /* Apply diamond-difference relationships */
-              psi_lf(d,g,lf_idx) = 2.0 * psi_d_g_z - psi_lf(d,g,lf_idx);
-              psi_fr(d,g,fr_idx) = 2.0 * psi_d_g_z - psi_fr(d,g,fr_idx);
-              psi_bo(d,g,bo_idx) = 2.0 * psi_d_g_z - psi_bo(d,g,bo_idx);
-            }
-          }
-        }
-      } // group
-    } // direction
+        double const xcos_dxi = 2.0 * direction[d].xcos / dx(i + 1);
+        double const ycos_dyj = 2.0 * direction[d].ycos / dy(j + 1);
+        double const zcos_dzk = 2.0 * direction[d].zcos / dz(k + 1);
+
+        int const z_idx = zone_layout(i,j,k);
+        int const lf_idx = i_layout(j,k);
+        int const fr_idx = j_layout(i,k);
+        int const bo_idx = k_layout(i,j);
+
+        /* Calculate new zonal flux */
+        double const psi_d_g_z = (
+              rhs(d,g,z_idx)
+            + psi_lf(d,g,lf_idx) * xcos_dxi
+            + psi_fr(d,g,fr_idx) * ycos_dyj
+            + psi_bo(d,g,bo_idx) * zcos_dzk)
+            / (xcos_dxi + ycos_dyj + zcos_dzk + sigt(g,z_idx) );
+
+        psi(d,g,z_idx) = psi_d_g_z;
+
+        /* Apply diamond-difference relationships */
+        psi_lf(d,g,lf_idx) = 2.0 * psi_d_g_z - psi_lf(d,g,lf_idx);
+        psi_fr(d,g,fr_idx) = 2.0 * psi_d_g_z - psi_fr(d,g,fr_idx);
+        psi_bo(d,g,bo_idx) = 2.0 * psi_d_g_z - psi_bo(d,g,bo_idx);
+    }); // forall3
   })); // policy
 }
 
