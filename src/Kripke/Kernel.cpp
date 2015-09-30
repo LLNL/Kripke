@@ -37,7 +37,7 @@
 #include<Domain/View.h>
 #include<Domain/Forall.h>
 
-
+#include<RAJA/RAJA.hxx>
 
 #include<Kripke/Kernel/Kernel_3d_GDZ.h>
 #include<Kripke/Kernel/Kernel_3d_DGZ.h>
