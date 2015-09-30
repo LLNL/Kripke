@@ -33,7 +33,7 @@ def writeForallPolicy(ndims):
   argstr = ", ".join(args)
   print "      typedef LOOP_ORDER LoopOrder;"
   for dim in dim_names:
-    print "      typedef POL_%s pol_%s;" % (dim.upper(), dim)
+    print "      typedef POL_%s Policy%s;" % (dim.upper(), dim.upper())
   print "    };"
   print ""
   
@@ -66,7 +66,7 @@ def writeForallImpl(ndims):
     closing = []
     for i in range(0,ndims):
       d = perm[i]
-      print "%s      forall<typename POLICY::pol_%s>(0, end_%s, [=](int %s){" % (indent, d, d, d)
+      print "%s      forall<typename POLICY::Policy%s>(0, end_%s, [=](int %s){" % (indent, d.upper(), d, d)
       closing.append("%s      });" % indent)
       indent = indent + "  "
     

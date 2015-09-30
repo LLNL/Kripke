@@ -13,8 +13,8 @@
     template<typename LOOP_ORDER, typename POL_I, typename POL_J>
     struct ForallPolicy2 {
       typedef LOOP_ORDER LoopOrder;
-      typedef POL_I pol_i;
-      typedef POL_J pol_j;
+      typedef POL_I PolicyI;
+      typedef POL_J PolicyJ;
     };
 
 
@@ -24,8 +24,8 @@
 
       template<typename POLICY, typename BODY>
       inline void forall2(LAYOUT_IJ, int end_i, int end_j, BODY const &body){
-        forall<typename POLICY::pol_i>(0, end_i, [=](int i){
-          forall<typename POLICY::pol_j>(0, end_j, [=](int j){
+        forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
+          forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
             body(i, j);
           });
         });
@@ -33,8 +33,8 @@
 
       template<typename POLICY, typename BODY>
       inline void forall2(LAYOUT_JI, int end_i, int end_j, BODY const &body){
-        forall<typename POLICY::pol_j>(0, end_j, [=](int j){
-          forall<typename POLICY::pol_i>(0, end_i, [=](int i){
+        forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
+          forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
             body(i, j);
           });
         });
