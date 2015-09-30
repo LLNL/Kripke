@@ -8,16 +8,24 @@ def writeForallBase(ndims):
 
   dim_names = getDimNames(ndims)
 
-  args = map(lambda a: "int end_"+a, dim_names)
+  
+  args = map(lambda a: "typename T"+a.upper(), dim_names)
+  argstr = ", ".join(args)    
+  print "    template<typename POLICY, %s, typename BODY>" % argstr
+  
+  args = map(lambda a: "T%s const &is_%s"%(a.upper(), a), dim_names)
   argstr = ", ".join(args)
-  print "    template<typename POLICY, typename BODY>"
   print "    inline void forall%d(%s, BODY const &body){" % (ndims, argstr)
   
-  args = map(lambda a: "end_"+a, dim_names)
-  argstr = ", ".join(args)
+  args = map(lambda a: "T"+a.upper(), dim_names)
+  argstr = ", ".join(args)    
+  
+  args = map(lambda a: "is_"+a, dim_names)
+  argstr2 = ", ".join(args)
   print "      typedef typename POLICY::LoopOrder L;"
-  print "      forall%d<POLICY, BODY>(L(), %s, body);" % (ndims, argstr)
-  print "    }"
+  print "      forall%d<POLICY, %s, BODY>(L(), %s, body);" % (ndims, argstr, argstr2)
+  print "    }"  
+  print ""
 
 
 def writeForallPolicy(ndims):
@@ -56,9 +64,12 @@ def writeForallImpl(ndims):
     enum = getEnumName(perm)
   
     # print function declaration
-    args = map(lambda a: "int end_"+a, dim_names)
+    args = map(lambda a: "typename T"+a.upper(), dim_names)
     argstr = ", ".join(args)    
-    print "      template<typename POLICY, typename BODY>"
+    print "      template<typename POLICY, %s, typename BODY>" % argstr
+    
+    args = map(lambda a: "T%s const &is_%s"%(a.upper(), a), dim_names)
+    argstr = ", ".join(args)    
     print "      inline void forall%d(%s, %s, BODY const &body){" % (ndims, enum, argstr)    
     
     # print each nested "forall" loop
@@ -66,8 +77,8 @@ def writeForallImpl(ndims):
     closing = []
     for i in range(0,ndims):
       d = perm[i]
-      #print "%s      RAJA::forall<typename POLICY::Policy%s>(RAJA::RangeSegment(0, end_%s), [=](int %s){" % (indent, d.upper(), d, d)
-      print "%s      RAJA::forall<typename POLICY::Policy%s>(0, end_%s, [=](int %s){" % (indent, d.upper(), d, d)
+      #print "%s      RAJA::forall<typename POLICY::Policy%s>(RAJA::RangeSegment(0, end_%s), [=](int %s){" % (indent, d.upper(), d, d)  
+      print "%s      RAJA::forall<typename POLICY::Policy%s>(is_%s, [=](int %s){" % (indent, d.upper(), d, d)      
       closing.append("%s      });" % indent)
       indent = indent + "  "
     

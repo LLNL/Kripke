@@ -6,11 +6,12 @@
 #include<RAJA/RAJA.hxx>
 
 
-    template<typename POLICY, typename BODY>
-    inline void forall2(int end_i, int end_j, BODY const &body){
+    template<typename POLICY, typename TI, typename TJ, typename BODY>
+    inline void forall2(TI const &is_i, TJ const &is_j, BODY const &body){
       typedef typename POLICY::LoopOrder L;
-      forall2<POLICY, BODY>(L(), end_i, end_j, body);
+      forall2<POLICY, TI, TJ, BODY>(L(), is_i, is_j, body);
     }
+
     template<typename LOOP_ORDER, typename POL_I, typename POL_J>
     struct ForallPolicy2 {
       typedef LOOP_ORDER LoopOrder;
@@ -23,19 +24,19 @@
  *  Implementation for permutations of forall2()
  ******************************************************************/
 
-      template<typename POLICY, typename BODY>
-      inline void forall2(PERM_IJ, int end_i, int end_j, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
-          RAJA::forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
+      template<typename POLICY, typename TI, typename TJ, typename BODY>
+      inline void forall2(PERM_IJ, TI const &is_i, TJ const &is_j, BODY const &body){
+        RAJA::forall<typename POLICY::PolicyI>(is_i, [=](int i){
+          RAJA::forall<typename POLICY::PolicyJ>(is_j, [=](int j){
             body(i, j);
           });
         });
       }
 
-      template<typename POLICY, typename BODY>
-      inline void forall2(PERM_JI, int end_i, int end_j, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
-          RAJA::forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
+      template<typename POLICY, typename TI, typename TJ, typename BODY>
+      inline void forall2(PERM_JI, TI const &is_i, TJ const &is_j, BODY const &body){
+        RAJA::forall<typename POLICY::PolicyJ>(is_j, [=](int j){
+          RAJA::forall<typename POLICY::PolicyI>(is_i, [=](int i){
             body(i, j);
           });
         });

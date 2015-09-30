@@ -116,7 +116,10 @@ void Kernel::LTimes(Grid_Data *grid_data) {
       typename VIEW::Ell ell(sdom.ell->ptr(), num_local_directions, num_moments);
             
       forall4<LTimesPolicy<nest_type> >(
-        num_moments, num_local_directions, num_local_groups, num_zones, 
+        RAJA::RangeSegment(0, num_moments),
+        RAJA::RangeSegment(0, num_local_directions),
+        RAJA::RangeSegment(0, num_local_groups),
+        RAJA::RangeSegment(0, num_zones),
         [=](int nm, int d, int g, int z){
  
           phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
@@ -159,7 +162,10 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
       VIEW::EllPlus ell_plus(sdom.ell_plus->ptr(), num_local_directions, num_moments);
       
       forall4<LPlusTimesPolicy<nest_type> >(
-        num_moments, num_local_directions, num_local_groups, num_zones, 
+        RAJA::RangeSegment(0, num_moments),
+        RAJA::RangeSegment(0, num_local_directions),
+        RAJA::RangeSegment(0, num_local_groups),
+        RAJA::RangeSegment(0, num_zones),
         [=](int nm, int d, int g, int z){
  
           rhs(d,g,z) += ell_plus(d,nm) * phi_out(nm,g+group0,z);
@@ -210,7 +216,10 @@ void Kernel::scattering(Grid_Data *grid_data){
       View1d<int, PERM_I>    const moment_to_coeff(&grid_data->moment_to_coeff[0], 1);
           
       forall4<ScatteringPolicy<nest_type> >(
-        num_moments, num_groups, num_groups, num_mixed,
+        RAJA::RangeSegment(0, num_moments),
+        RAJA::RangeSegment(0, num_groups),
+        RAJA::RangeSegment(0, num_groups),
+        RAJA::RangeSegment(0, num_mixed),
         [=](int nm, int g, int gp, int mix){
         
           int n = moment_to_coeff(nm);
@@ -258,7 +267,9 @@ void Kernel::source(Grid_Data *grid_data){
       View1d<int,    PERM_I> const mixed_material(&sdom.mixed_material[0], 1);
       View1d<double, PERM_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
 
-      forall2<SourcePolicy<nest_type> >(num_groups, num_mixed,
+      forall2<SourcePolicy<nest_type> >(
+          RAJA::RangeSegment(0, num_groups),
+          RAJA::RangeSegment(0, num_mixed),
         [=](int g, int mix){
           int zone = mixed_to_zones(mix);
           int material = mixed_material(mix);
