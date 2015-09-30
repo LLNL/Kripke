@@ -3,6 +3,7 @@
 #ifndef __DOMAIN_FORALL2_H__
 #define __DOMAIN_FORALL2_H__
 
+#include<RAJA/RAJA.hxx>
 
 
     template<typename POLICY, typename BODY>
@@ -24,8 +25,8 @@
 
       template<typename POLICY, typename BODY>
       inline void forall2(PERM_IJ, int end_i, int end_j, BODY const &body){
-        forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
-          forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
+        RAJA::forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
+          RAJA::forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
             body(i, j);
           });
         });
@@ -33,8 +34,8 @@
 
       template<typename POLICY, typename BODY>
       inline void forall2(PERM_JI, int end_i, int end_j, BODY const &body){
-        forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
-          forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
+        RAJA::forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
+          RAJA::forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
             body(i, j);
           });
         });

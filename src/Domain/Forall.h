@@ -4,31 +4,13 @@
 #include<Domain/Layout.h>
 #include<Domain/View.h>
 
-struct seq_pol{};
-struct omp_pol{};
+#include<RAJA/RAJA.hxx>
 
+typedef RAJA::seq_exec seq_pol;
+//typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::seq_exec> seq_pol;
+//typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_exec, RAJA::omp_parallel_segit> omp_pol;
 
-template<typename POL, typename BODY>
-inline void forall(int start, int end, BODY const &body){
-  forall(POL(), start, end, body);
-}
-
-template<typename BODY>
-inline void forall(seq_pol const &pol, int start, int end, BODY const &body){
-  for(int i = start;i < end;++ i){
-    body(i);
-  }
-}
-
-template<typename BODY>
-inline void forall(omp_pol const &pol, int start, int end, BODY const &body){
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
-  for(int i = start;i < end;++ i){
-    body(i);
-  }
-}
+typedef seq_pol omp_pol;
 
 
 // Include nested forall's

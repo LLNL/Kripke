@@ -100,6 +100,11 @@ endif()
 #bdiv_opt_pkg(perftools 0 OFF)
 
 
+
+# RAJA Stuff
+add_definitions (-DRAJA_USE_DOUBLE -DRAJA_USE_RESTRICT_PTR -DRAJA_PLATFORM_X86_SSE -DRAJA_COMPILER_GNU)
+include_directories(./src/RAJA/includes)
+
 #
 # Other Build Options
 # 
