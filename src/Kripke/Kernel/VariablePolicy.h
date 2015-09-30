@@ -38,11 +38,11 @@
 #include<Domain/Forall.h>
 
 struct FixedLayoutPolicy {
-  typedef LAYOUT_JI Ell;
-  typedef LAYOUT_IJ EllPlus;
+  typedef PERM_JI Ell;
+  typedef PERM_IJ EllPlus;
   
-  typedef Layout3d<LAYOUT_KJI> Zone;
-  typedef Layout2d<LAYOUT_JI> Face;
+  typedef Layout3d<PERM_KJI> Zone;
+  typedef Layout2d<PERM_JI> Face;
 };
 
 
@@ -51,50 +51,50 @@ struct LayoutPolicy{};
 
 template<>
 struct LayoutPolicy<NEST_DGZ_T> : public FixedLayoutPolicy {
-  typedef LAYOUT_IJK Psi;
-  typedef LAYOUT_IJK Phi;
-  typedef LAYOUT_IJKL SigS;
-  typedef LAYOUT_IJ SigT;
+  typedef PERM_IJK Psi;
+  typedef PERM_IJK Phi;
+  typedef PERM_IJKL SigS;
+  typedef PERM_IJ SigT;
 };
 
 template<>
 struct LayoutPolicy<NEST_DZG_T> : public FixedLayoutPolicy {
-  typedef LAYOUT_IKJ Psi;
-  typedef LAYOUT_IKJ Phi;
-  typedef LAYOUT_ILJK SigS;
-  typedef LAYOUT_JI SigT;
+  typedef PERM_IKJ Psi;
+  typedef PERM_IKJ Phi;
+  typedef PERM_ILJK SigS;
+  typedef PERM_JI SigT;
 };
 
 template<>
 struct LayoutPolicy<NEST_GDZ_T> : public FixedLayoutPolicy {
-  typedef LAYOUT_JIK Psi;
-  typedef LAYOUT_JIK Phi;
-  typedef LAYOUT_JKIL SigS;
-  typedef LAYOUT_IJ SigT;
+  typedef PERM_JIK Psi;
+  typedef PERM_JIK Phi;
+  typedef PERM_JKIL SigS;
+  typedef PERM_IJ SigT;
 };
 
 template<>
 struct LayoutPolicy<NEST_GZD_T> : public FixedLayoutPolicy {
-  typedef LAYOUT_JKI Psi;
-  typedef LAYOUT_JKI Phi;
-  typedef LAYOUT_JKLI SigS;
-  typedef LAYOUT_IJ SigT;
+  typedef PERM_JKI Psi;
+  typedef PERM_JKI Phi;
+  typedef PERM_JKLI SigS;
+  typedef PERM_IJ SigT;
 };
 
 template<>
 struct LayoutPolicy<NEST_ZDG_T> : public FixedLayoutPolicy {
-  typedef LAYOUT_KIJ Psi;
-  typedef LAYOUT_KIJ Phi;
-  typedef LAYOUT_LIJK SigS;
-  typedef LAYOUT_JI SigT;
+  typedef PERM_KIJ Psi;
+  typedef PERM_KIJ Phi;
+  typedef PERM_LIJK SigS;
+  typedef PERM_JI SigT;
 };
 
 template<>
 struct LayoutPolicy<NEST_ZGD_T> : public FixedLayoutPolicy {
-  typedef LAYOUT_KJI Psi;
-  typedef LAYOUT_KJI Phi;
-  typedef LAYOUT_LJKI SigS;
-  typedef LAYOUT_JI SigT;  
+  typedef PERM_KJI Psi;
+  typedef PERM_KJI Phi;
+  typedef PERM_LJKI SigS;
+  typedef PERM_JI SigT;
 };
 
 

@@ -25,7 +25,7 @@
  ******************************************************************/
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_IJKL, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_IJKL, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
           forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
             forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
@@ -38,7 +38,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_IJLK, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_IJLK, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
           forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
             forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
@@ -51,7 +51,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_IKJL, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_IKJL, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
           forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
             forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
@@ -64,7 +64,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_IKLJ, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_IKLJ, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
           forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
             forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
@@ -77,7 +77,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_ILJK, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_ILJK, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
           forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
             forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
@@ -90,7 +90,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_ILKJ, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_ILKJ, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
           forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
             forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
@@ -103,7 +103,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_JIKL, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_JIKL, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
           forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
             forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
@@ -116,7 +116,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_JILK, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_JILK, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
           forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
             forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
@@ -129,7 +129,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_JKIL, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_JKIL, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
           forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
             forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
@@ -142,7 +142,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_JKLI, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_JKLI, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
           forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
             forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
@@ -155,7 +155,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_JLIK, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_JLIK, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
           forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
             forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
@@ -168,7 +168,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_JLKI, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_JLKI, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
           forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
             forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
@@ -181,7 +181,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_KIJL, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_KIJL, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
           forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
             forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
@@ -194,7 +194,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_KILJ, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_KILJ, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
           forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
             forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
@@ -207,7 +207,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_KJIL, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_KJIL, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
           forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
             forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
@@ -220,7 +220,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_KJLI, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_KJLI, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
           forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
             forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
@@ -233,7 +233,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_KLIJ, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_KLIJ, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
           forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
             forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
@@ -246,7 +246,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_KLJI, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_KLJI, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
           forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
             forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
@@ -259,7 +259,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_LIJK, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_LIJK, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
           forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
             forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
@@ -272,7 +272,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_LIKJ, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_LIKJ, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
           forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
             forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
@@ -285,7 +285,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_LJIK, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_LJIK, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
           forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
             forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
@@ -298,7 +298,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_LJKI, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_LJKI, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
           forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
             forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
@@ -311,7 +311,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_LKIJ, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_LKIJ, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
           forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
             forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
@@ -324,7 +324,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall4(LAYOUT_LKJI, int end_i, int end_j, int end_k, int end_l, BODY const &body){
+      inline void forall4(PERM_LKJI, int end_i, int end_j, int end_k, int end_l, BODY const &body){
         forall<typename POLICY::PolicyL>(0, end_l, [=](int l){
           forall<typename POLICY::PolicyK>(0, end_k, [=](int k){
             forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){

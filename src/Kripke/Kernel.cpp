@@ -204,10 +204,10 @@ void Kernel::scattering(Grid_Data *grid_data){
       VIEW::Phi  const phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);  
       VIEW::SigS const sigs(grid_data->sigs->ptr(), legendre_order+1, num_groups, num_groups, 3);
 
-      View1d<int, LAYOUT_I>    const mixed_to_zones(&sdom.mixed_to_zones[0], 1);    
-      View1d<int, LAYOUT_I>    const mixed_material(&sdom.mixed_material[0], 1);
-      View1d<double, LAYOUT_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
-      View1d<int, LAYOUT_I>    const moment_to_coeff(&grid_data->moment_to_coeff[0], 1);
+      View1d<int, PERM_I>    const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
+      View1d<int, PERM_I>    const mixed_material(&sdom.mixed_material[0], 1);
+      View1d<double, PERM_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
+      View1d<int, PERM_I>    const moment_to_coeff(&grid_data->moment_to_coeff[0], 1);
           
       forall4<ScatteringPolicy<nest_type> >(
         num_moments, num_groups, num_groups, num_mixed,
@@ -254,9 +254,9 @@ void Kernel::source(Grid_Data *grid_data){
     
       VIEW::Phi phi_out(sdom.phi_out->ptr(), num_moments, num_groups, num_zones);
       
-      View1d<int,    LAYOUT_I> const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
-      View1d<int,    LAYOUT_I> const mixed_material(&sdom.mixed_material[0], 1);
-      View1d<double, LAYOUT_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
+      View1d<int,    PERM_I> const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
+      View1d<int,    PERM_I> const mixed_material(&sdom.mixed_material[0], 1);
+      View1d<double, PERM_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
 
       forall2<SourcePolicy<nest_type> >(num_groups, num_mixed,
         [=](int g, int mix){
@@ -298,9 +298,9 @@ void Kernel::sweep(Subdomain *sdom) {
     VIEW::Psi psi(sdom->psi->ptr(), num_directions, num_groups, num_zones);
     VIEW::SigT const sigt(sdom->sigt->ptr(), num_groups, num_zones);
     
-    View1d<double, LAYOUT_I> const dx(&sdom->deltas[0][0], local_imax+2);
-    View1d<double, LAYOUT_I> const dy(&sdom->deltas[1][0], local_jmax+2);
-    View1d<double, LAYOUT_I> const dz(&sdom->deltas[2][0], local_kmax+2);
+    View1d<double, PERM_I> const dx(&sdom->deltas[0][0], local_imax+2);
+    View1d<double, PERM_I> const dy(&sdom->deltas[1][0], local_jmax+2);
+    View1d<double, PERM_I> const dz(&sdom->deltas[2][0], local_kmax+2);
             
     VIEW::Face psi_lf(sdom->plane_data[0]->ptr(), num_directions, num_groups, num_z_i);
     VIEW::Face psi_fr(sdom->plane_data[1]->ptr(), num_directions, num_groups, num_z_j);

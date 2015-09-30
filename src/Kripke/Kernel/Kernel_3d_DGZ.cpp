@@ -78,26 +78,26 @@ void Kernel_3d_DGZ::sweep(Subdomain *sdom) {
   int local_jmax = sdom->nzones[1];
   int local_kmax = sdom->nzones[2];
 
-  View3d<double, LAYOUT_IJK> const rhs(sdom->rhs->ptr(), num_directions, num_groups, num_zones);
-  View3d<double, LAYOUT_IJK> psi(sdom->psi->ptr(), num_directions, num_groups, num_zones);
-  View2d<double, LAYOUT_IJ>  const sigt(sdom->sigt->ptr(), num_groups, num_zones);
+  View3d<double, PERM_IJK> const rhs(sdom->rhs->ptr(), num_directions, num_groups, num_zones);
+  View3d<double, PERM_IJK> psi(sdom->psi->ptr(), num_directions, num_groups, num_zones);
+  View2d<double, PERM_IJ>  const sigt(sdom->sigt->ptr(), num_groups, num_zones);
   
-  View1d<double, LAYOUT_I> const dx(&sdom->deltas[0][0], local_imax+2);
-  View1d<double, LAYOUT_I> const dy(&sdom->deltas[1][0], local_jmax+2);
-  View1d<double, LAYOUT_I> const dz(&sdom->deltas[2][0], local_kmax+2);
+  View1d<double, PERM_I> const dx(&sdom->deltas[0][0], local_imax+2);
+  View1d<double, PERM_I> const dy(&sdom->deltas[1][0], local_jmax+2);
+  View1d<double, PERM_I> const dz(&sdom->deltas[2][0], local_kmax+2);
   
   int num_z_i = local_jmax * local_kmax;
   int num_z_j = local_imax * local_kmax;
   int num_z_k = local_imax * local_jmax;
   
-  View3d<double, LAYOUT_IJK> psi_lf(sdom->plane_data[0]->ptr(), num_directions, num_groups, num_z_i);
-  View3d<double, LAYOUT_IJK> psi_fr(sdom->plane_data[1]->ptr(), num_directions, num_groups, num_z_j);
-  View3d<double, LAYOUT_IJK> psi_bo(sdom->plane_data[2]->ptr(), num_directions, num_groups, num_z_k);
+  View3d<double, PERM_IJK> psi_lf(sdom->plane_data[0]->ptr(), num_directions, num_groups, num_z_i);
+  View3d<double, PERM_IJK> psi_fr(sdom->plane_data[1]->ptr(), num_directions, num_groups, num_z_j);
+  View3d<double, PERM_IJK> psi_bo(sdom->plane_data[2]->ptr(), num_directions, num_groups, num_z_k);
   
-  Layout3d<LAYOUT_KJI> zone_layout(local_imax, local_jmax, local_kmax);
-  Layout2d<LAYOUT_JI> i_layout(local_jmax, local_kmax);
-  Layout2d<LAYOUT_JI> j_layout(local_imax, local_kmax);
-  Layout2d<LAYOUT_JI> k_layout(local_imax, local_jmax);
+  Layout3d<PERM_KJI> zone_layout(local_imax, local_jmax, local_kmax);
+  Layout2d<PERM_JI> i_layout(local_jmax, local_kmax);
+  Layout2d<PERM_JI> j_layout(local_imax, local_kmax);
+  Layout2d<PERM_JI> k_layout(local_imax, local_jmax);
 
   // All directions have same id,jd,kd, since these are all one Direction Set
   // So pull that information out now

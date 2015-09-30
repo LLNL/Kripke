@@ -43,7 +43,7 @@ struct SweepPolicy{};
 
 template<>
 struct SweepPolicy<NEST_DGZ_T>{ // g, d, z
-  typedef LAYOUT_IJK LoopOrder;
+  typedef PERM_IJK LoopOrder;
   typedef seq_pol pol_i;
   typedef seq_pol pol_j;
   typedef seq_pol pol_k;
@@ -51,7 +51,7 @@ struct SweepPolicy<NEST_DGZ_T>{ // g, d, z
 
 template<>
 struct SweepPolicy<NEST_DZG_T>{ // g, d, z
-  typedef LAYOUT_IKJ LoopOrder;
+  typedef PERM_IKJ LoopOrder;
   typedef seq_pol pol_i;
   typedef seq_pol pol_j;
   typedef seq_pol pol_k;
@@ -59,7 +59,7 @@ struct SweepPolicy<NEST_DZG_T>{ // g, d, z
 
 template<>
 struct SweepPolicy<NEST_GDZ_T>{ // g, d, z
-  typedef LAYOUT_JIK LoopOrder;
+  typedef PERM_JIK LoopOrder;
   typedef seq_pol pol_i;
   typedef seq_pol pol_j;
   typedef seq_pol pol_k;
@@ -67,7 +67,7 @@ struct SweepPolicy<NEST_GDZ_T>{ // g, d, z
 
 template<>
 struct SweepPolicy<NEST_GZD_T>{ // g, d, z
-  typedef LAYOUT_JKI LoopOrder;
+  typedef PERM_JKI LoopOrder;
   typedef seq_pol pol_i;
   typedef seq_pol pol_j;
   typedef seq_pol pol_k;
@@ -75,7 +75,7 @@ struct SweepPolicy<NEST_GZD_T>{ // g, d, z
 
 template<>
 struct SweepPolicy<NEST_ZDG_T>{ // g, d, z
-  typedef LAYOUT_KIJ LoopOrder;
+  typedef PERM_KIJ LoopOrder;
   typedef seq_pol pol_i;
   typedef seq_pol pol_j;
   typedef seq_pol pol_k;
@@ -83,7 +83,7 @@ struct SweepPolicy<NEST_ZDG_T>{ // g, d, z
 
 template<>
 struct SweepPolicy<NEST_ZGD_T>{ // g, d, z
-  typedef LAYOUT_KJI LoopOrder;
+  typedef PERM_KJI LoopOrder;
   typedef seq_pol pol_i;
   typedef seq_pol pol_j;
   typedef seq_pol pol_k;

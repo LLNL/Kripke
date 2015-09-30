@@ -23,7 +23,7 @@
  ******************************************************************/
 
       template<typename POLICY, typename BODY>
-      inline void forall2(LAYOUT_IJ, int end_i, int end_j, BODY const &body){
+      inline void forall2(PERM_IJ, int end_i, int end_j, BODY const &body){
         forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
           forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
             body(i, j);
@@ -32,7 +32,7 @@
       }
 
       template<typename POLICY, typename BODY>
-      inline void forall2(LAYOUT_JI, int end_i, int end_j, BODY const &body){
+      inline void forall2(PERM_JI, int end_i, int end_j, BODY const &body){
         forall<typename POLICY::PolicyJ>(0, end_j, [=](int j){
           forall<typename POLICY::PolicyI>(0, end_i, [=](int i){
             body(i, j);

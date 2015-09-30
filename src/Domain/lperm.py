@@ -20,11 +20,11 @@ def getDimPermNames(dim_names):
 def getEnumNames(ndims):
   dim_names = getDimNames(ndims)
   perm_names = getDimPermNames(dim_names)
-  enum_names = map( lambda a: "LAYOUT_"+a, perm_names)
+  enum_names = map( lambda a: "PERM_"+a, perm_names)
   return enum_names
   
 def getEnumName(PERM):
-  return "LAYOUT_" + "".join(PERM).upper();
+  return "PERM_" + "".join(PERM).upper();
  
 
 

@@ -42,27 +42,27 @@ template<typename T>
 struct LTimesPolicy{}; // nm, d, g, z
 
 template<>
-struct LTimesPolicy<NEST_DGZ_T> : ForallPolicy4<LAYOUT_IJKL, seq_pol, seq_pol, omp_pol, seq_pol> 
+struct LTimesPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, seq_pol, seq_pol, omp_pol, seq_pol>
 {};
 
 template<>
-struct LTimesPolicy<NEST_DZG_T> : ForallPolicy4<LAYOUT_IJLK, seq_pol, seq_pol, seq_pol, omp_pol> 
+struct LTimesPolicy<NEST_DZG_T> : ForallPolicy4<PERM_IJLK, seq_pol, seq_pol, seq_pol, omp_pol>
 {};
 
 template<>
-struct LTimesPolicy<NEST_GDZ_T> : ForallPolicy4<LAYOUT_KIJL, seq_pol, seq_pol, omp_pol, seq_pol> 
+struct LTimesPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_KIJL, seq_pol, seq_pol, omp_pol, seq_pol>
 {};
 
 template<>
-struct LTimesPolicy<NEST_GZD_T> : ForallPolicy4<LAYOUT_KLIJ, seq_pol, seq_pol, omp_pol, seq_pol> 
+struct LTimesPolicy<NEST_GZD_T> : ForallPolicy4<PERM_KLIJ, seq_pol, seq_pol, omp_pol, seq_pol>
 {};
 
 template<>
-struct LTimesPolicy<NEST_ZDG_T> : ForallPolicy4<LAYOUT_LIJK, seq_pol, seq_pol, seq_pol, omp_pol> 
+struct LTimesPolicy<NEST_ZDG_T> : ForallPolicy4<PERM_LIJK, seq_pol, seq_pol, seq_pol, omp_pol>
 {}; 
 
 template<>
-struct LTimesPolicy<NEST_ZGD_T> : ForallPolicy4<LAYOUT_LKIJ, seq_pol, seq_pol, seq_pol, omp_pol> 
+struct LTimesPolicy<NEST_ZGD_T> : ForallPolicy4<PERM_LKIJ, seq_pol, seq_pol, seq_pol, omp_pol>
 {};
 
 
