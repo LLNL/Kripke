@@ -90,14 +90,12 @@ void Kernel::LTimes(Grid_Data *grid_data) {
   int num_moments = grid_data->total_num_moments;
 
   // Zero Phi
-  for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
-    grid_data->phi[ds]->clear(0.0);
-  }
+  forallZoneSets(grid_data, [=](int zs, int sdom_id, Subdomain &sdom){
+    sdom.phi->clear(0.0);
+  });
 
   // Loop over Subdomains
-  int num_subdomains = grid_data->subdomains.size();
-  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
+  forallSubdomains(grid_data, [=](int sdom_id, Subdomain &sdom){
   
     // Get dimensioning
     int num_zones = sdom.num_zones;
@@ -124,9 +122,9 @@ void Kernel::LTimes(Grid_Data *grid_data) {
  
           phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
  
-        });
-    });
-  }
+        }); // forall
+    });// policy
+  }); // sdom
 
 }
 
@@ -137,14 +135,11 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
   int num_moments = grid_data->total_num_moments;
 
   // Loop over Subdomains
-  int num_subdomains = grid_data->subdomains.size();
-  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
-    // Zero RHS
+  forallSubdomains(grid_data, [=](int sdom_id, Subdomain &sdom){
     sdom.rhs->clear(0.0);
-  }
-  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
+  });
+
+  forallSubdomains(grid_data, [=](int sdom_id, Subdomain &sdom){
 
     // Get dimensioning
     int num_zones = sdom.num_zones;
@@ -170,9 +165,9 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
  
           rhs(d,g,z) += ell_plus(d,nm) * phi_out(nm,g+group0,z);
  
-        });
-    }));
-  }
+        }); // forall
+    })); // policy
+  }); // sdom
   
 }
 
@@ -185,15 +180,12 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
 void Kernel::scattering(Grid_Data *grid_data){
 
   // Zero out source terms
-  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
-    grid_data->phi_out[zs]->clear(0.0);
-  }
+  forallZoneSets(grid_data, [=](int zs, int sdom_id, Subdomain &sdom){
+    sdom.phi_out->clear(0.0);
+  });
   
   // Loop over zoneset subdomains
-  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
-    // get material mix information
-    int sdom_id = grid_data->zs_to_sdomid[zs];
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
+  forallZoneSets(grid_data, [=](int zs, int sdom_id, Subdomain &sdom){
 
     // grab dimensions
     int num_zones = sdom.num_zones;
@@ -230,9 +222,9 @@ void Kernel::scattering(Grid_Data *grid_data){
           phi_out(nm, gp, zone) += 
             sigs(n, g, gp, material) * phi(nm, g, zone) * fraction;                     
                              
-        });      
-    }));
-  }  
+        });  // forall
+    })); // policy
+  }); // zonesets
   
 }
 
@@ -245,11 +237,9 @@ void Kernel::scattering(Grid_Data *grid_data){
  */
 #include<Kripke/Kernel/SourcePolicy.h>
 void Kernel::source(Grid_Data *grid_data){
+
   // Loop over zoneset subdomains
-  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
-    // get material mix information
-    int sdom_id = grid_data->zs_to_sdomid[zs];
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
+  forallZoneSets(grid_data, [=](int zs, int sdom_id, Subdomain &sdom){
        
     // grab dimensions
     int num_mixed = sdom.mixed_to_zones.size();
@@ -268,8 +258,8 @@ void Kernel::source(Grid_Data *grid_data){
       View1d<double, PERM_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
 
       forall2<SourcePolicy<nest_type> >(
-          RAJA::RangeSegment(0, num_groups),
-          RAJA::RangeSegment(0, num_mixed),
+        RAJA::RangeSegment(0, num_groups),
+        RAJA::RangeSegment(0, num_mixed),
         [=](int g, int mix){
           int zone = mixed_to_zones(mix);
           int material = mixed_material(mix);
@@ -278,10 +268,10 @@ void Kernel::source(Grid_Data *grid_data){
           if(material == 0){
             phi_out(0, g, zone) += 1.0 * fraction;
           }
-        });
+        }); // forall
         
-    }));
-  }
+    })); // policy
+  });// zonesets
 }
 
 
