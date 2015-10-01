@@ -4,7 +4,7 @@ add_library(lib_kripke
   Directions.cpp  
   Grid.cpp  
   Input_Variables.cpp
-  Kernel.cpp  
+  Kernel.cpp
   Layout.cpp
   Subdomain.cpp  
   Sweep_Solver.cpp

@@ -112,7 +112,7 @@ void Kernel::LTimes(Grid_Data *grid_data) {
       typename VIEW::Psi psi(sdom.psi->ptr(), num_local_directions, num_local_groups, num_zones);
       typename VIEW::Phi phi(sdom.phi->ptr(), num_moments, num_groups, num_zones);
       typename VIEW::Ell ell(sdom.ell->ptr(), num_local_directions, num_moments);
-            
+
       forall4<LTimesPolicy<nest_type> >(
         RAJA::RangeSegment(0, num_moments),
         RAJA::RangeSegment(0, num_local_directions),
@@ -353,5 +353,4 @@ void Kernel::sweep(Subdomain *sdom) {
     }); // forall3
   })); // policy
 }
-
 
