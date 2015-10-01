@@ -7,7 +7,7 @@
 
 
     template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
-    inline void forall3(TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
+    RAJA_INLINE void forall3(TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
       typedef typename POLICY::LoopOrder L;
       forall3<POLICY, TI, TJ, TK, BODY>(L(), is_i, is_j, is_k, body);
     }
@@ -26,7 +26,7 @@
  ******************************************************************/
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
-      inline void forall3(PERM_IJK, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
+      RAJA_INLINE void forall3(PERM_IJK, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
         RAJA::forall<typename POLICY::PolicyI>(is_i, [=](int i){
           RAJA::forall<typename POLICY::PolicyJ>(is_j, [=](int j){
             RAJA::forall<typename POLICY::PolicyK>(is_k, [=](int k){
@@ -37,7 +37,7 @@
       }
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
-      inline void forall3(PERM_IKJ, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
+      RAJA_INLINE void forall3(PERM_IKJ, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
         RAJA::forall<typename POLICY::PolicyI>(is_i, [=](int i){
           RAJA::forall<typename POLICY::PolicyK>(is_k, [=](int k){
             RAJA::forall<typename POLICY::PolicyJ>(is_j, [=](int j){
@@ -48,7 +48,7 @@
       }
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
-      inline void forall3(PERM_JIK, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
+      RAJA_INLINE void forall3(PERM_JIK, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
         RAJA::forall<typename POLICY::PolicyJ>(is_j, [=](int j){
           RAJA::forall<typename POLICY::PolicyI>(is_i, [=](int i){
             RAJA::forall<typename POLICY::PolicyK>(is_k, [=](int k){
@@ -59,7 +59,7 @@
       }
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
-      inline void forall3(PERM_JKI, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
+      RAJA_INLINE void forall3(PERM_JKI, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
         RAJA::forall<typename POLICY::PolicyJ>(is_j, [=](int j){
           RAJA::forall<typename POLICY::PolicyK>(is_k, [=](int k){
             RAJA::forall<typename POLICY::PolicyI>(is_i, [=](int i){
@@ -70,7 +70,7 @@
       }
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
-      inline void forall3(PERM_KIJ, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
+      RAJA_INLINE void forall3(PERM_KIJ, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
         RAJA::forall<typename POLICY::PolicyK>(is_k, [=](int k){
           RAJA::forall<typename POLICY::PolicyI>(is_i, [=](int i){
             RAJA::forall<typename POLICY::PolicyJ>(is_j, [=](int j){
@@ -81,7 +81,7 @@
       }
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
-      inline void forall3(PERM_KJI, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
+      RAJA_INLINE void forall3(PERM_KJI, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
         RAJA::forall<typename POLICY::PolicyK>(is_k, [=](int k){
           RAJA::forall<typename POLICY::PolicyJ>(is_j, [=](int j){
             RAJA::forall<typename POLICY::PolicyI>(is_i, [=](int i){

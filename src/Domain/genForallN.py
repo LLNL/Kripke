@@ -15,7 +15,7 @@ def writeForallBase(ndims):
   
   args = map(lambda a: "T%s const &is_%s"%(a.upper(), a), dim_names)
   argstr = ", ".join(args)
-  print "    inline void forall%d(%s, BODY const &body){" % (ndims, argstr)
+  print "    RAJA_INLINE void forall%d(%s, BODY const &body){" % (ndims, argstr)
   
   args = map(lambda a: "T"+a.upper(), dim_names)
   argstr = ", ".join(args)    
@@ -70,7 +70,7 @@ def writeForallImpl(ndims):
     
     args = map(lambda a: "T%s const &is_%s"%(a.upper(), a), dim_names)
     argstr = ", ".join(args)    
-    print "      inline void forall%d(%s, %s, BODY const &body){" % (ndims, enum, argstr)    
+    print "      RAJA_INLINE void forall%d(%s, %s, BODY const &body){" % (ndims, enum, argstr)    
     
     # print each nested "forall" loop
     indent = "  "
