@@ -24,5 +24,6 @@ add_library(lib_kripke
   Test/TestKernels.cpp
 )
 
+target_compile_features(lib_kripke PUBLIC cxx_auto_type cxx_attributes cxx_lambdas)
                                                                                                           
 set(KRIPKE_LIBS ${KRIPKE_LIBS} lib_kripke PARENT_SCOPE) 
