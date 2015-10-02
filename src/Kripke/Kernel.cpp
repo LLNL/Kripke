@@ -90,12 +90,12 @@ void Kernel::LTimes(Grid_Data *grid_data) {
   int num_moments = grid_data->total_num_moments;
 
   // Zero Phi
-  forallZoneSets(grid_data, [=](int zs, int sdom_id, Subdomain &sdom){
+  forallZoneSets(grid_data, [&](int zs, int sdom_id, Subdomain &sdom){
     sdom.phi->clear(0.0);
   });
 
   // Loop over Subdomains
-  forallSubdomains(grid_data, [=](int sdom_id, Subdomain &sdom){
+  forallSubdomains(grid_data, [&](int sdom_id, Subdomain &sdom){
   
     // Get dimensioning
     int num_zones = sdom.num_zones;
@@ -118,7 +118,7 @@ void Kernel::LTimes(Grid_Data *grid_data) {
         RAJA::RangeSegment(0, num_local_directions),
         RAJA::RangeSegment(0, num_local_groups),
         RAJA::RangeSegment(0, num_zones),
-        [=](int nm, int d, int g, int z){
+        [&](int nm, int d, int g, int z){
  
           phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
  
@@ -135,11 +135,11 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
   int num_moments = grid_data->total_num_moments;
 
   // Loop over Subdomains
-  forallSubdomains(grid_data, [=](int sdom_id, Subdomain &sdom){
+  forallSubdomains(grid_data, [&](int sdom_id, Subdomain &sdom){
     sdom.rhs->clear(0.0);
   });
 
-  forallSubdomains(grid_data, [=](int sdom_id, Subdomain &sdom){
+  forallSubdomains(grid_data, [&](int sdom_id, Subdomain &sdom){
 
     // Get dimensioning
     int num_zones = sdom.num_zones;
@@ -161,7 +161,7 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
         RAJA::RangeSegment(0, num_local_directions),
         RAJA::RangeSegment(0, num_local_groups),
         RAJA::RangeSegment(0, num_zones),
-        [=](int nm, int d, int g, int z){
+        [&](int nm, int d, int g, int z){
  
           rhs(d,g,z) += ell_plus(d,nm) * phi_out(nm,g+group0,z);
  
@@ -180,12 +180,12 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
 void Kernel::scattering(Grid_Data *grid_data){
 
   // Zero out source terms
-  forallZoneSets(grid_data, [=](int zs, int sdom_id, Subdomain &sdom){
+  forallZoneSets(grid_data, [&](int zs, int sdom_id, Subdomain &sdom){
     sdom.phi_out->clear(0.0);
   });
   
   // Loop over zoneset subdomains
-  forallZoneSets(grid_data, [=](int zs, int sdom_id, Subdomain &sdom){
+  forallZoneSets(grid_data, [&](int zs, int sdom_id, Subdomain &sdom){
 
     // grab dimensions
     int num_zones = sdom.num_zones;
@@ -212,7 +212,7 @@ void Kernel::scattering(Grid_Data *grid_data){
         RAJA::RangeSegment(0, num_groups),
         RAJA::RangeSegment(0, num_groups),
         RAJA::RangeSegment(0, num_mixed),
-        [=](int nm, int g, int gp, int mix){
+        [&](int nm, int g, int gp, int mix){
         
           int n = moment_to_coeff(nm);
           int zone = mixed_to_zones(mix);
@@ -239,7 +239,7 @@ void Kernel::scattering(Grid_Data *grid_data){
 void Kernel::source(Grid_Data *grid_data){
 
   // Loop over zoneset subdomains
-  forallZoneSets(grid_data, [=](int zs, int sdom_id, Subdomain &sdom){
+  forallZoneSets(grid_data, [&](int zs, int sdom_id, Subdomain &sdom){
        
     // grab dimensions
     int num_mixed = sdom.mixed_to_zones.size();
@@ -260,7 +260,7 @@ void Kernel::source(Grid_Data *grid_data){
       forall2<SourcePolicy<nest_type> >(
         RAJA::RangeSegment(0, num_groups),
         RAJA::RangeSegment(0, num_mixed),
-        [=](int g, int mix){
+        [&](int g, int mix){
           int zone = mixed_to_zones(mix);
           int material = mixed_material(mix);
           double fraction = mixed_fraction(mix);
@@ -321,7 +321,7 @@ void Kernel::sweep(Subdomain *sdom) {
       RAJA::RangeSegment(0, num_directions),
       RAJA::RangeSegment(0, num_groups),
       extent.indexset_sweep,
-      [=](int d, int g, int zone_idx){
+      [&](int d, int g, int zone_idx){
 
         int i = extent.idx_to_i[zone_idx];
         int j = extent.idx_to_j[zone_idx];
