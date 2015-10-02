@@ -56,5 +56,55 @@ RAJA_INLINE void forallZoneSets(Grid_Data *grid_data, BODY const &body){
 }
 
 
+
+
+/**
+ * Converts run-time nesting to static type for a given lambda scope.
+ * This could be done w/o a macro in C++14 with polymorphic lambdas
+ */
+#if 0 // set to 0 to eliminate the "switch" test
+
+#define policyScope(GNT_NEST__, GNT_TYPE__, GNT_LAMBDA__) \
+{\
+  typedef NEST_DGZ_T GNT_TYPE__;\
+  GNT_LAMBDA__();\
+}
+
+#else
+
+#define policyScope(GNT_NEST__, GNT_TYPE__, GNT_LAMBDA__) \
+{\
+  switch(GNT_NEST__){\
+    case NEST_DGZ: {\
+      typedef NEST_DGZ_T GNT_TYPE__;\
+      GNT_LAMBDA__();\
+    } break; \
+    case NEST_DZG: {\
+      typedef NEST_DZG_T GNT_TYPE__;\
+      GNT_LAMBDA__();\
+    } break; \
+    case NEST_GDZ: {\
+      typedef NEST_GDZ_T GNT_TYPE__;\
+      GNT_LAMBDA__();\
+    } break; \
+    case NEST_GZD: {\
+      typedef NEST_GZD_T GNT_TYPE__;\
+      GNT_LAMBDA__();\
+    } break; \
+    case NEST_ZDG: {\
+      typedef NEST_ZDG_T GNT_TYPE__;\
+      GNT_LAMBDA__();\
+    } break; \
+    case NEST_ZGD: {\
+      typedef NEST_ZGD_T GNT_TYPE__;\
+      GNT_LAMBDA__();\
+    } break; \
+  }\
+}
+
+#endif
+
+
+
 #endif
 
