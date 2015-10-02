@@ -10,8 +10,8 @@
 //#define RAJA_INLINE __attribute__((always_inline))
 
 
-//#define RAJA_LAMBDA [&]
-#define RAJA_LAMBDA [=]
+#define RAJA_LAMBDA [&]
+//#define RAJA_LAMBDA [=]
 
 typedef RAJA::simd_exec seq_pol;
 //typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::seq_exec> seq_pol;
@@ -62,15 +62,22 @@ RAJA_INLINE void forallZoneSets(Grid_Data *grid_data, BODY const &body){
  * Converts run-time nesting to static type for a given lambda scope.
  * This could be done w/o a macro in C++14 with polymorphic lambdas
  */
-#if 0 // set to 0 to eliminate the "switch" test
+//#if 1 // set to 0 to use polymo
 
-#define policyScope(GNT_NEST__, GNT_TYPE__, GNT_LAMBDA__) \
-{\
-  typedef NEST_DGZ_T GNT_TYPE__;\
-  GNT_LAMBDA__();\
+template<typename BODY>
+inline void policyScopeT(Nesting_Order nesting_order, BODY const &body){
+  switch(nesting_order){
+    case NEST_DGZ: body(NEST_DGZ_T()); break;
+    case NEST_DZG: body(NEST_DZG_T()); break;
+    case NEST_GDZ: body(NEST_GDZ_T()); break;
+    case NEST_GZD: body(NEST_GZD_T()); break;
+    case NEST_ZDG: body(NEST_ZDG_T()); break;
+    case NEST_ZGD: body(NEST_ZGD_T()); break;
+  }
 }
 
-#else
+
+//#else
 
 #define policyScope(GNT_NEST__, GNT_TYPE__, GNT_LAMBDA__) \
 {\
@@ -102,8 +109,21 @@ RAJA_INLINE void forallZoneSets(Grid_Data *grid_data, BODY const &body){
   }\
 }
 
-#endif
+//#endif
 
+#if 1
+
+#define BEGIN_POLICY_SCOPE(NEST, TYPE) policyScopeT(NEST, [&](auto POLTYPE){\
+                                         typedef decltype(POLTYPE) TYPE;
+#define   END_POLICY_SCOPE()             });
+
+#else
+
+#define BEGIN_POLICY_SCOPE(NEST, TYPE) policyScope(NEST, TYPE, [&](){
+#define   END_POLICY_SCOPE()             });
+
+
+#endif
 
 
 #endif
