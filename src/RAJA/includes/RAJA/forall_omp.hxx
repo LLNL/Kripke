@@ -17,6 +17,8 @@
 #ifndef RAJA_forall_omp_HXX
 #define RAJA_forall_omp_HXX
 
+#if defined(_OPENMP)
+
 #include "config.hxx"
 
 #include "int_datatypes.hxx"
@@ -1467,4 +1469,5 @@ void forall_segments(omp_taskgraph_interval_segit,
 
 }  // closing brace for RAJA namespace
 
+#endif
 #endif  // closing endif for header file include guard
