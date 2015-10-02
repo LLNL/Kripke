@@ -396,39 +396,58 @@ void Subdomain::computeSweepIndexSet(void){
   sweep_block.idx_to_j = new int[nzones[0]*nzones[1]*nzones[2]];
   sweep_block.idx_to_k = new int[nzones[0]*nzones[1]*nzones[2]];
   sweep_block.idx_to_z = new int[nzones[0]*nzones[1]*nzones[2]];
+  
+  if(true){ // try a dummy sweep pattern.. this will give you the WRONG answer.. just to understand memory performance
+    int z = 0;
+    int zstart = z;
+    for(int k = 0;k < nzones[2];++k){          
+      for(int j = 0;j < nzones[1];++j){        
+        for(int i = 0;i < nzones[0];++i){ 
+          sweep_block.idx_to_i[z] = i;
+          sweep_block.idx_to_j[z] = j;
+          sweep_block.idx_to_k[z] = k;
+          sweep_block.idx_to_z[z] = z;
+          ++ z;
+        }        
+      }
+      
+    }
+    sweep_block.indexset_sweep.push_back(
+            RAJA::RangeSegment(zstart, z)); 
+  }
+  else{
+    for (int C = 0; C <=(3*N); ++C){   //for each C we can touch zone["i","j","k"]  as well as "d" and "group"    in parallel
+     int FLAG=0;
+     for (int i = 0; i <= C; ++i){
+       for (int j = 0; j <= C; ++j){
+          int k = C - i - j; // surface equation i+j+j=C
+          //flip if needed
 
-  for (int C = 0; C <=(3*N); ++C){   //for each C we can touch zone["i","j","k"]  as well as "d" and "group"    in parallel
-   int FLAG=0;
-   RAJA::IndexSet slice_index_set;
-   for (int i = 0; i <= C; ++i){
-     for (int j = 0; j <= C; ++j){
-        int k = C - i - j; // surface equation i+j+j=C
-        //flip if needed
+          int ii = ii_tmp + i*i_inc;
+          int jj = jj_tmp + j*j_inc;
+          int kk = kk_tmp + k*k_inc;
 
-        int ii = ii_tmp + i*i_inc;
-        int jj = jj_tmp + j*j_inc;
-        int kk = kk_tmp + k*k_inc;
+          if (ii <= i_max && jj <= j_max && kk <= k_max && ii >= i_min && jj >= j_min && kk >= k_min){
 
-        if (ii <= i_max && jj <= j_max && kk <= k_max && ii >= i_min && jj >= j_min && kk >= k_min){
-
-          sweep_block.idx_to_i[counter] = ii;
-          sweep_block.idx_to_j[counter] = jj;
-          sweep_block.idx_to_k[counter] = kk;
-          sweep_block.idx_to_z[counter] = ii + nzones[0]*jj + nzones[0]*nzones[1]*kk;//  Zonal_INDEX(ii, jj, kk);
-          counter++; //counts all elements
-          FLAG++;   //counts elements per slice
+            sweep_block.idx_to_i[counter] = ii;
+            sweep_block.idx_to_j[counter] = jj;
+            sweep_block.idx_to_k[counter] = kk;
+            sweep_block.idx_to_z[counter] = ii + nzones[0]*jj + nzones[0]*nzones[1]*kk;//  Zonal_INDEX(ii, jj, kk);
+            counter++; //counts all elements
+            FLAG++;   //counts elements per slice
+         }
        }
      }
-   }
-   if (FLAG){
-      Nslices++;
-      offset[Nslices] = offset[Nslices-1] + FLAG;
+     if (FLAG){
+        Nslices++;
+        offset[Nslices] = offset[Nslices-1] + FLAG;
 
-      // an index set which describes each hyperplane as a RangeSegment
-      sweep_block.indexset_sweep.push_back(
-          RAJA::RangeSegment(offset[Nslices-1], offset[Nslices]));
+        // an index set which describes each hyperplane as a RangeSegment
+        sweep_block.indexset_sweep.push_back(
+            RAJA::RangeSegment(offset[Nslices-1], offset[Nslices]));
+     }
    }
- }
+   } // hyper-plane generator
 }
 
 namespace {

@@ -84,6 +84,16 @@ struct NEST_ZGD_T {};
  * Converts run-time nesting to static type for a given lambda scope.
  * This could be done w/o a macro in C++14 with polymorphic lambdas
  */
+#if 0 // set to 0 to eliminate the "switch" test
+
+#define policyScope(GNT_NEST__, GNT_TYPE__, GNT_LAMBDA__) \
+{\
+  typedef NEST_DGZ_T GNT_TYPE__;\
+  GNT_LAMBDA__();\
+}
+
+#else
+
 #define policyScope(GNT_NEST__, GNT_TYPE__, GNT_LAMBDA__) \
 {\
   switch(GNT_NEST__){\
@@ -114,6 +124,7 @@ struct NEST_ZGD_T {};
   }\
 }
 
+#endif
 
 
 /**

@@ -290,7 +290,7 @@ void Kernel::sweep(Subdomain *sdom) {
   int num_z_i = local_jmax * local_kmax;
   int num_z_j = local_imax * local_kmax;
   int num_z_k = local_imax * local_jmax;
-    
+   
   policyScope(nesting_order, nest_type, ([&](){
     typedef LayoutPolicy<nest_type> LAYOUT;
     typedef ViewPolicy<LAYOUT> VIEW;
@@ -326,10 +326,11 @@ void Kernel::sweep(Subdomain *sdom) {
         int i = extent.idx_to_i[zone_idx];
         int j = extent.idx_to_j[zone_idx];
         int k = extent.idx_to_k[zone_idx];
-
+        
         double const xcos_dxi = 2.0 * direction[d].xcos / dx(i + 1);
         double const ycos_dyj = 2.0 * direction[d].ycos / dy(j + 1);
         double const zcos_dzk = 2.0 * direction[d].zcos / dz(k + 1);
+
 
         int const z_idx = zone_layout(i,j,k);
         int const lf_idx = i_layout(j,k);

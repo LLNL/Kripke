@@ -71,6 +71,22 @@ if(ENABLE_TCMALLOC)
 endif()
 
 
+# Google Perftools Support for sampling profiling (Optional)
+if(ENABLE_PERFTOOLS)
+  find_package(PerfTools)
+  if(GOOGLE_PERFTOOLS_FOUND)
+    add_definitions(-DKRIPKE_USE_PERFTOOLS)
+    include_directories(${GOOGLE_PERFTOOLS_INCLUDE_DIR})
+    set(KRIPKE_LIBS ${KRIPKE_LIBS} ${PROFILER_LIBRARY})
+    message(STATUS "Google Perftools Enabled")
+    message(STATUS "Google Perftools Include: ${GOOGLE_PERFTOOLS_INCLUDE_DIR}")
+    message(STATUS "Google Perftools Library: ${PROFILER_LIBRARY}")
+  else()
+    message(WARNING "Google Perftools NOT FOUND")
+  endif()
+endif()
+
+
 # BG/Q Performance tools (BGPM) Support (Optional, only on BG/Q)
 if(ENABLED_BGPM)
   find_package(TCMalloc)

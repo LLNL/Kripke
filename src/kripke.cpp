@@ -49,6 +49,10 @@
 #include<gperftools/malloc_extension.h>
 #endif
 
+#ifdef KRIPKE_USE_PERFTOOLS
+#include<gperftools/profiler.h>
+#endif
+
 #ifdef __bgq__
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/location.h>
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/memory.h>
@@ -427,7 +431,10 @@ int main(int argc, char **argv) {
 
     
   }
-  
+
+#ifdef KRIPKE_USE_PERFTOOLS
+  ProfilerStart("kripke.prof");
+#endif  
 
   if(test){
     // Invoke Kernel testing
@@ -460,6 +467,10 @@ int main(int argc, char **argv) {
     // Cleanup 
     delete grid_data;
   }
+  
+#ifdef KRIPKE_USE_PERFTOOLS
+  ProfilerStop();
+#endif  
 
   // Gather post-point memory info
   double heap_mb = -1.0;
