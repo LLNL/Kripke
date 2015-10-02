@@ -28,10 +28,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_IJKL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-          RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-            RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-              RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
+        RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+          RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+            RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+              RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
                 body(i, j, k, l);
               });
             });
@@ -41,10 +41,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_IJLK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-          RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-            RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-              RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
+        RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+          RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+            RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+              RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
                 body(i, j, k, l);
               });
             });
@@ -54,10 +54,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_IKJL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-          RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-            RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-              RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
+        RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+          RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+            RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+              RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
                 body(i, j, k, l);
               });
             });
@@ -67,10 +67,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_IKLJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-          RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-            RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-              RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
+        RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+          RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+            RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+              RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
                 body(i, j, k, l);
               });
             });
@@ -80,10 +80,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_ILJK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-          RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-            RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-              RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
+        RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+          RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+            RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+              RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
                 body(i, j, k, l);
               });
             });
@@ -93,10 +93,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_ILKJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-          RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-            RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-              RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
+        RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+          RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+            RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+              RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
                 body(i, j, k, l);
               });
             });
@@ -106,10 +106,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_JIKL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-          RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-            RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-              RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
+        RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+          RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+            RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+              RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
                 body(i, j, k, l);
               });
             });
@@ -119,10 +119,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_JILK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-          RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-            RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-              RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
+        RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+          RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+            RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+              RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
                 body(i, j, k, l);
               });
             });
@@ -132,10 +132,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_JKIL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-          RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-            RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-              RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
+        RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+          RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+            RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+              RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
                 body(i, j, k, l);
               });
             });
@@ -145,10 +145,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_JKLI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-          RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-            RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-              RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
+        RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+          RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+            RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+              RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
                 body(i, j, k, l);
               });
             });
@@ -158,10 +158,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_JLIK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-          RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-            RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-              RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
+        RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+          RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+            RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+              RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
                 body(i, j, k, l);
               });
             });
@@ -171,10 +171,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_JLKI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-          RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-            RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-              RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
+        RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+          RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+            RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+              RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
                 body(i, j, k, l);
               });
             });
@@ -184,10 +184,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_KIJL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-          RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-            RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-              RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
+        RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+          RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+            RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+              RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
                 body(i, j, k, l);
               });
             });
@@ -197,10 +197,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_KILJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-          RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-            RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-              RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
+        RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+          RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+            RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+              RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
                 body(i, j, k, l);
               });
             });
@@ -210,10 +210,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_KJIL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-          RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-            RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-              RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
+        RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+          RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+            RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+              RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
                 body(i, j, k, l);
               });
             });
@@ -223,10 +223,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_KJLI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-          RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-            RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-              RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
+        RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+          RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+            RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+              RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
                 body(i, j, k, l);
               });
             });
@@ -236,10 +236,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_KLIJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-          RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-            RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-              RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
+        RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+          RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+            RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+              RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
                 body(i, j, k, l);
               });
             });
@@ -249,10 +249,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_KLJI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-          RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-            RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-              RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
+        RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+          RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+            RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+              RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
                 body(i, j, k, l);
               });
             });
@@ -262,10 +262,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_LIJK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-          RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-            RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-              RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
+        RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+          RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+            RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+              RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
                 body(i, j, k, l);
               });
             });
@@ -275,10 +275,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_LIKJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-          RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-            RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-              RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
+        RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+          RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+            RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+              RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
                 body(i, j, k, l);
               });
             });
@@ -288,10 +288,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_LJIK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-          RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-            RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-              RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
+        RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+          RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+            RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+              RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
                 body(i, j, k, l);
               });
             });
@@ -301,10 +301,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_LJKI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-          RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-            RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-              RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
+        RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+          RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+            RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+              RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
                 body(i, j, k, l);
               });
             });
@@ -314,10 +314,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_LKIJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-          RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-            RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
-              RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
+        RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+          RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+            RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+              RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
                 body(i, j, k, l);
               });
             });
@@ -327,10 +327,10 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
       RAJA_INLINE void forall4(PERM_LKJI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyL>(is_l, [&](int l){
-          RAJA::forall<typename POLICY::PolicyK>(is_k, [&](int k){
-            RAJA::forall<typename POLICY::PolicyJ>(is_j, [&](int j){
-              RAJA::forall<typename POLICY::PolicyI>(is_i, [&](int i){
+        RAJA::forall<typename POLICY::PolicyL>(is_l, RAJA_LAMBDA(int l){
+          RAJA::forall<typename POLICY::PolicyK>(is_k, RAJA_LAMBDA(int k){
+            RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+              RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
                 body(i, j, k, l);
               });
             });

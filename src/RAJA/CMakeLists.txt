@@ -11,6 +11,6 @@ add_library(RAJA
   sources/RangeSegment.cxx
 )
 
-target_compile_features(RAJA PUBLIC cxx_auto_type cxx_attributes cxx_lambdas)
+#target_compile_features(RAJA PUBLIC cxx_auto_type cxx_attributes cxx_lambdas)
                                                                                                           
 set(KRIPKE_LIBS ${KRIPKE_LIBS} RAJA PARENT_SCOPE) 

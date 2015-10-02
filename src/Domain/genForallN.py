@@ -78,7 +78,7 @@ def writeForallImpl(ndims):
     for i in range(0,ndims):
       d = perm[i]
       #print "%s      RAJA::forall<typename POLICY::Policy%s>(RAJA::RangeSegment(0, end_%s), [=](int %s){" % (indent, d.upper(), d, d)  
-      print "%s      RAJA::forall<typename POLICY::Policy%s>(is_%s, [=](int %s){" % (indent, d.upper(), d, d)      
+      print "%s      RAJA::forall<typename POLICY::Policy%s>(is_%s, RAJA_LAMBDA(int %s){" % (indent, d.upper(), d, d)      
       closing.append("%s      });" % indent)
       indent = indent + "  "
     

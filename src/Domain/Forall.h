@@ -9,6 +9,10 @@
 
 //#define RAJA_INLINE __attribute__((always_inline))
 
+
+//#define RAJA_LAMBDA [&]
+#define RAJA_LAMBDA [=]
+
 typedef RAJA::simd_exec seq_pol;
 //typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::seq_exec> seq_pol;
 //typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_exec, RAJA::omp_parallel_segit> omp_pol;

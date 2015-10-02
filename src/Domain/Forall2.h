@@ -26,8 +26,8 @@
 
       template<typename POLICY, typename TI, typename TJ, typename BODY>
       RAJA_INLINE void forall2(PERM_IJ, TI const &is_i, TJ const &is_j, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyI>(is_i, [=](int i){
-          RAJA::forall<typename POLICY::PolicyJ>(is_j, [=](int j){
+        RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+          RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
             body(i, j);
           });
         });
@@ -35,8 +35,8 @@
 
       template<typename POLICY, typename TI, typename TJ, typename BODY>
       RAJA_INLINE void forall2(PERM_JI, TI const &is_i, TJ const &is_j, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyJ>(is_j, [=](int j){
-          RAJA::forall<typename POLICY::PolicyI>(is_i, [=](int i){
+        RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+          RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
             body(i, j);
           });
         });
