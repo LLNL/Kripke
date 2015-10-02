@@ -397,7 +397,7 @@ void Subdomain::computeSweepIndexSet(void){
   sweep_block.idx_to_k = new int[nzones[0]*nzones[1]*nzones[2]];
   sweep_block.idx_to_z = new int[nzones[0]*nzones[1]*nzones[2]];
   
-  if(true){ // try a dummy sweep pattern.. this will give you the WRONG answer.. just to understand memory performance
+  if(false){ // try a dummy sweep pattern.. this will give you the WRONG answer.. just to understand memory performance
     int z = 0;
     int zstart = z;
     for(int k = 0;k < nzones[2];++k){          
