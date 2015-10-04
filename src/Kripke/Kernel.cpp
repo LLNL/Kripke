@@ -104,7 +104,8 @@ void Kernel::LTimes(Grid_Data *grid_data) {
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
 
-    BEGIN_POLICY_SCOPE(nesting_order, nest_type)
+    policyScope(nesting_order, [&](auto nest_tag){
+      typedef decltype(nest_tag) nest_type;
       typedef LayoutPolicy<nest_type> LAYOUT;
       typedef ViewPolicy<LAYOUT> VIEW;
                  
@@ -123,7 +124,7 @@ void Kernel::LTimes(Grid_Data *grid_data) {
           phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
  
         }); // forall
-    END_POLICY_SCOPE()
+    }); // policy    
   }); // sdom
 
 }
@@ -148,7 +149,9 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
 
-    BEGIN_POLICY_SCOPE(nesting_order, nest_type)
+    //BEGIN_POLICY_SCOPE(nesting_order, nest_type)
+    policyScope(nesting_order, [&](auto nest_tag){
+      typedef decltype(nest_tag) nest_type;
       typedef LayoutPolicy<nest_type> LAYOUT;
       typedef ViewPolicy<LAYOUT> VIEW;
 
@@ -167,7 +170,7 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
           rhs(d,g,z) += ell_plus(d,nm) * phi_out(nm,g+group0,z);
  
         }); // forall
-    END_POLICY_SCOPE()
+    }); // policy
   }); // sdom
   
 }
@@ -195,7 +198,9 @@ void Kernel::scattering(Grid_Data *grid_data){
     int num_moments = grid_data->total_num_moments;
     int legendre_order = grid_data->legendre_order;
 
-    BEGIN_POLICY_SCOPE(nesting_order, nest_type)
+    //BEGIN_POLICY_SCOPE(nesting_order, nest_type)
+    policyScope(nesting_order, [&](auto nest_tag){
+      typedef decltype(nest_tag) nest_type;
       typedef LayoutPolicy<nest_type> LAYOUT;
       typedef ViewPolicy<LAYOUT> VIEW;
 
@@ -224,7 +229,7 @@ void Kernel::scattering(Grid_Data *grid_data){
             sigs(n, g, gp, material) * phi(nm, g, zone) * fraction;                     
                              
         });  // forall
-    END_POLICY_SCOPE()
+    }); // policy    
   }); // zonesets
   
 }
@@ -248,7 +253,9 @@ void Kernel::source(Grid_Data *grid_data){
     int num_groups = sdom.phi_out->groups;
     int num_moments = grid_data->total_num_moments;
     
-    BEGIN_POLICY_SCOPE(nesting_order, nest_type)
+    //BEGIN_POLICY_SCOPE(nesting_order, nest_type)
+    policyScope(nesting_order, [&](auto nest_tag){
+      typedef decltype(nest_tag) nest_type;
       typedef LayoutPolicy<nest_type> LAYOUT;
       typedef ViewPolicy<LAYOUT> VIEW;
     
@@ -270,9 +277,8 @@ void Kernel::source(Grid_Data *grid_data){
             phi_out(0, g, zone) += 1.0 * fraction;
           }
         }); // forall
-        
-    END_POLICY_SCOPE()
-  });// zonesets
+    }); // policy      
+  }); // zonesets
 }
 
 
@@ -292,7 +298,9 @@ void Kernel::sweep(Subdomain *sdom) {
   int num_z_j = local_imax * local_kmax;
   int num_z_k = local_imax * local_jmax;
    
-  BEGIN_POLICY_SCOPE(nesting_order, nest_type)
+  //BEGIN_POLICY_SCOPE(nesting_order, nest_type)
+  policyScope(nesting_order, [&](auto nest_tag){
+    typedef decltype(nest_tag) nest_type;
     typedef LayoutPolicy<nest_type> LAYOUT;
     typedef ViewPolicy<LAYOUT> VIEW;
 
@@ -353,6 +361,6 @@ void Kernel::sweep(Subdomain *sdom) {
         psi_fr(d,g,fr_idx) = 2.0 * psi_d_g_z - psi_fr(d,g,fr_idx);
         psi_bo(d,g,bo_idx) = 2.0 * psi_d_g_z - psi_bo(d,g,bo_idx);
     }); // forall3
-  END_POLICY_SCOPE()
+  }); // policy  
 }
 

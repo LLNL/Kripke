@@ -60,12 +60,10 @@ RAJA_INLINE void forallZoneSets(Grid_Data *grid_data, BODY const &body){
 
 /**
  * Converts run-time nesting to static type for a given lambda scope.
- * This could be done w/o a macro in C++14 with polymorphic lambdas
+ * This requires C++14 for polymorphic lambdas
  */
-//#if 1 // set to 0 to use polymo
-
 template<typename BODY>
-inline void policyScopeT(Nesting_Order nesting_order, BODY const &body){
+inline void policyScope(Nesting_Order nesting_order, BODY const &body){
   switch(nesting_order){
     case NEST_DGZ: body(NEST_DGZ_T()); break;
     case NEST_DZG: body(NEST_DZG_T()); break;
@@ -77,54 +75,5 @@ inline void policyScopeT(Nesting_Order nesting_order, BODY const &body){
 }
 
 
-//#else
-
-#define policyScope(GNT_NEST__, GNT_TYPE__, GNT_LAMBDA__) \
-{\
-  switch(GNT_NEST__){\
-    case NEST_DGZ: {\
-      typedef NEST_DGZ_T GNT_TYPE__;\
-      GNT_LAMBDA__();\
-    } break; \
-    case NEST_DZG: {\
-      typedef NEST_DZG_T GNT_TYPE__;\
-      GNT_LAMBDA__();\
-    } break; \
-    case NEST_GDZ: {\
-      typedef NEST_GDZ_T GNT_TYPE__;\
-      GNT_LAMBDA__();\
-    } break; \
-    case NEST_GZD: {\
-      typedef NEST_GZD_T GNT_TYPE__;\
-      GNT_LAMBDA__();\
-    } break; \
-    case NEST_ZDG: {\
-      typedef NEST_ZDG_T GNT_TYPE__;\
-      GNT_LAMBDA__();\
-    } break; \
-    case NEST_ZGD: {\
-      typedef NEST_ZGD_T GNT_TYPE__;\
-      GNT_LAMBDA__();\
-    } break; \
-  }\
-}
-
-//#endif
-
-#if 1
-
-#define BEGIN_POLICY_SCOPE(NEST, TYPE) policyScopeT(NEST, [&](auto POLTYPE){\
-                                         typedef decltype(POLTYPE) TYPE;
-#define   END_POLICY_SCOPE()             });
-
-#else
-
-#define BEGIN_POLICY_SCOPE(NEST, TYPE) policyScope(NEST, TYPE, [&](){
-#define   END_POLICY_SCOPE()             });
-
 
 #endif
-
-
-#endif
-
