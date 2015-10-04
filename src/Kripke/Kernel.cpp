@@ -149,7 +149,6 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
 
-    //BEGIN_POLICY_SCOPE(nesting_order, nest_type)
     policyScope(nesting_order, [&](auto nest_tag){
       typedef decltype(nest_tag) nest_type;
       typedef LayoutPolicy<nest_type> LAYOUT;
@@ -198,7 +197,6 @@ void Kernel::scattering(Grid_Data *grid_data){
     int num_moments = grid_data->total_num_moments;
     int legendre_order = grid_data->legendre_order;
 
-    //BEGIN_POLICY_SCOPE(nesting_order, nest_type)
     policyScope(nesting_order, [&](auto nest_tag){
       typedef decltype(nest_tag) nest_type;
       typedef LayoutPolicy<nest_type> LAYOUT;
@@ -253,7 +251,6 @@ void Kernel::source(Grid_Data *grid_data){
     int num_groups = sdom.phi_out->groups;
     int num_moments = grid_data->total_num_moments;
     
-    //BEGIN_POLICY_SCOPE(nesting_order, nest_type)
     policyScope(nesting_order, [&](auto nest_tag){
       typedef decltype(nest_tag) nest_type;
       typedef LayoutPolicy<nest_type> LAYOUT;
@@ -298,7 +295,6 @@ void Kernel::sweep(Subdomain *sdom) {
   int num_z_j = local_imax * local_kmax;
   int num_z_k = local_imax * local_jmax;
    
-  //BEGIN_POLICY_SCOPE(nesting_order, nest_type)
   policyScope(nesting_order, [&](auto nest_tag){
     typedef decltype(nest_tag) nest_type;
     typedef LayoutPolicy<nest_type> LAYOUT;
@@ -325,7 +321,6 @@ void Kernel::sweep(Subdomain *sdom) {
     // So pull that information out now
     Grid_Sweep_Block const &extent = sdom->sweep_block;
 
-    // TODO: We really need the RAJA::IndexSet concept to deal with zone iteration pattern
     forall3<SweepPolicy<nest_type> >(
       RAJA::RangeSegment(0, num_directions),
       RAJA::RangeSegment(0, num_groups),
