@@ -42,7 +42,7 @@ template<typename T>
 struct ScatteringPolicy{}; // nm, g, gp, mat
 
 template<>
-struct ScatteringPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, seq_pol, omp_pol, seq_pol, seq_pol>
+struct ScatteringPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, seq_pol, seq_pol, seq_pol, omp_pol>
 {};
 
 template<>
@@ -50,7 +50,7 @@ struct ScatteringPolicy<NEST_DZG_T> : ForallPolicy4<PERM_ILJK, omp_pol, seq_pol,
 {};
 
 template<>
-struct ScatteringPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_JKIL, seq_pol, omp_pol, seq_pol, seq_pol>
+struct ScatteringPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_JKIL, seq_pol, seq_pol, seq_pol, seq_pol>
 {};
 
 template<>

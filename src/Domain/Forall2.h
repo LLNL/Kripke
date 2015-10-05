@@ -14,39 +14,84 @@
       typedef POL_J PolicyJ;
     };
 
-
 /******************************************************************
- *  Implementation for permutations of forall2()
+ *  Executors for forall2()
  ******************************************************************/
 
-      template<typename POLICYI, typename POLICYJ, typename TI, typename TJ, typename BODY>
-      RAJA_INLINE void forall2_final(LOOP_NEST_EXPLICIT, TI const &is_i, TJ const &is_j, BODY const &body){
+  // Default executor
+  template<typename POLICYI, typename POLICYJ, typename TI, typename TJ>
+  class Forall2Executor{
+    public:
+
+      // Default executor uses nested RAJA::forall's
+      template<typename BODY>
+      void operator()(TI const &is_i, TJ const &is_j, BODY const &body){
         RAJA::forall<POLICYI>(is_i, RAJA_LAMBDA(int i){
           RAJA::forall<POLICYJ>(is_j, RAJA_LAMBDA(int j){
             body(i, j);
           });
         });
       }
-    
+  };
+
+#ifdef _OPENMP
+  /** Executor with OpenMP collapse(2)
+   *
+   * Auto-detects when:
+   *   -- omp_parallel_for_exec is used for top 2 index sets
+   *   -- RangeSegment is used for top 2 index sets
+   */
+  template<>
+  class Forall2Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, RAJA::RangeSegment, RAJA::RangeSegment>{
+    public:
+
+      // Default executor uses nested RAJA::forall's
+      template<typename BODY>
+      void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY const &body){
+        printf("collapse(2)\n\n");
+        int const i_start = is_i.getBegin();
+        int const i_end   = is_i.getEnd();
+
+        int const j_start = is_j.getBegin();
+        int const j_end   = is_j.getEnd();
+
+#pragma omp parallel for collapse(2)
+        for(int i = i_start;i < i_end;++ i){
+          for(int j = j_start;j < j_end;++ j){
+            body(i, j);
+          }
+        }
+      }
+  };
+#endif
+
+
+
+/******************************************************************
+ *  Permutations for forall2()
+ ******************************************************************/
 
 
       template<typename POLICY, typename TI, typename TJ, typename BODY>
       RAJA_INLINE void forall2_permute(PERM_IJ, TI const &is_i, TJ const &is_j, BODY const &body){
-        typedef typename POLICY::LoopNesting N;
-        forall2_final<typename POLICY::PolicyI, typename POLICY::PolicyJ, TI, TJ>
-          ( N(), is_i, is_j, [&](int i, int j){
-            body(i, j);
-          });        
+
+        Forall2Executor<typename POLICY::PolicyI, typename POLICY::PolicyJ, TI, TJ> exec;
+        exec(is_i, is_j, [&](int i, int j){
+          body(i, j);
+        });
       }
 
       template<typename POLICY, typename TI, typename TJ, typename BODY>
       RAJA_INLINE void forall2_permute(PERM_JI, TI const &is_i, TJ const &is_j, BODY const &body){
-        typedef typename POLICY::LoopNesting N;
-        forall2_final<typename POLICY::PolicyJ, typename POLICY::PolicyI, TJ, TI>
-          ( N(), is_j, is_i, [&](int i, int j){
-            body(j, i);
-          });        
+        Forall2Executor<typename POLICY::PolicyJ, typename POLICY::PolicyI, TJ, TI> exec;
+        exec(is_j, is_i, [&](int j, int i){
+          body(i, j);
+        });
       }
+
+/******************************************************************
+ *  User interface for forall2()
+ ******************************************************************/
 
 
     template<typename POLICY, typename TI, typename TJ, typename BODY>
