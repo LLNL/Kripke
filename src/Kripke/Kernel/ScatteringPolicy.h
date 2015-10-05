@@ -50,19 +50,19 @@ struct ScatteringPolicy<NEST_DZG_T> : ForallPolicy4<PERM_ILJK, omp_pol, seq_pol,
 {};
 
 template<>
-struct ScatteringPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_JKIL, seq_pol, seq_pol, seq_pol, seq_pol>
+struct ScatteringPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_JKIL, seq_pol, omp_pol, seq_pol, seq_pol>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_GZD_T> : ForallPolicy4<PERM_JKLI, seq_pol, seq_pol, seq_pol, seq_pol>
+struct ScatteringPolicy<NEST_GZD_T> : ForallPolicy4<PERM_JKLI, seq_pol, omp_pol, seq_pol, seq_pol>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_ZDG_T> : ForallPolicy4<PERM_LIJK, seq_pol, seq_pol, seq_pol, seq_pol>
+struct ScatteringPolicy<NEST_ZDG_T> : ForallPolicy4<PERM_LIJK, seq_pol, seq_pol, seq_pol, omp_pol>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_ZGD_T> : ForallPolicy4<PERM_LJKI, seq_pol, omp_pol, seq_pol, omp_pol>
+struct ScatteringPolicy<NEST_ZGD_T> : ForallPolicy4<PERM_LJKI, seq_pol, seq_pol, seq_pol, omp_pol>
 {};
 
 

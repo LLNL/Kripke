@@ -12,20 +12,24 @@
 
 #define RAJA_LAMBDA [&]
 //#define RAJA_LAMBDA [=]
+//#define RAJA_LAMBDA [=] __device__
 
 typedef RAJA::simd_exec seq_pol;
-//typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::seq_exec> seq_pol;
-//typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_exec, RAJA::omp_parallel_segit> omp_pol;
-
-typedef seq_pol omp_pol;
+typedef RAJA::omp_parallel_for_exec omp_pol;
 
 typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::simd_exec> sweep_seq_pol;
+typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::omp_parallel_for_exec> sweep_omp_pol;
+
+
+struct LOOP_NEST_EXPLICIT {};
+struct LOOP_NEST_CUDA {};
 
 
 // Include nested forall's
 #include<Domain/Forall2.h>
 #include<Domain/Forall3.h>
 #include<Domain/Forall4.h>
+
 
 
 // Subdomain loops

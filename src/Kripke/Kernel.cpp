@@ -285,7 +285,7 @@ void Kernel::sweep(Subdomain *sdom) {
   int num_groups = sdom->num_groups;
   int num_zones = sdom->num_zones;
 
-  Directions *direction = sdom->directions;
+  Directions const * __restrict__ direction = sdom->directions;
 
   int local_imax = sdom->nzones[0];
   int local_jmax = sdom->nzones[1];
@@ -334,7 +334,6 @@ void Kernel::sweep(Subdomain *sdom) {
         double const xcos_dxi = 2.0 * direction[d].xcos / dx(i + 1);
         double const ycos_dyj = 2.0 * direction[d].ycos / dy(j + 1);
         double const zcos_dzk = 2.0 * direction[d].zcos / dz(k + 1);
-
 
         int const z_idx = zone_layout(i,j,k);
         int const lf_idx = i_layout(j,k);

@@ -42,27 +42,27 @@ template<typename T>
 struct SweepPolicy{}; // d, g, z
 
 template<>
-struct SweepPolicy<NEST_DGZ_T> : ForallPolicy3<PERM_IJK, seq_pol, seq_pol, sweep_seq_pol>
+struct SweepPolicy<NEST_DGZ_T> : ForallPolicy3<PERM_IJK, omp_pol, seq_pol, sweep_seq_pol>
 {};
 
 template<>
-struct SweepPolicy<NEST_DZG_T> : ForallPolicy3<PERM_IKJ, seq_pol, seq_pol, sweep_seq_pol>
+struct SweepPolicy<NEST_DZG_T> : ForallPolicy3<PERM_IKJ, omp_pol, seq_pol, sweep_seq_pol>
 {};
 
 template<>
-struct SweepPolicy<NEST_GDZ_T> : ForallPolicy3<PERM_JIK, seq_pol, seq_pol, sweep_seq_pol>
+struct SweepPolicy<NEST_GDZ_T> : ForallPolicy3<PERM_JIK, seq_pol, omp_pol, sweep_seq_pol>
 {};
 
 template<>
-struct SweepPolicy<NEST_GZD_T> : ForallPolicy3<PERM_JKI, seq_pol, seq_pol, sweep_seq_pol>
+struct SweepPolicy<NEST_GZD_T> : ForallPolicy3<PERM_JKI, seq_pol, omp_pol, sweep_seq_pol>
 {};
 
 template<>
-struct SweepPolicy<NEST_ZDG_T> : ForallPolicy3<PERM_KIJ, seq_pol, seq_pol, sweep_seq_pol>
+struct SweepPolicy<NEST_ZDG_T> : ForallPolicy3<PERM_KIJ, seq_pol, seq_pol, sweep_omp_pol>
 {};
 
 template<>
-struct SweepPolicy<NEST_ZGD_T> : ForallPolicy3<PERM_KJI, seq_pol, seq_pol, sweep_seq_pol>
+struct SweepPolicy<NEST_ZGD_T> : ForallPolicy3<PERM_KJI, seq_pol, seq_pol, sweep_omp_pol>
 {};
 
 

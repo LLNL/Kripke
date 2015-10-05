@@ -6,15 +6,10 @@
 #include<RAJA/RAJA.hxx>
 
 
-    template<typename POLICY, typename TI, typename TJ, typename BODY>
-    RAJA_INLINE void forall2(TI const &is_i, TJ const &is_j, BODY const &body){
-      typedef typename POLICY::LoopOrder L;
-      forall2<POLICY, TI, TJ, BODY>(L(), is_i, is_j, body);
-    }
-
-    template<typename LOOP_ORDER, typename POL_I, typename POL_J>
+    template<typename LOOP_NEST, typename LOOP_ORDER, typename POL_I, typename POL_J>
     struct ForallPolicy2 {
-      typedef LOOP_ORDER LoopOrder;
+      typedef LOOP_NEST LoopNesting;
+      typedef LOOP_ORDER LoopOrder;      
       typedef POL_I PolicyI;
       typedef POL_J PolicyJ;
     };
@@ -24,24 +19,41 @@
  *  Implementation for permutations of forall2()
  ******************************************************************/
 
-      template<typename POLICY, typename TI, typename TJ, typename BODY>
-      RAJA_INLINE void forall2(PERM_IJ, TI const &is_i, TJ const &is_j, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
-          RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
+      template<typename POLICYI, typename POLICYJ, typename TI, typename TJ, typename BODY>
+      RAJA_INLINE void forall2_final(LOOP_NEST_EXPLICIT, TI const &is_i, TJ const &is_j, BODY const &body){
+        RAJA::forall<POLICYI>(is_i, RAJA_LAMBDA(int i){
+          RAJA::forall<POLICYJ>(is_j, RAJA_LAMBDA(int j){
             body(i, j);
           });
         });
       }
+    
+
 
       template<typename POLICY, typename TI, typename TJ, typename BODY>
-      RAJA_INLINE void forall2(PERM_JI, TI const &is_i, TJ const &is_j, BODY const &body){
-        RAJA::forall<typename POLICY::PolicyJ>(is_j, RAJA_LAMBDA(int j){
-          RAJA::forall<typename POLICY::PolicyI>(is_i, RAJA_LAMBDA(int i){
+      RAJA_INLINE void forall2_permute(PERM_IJ, TI const &is_i, TJ const &is_j, BODY const &body){
+        typedef typename POLICY::LoopNesting N;
+        forall2_final<typename POLICY::PolicyI, typename POLICY::PolicyJ, TI, TJ>
+          ( N(), is_i, is_j, [&](int i, int j){
             body(i, j);
-          });
-        });
+          });        
       }
 
+      template<typename POLICY, typename TI, typename TJ, typename BODY>
+      RAJA_INLINE void forall2_permute(PERM_JI, TI const &is_i, TJ const &is_j, BODY const &body){
+        typedef typename POLICY::LoopNesting N;
+        forall2_final<typename POLICY::PolicyJ, typename POLICY::PolicyI, TJ, TI>
+          ( N(), is_j, is_i, [&](int i, int j){
+            body(j, i);
+          });        
+      }
+
+
+    template<typename POLICY, typename TI, typename TJ, typename BODY>
+    RAJA_INLINE void forall2(TI const &is_i, TJ const &is_j, BODY const &body){
+      typedef typename POLICY::LoopOrder L;
+      forall2_permute<POLICY, TI, TJ, BODY>(L(), is_i, is_j, body);
+    }
 
   
 #endif
