@@ -181,43 +181,80 @@ def writeForallExecutorOpenMPCollapse(ndims):
     print "    template<%s>" % argstr
     
     args =  map(lambda a: "RAJA::omp_parallel_for_exec", range(0,depth))
+    args.extend(map(lambda a: "POLICY_"+a.upper(), dim_names[depth:]))
     args.extend(map(lambda a: "RAJA::RangeSegment", range(0,depth)))
+    args.extend(map(lambda a: "T"+a.upper(), dim_names[depth:]))
     argstr = ", ".join(args)   
     print "    class Forall%dExecutor<%s> {" % (ndims, argstr)
     print "      public:  "
     
     # Create collapse(depth) executor function
-    args = map(lambda a: "T%s const &is_%s"%(a.upper(), a), dim_names)    
-    args.append("typename BODY")
-    argstr = ", ".join(args)  
-    print "        template<%s>" % argstr
+    print "        template<typename BODY>"
     
-    args = map(lambda a: "T%s const &is_%s"%(a.upper(), a), dim_names)
+    args = map(lambda a: "RAJA::RangeSegment const &is_"+ a, dim_names[0:depth])
+    args.extend(map(lambda a: "T%s const &is_%s"%(a.upper(),a), dim_names[depth:ndims]))
     argstr = ", ".join(args)  
     print "        inline void operator()(%s, BODY const &body) const {" % argstr
-    print "          RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(int i){"
-    if ndims == 2:  # 2 dimension termination case:
-      print "            RAJA::forall<POLICY_J>(is_j, RAJA_LAMBDA(int j){"
-    else: # more than 2 dimensions, we just peel off the outer loop, and call an N-1 executor
-      args = map(lambda a: "int "+a, dim_names[2:])
-      idxstr = ", ".join(dim_names)  
-      print "            exec(%s, RAJA_LAMBDA(%s){" % (setstr, idxstr)
+#    print "          printf(\"collapse(%d)\\n\");" % depth
     
-    argstr = ", ".join(dim_names)  
-    print "              body(%s);" % argstr
-    print "            });"
-    print "          });"
+    # get begin and end indices each collapsed RangeSegment
+    for a in dim_names[0:depth]:
+      print "          int const %s_start = is_%s.getBegin();" % (a,a)
+      print "          int const %s_end   = is_%s.getEnd();" % (a,a)
+      print ""
+    
+    # Generate nested collapsed for loops
+    print "#pragma omp parallel for collapse(%d)" % depth
+    indent = ""
+    for d in dim_names[0:depth]:
+      print "          %sfor(int %s = %s_start;%s < %s_end;++ %s){" % (indent, d, d, d, d, d)
+      indent += "  "
+    
+    # No more inner loops, so call the loop body directly
+    if remainder_ndims == 0:
+      argstr = argstr = ", ".join(dim_names)
+      print "          %sbody(%s);" % (indent, argstr)
+    
+    # Just one inner loop, so issue a RAJA::forall
+    elif remainder_ndims == 1:      
+      d = dim_names[depth]
+      print "          %sRAJA::forall<POLICY_%s>(is_%s, RAJA_LAMBDA(int %s){" % (indent, d.upper(), d, d)
+      argstr = argstr = ", ".join(dim_names)
+      print "          %s  body(%s);" % (indent, argstr)
+      print "          %s});" % (indent)
+    
+    # More than one inner loop, so call an inner executor
+    else:      
+      #    exec(is_j, is_k, is_l, RAJA_LAMBDA(int j, int k, int l){
+      #      body(i, j, k, l);
+      #    });
+      
+      args = map(lambda a: "is_"+a, dim_names[depth:])
+      setstr = ", ".join(args)
+      args = map(lambda a: "int "+a, dim_names[depth:])
+      argstr = ", ".join(args)      
+      print "          %sexec(%s, RAJA_LAMBDA(%s){" % (indent, setstr, argstr)
+      argstr = argstr = ", ".join(dim_names)
+      print "          %s  body(%s);" % (indent, argstr)
+      print "          %s});" % (indent)
+    
+    # Close out collapsed loops
+    argstr = "";
+    for d in range(0,depth):
+      argstr += "} "
+    print "          %s" % argstr
     print "        }"
+    
       
     # More than 2 dims: create nested ForallNExecutor
-    if remainder_ndims > 2:
+    if remainder_ndims >= 2:
       print ""
-      args = map(lambda a: "POLICY_"+(a.upper()), dim_names[1:])
+      args = map(lambda a: "POLICY_"+(a.upper()), dim_names[depth:])
       polstr = ", ".join(args)
-      args = map(lambda a: "T"+(a.upper()), dim_names[1:])
+      args = map(lambda a: "T"+(a.upper()), dim_names[depth:])
       argstr = ", ".join(args)
       print "      private:"
-      print "        Forall%dExecutor<%s, %s> exec;" % (ndims-1, polstr, argstr)
+      print "        Forall%dExecutor<%s, %s> exec;" % (ndims-depth, polstr, argstr)
     print "    };"
     print ""    
     
@@ -246,7 +283,7 @@ writeForallPolicy(ndims)
 writeForallExecutor(ndims)
 
 # Create the OpenMP collapse() executors
-#writeForallExecutorOpenMPCollapse(ndims)
+writeForallExecutorOpenMPCollapse(ndims)
 
 # Create all permutation MUX's 
 writeForallPermutations(ndims)

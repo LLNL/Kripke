@@ -50,7 +50,7 @@ struct LPlusTimesPolicy<NEST_DZG_T> : ForallPolicy4<PERM_JILK, seq_pol, seq_pol,
 {};
 
 template<>
-struct LPlusTimesPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_KJIL, seq_pol, seq_pol, omp_pol, seq_pol>
+struct LPlusTimesPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_KJIL, seq_pol, seq_pol, seq_pol, seq_pol>
 {};
 
 template<>

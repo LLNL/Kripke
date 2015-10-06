@@ -43,6 +43,95 @@
 
 
 /******************************************************************
+ *  OpenMP Auto-Collapsing Executors for forall4()
+ ******************************************************************/
+
+#ifdef _OPENMP
+
+    // OpenMP Executor with collapse(2)
+    template<typename POLICY_K, typename POLICY_L, typename TK, typename TL>
+    class Forall4Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, POLICY_K, POLICY_L, RAJA::RangeSegment, RAJA::RangeSegment, TK, TL> {
+      public:  
+        template<typename BODY>
+        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, TK const &is_k, TL const &is_l, BODY const &body) const {
+          int const i_start = is_i.getBegin();
+          int const i_end   = is_i.getEnd();
+
+          int const j_start = is_j.getBegin();
+          int const j_end   = is_j.getEnd();
+
+#pragma omp parallel for collapse(2)
+          for(int i = i_start;i < i_end;++ i){
+            for(int j = j_start;j < j_end;++ j){
+              exec(is_k, is_l, RAJA_LAMBDA(int k, int l){
+                body(i, j, k, l);
+              });
+          } } 
+        }
+
+      private:
+        Forall2Executor<POLICY_K, POLICY_L, TK, TL> exec;
+    };
+
+    // OpenMP Executor with collapse(3)
+    template<typename POLICY_L, typename TL>
+    class Forall4Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, POLICY_L, RAJA::RangeSegment, RAJA::RangeSegment, RAJA::RangeSegment, TL> {
+      public:  
+        template<typename BODY>
+        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, TL const &is_l, BODY const &body) const {
+          int const i_start = is_i.getBegin();
+          int const i_end   = is_i.getEnd();
+
+          int const j_start = is_j.getBegin();
+          int const j_end   = is_j.getEnd();
+
+          int const k_start = is_k.getBegin();
+          int const k_end   = is_k.getEnd();
+
+#pragma omp parallel for collapse(3)
+          for(int i = i_start;i < i_end;++ i){
+            for(int j = j_start;j < j_end;++ j){
+              for(int k = k_start;k < k_end;++ k){
+                RAJA::forall<POLICY_L>(is_l, RAJA_LAMBDA(int l){
+                  body(i, j, k, l);
+                });
+          } } } 
+        }
+    };
+
+    // OpenMP Executor with collapse(4)
+    template<>
+    class Forall4Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, RAJA::RangeSegment, RAJA::RangeSegment, RAJA::RangeSegment, RAJA::RangeSegment> {
+      public:  
+        template<typename BODY>
+        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, RAJA::RangeSegment const &is_l, BODY const &body) const {
+          int const i_start = is_i.getBegin();
+          int const i_end   = is_i.getEnd();
+
+          int const j_start = is_j.getBegin();
+          int const j_end   = is_j.getEnd();
+
+          int const k_start = is_k.getBegin();
+          int const k_end   = is_k.getEnd();
+
+          int const l_start = is_l.getBegin();
+          int const l_end   = is_l.getEnd();
+
+#pragma omp parallel for collapse(4)
+          for(int i = i_start;i < i_end;++ i){
+            for(int j = j_start;j < j_end;++ j){
+              for(int k = k_start;k < k_end;++ k){
+                for(int l = l_start;l < l_end;++ l){
+                  body(i, j, k, l);
+          } } } } 
+        }
+    };
+
+
+#endif // _OPENMP
+
+
+/******************************************************************
  *  Permutations layer for forall4()
  ******************************************************************/
 
