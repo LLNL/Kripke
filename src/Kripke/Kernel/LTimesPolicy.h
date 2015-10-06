@@ -42,11 +42,11 @@ template<typename T>
 struct LTimesPolicy{}; // nm, d, g, z
 
 template<>
-struct LTimesPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, seq_pol, seq_pol, omp_pol, seq_pol>
+struct LTimesPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, seq_pol, seq_pol, omp_pol, omp_pol>
 {};
 
 template<>
-struct LTimesPolicy<NEST_DZG_T> : ForallPolicy4<PERM_IJLK, seq_pol, seq_pol, seq_pol, omp_pol>
+struct LTimesPolicy<NEST_DZG_T> : ForallPolicy4<PERM_IJLK, seq_pol, seq_pol, omp_pol, omp_pol>
 {};
 
 template<>

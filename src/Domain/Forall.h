@@ -20,11 +20,6 @@ typedef RAJA::omp_parallel_for_exec omp_pol;
 typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::simd_exec> sweep_seq_pol;
 typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::omp_parallel_for_exec> sweep_omp_pol;
 
-
-struct LOOP_NEST_EXPLICIT {};
-struct LOOP_NEST_CUDA {};
-
-
 // Include nested forall's
 #include<Domain/Forall2.h>
 #include<Domain/Forall3.h>
