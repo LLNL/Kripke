@@ -10,7 +10,7 @@ if(${ENABLE_CUDA})
       set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CUDA_C_FLAGS}")
       set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CUDA_CXX_FLAGS}")
       set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CUDA_EXE_LINKER_FLAGS}")
-      add_definitions (-DKRIPKE_USE_CUDA)
+      add_definitions (-DKRIPKE_USE_CUDA -DLPlusTimes_sweep_combined_ -DLPlusTimes_sweep_LTimes_combined__  -DKRIPKE_USE_CUBLAS)
   endif()
 endif()
 

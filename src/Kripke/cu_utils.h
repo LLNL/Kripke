@@ -3,6 +3,13 @@
 
 #ifdef KRIPKE_USE_CUDA
 
+ #ifdef KRIPKE_USE_CUBLAS
+ /* Using updated (v2) interfaces to cublas and cusparse */
+ #include <cublas_v2.h>
+ #endif
+
+
+
 int get_cudaGetDeviceCount();
 void set_cudaSetDevice(int id);
 void do_cudaDeviceSynchronize();
@@ -21,6 +28,9 @@ void  do_cudaMemcpyD2H( void *dst, void * src,  size_t size);
 void  do_cudaMemcpyH2D_Async( void *dst, void * src,  size_t size);
 void  do_cudaMemcpyD2H_Async( void *dst, void * src,  size_t size);
 
+#ifdef KRIPKE_USE_CUBLAS
+cublasHandle_t get_cublasHandle();
+#endif
 
 #endif
 

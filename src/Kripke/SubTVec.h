@@ -1,18 +1,38 @@
 #ifndef KRIPKE_SUBTVEC_H__
 #define KRIPKE_SUBTVEC_H__
 
-#ifdef KRIPKE_USE_CUDA
-#define USE_PINNED_MEMORY
-#endif
 
 #include <Kripke/Kernel.h>
 #include <algorithm>
 #include <vector>
 #include <stdlib.h>
 
-#ifdef USE_PINNED_MEMORY
+#ifdef KRIPKE_USE_CUDA
 #include "Kripke/cu_utils.h"
 #endif
+
+#ifdef KRIPKE_USE_CUDA
+
+#define CPUMEMORY 0
+#define CPUPINNED 1
+#define GPUMEMORY 2
+#define CUMNGMEM  3
+#define NVRAMMEM  4
+#define NOMEMORY  5
+
+
+#else
+
+#define CPUMEMORY 0
+#define CPUPINNED 0
+#define GPUMEMORY 0
+#define CUMNGMEM  0
+#define NVRAMMEM  3
+#define NOMEMORY  5
+
+#endif
+
+
 
 /**
  *  A transport vector (used for Psi and Phi, RHS, etc.)
@@ -22,21 +42,40 @@
  *  but in whatever nesting order is specified.
  */
 struct SubTVec {
-  SubTVec(Nesting_Order nesting, int ngrps, int ndir_mom, int nzones):
+  SubTVec(Nesting_Order nesting, int ngrps, int ndir_mom, int nzones, int MEMTYPE=CPUPINNED):
     groups(ngrps),
     directions(ndir_mom),
     zones(nzones),
     elements(groups*directions*zones),
-#ifdef USE_PINNED_MEMORY
-    hp_data_linear(0)
-#else
-    data_linear(elements)
-#endif
+    memory_type(MEMTYPE),
+    data_linear(0)
   {
-#ifdef USE_PINNED_MEMORY
-    hp_data_linear = (double *)  get_cudaMallocHost ((size_t) elements*sizeof(double));
-    data_linear = hp_data_linear;
-#endif
+    switch (MEMTYPE){
+      case CPUMEMORY:
+        data_linear = (double *) malloc((size_t) elements*sizeof(double));
+        break;
+      case CPUPINNED://LG protect for compilation without cuda
+        #ifdef KRIPKE_USE_CUDA
+        data_linear = (double *)  get_cudaMallocHost ((size_t) elements*sizeof(double));
+        #else
+        data_linear = (double *) malloc((size_t) elements*sizeof(double));
+        #endif
+        break;
+      #ifdef KRIPKE_USE_CUDA
+      case GPUMEMORY:
+        data_linear = (double*) get_cudaMalloc( (size_t) elements * sizeof(double));
+        break;
+      case CUMNGMEM:
+        data_linear = (double*) get_cudaMallocManaged( (size_t) elements * sizeof(double));
+        break; 
+      #endif
+      case NOMEMORY:
+        data_linear = NULL;
+        break;
+      default:
+        data_linear = (double *) malloc((size_t) elements*sizeof(double)); 
+    }
+
     setupIndices(nesting, &data_linear[0]);
   }
 
@@ -51,15 +90,8 @@ struct SubTVec {
     directions(ndir_mom),
     zones(nzones),
     elements(groups*directions*zones),
-#ifdef USE_PINNED_MEMORY
-    hp_data_linear(0)
-#else
     data_linear(0)
-#endif
   {
-#ifdef USE_PINNED_MEMORY
-    hp_data_linear = NULL;
-#endif
     setupIndices(nesting, ptr);
   }
 
@@ -125,6 +157,28 @@ struct SubTVec {
 
   // These are NOT efficient.. just used to re-stride data for comparisons
   inline double &operator()(int g, int d, int z) {
+
+
+/* 
+    idx[0] = g;
+    idx[1] = z;
+    idx[2] = d;
+
+        ext_to_int[0] = 0;
+        ext_to_int[2] = 1;
+        ext_to_int[1] = 2;
+
+ size_int[0] = groups;
+ size_int[2] = directions;
+ size_int[1] = zones;
+
+  offset = g*nzones*directions + 
+           z*directions + 
+           d
+
+  */
+
+
     int idx[3];
     idx[ext_to_int[0]] = g;
     idx[ext_to_int[1]] = d;
@@ -203,15 +257,10 @@ struct SubTVec {
   int size_int[3]; // size of each dimension in internal indices
 
   int groups, directions, zones, elements;
+  int memory_type;
   double *data_pointer;
 //LG
-
-#ifdef USE_PINNED_MEMORY 
-  double *hp_data_linear;
   double *data_linear;
-#else
-  std::vector<double> data_linear;
-#endif
 };
 
 

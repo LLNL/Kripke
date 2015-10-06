@@ -19,17 +19,19 @@
 #include "Kripke/cu_utils.h"
 #endif
 
-#define USE_GPU_SWEEP_ZDG
-#define USE_GPU_SWEEP_ZGD
 
-//#define KRIPKE_USE_CUDA_TIMING
+#define KRIPKE_USE_CUDA_TIMING
 
 
 void SYNC_GPU(){
-#ifdef KRIPKE_USE_CUDA__
+#ifdef KRIPKE_USE_CUDA
+
+ #ifdef KRIPKE_USE_CUDA_TIMING
  do_cudaDeviceSynchronize();
+ #endif
+ ; 
 #else
-  ;
+ ;
 #endif
 }
 
@@ -69,7 +71,10 @@ int SweepSolver (Grid_Data *grid_data)
    
     {
       BLOCK_TIMER(grid_data->timing, LTimes);
-      kernel->LTimes(grid_data);
+      #ifdef LPlusTimes_sweep_LTimes_combined
+      if (iter == 0)
+      #endif
+        kernel->LTimes(grid_data);
       SYNC_GPU();
     }
 
@@ -106,7 +111,14 @@ int SweepSolver (Grid_Data *grid_data)
       //MPI_Barrier(MPI_COMM_WORLD);
       BLOCK_TIMER(grid_data->timing, Sweep);
 
+#ifdef LPlusTimes_sweep_LTimes_combined
+      #ifdef KRIPKE_USE_CUDA
+      for(int ds = 0;ds < grid_data->num_zone_sets;++ ds)
+        set_cudaMemZeroAsync( (void *) grid_data->d_phi[ds], (size_t)(grid_data->phi[ds]->elements) * sizeof(double));
+      #endif
+#endif
       if(true){
+//      if(else){
         // Create a list of all groups
         std::vector<int> sdom_list(grid_data->subdomains.size());
         for(int i = 0;i < grid_data->subdomains.size();++ i){
@@ -174,15 +186,6 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
     int sdom_id = subdomain_list[i];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
 
-#ifdef KRIPKE_USE_CUDA
-    if(grid_data->kernel->sweep_mode == SWEEP_GPU){
-      //LG  copy RHS to device
-      double *dptr_h_rhs = sdom.rhs->ptr();
-      if ( sdom.d_rhs == NULL){ // allocate
-         sdom.d_rhs = (double *) get_cudaMalloc((size_t) ( sdom.num_zones * sdom.num_groups * sdom.num_directions) * sizeof(double));
-      }
-    }
-#endif
 
     sweep_comm.addSubdomain(sdom_id, sdom);
     // Clear boundary conditions

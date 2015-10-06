@@ -14,6 +14,8 @@
 #include <string.h>
 #endif
 
+
+
 /**
  * Grid_Data constructor
 */
@@ -77,7 +79,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 #endif
   for(int mat = 0;mat < 3;++ mat){
     // allocate transfer matrix
-    sigs[mat] = new SubTVec(kernel->nestingSigs(), total_num_groups, legendre_order+1, total_num_groups);
+    sigs[mat] = new SubTVec(kernel->nestingSigs(), total_num_groups, legendre_order+1, total_num_groups, CPUMEMORY);
 #ifdef KRIPKE_USE_CUDA
     d_sigs[mat] = (double*) get_cudaMalloc((size_t) (sigs[mat]->elements) * sizeof(double) ); 
 #endif
@@ -141,7 +143,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
         // Create ell and ell_plus, if this is the first of this ds
         bool compute_ell = false;
         if(ell[ds] == NULL){
-          ell[ds] = new SubTVec(kernel->nestingEll(), total_num_moments, sdom.num_directions, 1);
+          ell[ds] = new SubTVec(kernel->nestingEll(), total_num_moments, sdom.num_directions, 1, CPUMEMORY);
           ell_plus[ds] = new SubTVec(kernel->nestingEllPlus(), total_num_moments, sdom.num_directions, 1);
 	  #ifdef KRIPKE_USE_CUDA
           d_ell[ds] = (double*) get_cudaMalloc((size_t) (ell[ds]->elements) * sizeof(double) );
@@ -154,7 +156,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
         if(phi[zs] == NULL){
           zs_to_sdomid[zs] = sdom_id;
           phi[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
-          phi_out[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
+          phi_out[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones,CPUMEMORY);
           
 	  #ifdef KRIPKE_USE_CUDA
 	  d_phi[zs] = (double*) get_cudaMalloc((size_t) (phi[zs]->elements)*sizeof(double));
@@ -279,15 +281,31 @@ double Grid_Data::particleEdit(void){
     int num_groups= sdom.num_groups;
     Directions *dirs = sdom.directions;
 
-    #pragma omp parallel for reduction(+:part)
-    for(int z = 0;z < num_zones;++ z){
-      for(int d = 0;d < num_directions;++ d){
-        double w = dirs[d].w;
-        for(int g = 0;g < num_groups;++ g){
-          part += w * (*sdom.psi)(g,d,z);
+#if 0
+    if (kernel->NEST_ZDG){
+      #pragma omp parallel for reduction(+:part) 
+      for(int z = 0;z < num_zones;++ z){
+        for(int d = 0;d < num_directions;++ d){
+          double w = dirs[d].w;
+          double *psi_zd = sdom.psi->ptr(0,d,z);
+          for(int g = 0;g < num_groups;++ g){
+            part += w * psi_zd[g];//    (*sdom.psi)(g,d,z);
+          }
         }
       }
-    }
+     }
+     else{
+#endif
+       #pragma omp parallel for reduction(+:part) num_threads(1) 
+       for(int z = 0;z < num_zones;++ z){
+         for(int d = 0;d < num_directions;++ d){
+           double w = dirs[d].w;
+           for(int g = 0;g < num_groups;++ g){
+             part += w * (*sdom.psi)(g,d,z);
+           }
+         }
+       }
+ //    }
   }
 
   // reduce

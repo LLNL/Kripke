@@ -79,6 +79,12 @@ Subdomain::Subdomain() :
   d_ell(NULL),
   d_phi(NULL),
   d_phi_out(NULL)
+#ifdef KRIPKE_USE_CUBLAS
+  ,
+  d_rhs_ptrs(NULL),
+  d_ell_plus_ptrs(NULL),
+  d_phi_out_ptrs(NULL)
+#endif
 {
   plane_data[0] = NULL;
   plane_data[1] = NULL;
@@ -129,15 +135,32 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   }
 
   // allocate storage for the sweep boundary data (upwind and downwind share same buffer)
-  plane_data[0] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[1] * nzones[2]);
-  plane_data[1] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[2]);
-  plane_data[2] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[1]);
+  plane_data[0] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[1] * nzones[2],CPUPINNED);
+  plane_data[1] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[2],CPUPINNED);
+  plane_data[2] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[0] * nzones[1],CPUPINNED);
 
   // allocate the storage for solution and source terms
-  psi = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, num_zones);
+  psi = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, num_zones,CPUPINNED);
   psi->clear(0.0);
-  rhs = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, num_zones);
-  sigt = new SubTVec(kernel->nestingSigt(), num_groups, 1, num_zones);
+
+#ifdef KRIPKE_USE_CUDA
+  if(kernel->sweep_mode == SWEEP_GPU){
+    #if defined(LPlusTimes_sweep_combined) || defined(LPlusTimes_sweep_LTimes_combined) 
+      rhs = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, num_zones,NOMEMORY);
+    #else
+      rhs = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, num_zones,NOMEMORY);
+      d_rhs = (double *) get_cudaMalloc((size_t) ( num_zones * num_groups * num_directions) * sizeof(double));
+    #endif
+  }
+  else{
+    rhs = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, num_zones,CPUMEMORY);
+  }
+
+#else
+  rhs = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, num_zones,CPUMEMORY);
+#endif
+
+  sigt = new SubTVec(kernel->nestingSigt(), num_groups, 1, num_zones,CPUMEMORY);
   sigt->clear(0.0);
 
   computeSweepIndexSet();

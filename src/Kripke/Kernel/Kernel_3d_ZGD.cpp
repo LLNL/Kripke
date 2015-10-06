@@ -4,16 +4,16 @@
 
 #include "Kripke/cu_utils.h"
 
-#define KRIPKE_ZGD_FLUX_REGISTERS
-
-// #define LPlusTimes_sweep_combined
 
 #ifdef KRIPKE_USE_CUDA
+
 int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_ell,
-                    int num_zones, int num_groups, int num_local_directions, int num_local_groups, int nidx);
+                    int num_zones, int num_groups, int num_local_directions, int num_local_groups, 
+                    int nidx, int group0);
 
 int  cuda_LPlusTimes_ZGD(double *rhs, double *phi_out, double *ell_plus,
-                    int num_zones, int num_groups, int num_local_directions, int num_local_groups, int nidx);
+                    int num_zones, int num_groups, int num_local_directions, int num_local_groups, 
+                    int nidx, int group0);
 
 int cuda_sweep_ZGD( double *rhs, double *phi,
                     double *psi, double *sigt,  Directions *direction,
@@ -22,32 +22,12 @@ int cuda_sweep_ZGD( double *rhs, double *phi,
                     int num_zones, int num_directions, int num_groups,
                     int local_imax, int local_jmax, int local_kmax, int Nslices);
 
-int cuda_sweep_ZGD_fluxRegisters ( const int local_imax,
-				   const int local_jmax,
-				   const int local_kmax,
-				   const int num_zones,
-				   const int num_directions,
-				   const int num_groups,
-				   const double * __restrict__ d_rhs,
-				   const double * __restrict__ d_sigt,
-				   const Directions * __restrict__ d_directions,
-				   const double * __restrict__ d_dx,
-				   const double * __restrict__ d_dy,
-				   const double * __restrict__ d_dz,
-				   double * h_psi,
-				   double * h_i_plane,
-				   double * h_j_plane,
-				   double * h_k_plane,
-				   int i_inc,
-				   int j_inc,
-				   int k_inc
-				   );
 
 int cuda_LPlusTimes_sweep_ZGD( double *phi_out, double *ell_plus,
                     double *psi, double *sigt,  Directions *direction,
                     double *i_plane, double *j_plane, double *k_plane,
                     int *ii_jj_kk_z_idx, int *h_offset, int *d_offset, double *dx, double *dy, double *dz,
-                    int num_zones, int num_directions, int num_groups, int nidx,
+                    int num_zones, int num_directions, int num_groups, int num_local_groups, int nidx, int group0,
                     int local_imax, int local_jmax, int local_kmax, int Nslices);
 
 
@@ -133,7 +113,7 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
 #ifdef KRIPKE_USE_CUDA
     if(sweep_mode == SWEEP_GPU){
       cuda_LTimes_ZGD(sdom.d_phi, sdom.psi->ptr(0, 0, 0), sdom.d_ell,
-                    num_zones, num_groups, num_local_directions, num_local_groups, nidx);
+                    num_zones, num_groups, num_local_directions, num_local_groups, nidx, group0);
     }
 #endif
 
@@ -198,23 +178,21 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
 
       int num_groups = sdom.phi_out->groups;
 
+      #ifndef LPlusTimes_sweep_combined
       double *dptr_h_rhs = sdom.rhs->ptr();
       if ( sdom.d_rhs == NULL){ // allocate
          sdom.d_rhs = (double *) get_cudaMalloc((size_t) ( sdom.num_zones * sdom.num_groups * sdom.num_directions) * sizeof(double));
       }
+      set_cudaMemZeroAsync( (void *) sdom.d_rhs,  (size_t) ( sdom.num_zones * sdom.num_groups * sdom.num_directions ) * sizeof(double));
+      #endif
+  
       if ( sdom.d_ell_plus == NULL){ // allocate , consider moving to preprocessing;
          sdom.d_ell_plus = (double *) get_cudaMalloc((size_t) (nidx * num_local_directions) * sizeof(double) );
          do_cudaMemcpyH2D( (void *) sdom.d_ell_plus, (void*)  sdom.ell_plus->ptr(), (size_t) (nidx * num_local_directions) * sizeof(double));
       }
 
-      set_cudaMemZeroAsync( (void *) sdom.d_rhs,  (size_t) ( sdom.num_zones * sdom.num_groups * sdom.num_directions ) * sizeof(double));
-
-
-      //      cuda_LPlusTimes_ZGD(sdom.d_rhs,sdom.phi_out->ptr(group0, 0, 0), sdom.d_ell_plus,
-      //              num_zones, num_groups, num_local_directions, num_local_groups, nidx);
-
-            cuda_LPlusTimes_ZGD(sdom.d_rhs,sdom.d_phi_out, sdom.d_ell_plus,
-                    num_zones, num_groups, num_local_directions, num_local_groups, nidx);      
+      cuda_LPlusTimes_ZGD(sdom.d_rhs,sdom.d_phi_out, sdom.d_ell_plus,
+                    num_zones, num_groups, num_local_directions, num_local_groups, nidx, group0);      
 
 
   }
@@ -231,7 +209,8 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
     for(int z = 0;z < num_zones;++ z){
       double * KRESTRICT rhs = sdom.rhs->ptr(0, 0, z);
       double * KRESTRICT phi_out = sdom.phi_out->ptr(group0,0, z);
-      for(int group = 0;group < num_local_groups;++ group){
+
+      for(int group = 0;group < num_local_groups;++group){
         double * KRESTRICT ell_plus_d = ell_plus_ptr;
 
         for (int d = 0; d < num_local_directions; d++) {
@@ -532,49 +511,16 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
         do_cudaMemcpyH2D( (void*) sdom->d_sigt,  (void *)  sdom->sigt->ptr(), (size_t) (num_zones*num_groups) * sizeof(double));
      }
 
-#ifdef  KRIPKE_ZGD_FLUX_REGISTERS
-     if ( sdom->sweep_block.start_i == 0 &&
-	  sdom->sweep_block.start_j == 0 &&
-	  sdom->sweep_block.start_k == 0 ) {
-       cuda_sweep_ZGD_fluxRegisters ( local_imax,
-				      local_jmax,
-				      local_kmax,
-				      num_zones,
-				      num_directions,
-				      num_groups,
-				      sdom->d_rhs,
-				      sdom->d_sigt,
-				      sdom->d_directions,
-				      sdom->d_delta_x,
-				      sdom->d_delta_y,
-				      sdom->d_delta_z,
-				      sdom->psi->ptr(),
-				      i_plane.ptr(),
-				      j_plane.ptr(),
-				      k_plane.ptr(),
-				      sdom->sweep_block.start_i,
-				      sdom->sweep_block.start_j,
-				      sdom->sweep_block.start_k
-				      );
-     }
+     cuda_sweep_ZGD( sdom->d_rhs, sdom->phi->ptr(),
+                     sdom->psi->ptr(), sdom->d_sigt,  sdom->d_directions,
+                     i_plane.ptr(),j_plane.ptr(),k_plane.ptr(),
+                     extent.d_ii_jj_kk_z_idx, offset, extent.d_offset,
+                     sdom->d_delta_x, sdom->d_delta_y, sdom->d_delta_z,
+                     num_zones, num_directions, num_groups,
+                     local_imax,local_jmax, local_kmax,
+                     Nslices);
 
-#else
-     if ( sdom->sweep_block.start_i == 0 &&
-	  sdom->sweep_block.start_j == 0 &&
-	  sdom->sweep_block.start_k == 0 ) {
-       cuda_sweep_ZGD( sdom->d_rhs, sdom->phi->ptr(),
-		       sdom->psi->ptr(), sdom->d_sigt,  sdom->d_directions,
-		       i_plane.ptr(),j_plane.ptr(),k_plane.ptr(),
-		       extent.d_ii_jj_kk_z_idx, offset, extent.d_offset,
-		       sdom->d_delta_x, sdom->d_delta_y, sdom->d_delta_z,
-		       num_zones, num_directions, num_groups,
-		       local_imax,local_jmax, local_kmax,
-		       Nslices);
-     }
-     else {
-       printf ("did NOT run a sweep \n");
-     }
-#endif
+
 
      // say what we really did
      sweep_mode = SWEEP_GPU;
@@ -583,11 +529,6 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
 #endif
 
   if(sweep_mode == SWEEP_HYPERPLANE){
-
-    if ( sdom->sweep_block.start_i == 0 &&
-	 sdom->sweep_block.start_j == 0 &&
-	 sdom->sweep_block.start_k == 0 ) {
-      
 
   /*  Perform transport sweep of the grid 1 cell at a time.   */
 #ifdef KRIPKE_USE_OPENMP
@@ -651,7 +592,6 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
           }
 
       }
-    }
     }
 
 #ifdef KRIPKE_USE_OPENMP
@@ -722,8 +662,9 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
 void Kernel_3d_ZGD::LPlusTimes_sweep(Subdomain *sdom) {
 
   int num_directions = sdom->num_directions;
-  int num_groups = sdom->num_groups;
+  int num_local_groups = sdom->num_groups;
   int num_zones = sdom->num_zones;
+  int num_groups = sdom->phi->groups; 
 
   Directions *direction = sdom->directions;
 
@@ -775,8 +716,8 @@ void Kernel_3d_ZGD::LPlusTimes_sweep(Subdomain *sdom) {
          do_cudaMemcpyH2D( (void*) sdom->d_directions , (void *)  sdom->directions,  (size_t)   num_directions * sizeof(Directions) );
      }
      if ( sdom->d_sigt == NULL){
-        sdom->d_sigt = (double *) get_cudaMalloc((size_t) (num_zones*num_groups) * sizeof(double));
-        do_cudaMemcpyH2D( (void*) sdom->d_sigt,  (void *)  sdom->sigt->ptr(), (size_t) (num_zones*num_groups) * sizeof(double));
+        sdom->d_sigt = (double *) get_cudaMalloc((size_t) (num_zones*num_local_groups) * sizeof(double));
+        do_cudaMemcpyH2D( (void*) sdom->d_sigt,  (void *)  sdom->sigt->ptr(), (size_t) (num_zones*num_local_groups) * sizeof(double));
      }
 
      cuda_LPlusTimes_sweep_ZGD( sdom->d_phi_out, sdom->d_ell_plus,
@@ -784,7 +725,8 @@ void Kernel_3d_ZGD::LPlusTimes_sweep(Subdomain *sdom) {
                      i_plane.ptr(),j_plane.ptr(),k_plane.ptr(),
                      extent.d_ii_jj_kk_z_idx, offset, extent.d_offset,
                      sdom->d_delta_x, sdom->d_delta_y, sdom->d_delta_z,
-                     num_zones, num_directions, num_groups, sdom->ell_plus->groups,
+                     num_zones, num_directions, num_groups, num_local_groups, 
+                     sdom->ell_plus->groups, sdom->group0,
                      local_imax,local_jmax, local_kmax,
                      Nslices);
 
@@ -798,6 +740,7 @@ void Kernel_3d_ZGD::LPlusTimes_sweep(Subdomain *sdom) {
 
   if(sweep_mode == SWEEP_HYPERPLANE){
 
+   int group0 =  sdom->group0;
   /*  Perform transport sweep of the grid 1 cell at a time.   */
 #ifdef KRIPKE_USE_OPENMP
     #pragma omp parallel
@@ -810,8 +753,6 @@ void Kernel_3d_ZGD::LPlusTimes_sweep(Subdomain *sdom) {
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp for
 #endif
-
-
       for (int element = offset[slice]; element < offset[slice+1]; element++){
         int i    = ii_jj_kk_z_idx[element*4];
         int j    = ii_jj_kk_z_idx[element*4+1];
@@ -825,11 +766,11 @@ void Kernel_3d_ZGD::LPlusTimes_sweep(Subdomain *sdom) {
         double two_dz = 2.0 / dzk;
 
         double * sigt_z = sdom->sigt->ptr(0, 0, z);
-        double * KRESTRICT phi_out = sdom->phi_out->ptr(0,0, z);
+        double * KRESTRICT phi_out = sdom->phi_out->ptr(group0,0, z);
         int nidx = sdom->ell_plus->groups;
         double * KRESTRICT ell_plus_ptr = sdom->ell_plus->ptr();
 
-        for (int group = 0; group < num_groups; ++group) {
+        for (int group = 0; group < num_local_groups; ++group) {
               double * KRESTRICT psi_z_g = sdom->psi->ptr(group, 0, z);
               double * KRESTRICT psi_lf_z_g = i_plane.ptr(group, 0, I_PLANE_INDEX(j, k));
               double * KRESTRICT psi_fr_z_g = j_plane.ptr(group, 0, J_PLANE_INDEX(i, k));
@@ -845,8 +786,6 @@ void Kernel_3d_ZGD::LPlusTimes_sweep(Subdomain *sdom) {
                 rhs_local[d] += rhs_acc;				
               }
         
- 		  
-			  
             for (int d = 0; d < num_directions; ++d) {
 
               double xcos = direction[d].xcos;
@@ -904,7 +843,7 @@ void Kernel_3d_ZGD::LPlusTimes_sweep(Subdomain *sdom) {
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
-        for (int group = 0; group < num_groups; ++group) {
+        for (int group = 0; group < num_local_groups; ++group) {
           double * KRESTRICT psi_z_g = sdom->psi->ptr(group, 0, z);
           double * KRESTRICT rhs_z_g = sdom->rhs->ptr(group, 0, z);
 

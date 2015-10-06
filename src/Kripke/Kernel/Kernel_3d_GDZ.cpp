@@ -102,7 +102,7 @@ void Kernel_3d_GDZ::LTimes(Grid_Data *grid_data) {
         double *ell_dgemm = &ell_nm[0];
         double *psi_ptr_dgemm = &psi_ptr[0];
         double *phi_dgemm = &phi[0];
-        dgemm_ ('N','N',num_zones, nidx, num_local_directions,ONE, psi_ptr_dgemm,num_zones,ell_dgemm, num_directions,ONE, phi_dgemm, num_zones);
+        dgemm_ ('N','N',num_zones, nidx, num_local_directions,ONE, psi_ptr_dgemm,num_zones,ell_dgemm, num_local_directions,ONE, phi_dgemm, num_zones);
   #else
         for (int i=0; i < nidx; ++i)
           for (int j=0; j < num_local_directions; ++j){ 

@@ -66,4 +66,16 @@ void  do_cudaMemcpyD2H_Async( void *dst, void * src,  size_t size){
   cudaMemcpyAsync(dst, src, size, cudaMemcpyDeviceToHost);
 }
 
+#ifdef KRIPKE_USE_CUBLAS
+cublasHandle_t get_cublasHandle(){
+     static cublasHandle_t handle;
+     static int handle_FLAG = 0;
+     if (handle_FLAG==0){
+        cublasCreate(&handle);
+        handle_FLAG=1;
+     }      
+     return handle;
+}
+#endif
+
 

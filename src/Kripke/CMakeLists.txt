@@ -25,6 +25,7 @@ if(ENABLE_CUDA)
 	  Kripke/cu_utils.cu
 	  Kripke/sweep_ZGD.cu
 	  Kripke/sweep_ZDG.cu 
+          Kripke/sweep_GZD.cu
 	)
 
 	set(CUDA_KRIPKE_SOURCE ${CUDA_KRIPKE_SOURCE} PARENT_SCOPE)

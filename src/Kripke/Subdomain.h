@@ -65,6 +65,7 @@ struct Subdomain {
 //LG
 #ifdef KRIPKE_USE_CUDA
   double *d_delta_x, *d_delta_y, *d_delta_z; // Spatial grid deltas in each dimension, stored as 1D array on GPU
+  double *two_inv_d_delta_x, *two_inv_d_delta_y, *two_inv_d_delta_z;
 #endif
 
   int group0;           // Starting global group id
@@ -102,6 +103,13 @@ struct Subdomain {
   double *d_ell;
   double *d_phi_out;
   double *d_phi;
+
+  #ifdef KRIPKE_USE_CUBLAS
+    double **d_rhs_ptrs,
+           **d_ell_plus_ptrs,
+           **d_phi_out_ptrs;
+  #endif
+
 #endif
 
   // Materials on the mesh, used for scattering lookup

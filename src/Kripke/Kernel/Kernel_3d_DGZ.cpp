@@ -90,7 +90,7 @@ void Kernel_3d_DGZ::LTimes(Grid_Data *grid_data) {
      double *psi_ptr_dgemm = &psi_ptr[0];
      double *phi_dgemm = &phi[0];
      //double timestart = MPI_Wtime();
-     dgemm_ ('N','N',num_groups_zones, nidx, num_local_directions,ONE, psi_ptr_dgemm,num_groups_zones,ell_dgemm, num_directions,ONE, phi_dgemm, num_zones*num_groups);
+     dgemm_ ('N','N',num_groups_zones, nidx, num_local_directions,ONE, psi_ptr_dgemm,num_groups_zones,ell_dgemm, num_local_directions,ONE, phi_dgemm, num_zones*num_groups);
      //double dgemmtime = MPI_Wtime() - timestart;
 
 //      #ifdef LG_PRINT_INFO

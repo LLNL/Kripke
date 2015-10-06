@@ -2,6 +2,7 @@
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 
+#include "Kripke/cu_utils.h"
 
 #ifdef KRIPKE_USE_ESSL
 extern "C"
@@ -14,6 +15,25 @@ void dgemm_ (const char& trans,   const char& transb,
                          const double& beta,  double* c, const int& ldc);
 }
 #endif
+
+#ifdef KRIPKE_USE_CUDA
+
+
+int cuda_LTimes_GZD(double *d_phi, double *h_psi, double *d_ell,
+                    int num_groups_zones, int num_local_directions, int nidx, int group0);
+
+
+int cuda_sweep_GZD( double *d_rhs, double *h_phi, double *h_psi, double *d_sigt, Directions *d_direction,
+                    double *h_i_plane, double *h_j_plane, double *h_k_plane,
+                    int *d_ii_jj_kk_z_idx, int *h_offset,  int *d_offset, double *d_dx, double *d_dy, double *d_dz,
+                    int num_zones, int num_directions, int num_groups,
+                    int local_imax, int local_jmax, int local_kmax, int Nslices,
+                    int start_i, int start_j, int start_k,
+                    int end_i, int end_j, int end_k,
+                    int inc_i, int inc_j, int inc_k);
+#endif
+
+
 
 Kernel_3d_GZD::Kernel_3d_GZD() {
 
@@ -52,10 +72,19 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
   // Outer parameters
   int nidx = grid_data->total_num_moments;
 
+#ifdef KRIPKE_USE_CUDA
+//  if(sweep_mode == SWEEP_GPU){
+    // Clear phi
+    for(int ds = 0;ds < grid_data->num_zone_sets;++ ds)
+     set_cudaMemZeroAsync( (void *) grid_data->d_phi[ds], (size_t)(grid_data->phi[ds]->elements) * sizeof(double));
+//  }
+#else
+
   // Clear phi
   for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
     grid_data->phi[ds]->clear(0.0);
   }
+#endif
 
  // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
@@ -69,55 +98,82 @@ void Kernel_3d_GZD::LTimes(Grid_Data *grid_data) {
     int num_groups_zones = num_local_groups*num_zones;
     int group0 = sdom.group0;
 
-    /* 3D Cartesian Geometry */
-    double *ell_ptr = sdom.ell->ptr();
-    
 
+#ifdef KRIPKE_USE_CUDA
+ 
+//  if(sweep_mode == SWEEP_GPU){
+
+//LG can be an issue with group0!=0 
+//LG need to shift pointer to sdom.d_phi
+
+//      do_cudaMemcpyD2H( (void *) sdom.d_phi,  (void *) sdom.phi->ptr(), (size_t) (sdom.phi->elements * sizeof(double)) );
+
+      cuda_LTimes_GZD(sdom.d_phi, sdom.psi->ptr(), sdom.d_ell,
+                    num_groups_zones, num_local_directions, nidx, group0);
+
+      //copy results back to CPU (for now) 
+      do_cudaMemcpyD2H( (void *) sdom.phi->ptr(),  (void *) sdom.d_phi, (size_t) (sdom.phi->elements * sizeof(double)) );
+
+
+//  }
+  
+#else
+
+  if(sweep_mode != SWEEP_GPU){
+
+     /* 3D Cartesian Geometry */
+      double *ell_ptr = sdom.ell->ptr();
       double * KRESTRICT psi = sdom.psi->ptr();
       double * KRESTRICT phi = sdom.phi->ptr(group0, 0, 0);
       double * KRESTRICT ell_d = ell_ptr;
 
-  #ifdef KRIPKE_USE_ESSL
+
+
+    #ifdef KRIPKE_USE_ESSL
         double ONE = 1.0;
         double *ell_dgemm = &ell_ptr[0];
         double *psi_ptr_dgemm = &psi[0];
         double *phi_dgemm = &phi[0];
         dgemm_ ('N','N', nidx, num_groups_zones, num_local_directions, ONE, ell_dgemm, nidx, psi_ptr_dgemm,num_local_directions, ONE, phi_dgemm, nidx);
 
-  #else
+    #else
 
-#if 1
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
+     #if 0
+        #ifdef KRIPKE_USE_OPENMP
+        #pragma omp parallel for
+        #endif
         for (int i = 0; i < num_groups_zones; ++i)
-        for (int j = 0; j < num_local_directions; ++j)
-          for (int k = 0; k < nidx; ++k)
-            phi[i*nidx + k] += ell_d[j*nidx + k] * psi[i*num_local_directions + j];
-#else
+          for (int j = 0; j < num_local_directions; ++j)
+            for (int k = 0; k < nidx; ++k)
+              phi[i*nidx + k] += ell_d[j*nidx + k] * psi[i*num_local_directions + j];
+     #else
 
 
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel for
-#endif
-    for(int gz = 0;gz < num_groups_zones; ++ gz){
-      double * KRESTRICT psi = sdom.psi->ptr() + gz*num_local_directions;
-      double * KRESTRICT phi = sdom.phi->ptr(group0, 0, 0);
-      double * KRESTRICT ell_d = ell_ptr;
+        #ifdef KRIPKE_USE_OPENMP
+        #pragma omp parallel for
+        #endif
+        for(int gz = 0;gz < num_groups_zones; ++ gz){
+          double * KRESTRICT psi = sdom.psi->ptr() + gz*num_local_directions;
+          double * KRESTRICT phi = sdom.phi->ptr(group0, 0, 0);
+          double * KRESTRICT ell_d = ell_ptr;
 
-      for (int d = 0; d < num_local_directions; d++) {
-        double psi_d = psi[d];
+          for (int d = 0; d < num_local_directions; d++) {
+            double psi_d = psi[d];
 
-        for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
-          phi[nm_offset] += ell_d[nm_offset] * psi_d;
+            for(int nm_offset = 0;nm_offset < nidx;++nm_offset){
+              phi[nm_offset] += ell_d[nm_offset] * psi_d;
+            }
+            ell_d += nidx;
+          }
         }
-        ell_d += nidx;
-      }
-    }
-#endif
+    #endif
 
-#endif // essl
+  #endif // essl
+  }
+#endif //if def KRIPKE_USE_CUDA
   } // Subdomain
+
+
 }
 
 void Kernel_3d_GZD::LPlusTimes(Grid_Data *grid_data) {
@@ -307,11 +363,11 @@ void Kernel_3d_GZD::source(Grid_Data *grid_data){
 
 /* Sweep routine for Diamond-Difference */
 /* Macros for offsets with fluxes on cell faces */
-#define I_PLANE_INDEX(j, k) (k)*(local_jmax) + (j)
-#define J_PLANE_INDEX(i, k) (k)*(local_imax) + (i)
-#define K_PLANE_INDEX(i, j) (j)*(local_imax) + (i)
-#define Zonal_INDEX(i, j, k) (i) + (local_imax)*(j) \
-  + (local_imax)*(local_jmax)*(k)
+#define I_PLANE_INDEX(j, k) ((k)*(local_jmax) + (j))
+#define J_PLANE_INDEX(i, k) ((k)*(local_imax) + (i))
+#define K_PLANE_INDEX(i, j) ((j)*(local_imax) + (i))
+#define Zonal_INDEX(i, j, k) ((i) + (local_imax)*(j) \
+  + (local_imax)*(local_jmax)*(k))
 
 void Kernel_3d_GZD::sweep(Subdomain *sdom) {
   int num_directions = sdom->num_directions;
@@ -337,11 +393,92 @@ void Kernel_3d_GZD::sweep(Subdomain *sdom) {
   // So pull that information out now
   Grid_Sweep_Block const &extent = sdom->sweep_block;
 
+
+#ifdef KRIPKE_USE_CUDA
+  //copy data to d_rhs;
+
+     if (sdom->d_delta_x == NULL){
+       sdom->d_delta_x = (double*) get_cudaMalloc(size_t   (local_imax+2) * sizeof(double)   );
+       do_cudaMemcpyH2D( (void *) (sdom->d_delta_x), (void *) dx, (size_t) (local_imax+2) * sizeof(double));
+     }
+     if (sdom->d_delta_y == NULL){
+       sdom->d_delta_y = (double*) get_cudaMalloc(size_t   (local_jmax+2) * sizeof(double)   );
+       do_cudaMemcpyH2D( (void *) (sdom->d_delta_y), (void *) dy, (size_t) (local_jmax+2) * sizeof(double));
+     }
+     if (sdom->d_delta_z == NULL){
+       sdom->d_delta_z = (double*) get_cudaMalloc(size_t   (local_kmax+2) * sizeof(double)   );
+       do_cudaMemcpyH2D( (void *) (sdom->d_delta_z), (void *) dz, (size_t) (local_kmax+2) * sizeof(double));
+     }
+
+     if (sdom->two_inv_d_delta_x == NULL){
+       sdom->two_inv_d_delta_x = (double*) get_cudaMalloc(size_t   (local_imax+2) * sizeof(double)   );
+       double two_inv_d_delta_x[local_imax+2];
+       for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i)  two_inv_d_delta_x[i+1] = 2.0 / dx[i + 1];
+       do_cudaMemcpyH2D( (void *) (sdom->two_inv_d_delta_x), &two_inv_d_delta_x[0] , (size_t) (local_imax+2) * sizeof(double));
+     }
+     if (sdom->two_inv_d_delta_y == NULL){
+       sdom->two_inv_d_delta_y = (double*) get_cudaMalloc(size_t   (local_jmax+2) * sizeof(double)   );
+       double two_inv_d_delta_y[local_jmax+2];
+       for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j)  two_inv_d_delta_y[j+1] = 2.0 / dy[j + 1];
+       do_cudaMemcpyH2D( (void *) (sdom->two_inv_d_delta_y), &two_inv_d_delta_y[0] , (size_t) (local_jmax+2) * sizeof(double));
+     }
+     if (sdom->two_inv_d_delta_z == NULL){
+       sdom->two_inv_d_delta_z = (double*) get_cudaMalloc(size_t   (local_kmax+2) * sizeof(double)   );
+       double two_inv_d_delta_z[local_kmax+2];
+       for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k)  two_inv_d_delta_z[k+1] = 2.0 / dz[k + 1];
+       do_cudaMemcpyH2D( (void *) (sdom->two_inv_d_delta_z), &two_inv_d_delta_z[0] , (size_t) (local_kmax+2) * sizeof(double));
+     }
+
+
+
+        
+     if ( sdom->d_rhs == NULL){ // allocate , consider moving to preprocessing;
+         sdom->d_rhs = (double *) get_cudaMalloc((size_t) ( sdom->num_zones * sdom->num_groups * sdom->num_directions) * sizeof(double));
+     }
+     do_cudaMemcpyH2D( (void *) sdom->d_rhs, sdom->rhs->ptr(), (size_t) (sdom->num_zones * sdom->num_groups * sdom->num_directions) * sizeof(double)); 
+
+     if ( sdom->d_sigt == NULL){
+        sdom->d_sigt = (double *) get_cudaMalloc((size_t) (num_zones*num_groups) * sizeof(double));
+        do_cudaMemcpyH2D( (void*) sdom->d_sigt,  (void *)  sdom->sigt->ptr(), (size_t) (num_zones*num_groups) * sizeof(double));
+     }
+     if ( sdom->d_directions == NULL){
+         sdom->d_directions = (Directions*) get_cudaMalloc((size_t)  num_directions * sizeof(Directions) );
+         do_cudaMemcpyH2D( (void*) sdom->d_directions , (void *)  sdom->directions,  (size_t)   num_directions * sizeof(Directions) );
+     }
+
+
+     cuda_sweep_GZD(sdom->d_rhs, sdom->phi->ptr(), sdom->psi->ptr(), sdom->d_sigt, 
+                    sdom->d_directions,
+                    i_plane.ptr(), j_plane.ptr(), k_plane.ptr(),
+                    extent.d_ii_jj_kk_z_idx, extent.offset, extent.d_offset, 
+                    //sdom->d_delta_x, sdom->d_delta_y, sdom->d_delta_z,
+                    sdom->two_inv_d_delta_x, sdom->two_inv_d_delta_y, sdom->two_inv_d_delta_z,
+                    num_zones,  num_directions, num_groups,
+                    local_imax, local_jmax, local_kmax, extent.Nhyperplanes,
+                    extent.start_i, extent.start_j, extent.start_k,
+                    extent.end_i, extent.end_j, extent.end_k,
+                    extent.inc_i, extent.inc_j, extent.inc_k);
+
+   return;
+
+#endif
+
+
+  double *i_plane_ptr = i_plane.ptr();
+  double *psi_ptr = sdom->psi->ptr();
+  double *rhs_ptr = sdom->rhs->ptr();
+  double *sigt_ptr = sdom->sigt->ptr();
+
+  int i_plane_zones = local_jmax * local_kmax;
+  
+ 
 #ifdef KRIPKE_USE_OPENMP
 #pragma omp parallel for
 #endif
   for (int group = 0; group < num_groups; ++group) {
-    double *sigt_g = sdom->sigt->ptr(group, 0, 0);
+
+//    double *sigt_g = sdom->sigt->ptr(group, 0, 0);
+    double *sigt_g = &sigt_ptr[group * num_zones];
 
     /*  Perform transport sweep of the grid 1 cell at a time.   */
     for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {
@@ -356,10 +493,16 @@ void Kernel_3d_GZD::sweep(Subdomain *sdom) {
 
           int z = Zonal_INDEX(i, j, k);
 
-          double * KRESTRICT psi_g_z = sdom->psi->ptr(group, 0, z);
-          double * KRESTRICT rhs_g_z = sdom->rhs->ptr(group, 0, z);
+//          double * KRESTRICT psi_g_z = sdom->psi->ptr(group, 0, z);
+//          double * KRESTRICT rhs_g_z = sdom->rhs->ptr(group, 0, z);
 
-          double * KRESTRICT psi_lf_g_z = i_plane.ptr(group, 0, I_PLANE_INDEX(j, k));
+          double * KRESTRICT psi_g_z = &psi_ptr[group*num_zones*num_directions + z*num_directions];//psi(group, 0, z);
+          double * KRESTRICT rhs_g_z = &rhs_ptr[group*num_zones*num_directions + z*num_directions];
+
+
+          double * KRESTRICT psi_lf_g_z = &i_plane_ptr[group*i_plane_zones*num_directions+I_PLANE_INDEX(j, k)*num_directions];
+
+//          double * KRESTRICT psi_lf_g_z = i_plane.ptr(group, 0, I_PLANE_INDEX(j, k));
           double * KRESTRICT psi_fr_g_z = j_plane.ptr(group, 0, J_PLANE_INDEX(i, k));
           double * KRESTRICT psi_bo_g_z = k_plane.ptr(group, 0, K_PLANE_INDEX(i, j));
 
