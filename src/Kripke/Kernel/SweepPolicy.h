@@ -50,7 +50,7 @@ struct SweepPolicy<NEST_DZG_T> : ForallPolicy3<PERM_IKJ, omp_pol, seq_pol, sweep
 {};
 
 template<>
-struct SweepPolicy<NEST_GDZ_T> : ForallPolicy3<PERM_JIK, seq_pol, omp_pol, sweep_seq_pol>
+struct SweepPolicy<NEST_GDZ_T> : ForallPolicy3<PERM_JIK, omp_pol, omp_pol, sweep_seq_pol>
 {};
 
 template<>
