@@ -103,7 +103,7 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
       RAJA_INLINE void forall3_permute(PERM_IJK, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
-        Forall3Executor<typename POLICY::PolicyI, typename POLICY::PolicyJ, typename POLICY::PolicyK, TI, TJ, TK> const exec;
+        Forall3Executor<typename POLICY::PolicyI, typename POLICY::PolicyJ, typename POLICY::PolicyK, TI, TJ, TK> exec;
         exec(is_i, is_j, is_k, RAJA_LAMBDA(int i, int j, int k){
           body(i, j, k);
         });
@@ -111,7 +111,7 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
       RAJA_INLINE void forall3_permute(PERM_IKJ, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
-        Forall3Executor<typename POLICY::PolicyI, typename POLICY::PolicyK, typename POLICY::PolicyJ, TI, TK, TJ> const exec;
+        Forall3Executor<typename POLICY::PolicyI, typename POLICY::PolicyK, typename POLICY::PolicyJ, TI, TK, TJ> exec;
         exec(is_i, is_k, is_j, RAJA_LAMBDA(int i, int k, int j){
           body(i, j, k);
         });
@@ -119,7 +119,7 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
       RAJA_INLINE void forall3_permute(PERM_JIK, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
-        Forall3Executor<typename POLICY::PolicyJ, typename POLICY::PolicyI, typename POLICY::PolicyK, TJ, TI, TK> const exec;
+        Forall3Executor<typename POLICY::PolicyJ, typename POLICY::PolicyI, typename POLICY::PolicyK, TJ, TI, TK> exec;
         exec(is_j, is_i, is_k, RAJA_LAMBDA(int j, int i, int k){
           body(i, j, k);
         });
@@ -127,7 +127,7 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
       RAJA_INLINE void forall3_permute(PERM_JKI, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
-        Forall3Executor<typename POLICY::PolicyJ, typename POLICY::PolicyK, typename POLICY::PolicyI, TJ, TK, TI> const exec;
+        Forall3Executor<typename POLICY::PolicyJ, typename POLICY::PolicyK, typename POLICY::PolicyI, TJ, TK, TI> exec;
         exec(is_j, is_k, is_i, RAJA_LAMBDA(int j, int k, int i){
           body(i, j, k);
         });
@@ -135,7 +135,7 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
       RAJA_INLINE void forall3_permute(PERM_KIJ, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
-        Forall3Executor<typename POLICY::PolicyK, typename POLICY::PolicyI, typename POLICY::PolicyJ, TK, TI, TJ> const exec;
+        Forall3Executor<typename POLICY::PolicyK, typename POLICY::PolicyI, typename POLICY::PolicyJ, TK, TI, TJ> exec;
         exec(is_k, is_i, is_j, RAJA_LAMBDA(int k, int i, int j){
           body(i, j, k);
         });
@@ -143,7 +143,7 @@
 
       template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
       RAJA_INLINE void forall3_permute(PERM_KJI, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
-        Forall3Executor<typename POLICY::PolicyK, typename POLICY::PolicyJ, typename POLICY::PolicyI, TK, TJ, TI> const exec;
+        Forall3Executor<typename POLICY::PolicyK, typename POLICY::PolicyJ, typename POLICY::PolicyI, TK, TJ, TI> exec;
         exec(is_k, is_j, is_i, RAJA_LAMBDA(int k, int j, int i){
           body(i, j, k);
         });

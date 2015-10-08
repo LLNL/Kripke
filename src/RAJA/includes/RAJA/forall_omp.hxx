@@ -632,6 +632,39 @@ void forall(omp_parallel_for_exec,
    RAJA_FT_END ;
 }
 
+template <typename LOOP_BODY>
+RAJA_INLINE
+void forall(omp_parallel_seq_exec,
+            Index_type begin, Index_type end,
+            LOOP_BODY loop_body)
+{
+   RAJA_FT_BEGIN ;
+
+#pragma omp parallel
+   {
+     for ( Index_type ii = begin ; ii < end ; ++ii ) {
+        loop_body( ii );
+     }
+   }
+   RAJA_FT_END ;
+}
+
+template <typename LOOP_BODY>
+RAJA_INLINE
+void forall(omp_for_nowait_exec,
+            Index_type begin, Index_type end,
+            LOOP_BODY loop_body)
+{
+   RAJA_FT_BEGIN ;
+
+#pragma omp for schedule(static) nowait
+   for ( Index_type ii = begin ; ii < end ; ++ii ) {
+      loop_body( ii );
+   }
+
+   RAJA_FT_END ;
+}
+
 /*!
  ******************************************************************************
  *
@@ -685,6 +718,62 @@ void forall(omp_parallel_for_exec,
 
    RAJA_FT_END ;
 }
+
+
+
+/*!
+ ******************************************************************************
+ *
+ * \brief  omp parallel region, containing non-parallel iteration over index range set object.
+ *
+ ******************************************************************************
+ */
+template <typename LOOP_BODY>
+RAJA_INLINE
+void forall(RAJA::omp_parallel_seq_exec,
+            const RangeSegment& iseg,
+            LOOP_BODY loop_body)
+{
+   const Index_type begin = iseg.getBegin();
+   const Index_type end   = iseg.getEnd();
+
+   RAJA_FT_BEGIN ;
+
+#pragma omp parallel
+   for ( Index_type ii = begin ; ii < end ; ++ii ) {
+      loop_body( ii );
+   }
+
+   RAJA_FT_END ;
+}
+
+
+/*!
+ ******************************************************************************
+ *
+ * \brief  omp for-nowait iteration over index range set object.
+ *
+ ******************************************************************************
+ */
+template <typename LOOP_BODY>
+RAJA_INLINE
+void forall(omp_for_nowait_exec,
+            const RangeSegment& iseg,
+            LOOP_BODY loop_body)
+{
+   const Index_type begin = iseg.getBegin();
+   const Index_type end   = iseg.getEnd();
+
+   RAJA_FT_BEGIN ;
+
+#pragma omp for schedule(static) nowait
+   for ( Index_type ii = begin ; ii < end ; ++ii ) {
+      loop_body( ii );
+   }
+
+   RAJA_FT_END ;
+}
+
 
 /*!
  ******************************************************************************

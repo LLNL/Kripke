@@ -5,7 +5,7 @@
 
 #include<RAJA/RAJA.hxx>
 
-
+#include<omp.h>
 
 /******************************************************************
  *  Policy base class, forall2()
@@ -49,17 +49,41 @@
       public:  
         template<typename BODY>
         inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY const &body) const {
+          int tid = 0;
           int const i_start = is_i.getBegin();
           int const i_end   = is_i.getEnd();
 
           int const j_start = is_j.getBegin();
           int const j_end   = is_j.getEnd();
 
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for schedule(static) collapse(2)
           for(int i = i_start;i < i_end;++ i){
             for(int j = j_start;j < j_end;++ j){
               body(i, j);
           } } 
+
+        }
+    };
+
+    // OpenMP Executor with collapse(2) no wait
+    template<>
+    class Forall2Executor<RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec, RAJA::RangeSegment, RAJA::RangeSegment> {
+      public:
+        template<typename BODY>
+        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY const &body) const {
+          int tid = 0;
+          int const i_start = is_i.getBegin();
+          int const i_end   = is_i.getEnd();
+
+          int const j_start = is_j.getBegin();
+          int const j_end   = is_j.getEnd();
+
+#pragma omp for schedule(static) collapse(2) nowait
+          for(int i = i_start;i < i_end;++ i){
+            for(int j = j_start;j < j_end;++ j){
+              body(i, j);
+          } }
+
         }
     };
 
@@ -73,7 +97,7 @@
 
       template<typename POLICY, typename TI, typename TJ, typename BODY>
       RAJA_INLINE void forall2_permute(PERM_IJ, TI const &is_i, TJ const &is_j, BODY const &body){
-        Forall2Executor<typename POLICY::PolicyI, typename POLICY::PolicyJ, TI, TJ> const exec;
+        Forall2Executor<typename POLICY::PolicyI, typename POLICY::PolicyJ, TI, TJ> exec;
         exec(is_i, is_j, RAJA_LAMBDA(int i, int j){
           body(i, j);
         });
@@ -81,7 +105,7 @@
 
       template<typename POLICY, typename TI, typename TJ, typename BODY>
       RAJA_INLINE void forall2_permute(PERM_JI, TI const &is_i, TJ const &is_j, BODY const &body){
-        Forall2Executor<typename POLICY::PolicyJ, typename POLICY::PolicyI, TJ, TI> const exec;
+        Forall2Executor<typename POLICY::PolicyJ, typename POLICY::PolicyI, TJ, TI> exec;
         exec(is_j, is_i, RAJA_LAMBDA(int j, int i){
           body(i, j);
         });

@@ -88,7 +88,7 @@ def writeForallPermutations(ndims):
     polstr = ", ".join(args)
     args = map(lambda a: "T"+(a.upper()), perm)
     setstr = ", ".join(args)
-    print "        Forall%dExecutor<%s, %s> const exec;" % (ndims, polstr, setstr)
+    print "        Forall%dExecutor<%s, %s> exec;" % (ndims, polstr, setstr)
     
     # Call executor
     args = map(lambda a: "is_"+a, perm)

@@ -120,13 +120,12 @@ void Kernel::LTimes(Grid_Data *grid_data) {
         RAJA::RangeSegment(0, num_local_groups),
         RAJA::RangeSegment(0, num_zones),
         [&](int nm, int d, int g, int z){
- 
+
           phi(nm, g+group0, z) += ell(d,nm) * psi(d,g,z);
  
         }); // forall
     }); // policy    
   }); // sdom
-
 }
 
 #include<Kripke/Kernel/LPlusTimesPolicy.h>
@@ -171,7 +170,6 @@ void Kernel::LPlusTimes(Grid_Data *grid_data) {
         }); // forall
     }); // policy
   }); // sdom
-  
 }
 
 
