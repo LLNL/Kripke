@@ -42,13 +42,14 @@ template<typename T>
 struct LTimesPolicy{}; // nm, d, g, z
 
 template<>
-//struct LTimesPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, RAJA::omp_parallel_seq_exec, seq_pol, RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec>
-struct LTimesPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, seq_pol, seq_pol, omp_pol, omp_pol>
-//struct LTimesPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, seq_pol, seq_pol, RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec>
+struct LTimesPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, RAJA::omp_parallel_seq_exec, seq_pol, RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec>
+//struct LTimesPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, seq_pol, seq_pol, omp_pol, omp_pol>
+//struct LTimesPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, RAJA::omp_parallel_seq_exec, seq_pol, RAJA::omp_for_nowait_exec, seq_pol>
 {};
 
 template<>
-struct LTimesPolicy<NEST_DZG_T> : ForallPolicy4<PERM_IJLK, seq_pol, seq_pol, omp_pol, omp_pol>
+struct LTimesPolicy<NEST_DZG_T> : ForallPolicy4<PERM_IJLK, RAJA::omp_parallel_seq_exec, seq_pol, RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec>
+//struct LTimesPolicy<NEST_DZG_T> : ForallPolicy4<PERM_IJLK, seq_pol, seq_pol, omp_pol, omp_pol>
 {};
 
 template<>
@@ -56,15 +57,15 @@ struct LTimesPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_KIJL, seq_pol, seq_pol, seq
 {};
 
 template<>
-struct LTimesPolicy<NEST_GZD_T> : ForallPolicy4<PERM_KLIJ, seq_pol, seq_pol, omp_pol, seq_pol>
+struct LTimesPolicy<NEST_GZD_T> : ForallPolicy4<PERM_KLIJ, seq_pol, seq_pol, omp_pol, omp_pol>
 {};
 
 template<>
-struct LTimesPolicy<NEST_ZDG_T> : ForallPolicy4<PERM_LIJK, seq_pol, seq_pol, seq_pol, omp_pol>
+struct LTimesPolicy<NEST_ZDG_T> : ForallPolicy4<PERM_LIJK, omp_pol, seq_pol, seq_pol, omp_pol>
 {}; 
 
 template<>
-struct LTimesPolicy<NEST_ZGD_T> : ForallPolicy4<PERM_LKIJ, seq_pol, seq_pol, seq_pol, omp_pol>
+struct LTimesPolicy<NEST_ZGD_T> : ForallPolicy4<PERM_LKIJ, seq_pol, seq_pol, omp_pol, omp_pol>
 {};
 
 
