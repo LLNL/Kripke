@@ -5,7 +5,7 @@
 
 #include<RAJA/RAJA.hxx>
 
-#include<omp.h>
+
 
 /******************************************************************
  *  Policy base class, forall2()
@@ -43,13 +43,12 @@
 
 #ifdef _OPENMP
 
-    // OpenMP Executor with collapse(2)
+    // OpenMP Executor with collapse(2) for omp_parallel_for_exec
     template<>
     class Forall2Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, RAJA::RangeSegment, RAJA::RangeSegment> {
       public:  
         template<typename BODY>
         inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY const &body) const {
-          int tid = 0;
           int const i_start = is_i.getBegin();
           int const i_end   = is_i.getEnd();
 
@@ -61,17 +60,15 @@
             for(int j = j_start;j < j_end;++ j){
               body(i, j);
           } } 
-
         }
     };
 
-    // OpenMP Executor with collapse(2) no wait
+    // OpenMP Executor with collapse(2) for omp_for_nowait_exec
     template<>
     class Forall2Executor<RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec, RAJA::RangeSegment, RAJA::RangeSegment> {
-      public:
+      public:  
         template<typename BODY>
         inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY const &body) const {
-          int tid = 0;
           int const i_start = is_i.getBegin();
           int const i_end   = is_i.getEnd();
 
@@ -82,8 +79,7 @@
           for(int i = i_start;i < i_end;++ i){
             for(int j = j_start;j < j_end;++ j){
               body(i, j);
-          } }
-
+          } } 
         }
     };
 
