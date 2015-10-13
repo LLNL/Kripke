@@ -48,7 +48,8 @@ struct LPlusTimesPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, RAJA::omp_paralle
 
 template<>
 //struct LPlusTimesPolicy<NEST_DZG_T> : ForallPolicy4<PERM_JILK, seq_pol, seq_pol, seq_pol, omp_pol>
-struct LPlusTimesPolicy<NEST_DZG_T> : ForallPolicy4<PERM_JILK, seq_pol, RAJA::omp_parallel_seq_exec, RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec>
+struct LPlusTimesPolicy<NEST_DZG_T> : ForallPolicy4<PERM_JILK, seq_pol, seq_pol, omp_pol, omp_pol>
+//struct LPlusTimesPolicy<NEST_DZG_T> : ForallPolicy4<PERM_JILK, seq_pol, RAJA::omp_parallel_seq_exec, RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec>
 {};
 
 template<>
