@@ -530,8 +530,15 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
 
   if(sweep_mode == SWEEP_HYPERPLANE){
 
+    
+
   /*  Perform transport sweep of the grid 1 cell at a time.   */
 #ifdef KRIPKE_USE_OPENMP
+
+#ifdef OCTAVE_PROFILING
+    double sweep_start_time = MPI_Wtime();
+#endif
+
     #pragma omp parallel
     {
 #endif
@@ -593,6 +600,13 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
 
       }
     }
+
+#ifdef OCTAVE_PROFILING
+      double sweep_end_time = MPI_Wtime();
+      int ierr, my_id;
+      ierr = MPI_Comm_rank (MPI_COMM_WORLD, &my_id);
+      printf ("h = rectangle ('Position', [%f, %f, %f, %f]); set (h, 'faceColor', [%d, %d, %d]);\n", sweep_start_time, 1.0*my_id, sweep_end_time-sweep_start_time, 1.0, 0, 0, 1 );
+#endif
 
 #ifdef KRIPKE_USE_OPENMP
     }

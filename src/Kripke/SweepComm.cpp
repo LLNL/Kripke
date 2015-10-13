@@ -186,14 +186,16 @@ void SweepComm::markComplete(int sdom_id){
 
     // At this point, we know that we have to send an MPI message
     // Add request to send queue
-    send_requests.push_back(MPI_Request());
+    //send_requests.push_back(MPI_Request());
 
     // compute the tag id of TARGET subdomain (tags are always based on destination)
     int tag = sdom->downwind[dim].mpi_rank + mpi_size*sdom->downwind[dim].subdomain_id;
 
     // Post the send
-    MPI_Isend(sdom->plane_data[dim]->ptr(), sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
-      tag, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
+    //MPI_Isend(sdom->plane_data[dim]->ptr(), sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
+    //  tag, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
+    MPI_Send(sdom->plane_data[dim]->ptr(), sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
+      tag, MPI_COMM_WORLD);
   }
 }
 

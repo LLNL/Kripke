@@ -10,7 +10,8 @@ if(ENABLE_CUDA)
 	cuda_add_library(cukripkelib STATIC ${CUDA_KRIPKE_SOURCE})
 
 	set(KRIPKE_LIBS ${KRIPKE_LIBS} cukripkelib)
-        set(KRIPKE_LIBS ${KRIPKE_LIBS} /usr/local/cuda/lib64/libcublas.so)
+#        set(KRIPKE_LIBS ${KRIPKE_LIBS} /usr/local/cuda/lib64/libcublas.so)
+        set(KRIPKE_LIBS ${KRIPKE_LIBS} /opt/cudatoolkit-7.0/lib64/libcublas.so)
 
 endif()
 
