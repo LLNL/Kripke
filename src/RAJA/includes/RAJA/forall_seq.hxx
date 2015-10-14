@@ -962,6 +962,7 @@ void forall( IndexSet::ExecPolicy<seq_segit, SEG_EXEC_POLICY_T>,
          }
 #endif
 
+#if 0
          case _ListSeg_ : {
             const ListSegment* tseg =
                static_cast<const ListSegment*>(iseg);
@@ -972,7 +973,7 @@ void forall( IndexSet::ExecPolicy<seq_segit, SEG_EXEC_POLICY_T>,
             );
             break;
          }
-
+#endif
          default : {
          }
 

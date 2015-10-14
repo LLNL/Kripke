@@ -59,6 +59,8 @@ struct SweepPolicy<NEST_GZD_T> : ForallPolicy3<PERM_JKI, seq_pol, omp_pol, sweep
 
 template<>
 struct SweepPolicy<NEST_ZDG_T> : ForallPolicy3<PERM_KIJ, seq_pol, seq_pol, sweep_omp_pol>
+//struct SweepPolicy<NEST_ZDG_T> : ForallPolicy3<PERM_KIJ, omp_pol, omp_pol, sweep_seq_pol>
+//struct SweepPolicy<NEST_ZDG_T> : ForallPolicy3<PERM_KIJ, omp_nowait, omp_nowait, sweep_parallel_seq_pol>
 {};
 
 template<>

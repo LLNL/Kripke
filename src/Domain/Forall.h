@@ -10,15 +10,17 @@
 //#define RAJA_INLINE __attribute__((always_inline))
 
 
-#define RAJA_LAMBDA [&]
-//#define RAJA_LAMBDA [=]
+//#define RAJA_LAMBDA [&]
+#define RAJA_LAMBDA [=]
 //#define RAJA_LAMBDA [=] __device__
 
 typedef RAJA::simd_exec seq_pol;
 typedef RAJA::omp_parallel_for_exec omp_pol;
+typedef RAJA::omp_for_nowait_exec omp_nowait;
 
 typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::simd_exec> sweep_seq_pol;
 typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::omp_parallel_for_exec> sweep_omp_pol;
+typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::omp_parallel_seq_exec> sweep_parallel_seq_pol;
 
 // Include nested forall's
 #include<Domain/Forall2.h>
