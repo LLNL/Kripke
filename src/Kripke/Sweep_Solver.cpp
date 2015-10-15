@@ -197,7 +197,7 @@ void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, boo
       }
       if(grid_data->trace_file){
         end_time = MPI_Wtime() + grid_data->trace_offset;
-        fprintf(grid_data->trace_file, "sweep_kernel %lf %lf\n", start_time, end_time);
+        fprintf(grid_data->trace_file, "sweep_kernel %lf %lf %d\n", start_time, end_time, sdom_id);
       }
 
       // Mark as complete (and do any communication)
