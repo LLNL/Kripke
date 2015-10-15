@@ -73,6 +73,7 @@ struct Input_Variables {
 #ifdef KRIPKE_USE_SILO
   std::string silo_basename;    // name prefix for silo output files
 #endif
+  bool sweep_trace;             // Output per-rank sweep trace file
 
 };
 

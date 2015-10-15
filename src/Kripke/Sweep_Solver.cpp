@@ -49,6 +49,21 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
+  grid_data->trace_offset = MPI_Wtime();
+  if(grid_data->sweep_trace){
+    // Get a "synchronized" time in case there is clock skew
+    // this won't be perfect, but will eliminate large differences
+    MPI_Bcast(&grid_data->trace_offset, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    grid_data->trace_offset = grid_data->trace_offset - MPI_Wtime();
+
+    // Open a trace file based on our rank
+    char fname[1024];
+    snprintf(fname, 1024, "trace.%05d", mpi_rank);
+    grid_data->trace_file = fopen(fname, "wb");
+  }
+
+
+
   BLOCK_TIMER(grid_data->timing, Solve);
 
 
@@ -123,6 +138,11 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
     }
     part_last = part;
   }
+
+  if(grid_data->trace_file){
+    fclose(grid_data->trace_file);
+  }
+
   return(0);
 }
 
@@ -165,10 +185,19 @@ void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, boo
           sdom.plane_data[dim]->clear(0.0);
         }
       }
+
+      double start_time, end_time;
+      if(grid_data->trace_file){
+        start_time = MPI_Wtime() + grid_data->trace_offset;
+      }
       {
         BLOCK_TIMER(grid_data->timing, Sweep_Kernel);
         // Perform subdomain sweep
         grid_data->kernel->sweep(&sdom);
+      }
+      if(grid_data->trace_file){
+        end_time = MPI_Wtime() + grid_data->trace_offset;
+        fprintf(grid_data->trace_file, "sweep_kernel %lf %lf\n", start_time, end_time);
       }
 
       // Mark as complete (and do any communication)
