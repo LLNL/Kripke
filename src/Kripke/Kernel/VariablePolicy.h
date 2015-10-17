@@ -36,10 +36,12 @@
 #include<Kripke.h>
 #include<Domain/Layout.h>
 #include<Domain/Forall.h>
+#include<Domain/Index.h>
+
 
 struct FixedLayoutPolicy {
-  typedef PERM_JI Ell;
-  typedef PERM_IJ EllPlus;
+  typedef PERM_JI Ell;     // d, nm
+  typedef PERM_IJ EllPlus; // d, nm
   
   typedef Layout3d<PERM_KJI> Zone;
   typedef Layout2d<PERM_JI> Face;
@@ -98,6 +100,18 @@ struct LayoutPolicy<NEST_ZGD_T> : public FixedLayoutPolicy {
 };
 
 
+DEF_INDEX(IMaterial);
+DEF_INDEX(ILegendre);
+DEF_INDEX(IMoment);
+DEF_INDEX(IDirection);
+DEF_INDEX(IGlobalGroup);
+DEF_INDEX(IGroup);
+DEF_INDEX(IZone);
+DEF_INDEX(IMix);
+DEF_INDEX(IFaceI);
+DEF_INDEX(IFaceJ);
+DEF_INDEX(IFaceK);
+
 template<typename T>
 struct ViewPolicy {
   typedef View3d<double, typename T::Psi> Psi; // D, G, Z
@@ -107,6 +121,16 @@ struct ViewPolicy {
   typedef View2d<double, typename T::EllPlus> EllPlus; // D, NM  
   typedef View4d<double, typename T::SigS> SigS; // N, G, Gp, material  
   typedef View2d<double, typename T::SigT> SigT; // G, Z
+  
+  typedef TView3d<double, typename T::Psi, IDirection, IGroup, IZone> TPsi;
+  typedef TView3d<double, typename T::Psi, IDirection, IGroup, IFaceI> TFaceI;
+  typedef TView3d<double, typename T::Psi, IDirection, IGroup, IFaceJ> TFaceJ;
+  typedef TView3d<double, typename T::Psi, IDirection, IGroup, IFaceK> TFaceK;
+  typedef TView3d<double, typename T::Phi, IMoment, IGlobalGroup, IZone> TPhi;  
+  typedef TView2d<double, typename T::Ell, IDirection, IMoment> TEll;
+  typedef TView2d<double, typename T::EllPlus, IDirection, IMoment> TEllPlus;
+  typedef TView4d<double, typename T::SigS, ILegendre, IGlobalGroup, IGlobalGroup, IMaterial> TSigS;
+  typedef TView2d<double, typename T::EllPlus, IGroup, IZone> TSigT;
 };
 
 #endif

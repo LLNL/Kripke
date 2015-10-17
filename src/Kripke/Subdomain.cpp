@@ -33,6 +33,7 @@
 #include <Kripke/Grid.h>
 #include <Kripke/SubTVec.h>
 #include <Kripke/Input_Variables.h>
+#include <Kripke/Kernel/VariablePolicy.h>
 
 #include <cmath>
 #include <sstream>
@@ -134,6 +135,7 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   num_directions = input_vars->num_directions / input_vars->num_dirsets;
   direction0 = ds * num_directions;
   directions = &direction_list[direction0];
+  
 
   num_zones = 1;
   for(int dim = 0;dim < 3;++ dim){
@@ -150,6 +152,17 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
       deltas[dim][z] = dx;
     }
   }
+
+  index_size[IMaterial::getName()] = 3;
+  index_size[ILegendre::getName()] = input_vars->legendre_order+1;
+  index_size[IMoment::getName()] = (input_vars->legendre_order+1)*(input_vars->legendre_order+1);
+  index_size[IDirection::getName()] = num_directions;
+  index_size[IGroup::getName()] = num_groups;
+  index_size[IGlobalGroup::getName()] = input_vars->num_groups;
+  index_size[IZone::getName()] = num_zones;
+  index_size[IFaceI::getName()] = nzones[1]*nzones[2];
+  index_size[IFaceJ::getName()] = nzones[0]*nzones[2];
+  index_size[IFaceK::getName()] = nzones[0]*nzones[1];
 
   // allocate storage for the sweep boundary data (upwind and downwind share same buffer)
   plane_data[0] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[1] * nzones[2]);
@@ -249,6 +262,9 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
     }
     pz += deltas[2][k+1];
   }
+  
+  // store number of mixed elements
+  index_size[IMix::getName()] = mixed_to_zones.size();
 }
 
 void Subdomain::setVars(SubTVec *ell_ptr, SubTVec *ell_plus_ptr,

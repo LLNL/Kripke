@@ -43,6 +43,8 @@
 
 #ifdef _OPENMP
 
+
+#if 0
     // OpenMP Executor with collapse(2) for omp_parallel_for_exec, ending with IndexSet
     template<typename SEG_EXEC_POLICY_T>
     class Forall2Executor<RAJA::omp_parallel_for_exec, RAJA::IndexSet::ExecPolicy<RAJA::omp_parallel_for_exec, SEG_EXEC_POLICY_T>, RAJA::RangeSegment, RAJA::IndexSet> {
@@ -110,7 +112,79 @@
           }  
         }
     };
+    
+    
+    // OpenMP Executor with collapse(2) for omp_parallel_for_exec, ending with IndexSet
+    template<typename SEG_EXEC_POLICY_T>
+    class Forall2Executor<RAJA::IndexSet::ExecPolicy<SEG_EXEC_POLICY_T, RAJA::omp_parallel_for_exec>, RAJA::omp_parallel_for_exec, RAJA::IndexSet, RAJA::RangeSegment> {
+      public:  
+        template<typename BODY>
+        inline void operator()(RAJA::IndexSet const &is_i, RAJA::RangeSegment const &is_j, BODY const &body) const {
+          using namespace RAJA;
+          int const j_start = is_j.getBegin();
+          int const j_end   = is_j.getEnd();
 
+          const int num_seg = is_j.getNumSegments();
+
+          // collapsed iteration over segments in IndexSet is_i
+           for ( int isi = 0; isi < num_seg; ++isi ) {
+
+              const BaseSegment* iseg = is_j.getSegment(isi);
+              SegmentType segtype = iseg->getType();
+
+              switch ( segtype ) {
+
+                 case _RangeSeg_ : {
+                    const RangeSegment* tseg =
+                       static_cast<const RangeSegment*>(iseg);
+                    
+                    int const i_start = tseg->getBegin();
+                    int const i_end   = tseg->getEnd();
+                    
+#pragma omp parallel for schedule(static) collapse(2)
+                    for(int i = i_start;i < i_end;++ i){
+                      for(int j = j_start;j < j_end;++ j){
+                        body(i,j);                      
+                      }
+                    }
+                    break;
+                 }
+
+#if 0  // RDH RETHINK
+                 case _RangeStrideSeg_ : {
+                    const RangeStrideSegment* tseg =
+                       static_cast<const RangeStrideSegment*>(iseg);
+                    forall(
+                       SEG_EXEC_POLICY_T(),
+                       tseg->getBegin(), tseg->getEnd(), tseg->getStride(),
+                       loop_body
+                    );
+                    break;
+                 }
+#endif
+
+                 case _ListSeg_ : {
+                    const ListSegment* tseg =
+                       static_cast<const ListSegment*>(iseg);
+                    forall(
+                       SEG_EXEC_POLICY_T(),
+                       tseg->getIndex(), tseg->getLength(),
+                       [=](int j){body(i,j);}
+                    );
+                    break;
+                 }
+
+                 default : {
+                 }
+
+              }  // switch on segment type
+
+           } // iterate over segments of index set
+                          
+        }  
+      
+    };
+#endif
     // OpenMP Executor with collapse(2) for omp_parallel_for_exec
     template<>
     class Forall2Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, RAJA::RangeSegment, RAJA::RangeSegment> {

@@ -51,7 +51,7 @@ struct ScatteringPolicy<NEST_DZG_T> : ForallPolicy4<PERM_ILJK, omp_pol, seq_pol,
 {};
 
 template<>
-struct ScatteringPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_JKIL, seq_pol, seq_pol, seq_pol, seq_pol>
+struct ScatteringPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_JKIL, seq_pol, RAJA::omp_parallel_seq_exec, RAJA::omp_for_nowait_exec, seq_pol>
 {};
 
 template<>
