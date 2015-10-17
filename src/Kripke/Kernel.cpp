@@ -245,7 +245,9 @@ void Kernel::source(Grid_Data *grid_data){
 
 
 #include<Kripke/Kernel/SweepPolicy.h>
-void Kernel::sweep(Subdomain *sdom) {
+void Kernel::sweep(Grid_Data *domain, int sdom_id) {
+  Subdomain *sdom = &domain->subdomains[sdom_id];
+
   int num_directions = sdom->num_directions;
   int num_groups = sdom->num_groups;
   int num_zones = sdom->num_zones;
@@ -265,60 +267,54 @@ void Kernel::sweep(Subdomain *sdom) {
     typedef LayoutPolicy<nest_type> LAYOUT;
     typedef ViewPolicy<LAYOUT> VIEW;
 
-    typename VIEW::Psi const rhs(sdom->rhs->ptr(), num_directions, num_groups, num_zones);
-    typename VIEW::Psi psi(sdom->psi->ptr(), num_directions, num_groups, num_zones);
-    typename VIEW::SigT const sigt(sdom->sigt->ptr(), num_groups, num_zones);
+    typename VIEW::TPsi     rhs(sdom->rhs->ptr(), domain, sdom_id);
+    typename VIEW::TPsi     psi(sdom->psi->ptr(), domain, sdom_id);
+    typename VIEW::TSigT    sigt(sdom->sigt->ptr(), domain, sdom_id);
     
-    View1d<const double, PERM_I> const dx(&sdom->deltas[0][0], local_imax+2);
-    View1d<const double, PERM_I> const dy(&sdom->deltas[1][0], local_jmax+2);
-    View1d<const double, PERM_I> const dz(&sdom->deltas[2][0], local_kmax+2);
-            
-    typename VIEW::Face psi_lf(sdom->plane_data[0]->ptr(), num_directions, num_groups, num_z_i);
-    typename VIEW::Face psi_fr(sdom->plane_data[1]->ptr(), num_directions, num_groups, num_z_j);
-    typename VIEW::Face psi_bo(sdom->plane_data[2]->ptr(), num_directions, num_groups, num_z_k);
+    View1d<const double, PERM_I> const dx(&sdom->deltas[0][0], 1);
+    View1d<const double, PERM_I> const dy(&sdom->deltas[1][0], 1);
+    View1d<const double, PERM_I> const dz(&sdom->deltas[2][0], 1);
     
     typename LAYOUT::Zone zone_layout(local_imax, local_jmax, local_kmax);
-    typename LAYOUT::Face i_layout(local_jmax, local_kmax);
-    typename LAYOUT::Face j_layout(local_imax, local_kmax);
-    typename LAYOUT::Face k_layout(local_imax, local_jmax);
+    
+    typename VIEW::TFaceI face_lf(sdom->plane_data[0]->ptr(), domain, sdom_id);
+    typename VIEW::TFaceJ face_fr(sdom->plane_data[1]->ptr(), domain, sdom_id);
+    typename VIEW::TFaceK face_bo(sdom->plane_data[2]->ptr(), domain, sdom_id);
 
     // All directions have same id,jd,kd, since these are all one Direction Set
     // So pull that information out now
     Grid_Sweep_Block const &extent = sdom->sweep_block;
 
-    forall3<SweepPolicy<nest_type> >(
-      RAJA::RangeSegment(0, num_directions),
-      RAJA::RangeSegment(0, num_groups),
+    forall3T<SweepPolicy<nest_type>, IDirection, IGroup, int>(
+      IDirection::range(domain, sdom_id),
+      IGroup::range(domain, sdom_id),
       extent.indexset_sweep,
-      [&](int d, int g, int zone_idx){
-
-        int i = extent.idx_to_i[zone_idx];
-        int j = extent.idx_to_j[zone_idx];
-        int k = extent.idx_to_k[zone_idx];
+      [&](IDirection d, IGroup g, int zone_idx){
         
-        double const xcos_dxi = 2.0 * direction[d].xcos / dx(i + 1);
-        double const ycos_dyj = 2.0 * direction[d].ycos / dy(j + 1);
-        double const zcos_dzk = 2.0 * direction[d].zcos / dz(k + 1);
+        IZoneI i(extent.idx_to_i[zone_idx]);
+        IZoneJ j(extent.idx_to_j[zone_idx]);
+        IZoneK k(extent.idx_to_k[zone_idx]);
+        
+        double const xcos_dxi = 2.0 * direction[*d].xcos / dx(*i + 1);
+        double const ycos_dyj = 2.0 * direction[*d].ycos / dy(*j + 1);
+        double const zcos_dzk = 2.0 * direction[*d].zcos / dz(*k + 1);
 
-        int const z_idx = zone_layout(i,j,k);
-        int const lf_idx = i_layout(j,k);
-        int const fr_idx = j_layout(i,k);
-        int const bo_idx = k_layout(i,j);
-
+        IZone z(zone_layout(*i,*j,*k));
+        
         /* Calculate new zonal flux */
         double const psi_d_g_z = (
-              rhs(d,g,z_idx)
-            + psi_lf(d,g,lf_idx) * xcos_dxi
-            + psi_fr(d,g,fr_idx) * ycos_dyj
-            + psi_bo(d,g,bo_idx) * zcos_dzk)
-            / (xcos_dxi + ycos_dyj + zcos_dzk + sigt(g,z_idx) );
+              rhs(d,g,z)
+            + face_lf(d,g,j,k) * xcos_dxi
+            + face_fr(d,g,i,k) * ycos_dyj
+            + face_bo(d,g,i,j) * zcos_dzk)
+            / (xcos_dxi + ycos_dyj + zcos_dzk + sigt(g,z) );
 
-        psi(d,g,z_idx) = psi_d_g_z;
+        psi(d,g,z) = psi_d_g_z;
 
         /* Apply diamond-difference relationships */
-        psi_lf(d,g,lf_idx) = 2.0 * psi_d_g_z - psi_lf(d,g,lf_idx);
-        psi_fr(d,g,fr_idx) = 2.0 * psi_d_g_z - psi_fr(d,g,fr_idx);
-        psi_bo(d,g,bo_idx) = 2.0 * psi_d_g_z - psi_bo(d,g,bo_idx);
+        face_lf(d,g,j,k) = 2.0 * psi_d_g_z - face_lf(d,g,j,k);
+        face_fr(d,g,i,k) = 2.0 * psi_d_g_z - face_fr(d,g,i,k);
+        face_bo(d,g,i,j) = 2.0 * psi_d_g_z - face_bo(d,g,i,j);
     }); // forall3
   }); // policy  
 }

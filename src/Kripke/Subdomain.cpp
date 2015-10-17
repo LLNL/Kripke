@@ -160,9 +160,9 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   index_size[IGroup::getName()] = num_groups;
   index_size[IGlobalGroup::getName()] = input_vars->num_groups;
   index_size[IZone::getName()] = num_zones;
-  index_size[IFaceI::getName()] = nzones[1]*nzones[2];
-  index_size[IFaceJ::getName()] = nzones[0]*nzones[2];
-  index_size[IFaceK::getName()] = nzones[0]*nzones[1];
+  index_size[IZoneI::getName()] = nzones[0];
+  index_size[IZoneJ::getName()] = nzones[1];
+  index_size[IZoneK::getName()] = nzones[2];
 
   // allocate storage for the sweep boundary data (upwind and downwind share same buffer)
   plane_data[0] = new SubTVec(kernel->nestingPsi(), num_groups, num_directions, nzones[1] * nzones[2]);

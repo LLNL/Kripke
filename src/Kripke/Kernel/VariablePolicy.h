@@ -43,8 +43,7 @@ struct FixedLayoutPolicy {
   typedef PERM_JI Ell;     // d, nm
   typedef PERM_IJ EllPlus; // d, nm
   
-  typedef Layout3d<PERM_KJI> Zone;
-  typedef Layout2d<PERM_JI> Face;
+  typedef Layout3d<PERM_KJI> Zone;  
 };
 
 
@@ -57,6 +56,10 @@ struct LayoutPolicy<NEST_DGZ_T> : public FixedLayoutPolicy {
   typedef PERM_IJK Phi;
   typedef PERM_IJKL SigS;
   typedef PERM_IJ SigT;
+  
+  typedef PERM_IJLK FaceI; // d, g, j, k
+  typedef PERM_IJLK FaceJ; // d, g, i, k
+  typedef PERM_IJLK FaceK; // d, g, i, j
 };
 
 template<>
@@ -65,6 +68,10 @@ struct LayoutPolicy<NEST_DZG_T> : public FixedLayoutPolicy {
   typedef PERM_IKJ Phi;
   typedef PERM_ILJK SigS;
   typedef PERM_JI SigT;
+  
+  typedef PERM_ILKJ FaceI; // d, g, j, k
+  typedef PERM_ILKJ FaceJ; // d, g, i, k
+  typedef PERM_ILKJ FaceK; // d, g, i, j
 };
 
 template<>
@@ -73,6 +80,10 @@ struct LayoutPolicy<NEST_GDZ_T> : public FixedLayoutPolicy {
   typedef PERM_JIK Phi;
   typedef PERM_JKIL SigS;
   typedef PERM_IJ SigT;
+  
+  typedef PERM_JILK FaceI; // d, g, j, k
+  typedef PERM_JILK FaceJ; // d, g, i, k
+  typedef PERM_JILK FaceK; // d, g, i, j
 };
 
 template<>
@@ -81,6 +92,10 @@ struct LayoutPolicy<NEST_GZD_T> : public FixedLayoutPolicy {
   typedef PERM_JKI Phi;
   typedef PERM_JKLI SigS;
   typedef PERM_IJ SigT;
+  
+  typedef PERM_JLKI FaceI; // d, g, j, k
+  typedef PERM_JLKI FaceJ; // d, g, i, k
+  typedef PERM_JLKI FaceK; // d, g, i, j
 };
 
 template<>
@@ -89,6 +104,10 @@ struct LayoutPolicy<NEST_ZDG_T> : public FixedLayoutPolicy {
   typedef PERM_KIJ Phi;
   typedef PERM_LIJK SigS;
   typedef PERM_JI SigT;
+  
+  typedef PERM_LKIJ FaceI; // d, g, j, k
+  typedef PERM_LKIJ FaceJ; // d, g, i, k
+  typedef PERM_LKIJ FaceK; // d, g, i, j
 };
 
 template<>
@@ -97,6 +116,10 @@ struct LayoutPolicy<NEST_ZGD_T> : public FixedLayoutPolicy {
   typedef PERM_KJI Phi;
   typedef PERM_LJKI SigS;
   typedef PERM_JI SigT;
+  
+  typedef PERM_LKJI FaceI; // d, g, j, k
+  typedef PERM_LKJI FaceJ; // d, g, i, k
+  typedef PERM_LKJI FaceK; // d, g, i, j
 };
 
 
@@ -108,9 +131,9 @@ DEF_INDEX(IGlobalGroup);
 DEF_INDEX(IGroup);
 DEF_INDEX(IZone);
 DEF_INDEX(IMix);
-DEF_INDEX(IFaceI);
-DEF_INDEX(IFaceJ);
-DEF_INDEX(IFaceK);
+DEF_INDEX(IZoneI);
+DEF_INDEX(IZoneJ);
+DEF_INDEX(IZoneK);
 
 template<typename T>
 struct ViewPolicy {
@@ -123,9 +146,9 @@ struct ViewPolicy {
   typedef View2d<double, typename T::SigT> SigT; // G, Z
   
   typedef TView3d<double, typename T::Psi, IDirection, IGroup, IZone> TPsi;
-  typedef TView3d<double, typename T::Psi, IDirection, IGroup, IFaceI> TFaceI;
-  typedef TView3d<double, typename T::Psi, IDirection, IGroup, IFaceJ> TFaceJ;
-  typedef TView3d<double, typename T::Psi, IDirection, IGroup, IFaceK> TFaceK;
+  typedef TView4d<double, typename T::FaceI, IDirection, IGroup, IZoneJ, IZoneK> TFaceI;
+  typedef TView4d<double, typename T::FaceJ, IDirection, IGroup, IZoneI, IZoneK> TFaceJ;
+  typedef TView4d<double, typename T::FaceK, IDirection, IGroup, IZoneI, IZoneJ> TFaceK;
   typedef TView3d<double, typename T::Phi, IMoment, IGlobalGroup, IZone> TPhi;  
   typedef TView2d<double, typename T::Ell, IDirection, IMoment> TEll;
   typedef TView2d<double, typename T::EllPlus, IDirection, IMoment> TEllPlus;

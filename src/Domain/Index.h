@@ -124,10 +124,23 @@ void forall2T(Grid_Data *domain, int sdom_id, BODY const &body){
       // cast indicies to index types
       body(IdxI(i), IdxJ(j));    
     }
-  );
-  
-      
+  );      
 }
+
+
+template<typename POL, typename IdxI, typename IdxJ, typename IdxK, typename TI, typename TJ, typename TK, typename BODY>
+void forall3T(TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
+
+  // Call underlying forall, extracting ranges from domain
+  forall3<POL, TI, TJ, TK>(is_i, is_j, is_k,  
+    [=](int i, int j, int k){
+      // cast indicies to index types
+      body(IdxI(i), IdxJ(j), IdxK(k));    
+    }
+  );      
+}
+
+
 
 template<typename POL, typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename BODY>
 void forall4T(Grid_Data *domain, int sdom_id, BODY const &body){
@@ -144,8 +157,6 @@ void forall4T(Grid_Data *domain, int sdom_id, BODY const &body){
       body(IdxI(i), IdxJ(j), IdxK(k), IdxL(l));    
     }
   );
-  
-      
 }
 
 #endif
