@@ -20,6 +20,8 @@ class Index {
       
       return domain->subdomains[sdom_id].index_size[name];      
     }
+    
+    inline Index<IndexTag> operator+(int a) const { return Index<IndexTag>(value+a); }
 
     
     inline static RAJA::RangeSegment range(Grid_Data *domain, int sdom_id){
@@ -50,16 +52,19 @@ class Index {
   typedef Index<NAME##_TAG> NAME;
 
 
-/*
-template<typename T, typename L>
-struct View1d {
-    inline View1d(T *data_ptr, int ni);
-    inline T &operator()(int i) const;
+template<typename T, typename L, typename IdxI>
+struct TView1d {
+    inline TView1d(T* ptr, Grid_Data *domain, int sdom_id) :
+      view(ptr, 
+           IdxI::size(domain, sdom_id))
+    {}
 
-    Layout1d<L> const layout;
-    T *data;
+    inline T &operator()(IdxI i) const{
+      return view(*i);
+    }
+
+    View1d<T, L> const view;
 };
-*/
 
 template<typename T, typename L, typename IdxI, typename IdxJ>
 struct TView2d {
@@ -110,6 +115,34 @@ struct TView4d {
     View4d<T, L> const view;
 };
 
+
+template<typename T, typename L, typename IdxI>
+struct TLayout1d {
+    inline TLayout1d(Grid_Data *domain, int sdom_id) :
+      layout(IdxI::size(domain, sdom_id))
+    {}
+
+    inline T operator()(IdxI i) const{
+      return T(layout(*i));
+    }
+
+    Layout1d<L> const layout;
+};
+
+template<typename T, typename L, typename IdxI, typename IdxJ, typename IdxK>
+struct TLayout3d {
+    inline TLayout3d(Grid_Data *domain, int sdom_id) :
+      layout(IdxI::size(domain, sdom_id),
+           IdxJ::size(domain, sdom_id),
+           IdxK::size(domain, sdom_id))
+    {}
+
+    inline T operator()(IdxI i, IdxJ j, IdxK k) const{
+      return T(layout(*i, *j, *k));
+    }
+
+    Layout3d<L> const layout;
+};
 
 
 template<typename POL, typename IdxI, typename IdxJ, typename BODY>

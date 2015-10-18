@@ -252,8 +252,6 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
   int num_groups = sdom->num_groups;
   int num_zones = sdom->num_zones;
 
-  Directions const * __restrict__ direction = sdom->directions;
-
   int local_imax = sdom->nzones[0];
   int local_jmax = sdom->nzones[1];
   int local_kmax = sdom->nzones[2];
@@ -267,15 +265,17 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
     typedef LayoutPolicy<nest_type> LAYOUT;
     typedef ViewPolicy<LAYOUT> VIEW;
 
+    typename VIEW::TDirections direction(sdom->directions, domain, sdom_id);
+
     typename VIEW::TPsi     rhs(sdom->rhs->ptr(), domain, sdom_id);
     typename VIEW::TPsi     psi(sdom->psi->ptr(), domain, sdom_id);
     typename VIEW::TSigT    sigt(sdom->sigt->ptr(), domain, sdom_id);
+
+    typename VIEW::Tdx      dx(&sdom->deltas[0][0], domain, sdom_id);
+    typename VIEW::Tdy      dy(&sdom->deltas[1][0], domain, sdom_id);
+    typename VIEW::Tdz      dz(&sdom->deltas[2][0], domain, sdom_id);
     
-    View1d<const double, PERM_I> const dx(&sdom->deltas[0][0], 1);
-    View1d<const double, PERM_I> const dy(&sdom->deltas[1][0], 1);
-    View1d<const double, PERM_I> const dz(&sdom->deltas[2][0], 1);
-    
-    typename LAYOUT::Zone zone_layout(local_imax, local_jmax, local_kmax);
+    typename LAYOUT::TZone zone_layout(domain, sdom_id);
     
     typename VIEW::TFaceI face_lf(sdom->plane_data[0]->ptr(), domain, sdom_id);
     typename VIEW::TFaceJ face_fr(sdom->plane_data[1]->ptr(), domain, sdom_id);
@@ -295,11 +295,11 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
         IZoneJ j(extent.idx_to_j[zone_idx]);
         IZoneK k(extent.idx_to_k[zone_idx]);
         
-        double const xcos_dxi = 2.0 * direction[*d].xcos / dx(*i + 1);
-        double const ycos_dyj = 2.0 * direction[*d].ycos / dy(*j + 1);
-        double const zcos_dzk = 2.0 * direction[*d].zcos / dz(*k + 1);
+        double const xcos_dxi = 2.0 * direction(d).xcos / dx(i+1); 
+        double const ycos_dyj = 2.0 * direction(d).ycos / dy(j+1); 
+        double const zcos_dzk = 2.0 * direction(d).zcos / dz(k+1); 
 
-        IZone z(zone_layout(*i,*j,*k));
+        IZone z = zone_layout(i,j,k);
         
         /* Calculate new zonal flux */
         double const psi_d_g_z = (
