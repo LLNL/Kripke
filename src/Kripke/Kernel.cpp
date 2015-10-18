@@ -283,17 +283,20 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
 
     // All directions have same id,jd,kd, since these are all one Direction Set
     // So pull that information out now
-    Grid_Sweep_Block const &extent = sdom->sweep_block;
+    Grid_Sweep_Block const &extent = sdom->sweep_block;    
+    typename VIEW::TIdxToI  idx_to_i((IZoneI*)&extent.idx_to_i[0], domain, sdom_id);
+    typename VIEW::TIdxToJ  idx_to_j((IZoneJ*)&extent.idx_to_j[0], domain, sdom_id);
+    typename VIEW::TIdxToK  idx_to_k((IZoneK*)&extent.idx_to_k[0], domain, sdom_id);
 
-    forall3T<SweepPolicy<nest_type>, IDirection, IGroup, int>(
+    forall3T<SweepPolicy<nest_type>, IDirection, IGroup, IZoneIdx>(
       IDirection::range(domain, sdom_id),
       IGroup::range(domain, sdom_id),
       extent.indexset_sweep,
-      [&](IDirection d, IGroup g, int zone_idx){
+      [&](IDirection d, IGroup g, IZoneIdx zone_idx){
         
-        IZoneI i(extent.idx_to_i[zone_idx]);
-        IZoneJ j(extent.idx_to_j[zone_idx]);
-        IZoneK k(extent.idx_to_k[zone_idx]);
+        IZoneI i = idx_to_i(zone_idx);
+        IZoneJ j = idx_to_j(zone_idx);
+        IZoneK k = idx_to_k(zone_idx);
         
         double const xcos_dxi = 2.0 * direction(d).xcos / dx(i+1); 
         double const ycos_dyj = 2.0 * direction(d).ycos / dy(j+1); 

@@ -160,6 +160,7 @@ void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, 
   index_size[IGroup::getName()] = num_groups;
   index_size[IGlobalGroup::getName()] = input_vars->num_groups;
   index_size[IZone::getName()] = num_zones;
+  index_size[IZoneIdx::getName()] = num_zones;
   index_size[IZoneI::getName()] = nzones[0];
   index_size[IZoneJ::getName()] = nzones[1];
   index_size[IZoneK::getName()] = nzones[2];

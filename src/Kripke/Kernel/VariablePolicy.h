@@ -47,6 +47,7 @@ DEF_INDEX(IDirection);
 DEF_INDEX(IGlobalGroup);
 DEF_INDEX(IGroup);
 DEF_INDEX(IZone);
+DEF_INDEX(IZoneIdx);
 DEF_INDEX(IMix);
 DEF_INDEX(IZoneI);
 DEF_INDEX(IZoneJ);
@@ -136,8 +137,19 @@ struct LayoutPolicy<NEST_ZGD_T> : public FixedLayoutPolicy {
   typedef PERM_LKJI FaceK; // d, g, i, j
 };
 
+struct FixedViewPolicy {
+  typedef TView1d<double, PERM_I, IZoneI> Tdx;  
+  typedef TView1d<double, PERM_I, IZoneJ> Tdy;  
+  typedef TView1d<double, PERM_I, IZoneK> Tdz;
+  typedef TView1d<Directions, PERM_I, IDirection> TDirections;
+  
+  typedef TView1d<IZoneI, PERM_I, IZoneIdx> TIdxToI;
+  typedef TView1d<IZoneJ, PERM_I, IZoneIdx> TIdxToJ;
+  typedef TView1d<IZoneK, PERM_I, IZoneIdx> TIdxToK;
+};
+
 template<typename T>
-struct ViewPolicy {
+struct ViewPolicy : public FixedViewPolicy {
   typedef TView3d<double, typename T::Psi, IDirection, IGroup, IZone> TPsi;
   typedef TView4d<double, typename T::FaceI, IDirection, IGroup, IZoneJ, IZoneK> TFaceI;
   typedef TView4d<double, typename T::FaceJ, IDirection, IGroup, IZoneI, IZoneK> TFaceJ;
@@ -147,11 +159,6 @@ struct ViewPolicy {
   typedef TView2d<double, typename T::EllPlus, IDirection, IMoment> TEllPlus;
   typedef TView4d<double, typename T::SigS, ILegendre, IGlobalGroup, IGlobalGroup, IMaterial> TSigS;
   typedef TView2d<double, typename T::EllPlus, IGroup, IZone> TSigT;
-  
-  typedef TView1d<double, PERM_I, IZoneI> Tdx;  
-  typedef TView1d<double, PERM_I, IZoneJ> Tdy;  
-  typedef TView1d<double, PERM_I, IZoneK> Tdz;
-  typedef TView1d<Directions, PERM_I, IDirection> TDirections;
 };
 
 #endif
