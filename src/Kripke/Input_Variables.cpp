@@ -54,7 +54,8 @@ Input_Variables::Input_Variables() :
   layout_pattern(0),
   
   niter(10),
-  parallel_method(PMETHOD_SWEEP)
+  parallel_method(PMETHOD_SWEEP),
+  sweep_trace(false)
 {
   num_zonesets_dim[0] = 1; 
   num_zonesets_dim[1] = 1;

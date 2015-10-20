@@ -52,6 +52,24 @@ struct Grid_Data;
 #define KRESTRICT __restrict__
 
 
+/**
+ * Un-comment ONE of the 3 MPI send methods below.
+ * It decides how sweep messages are sent (intended to be Isend)
+ */
+
+#define KRIPKE_SWEEP_ISEND
+//#define KRIPKE_SWEEP_SEND
+//#define KRIPKE_SWEEP_SSEND
+
+/**
+ * Set to the number of extra "Testany"s that are executed during the sweep,
+ * between each Sweep kernel.
+ * This is intended to "help" MPI flush outgoing async messages.
+ * (In an ideal world, this would be 0)
+ */
+#define KRIPKE_SWEEP_EXTRA_RECV 0
+
+
 // In Kripke/Sweep_Solver.cpp
 int SweepSolver(Grid_Data *grid_data, bool block_jacobi);
 void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi);

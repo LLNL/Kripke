@@ -150,6 +150,7 @@ void usage(void){
 #ifdef KRIPKE_USE_SILO
     printf("  --silo <BASENAME>      Create SILO output files\n\n");
 #endif
+    printf("  --trace                Turn on sweep trace output\n\n");
     printf("  --test                 Run Kernel Test instead of solver\n\n");
     printf("\n");
   }
@@ -358,6 +359,9 @@ int main(int argc, char **argv) {
       papi_names = split(cmd.pop(), ',');
     }
 #endif
+    else if(opt == "--trace"){
+      vars.sweep_trace = true;
+    }
     else{
       printf("Unknwon options %s\n", opt.c_str());
       usage();
