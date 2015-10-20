@@ -179,14 +179,30 @@ void ParallelComm::postSends(Subdomain *sdom, double *src_buffers[3]){
 
     // At this point, we know that we have to send an MPI message
     // Add request to send queue
+#ifdef KRIPKE_SWEEP_ISEND
     send_requests.push_back(MPI_Request());
+#endif
 
     // compute the tag id of TARGET subdomain (tags are always based on destination)
     int tag = computeTag(mpi_rank, sdom->downwind[dim].subdomain_id);
 
     // Post the send
+#ifdef KRIPKE_SWEEP_ISEND
     MPI_Isend(src_buffers[dim], sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
       tag, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
+#endif
+
+#ifdef KRIPKE_SWEEP_SEND
+    MPI_Send(src_buffers[dim], sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
+          tag, MPI_COMM_WORLD);
+#endif
+
+#ifdef KRIPKE_SWEEP_SSEND
+    MPI_Ssend(src_buffers[dim], sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
+          tag, MPI_COMM_WORLD);
+#endif
+
+
   }
 }
 

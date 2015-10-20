@@ -168,10 +168,20 @@ void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, boo
     comm->addSubdomain(sdom_id, grid_data->subdomains[sdom_id]);
   }
 
+  // try and synch up tasks for better sweep performance?
+  //
+  // MPI_Barrier(MPI_COMM_WORLD);
+
   /* Loop until we have finished all of our work */
   while(comm->workRemaining()){
 
     // Get a list of subdomains that have met dependencies
+    // DEBUG: Query MPI a few times between doing actual work
+    // the idea is to trick MPI into actually sending messages
+    for(int i = 0;i < KRIPKE_SWEEP_EXTRA_RECV;++ i){
+      comm->readySubdomains();
+    }
+    // now do it for real
     std::vector<int> sdom_ready = comm->readySubdomains();
     int backlog = sdom_ready.size();
 
