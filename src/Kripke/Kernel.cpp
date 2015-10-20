@@ -86,22 +86,24 @@ Kernel::~Kernel(){
 
 #include<Kripke/Kernel/LTimesPolicy.h>
 void Kernel::LTimes(Grid_Data *domain) { 
-  // Zero Phi
-  forallZoneSets(domain, [&](int zs, int sdom_id, Subdomain &sdom){
-    sdom.phi->clear(0.0);
-  });
-
-  // Loop over Subdomains
-  forallSubdomains(domain, [&](int sdom_id, Subdomain &sdom){
   
-    // Get dimensioning
-    int group0 = sdom.group0;
+  policyScope(nesting_order, [&](auto nest_tag){
+    typedef decltype(nest_tag) nest_type;
+    typedef LayoutPolicy<nest_type> LAYOUT;
+    typedef ViewPolicy<LAYOUT> VIEW;
 
-    policyScope(nesting_order, [&](auto nest_tag){
-      typedef decltype(nest_tag) nest_type;
-      typedef LayoutPolicy<nest_type> LAYOUT;
-      typedef ViewPolicy<LAYOUT> VIEW;
-                          
+    // Zero Phi
+    forallZoneSets(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+      sdom.phi->clear(0.0);
+    });
+
+    // Loop over Subdomains
+    forallSubdomains(domain, [&](int sdom_id, Subdomain &sdom){
+
+      // Get dimensioning
+      int group0 = sdom.group0;
+
+      // Get pointers
       typename VIEW::TPsi psi(sdom.psi->ptr(), domain, sdom_id);
       typename VIEW::TPhi phi(sdom.phi->ptr(), domain, sdom_id);
       typename VIEW::TEll ell(sdom.ell->ptr(), domain, sdom_id);
@@ -114,28 +116,27 @@ void Kernel::LTimes(Grid_Data *domain) {
           
           phi(nm, g_global, z) += ell(d, nm) * psi(d, g, z);
       });
-        
-    }); // policy    
 
-  }); // sdom
+    }); // sdom
+
+  }); // policy
 }
 
 #include<Kripke/Kernel/LPlusTimesPolicy.h>
 void Kernel::LPlusTimes(Grid_Data *domain) {
-  // Loop over Subdomains
-  forallSubdomains(domain, [&](int sdom_id, Subdomain &sdom){
-    sdom.rhs->clear(0.0);
-  });
+  policyScope(nesting_order, [&](auto nest_tag){
+    typedef decltype(nest_tag) nest_type;
+    typedef LayoutPolicy<nest_type> LAYOUT;
+    typedef ViewPolicy<LAYOUT> VIEW;
+    // Loop over Subdomains
+    forallSubdomains(domain, [&](int sdom_id, Subdomain &sdom){
+      sdom.rhs->clear(0.0);
+    });
 
-  forallSubdomains(domain, [&](int sdom_id, Subdomain &sdom){
+    forallSubdomains(domain, [&](int sdom_id, Subdomain &sdom){
 
-    // Get dimensioning
-    int group0 = sdom.group0;
-
-    policyScope(nesting_order, [&](auto nest_tag){
-      typedef decltype(nest_tag) nest_type;
-      typedef LayoutPolicy<nest_type> LAYOUT;
-      typedef ViewPolicy<LAYOUT> VIEW;
+      // Get dimensioning
+      int group0 = sdom.group0;
 
       // Get pointers
       typename VIEW::TPsi     rhs(sdom.rhs->ptr(), domain, sdom_id);
@@ -150,9 +151,10 @@ void Kernel::LPlusTimes(Grid_Data *domain) {
   
           rhs(d, g, z) += ell_plus(d, nm) * phi_out(nm, g_global, z);  
       });
-      
-    }); // policy
-  }); // sdom
+
+    }); // sdom
+
+  }); // policy
 }
 
 
@@ -162,19 +164,19 @@ void Kernel::LPlusTimes(Grid_Data *domain) {
 */
 #include<Kripke/Kernel/ScatteringPolicy.h>
 void Kernel::scattering(Grid_Data *domain){
-
-  // Zero out source terms
-  forallZoneSets(domain, [&](int zs, int sdom_id, Subdomain &sdom){
-    sdom.phi_out->clear(0.0);
-  });
   
-  // Loop over zoneset subdomains
-  forallZoneSets(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+  policyScope(nesting_order, [&](auto nest_tag){
+    typedef decltype(nest_tag) nest_type;
+    typedef LayoutPolicy<nest_type> LAYOUT;
+    typedef ViewPolicy<LAYOUT> VIEW;
 
-    policyScope(nesting_order, [&](auto nest_tag){
-      typedef decltype(nest_tag) nest_type;
-      typedef LayoutPolicy<nest_type> LAYOUT;
-      typedef ViewPolicy<LAYOUT> VIEW;
+    // Zero out source terms
+    forallZoneSets(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+      sdom.phi_out->clear(0.0);
+    });
+
+    // Loop over zoneset subdomains
+    forallZoneSets(domain, [&](int zs, int sdom_id, Subdomain &sdom){
 
       typename VIEW::TPhi     phi(sdom.phi->ptr(), domain, sdom_id);
       typename VIEW::TPhi     phi_out(sdom.phi_out->ptr(), domain, sdom_id);
@@ -199,9 +201,9 @@ void Kernel::scattering(Grid_Data *domain){
                              
         });  // forall
           
-    }); // policy    
-  }); // zonesets
-  
+    }); // zonesets
+
+  }); // policy
 }
 
   
@@ -214,22 +216,20 @@ void Kernel::scattering(Grid_Data *domain){
 #include<Kripke/Kernel/SourcePolicy.h>
 void Kernel::source(Grid_Data *grid_data){
 
-  // Loop over zoneset subdomains
-  forallZoneSets(grid_data, [&](int zs, int sdom_id, Subdomain &sdom){
-    
-    policyScope(nesting_order, [&](auto nest_tag){
-      typedef decltype(nest_tag) nest_type;
-      typedef LayoutPolicy<nest_type> LAYOUT;
-      typedef ViewPolicy<LAYOUT> VIEW;
-    
+  policyScope(nesting_order, [&](auto nest_tag){
+    typedef decltype(nest_tag) nest_type;
+    typedef LayoutPolicy<nest_type> LAYOUT;
+    typedef ViewPolicy<LAYOUT> VIEW;
+
+    // Loop over zoneset subdomains
+    forallZoneSets(grid_data, [&](int zs, int sdom_id, Subdomain &sdom){
       typename VIEW::TPhi     phi_out(sdom.phi_out->ptr(), grid_data, sdom_id);
-      
       View1d<const int,    PERM_I> const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
       View1d<const int,    PERM_I> const mixed_material(&sdom.mixed_material[0], 1);
       View1d<const double, PERM_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
 
       forall2T<SourcePolicy<nest_type>, IGlobalGroup, IMix >(
-        grid_data, sdom_id,      
+        grid_data, sdom_id,
         [&](IGlobalGroup g, IMix mix){
           int zone = mixed_to_zones(*mix);
           int material = mixed_material(*mix);
@@ -238,32 +238,34 @@ void Kernel::source(Grid_Data *grid_data){
           if(material == 0){
             phi_out(IMoment(0), g, IZone(zone)) += 1.0 * fraction;
           }
-        }); // forall
-    }); // policy      
-  }); // zonesets
+      }); // forall
+
+    }); // zonesets
+
+  }); // policy
 }
 
 
 #include<Kripke/Kernel/SweepPolicy.h>
 void Kernel::sweep(Grid_Data *domain, int sdom_id) {
-  Subdomain *sdom = &domain->subdomains[sdom_id];
-
-  int num_directions = sdom->num_directions;
-  int num_groups = sdom->num_groups;
-  int num_zones = sdom->num_zones;
-
-  int local_imax = sdom->nzones[0];
-  int local_jmax = sdom->nzones[1];
-  int local_kmax = sdom->nzones[2];
-  
-  int num_z_i = local_jmax * local_kmax;
-  int num_z_j = local_imax * local_kmax;
-  int num_z_k = local_imax * local_jmax;
-   
   policyScope(nesting_order, [&](auto nest_tag){
     typedef decltype(nest_tag) nest_type;
     typedef LayoutPolicy<nest_type> LAYOUT;
     typedef ViewPolicy<LAYOUT> VIEW;
+
+    Subdomain *sdom = &domain->subdomains[sdom_id];
+
+    int num_directions = sdom->num_directions;
+    int num_groups = sdom->num_groups;
+    int num_zones = sdom->num_zones;
+
+    int local_imax = sdom->nzones[0];
+    int local_jmax = sdom->nzones[1];
+    int local_kmax = sdom->nzones[2];
+
+    int num_z_i = local_jmax * local_kmax;
+    int num_z_j = local_imax * local_kmax;
+    int num_z_k = local_imax * local_jmax;
 
     typename VIEW::TDirections direction(sdom->directions, domain, sdom_id);
 
