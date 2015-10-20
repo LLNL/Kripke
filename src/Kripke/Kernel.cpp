@@ -46,7 +46,7 @@
 #include<Kripke/Kernel/Kernel_3d_ZGD.h>
 #include<Kripke/Kernel/Kernel_3d_GZD.h>
 
-#include<Kripke/Kernel/VariablePolicy.h>
+#include<Kripke/Kernel/DataPolicy.h>
 
 
 /**
@@ -86,25 +86,26 @@ Kernel::~Kernel(){
 
 #include<Kripke/Kernel/LTimesPolicy.h>
 void Kernel::LTimes(Grid_Data *domain) { 
-  // Zero Phi
-  forallZoneSets(domain, [&](int zs, int sdom_id, Subdomain &sdom){
-    sdom.phi->clear(0.0);
-  });
-
-  // Loop over Subdomains
-  forallSubdomains(domain, [&](int sdom_id, Subdomain &sdom){
   
-    // Get dimensioning
-    int group0 = sdom.group0;
+  policyScope(nesting_order, [&](auto nest_tag){
+    typedef decltype(nest_tag) nest_type;
+    typedef DataPolicy<nest_type> POL;
 
-    policyScope(nesting_order, [&](auto nest_tag){
-      typedef decltype(nest_tag) nest_type;
-      typedef LayoutPolicy<nest_type> LAYOUT;
-      typedef ViewPolicy<LAYOUT> VIEW;
-                          
-      typename VIEW::TPsi psi(sdom.psi->ptr(), domain, sdom_id);
-      typename VIEW::TPhi phi(sdom.phi->ptr(), domain, sdom_id);
-      typename VIEW::TEll ell(sdom.ell->ptr(), domain, sdom_id);
+    // Zero Phi
+    forallZoneSets<seq_pol>(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+      sdom.phi->clear(0.0);
+    });
+
+    // Loop over Subdomains
+    forallSubdomains<seq_pol>(domain, [&](int sdom_id, Subdomain &sdom){
+
+      // Get dimensioning
+      int group0 = sdom.group0;
+
+      // Get pointers
+      typename POL::View_Psi psi(sdom.psi->ptr(), domain, sdom_id);
+      typename POL::View_Phi phi(sdom.phi->ptr(), domain, sdom_id);
+      typename POL::View_Ell ell(sdom.ell->ptr(), domain, sdom_id);
 
       forall4T<LTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
         domain, sdom_id, 
@@ -114,33 +115,32 @@ void Kernel::LTimes(Grid_Data *domain) {
           
           phi(nm, g_global, z) += ell(d, nm) * psi(d, g, z);
       });
-        
-    }); // policy    
 
-  }); // sdom
+    }); // sdom
+
+  }); // policy
 }
 
 #include<Kripke/Kernel/LPlusTimesPolicy.h>
 void Kernel::LPlusTimes(Grid_Data *domain) {
-  // Loop over Subdomains
-  forallSubdomains(domain, [&](int sdom_id, Subdomain &sdom){
-    sdom.rhs->clear(0.0);
-  });
+  policyScope(nesting_order, [&](auto nest_tag){
+    typedef decltype(nest_tag) nest_type;
+    typedef DataPolicy<nest_type> POL;
 
-  forallSubdomains(domain, [&](int sdom_id, Subdomain &sdom){
+    // Loop over Subdomains
+    forallSubdomains<seq_pol>(domain, [&](int sdom_id, Subdomain &sdom){
+      sdom.rhs->clear(0.0);
+    });
 
-    // Get dimensioning
-    int group0 = sdom.group0;
+    forallSubdomains<seq_pol>(domain, [&](int sdom_id, Subdomain &sdom){
 
-    policyScope(nesting_order, [&](auto nest_tag){
-      typedef decltype(nest_tag) nest_type;
-      typedef LayoutPolicy<nest_type> LAYOUT;
-      typedef ViewPolicy<LAYOUT> VIEW;
+      // Get dimensioning
+      int group0 = sdom.group0;
 
       // Get pointers
-      typename VIEW::TPsi     rhs(sdom.rhs->ptr(), domain, sdom_id);
-      typename VIEW::TPhi     phi_out(sdom.phi_out->ptr(), domain, sdom_id);
-      typename VIEW::TEllPlus ell_plus(sdom.ell_plus->ptr(), domain, sdom_id);
+      typename POL::View_Psi     rhs(sdom.rhs->ptr(), domain, sdom_id);
+      typename POL::View_Phi     phi_out(sdom.phi_out->ptr(), domain, sdom_id);
+      typename POL::View_EllPlus ell_plus(sdom.ell_plus->ptr(), domain, sdom_id);
       
       forall4T<LPlusTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
         domain, sdom_id, 
@@ -150,9 +150,10 @@ void Kernel::LPlusTimes(Grid_Data *domain) {
   
           rhs(d, g, z) += ell_plus(d, nm) * phi_out(nm, g_global, z);  
       });
-      
-    }); // policy
-  }); // sdom
+
+    }); // sdom
+
+  }); // policy
 }
 
 
@@ -162,23 +163,22 @@ void Kernel::LPlusTimes(Grid_Data *domain) {
 */
 #include<Kripke/Kernel/ScatteringPolicy.h>
 void Kernel::scattering(Grid_Data *domain){
-
-  // Zero out source terms
-  forallZoneSets(domain, [&](int zs, int sdom_id, Subdomain &sdom){
-    sdom.phi_out->clear(0.0);
-  });
   
-  // Loop over zoneset subdomains
-  forallZoneSets(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+  policyScope(nesting_order, [&](auto nest_tag){
+    typedef decltype(nest_tag) nest_type;
+    typedef DataPolicy<nest_type> POL;
 
-    policyScope(nesting_order, [&](auto nest_tag){
-      typedef decltype(nest_tag) nest_type;
-      typedef LayoutPolicy<nest_type> LAYOUT;
-      typedef ViewPolicy<LAYOUT> VIEW;
+    // Zero out source terms
+    forallZoneSets<seq_pol>(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+      sdom.phi_out->clear(0.0);
+    });
 
-      typename VIEW::TPhi     phi(sdom.phi->ptr(), domain, sdom_id);
-      typename VIEW::TPhi     phi_out(sdom.phi_out->ptr(), domain, sdom_id);
-      typename VIEW::TSigS    sigs(domain->sigs->ptr(), domain, sdom_id);
+    // Loop over zoneset subdomains
+    forallZoneSets<seq_pol>(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+
+      typename POL::View_Phi     phi(sdom.phi->ptr(), domain, sdom_id);
+      typename POL::View_Phi     phi_out(sdom.phi_out->ptr(), domain, sdom_id);
+      typename POL::View_SigS    sigs(domain->sigs->ptr(), domain, sdom_id);
 
       View1d<const int, PERM_I>    const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
       View1d<const int, PERM_I>    const mixed_material(&sdom.mixed_material[0], 1);
@@ -199,9 +199,9 @@ void Kernel::scattering(Grid_Data *domain){
                              
         });  // forall
           
-    }); // policy    
-  }); // zonesets
-  
+    }); // zonesets
+
+  }); // policy
 }
 
   
@@ -214,22 +214,19 @@ void Kernel::scattering(Grid_Data *domain){
 #include<Kripke/Kernel/SourcePolicy.h>
 void Kernel::source(Grid_Data *grid_data){
 
-  // Loop over zoneset subdomains
-  forallZoneSets(grid_data, [&](int zs, int sdom_id, Subdomain &sdom){
-    
-    policyScope(nesting_order, [&](auto nest_tag){
-      typedef decltype(nest_tag) nest_type;
-      typedef LayoutPolicy<nest_type> LAYOUT;
-      typedef ViewPolicy<LAYOUT> VIEW;
-    
-      typename VIEW::TPhi     phi_out(sdom.phi_out->ptr(), grid_data, sdom_id);
-      
+  policyScope(nesting_order, [&](auto nest_tag){
+    typedef decltype(nest_tag) nest_type;
+    typedef DataPolicy<nest_type> POL;
+
+    // Loop over zoneset subdomains
+    forallZoneSets<seq_pol>(grid_data, [&](int zs, int sdom_id, Subdomain &sdom){
+      typename POL::View_Phi     phi_out(sdom.phi_out->ptr(), grid_data, sdom_id);
       View1d<const int,    PERM_I> const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
       View1d<const int,    PERM_I> const mixed_material(&sdom.mixed_material[0], 1);
       View1d<const double, PERM_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
 
       forall2T<SourcePolicy<nest_type>, IGlobalGroup, IMix >(
-        grid_data, sdom_id,      
+        grid_data, sdom_id,
         [&](IGlobalGroup g, IMix mix){
           int zone = mixed_to_zones(*mix);
           int material = mixed_material(*mix);
@@ -238,55 +235,56 @@ void Kernel::source(Grid_Data *grid_data){
           if(material == 0){
             phi_out(IMoment(0), g, IZone(zone)) += 1.0 * fraction;
           }
-        }); // forall
-    }); // policy      
-  }); // zonesets
+      }); // forall
+
+    }); // zonesets
+
+  }); // policy
 }
 
 
 #include<Kripke/Kernel/SweepPolicy.h>
 void Kernel::sweep(Grid_Data *domain, int sdom_id) {
-  Subdomain *sdom = &domain->subdomains[sdom_id];
-
-  int num_directions = sdom->num_directions;
-  int num_groups = sdom->num_groups;
-  int num_zones = sdom->num_zones;
-
-  int local_imax = sdom->nzones[0];
-  int local_jmax = sdom->nzones[1];
-  int local_kmax = sdom->nzones[2];
-  
-  int num_z_i = local_jmax * local_kmax;
-  int num_z_j = local_imax * local_kmax;
-  int num_z_k = local_imax * local_jmax;
-   
   policyScope(nesting_order, [&](auto nest_tag){
     typedef decltype(nest_tag) nest_type;
-    typedef LayoutPolicy<nest_type> LAYOUT;
-    typedef ViewPolicy<LAYOUT> VIEW;
+    typedef DataPolicy<nest_type> POL;
 
-    typename VIEW::TDirections direction(sdom->directions, domain, sdom_id);
+    Subdomain *sdom = &domain->subdomains[sdom_id];
 
-    typename VIEW::TPsi     rhs(sdom->rhs->ptr(), domain, sdom_id);
-    typename VIEW::TPsi     psi(sdom->psi->ptr(), domain, sdom_id);
-    typename VIEW::TSigT    sigt(sdom->sigt->ptr(), domain, sdom_id);
+    int num_directions = sdom->num_directions;
+    int num_groups = sdom->num_groups;
+    int num_zones = sdom->num_zones;
 
-    typename VIEW::Tdx      dx(&sdom->deltas[0][0], domain, sdom_id);
-    typename VIEW::Tdy      dy(&sdom->deltas[1][0], domain, sdom_id);
-    typename VIEW::Tdz      dz(&sdom->deltas[2][0], domain, sdom_id);
+    int local_imax = sdom->nzones[0];
+    int local_jmax = sdom->nzones[1];
+    int local_kmax = sdom->nzones[2];
+
+    int num_z_i = local_jmax * local_kmax;
+    int num_z_j = local_imax * local_kmax;
+    int num_z_k = local_imax * local_jmax;
+
+    typename POL::View_Directions direction(sdom->directions, domain, sdom_id);
+
+    typename POL::View_Psi     rhs(sdom->rhs->ptr(), domain, sdom_id);
+    typename POL::View_Psi     psi(sdom->psi->ptr(), domain, sdom_id);
+    typename POL::View_SigT    sigt(sdom->sigt->ptr(), domain, sdom_id);
+
+    typename POL::View_dx      dx(&sdom->deltas[0][0], domain, sdom_id);
+    typename POL::View_dy      dy(&sdom->deltas[1][0], domain, sdom_id);
+    typename POL::View_dz      dz(&sdom->deltas[2][0], domain, sdom_id);
     
-    typename LAYOUT::TZone zone_layout(domain, sdom_id);
+    typename POL::TLayout_Zone zone_layout(domain, sdom_id);
     
-    typename VIEW::TFaceI face_lf(sdom->plane_data[0]->ptr(), domain, sdom_id);
-    typename VIEW::TFaceJ face_fr(sdom->plane_data[1]->ptr(), domain, sdom_id);
-    typename VIEW::TFaceK face_bo(sdom->plane_data[2]->ptr(), domain, sdom_id);
+    typename POL::View_FaceI face_lf(sdom->plane_data[0]->ptr(), domain, sdom_id);
+    typename POL::View_FaceJ face_fr(sdom->plane_data[1]->ptr(), domain, sdom_id);
+    typename POL::View_FaceK face_bo(sdom->plane_data[2]->ptr(), domain, sdom_id);
 
     // All directions have same id,jd,kd, since these are all one Direction Set
     // So pull that information out now
     Grid_Sweep_Block const &extent = sdom->sweep_block;    
-    typename VIEW::TIdxToI  idx_to_i((IZoneI*)&extent.idx_to_i[0], domain, sdom_id);
-    typename VIEW::TIdxToJ  idx_to_j((IZoneJ*)&extent.idx_to_j[0], domain, sdom_id);
-    typename VIEW::TIdxToK  idx_to_k((IZoneK*)&extent.idx_to_k[0], domain, sdom_id);
+    typename POL::View_IdxToI  idx_to_i((IZoneI*)&extent.idx_to_i[0], domain, sdom_id);
+    typename POL::View_IdxToJ  idx_to_j((IZoneJ*)&extent.idx_to_j[0], domain, sdom_id);
+    typename POL::View_IdxToK  idx_to_k((IZoneK*)&extent.idx_to_k[0], domain, sdom_id);
 
     forall3T<SweepPolicy<nest_type>, IDirection, IGroup, IZoneIdx>(
       IDirection::range(domain, sdom_id),

@@ -33,7 +33,7 @@
 #include <Kripke/Grid.h>
 #include <Kripke/SubTVec.h>
 #include <Kripke/Input_Variables.h>
-#include <Kripke/Kernel/VariablePolicy.h>
+#include <Kripke/Kernel/DataPolicy.h>
 
 #include <cmath>
 #include <sstream>

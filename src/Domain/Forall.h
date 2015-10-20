@@ -30,29 +30,33 @@ typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::omp_parallel_seq_exec>
 
 
 // Subdomain loops
-template<typename BODY>
+template<typename SubdomainPolicy, typename BODY>
 RAJA_INLINE void forallSubdomains(Grid_Data *grid_data, BODY const &body){
 
-  int num_subdomains = grid_data->subdomains.size();
-  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
+  RAJA::forall<SubdomainPolicy>(
+    RAJA::RangeSegment(0, grid_data->subdomains.size()),
+    [=](int sdom_id){
+      // get subdomain object
+      Subdomain &sdom = grid_data->subdomains[sdom_id];
 
-    body(sdom_id, sdom);
-  }
+      body(sdom_id, sdom);
+    });
 
 }
 
 // Loop over zoneset subdomains
-template<typename BODY>
+template<typename SubdomainPolicy, typename BODY>
 RAJA_INLINE void forallZoneSets(Grid_Data *grid_data, BODY const &body){
 
-  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
-    // get material mix information
-    int sdom_id = grid_data->zs_to_sdomid[zs];
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
+  RAJA::forall<SubdomainPolicy>(
+    RAJA::RangeSegment(0, grid_data->num_zone_sets),
+    [=](int zs){
+      // get material mix information
+      int sdom_id = grid_data->zs_to_sdomid[zs];
+      Subdomain &sdom = grid_data->subdomains[sdom_id];
 
-    body(zs, sdom_id, sdom);
-  }
+      body(zs, sdom_id, sdom);
+    });
 
 }
 
