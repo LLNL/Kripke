@@ -53,6 +53,9 @@ DEF_INDEX(IZoneI);
 DEF_INDEX(IZoneJ);
 DEF_INDEX(IZoneK);
 
+/**
+ * Layout policies that don't change with nesting.
+ */
 struct FixedLayoutPolicy {
   typedef PERM_JI Layout_Ell;     // d, nm
   typedef PERM_IJ Layout_EllPlus; // d, nm
@@ -62,11 +65,14 @@ struct FixedLayoutPolicy {
 };
 
 
+/**
+ * Layout policies tied directly to nesting.
+ */
 template<typename T>
-struct LayoutPolicy{};
+struct NestingPolicy{};
 
 template<>
-struct LayoutPolicy<NEST_DGZ_T> : public FixedLayoutPolicy {
+struct NestingPolicy<NEST_DGZ_T> : public FixedLayoutPolicy {
   typedef PERM_IJK Layout_Psi;
   typedef PERM_IJK Layout_Phi;
   typedef PERM_IJKL Layout_SigS;
@@ -78,7 +84,7 @@ struct LayoutPolicy<NEST_DGZ_T> : public FixedLayoutPolicy {
 };
 
 template<>
-struct LayoutPolicy<NEST_DZG_T> : public FixedLayoutPolicy {
+struct NestingPolicy<NEST_DZG_T> : public FixedLayoutPolicy {
   typedef PERM_IKJ Layout_Psi;
   typedef PERM_IKJ Layout_Phi;
   typedef PERM_ILJK Layout_SigS;
@@ -90,7 +96,7 @@ struct LayoutPolicy<NEST_DZG_T> : public FixedLayoutPolicy {
 };
 
 template<>
-struct LayoutPolicy<NEST_GDZ_T> : public FixedLayoutPolicy {
+struct NestingPolicy<NEST_GDZ_T> : public FixedLayoutPolicy {
   typedef PERM_JIK Layout_Psi;
   typedef PERM_JIK Layout_Phi;
   typedef PERM_JKIL Layout_SigS;
@@ -102,7 +108,7 @@ struct LayoutPolicy<NEST_GDZ_T> : public FixedLayoutPolicy {
 };
 
 template<>
-struct LayoutPolicy<NEST_GZD_T> : public FixedLayoutPolicy {
+struct NestingPolicy<NEST_GZD_T> : public FixedLayoutPolicy {
   typedef PERM_JKI Layout_Psi;
   typedef PERM_JKI Layout_Phi;
   typedef PERM_JKLI Layout_SigS;
@@ -114,7 +120,7 @@ struct LayoutPolicy<NEST_GZD_T> : public FixedLayoutPolicy {
 };
 
 template<>
-struct LayoutPolicy<NEST_ZDG_T> : public FixedLayoutPolicy {
+struct NestingPolicy<NEST_ZDG_T> : public FixedLayoutPolicy {
   typedef PERM_KIJ Layout_Psi;
   typedef PERM_KIJ Layout_Phi;
   typedef PERM_LIJK Layout_SigS;
@@ -126,7 +132,7 @@ struct LayoutPolicy<NEST_ZDG_T> : public FixedLayoutPolicy {
 };
 
 template<>
-struct LayoutPolicy<NEST_ZGD_T> : public FixedLayoutPolicy {
+struct NestingPolicy<NEST_ZGD_T> : public FixedLayoutPolicy {
   typedef PERM_KJI Layout_Psi;
   typedef PERM_KJI Layout_Phi;
   typedef PERM_LJKI Layout_SigS;
@@ -137,6 +143,10 @@ struct LayoutPolicy<NEST_ZGD_T> : public FixedLayoutPolicy {
   typedef PERM_LKJI Layout_FaceK; // d, g, i, j
 };
 
+
+/**
+ * Views that have fixed policies
+ */
 struct FixedViewPolicy {
   typedef TView1d<double, PERM_I, IZoneI> View_dx;
   typedef TView1d<double, PERM_I, IZoneJ> View_dy;
@@ -148,6 +158,9 @@ struct FixedViewPolicy {
   typedef TView1d<IZoneK, PERM_I, IZoneIdx> View_IdxToK;
 };
 
+/**
+ * Views with policies that vary between nestings.
+ */
 template<typename T>
 struct ViewPolicy : public FixedViewPolicy {
   typedef TView3d<double, typename T::Layout_Psi, IDirection, IGroup, IZone> View_Psi;
@@ -161,9 +174,15 @@ struct ViewPolicy : public FixedViewPolicy {
   typedef TView2d<double, typename T::Layout_EllPlus, IGroup, IZone> View_SigT;
 };
 
-template<typename T>
-struct DataPolicy : public LayoutPolicy<T>, public ViewPolicy<LayoutPolicy<T> > {
 
-};
+
+/**
+ * Combined Policies for Layouts, Views.
+ *
+ * A convenience class: makes it easier to include in application.
+ */
+template<typename T>
+struct DataPolicy : public NestingPolicy<T>, public ViewPolicy<NestingPolicy<T> >
+{};
 
 #endif

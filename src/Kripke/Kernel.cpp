@@ -92,12 +92,12 @@ void Kernel::LTimes(Grid_Data *domain) {
     typedef DataPolicy<nest_type> POL;
 
     // Zero Phi
-    forallZoneSets(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+    forallZoneSets<seq_pol>(domain, [&](int zs, int sdom_id, Subdomain &sdom){
       sdom.phi->clear(0.0);
     });
 
     // Loop over Subdomains
-    forallSubdomains(domain, [&](int sdom_id, Subdomain &sdom){
+    forallSubdomains<seq_pol>(domain, [&](int sdom_id, Subdomain &sdom){
 
       // Get dimensioning
       int group0 = sdom.group0;
@@ -128,11 +128,11 @@ void Kernel::LPlusTimes(Grid_Data *domain) {
     typedef DataPolicy<nest_type> POL;
 
     // Loop over Subdomains
-    forallSubdomains(domain, [&](int sdom_id, Subdomain &sdom){
+    forallSubdomains<seq_pol>(domain, [&](int sdom_id, Subdomain &sdom){
       sdom.rhs->clear(0.0);
     });
 
-    forallSubdomains(domain, [&](int sdom_id, Subdomain &sdom){
+    forallSubdomains<seq_pol>(domain, [&](int sdom_id, Subdomain &sdom){
 
       // Get dimensioning
       int group0 = sdom.group0;
@@ -169,12 +169,12 @@ void Kernel::scattering(Grid_Data *domain){
     typedef DataPolicy<nest_type> POL;
 
     // Zero out source terms
-    forallZoneSets(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+    forallZoneSets<seq_pol>(domain, [&](int zs, int sdom_id, Subdomain &sdom){
       sdom.phi_out->clear(0.0);
     });
 
     // Loop over zoneset subdomains
-    forallZoneSets(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+    forallZoneSets<seq_pol>(domain, [&](int zs, int sdom_id, Subdomain &sdom){
 
       typename POL::View_Phi     phi(sdom.phi->ptr(), domain, sdom_id);
       typename POL::View_Phi     phi_out(sdom.phi_out->ptr(), domain, sdom_id);
@@ -219,7 +219,7 @@ void Kernel::source(Grid_Data *grid_data){
     typedef DataPolicy<nest_type> POL;
 
     // Loop over zoneset subdomains
-    forallZoneSets(grid_data, [&](int zs, int sdom_id, Subdomain &sdom){
+    forallZoneSets<seq_pol>(grid_data, [&](int zs, int sdom_id, Subdomain &sdom){
       typename POL::View_Phi     phi_out(sdom.phi_out->ptr(), grid_data, sdom_id);
       View1d<const int,    PERM_I> const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
       View1d<const int,    PERM_I> const mixed_material(&sdom.mixed_material[0], 1);
