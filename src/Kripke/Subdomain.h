@@ -34,6 +34,8 @@
 #define KRIPKE_SUBDOMAIN_H__
 
 #include <vector>
+#include <string>
+#include <map>
 #include <Kripke/Layout.h>
 #include <RAJA/IndexSet.hxx>
 
@@ -130,6 +132,10 @@ struct Subdomain {
   std::vector<int> zones_to_mixed;    // mapping from zones to first mixed slot
   std::vector<int> mixed_material;    // material number for each mixed slot
   std::vector<double> mixed_fraction; // volume fraction each mixed slot
+  
+  // Index information
+  std::map<std::string, int> index_size; // size of each Index
+  
 };
 
 #endif
