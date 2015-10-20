@@ -1,6 +1,7 @@
 #ifndef __DOMAIN_INDEX_H__
 #define __DOMAIN_INDEX_H__
 
+#include<string>
 #include<RAJA/RangeSegment.hxx>
 
 
