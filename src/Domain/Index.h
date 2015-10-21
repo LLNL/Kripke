@@ -25,20 +25,25 @@ class Index {
     
     inline int operator*(void) const {return value;}
 
+    inline Index<IndexTag> operator+(int a) const { return Index<IndexTag>(value+a); }
+
+
+    // TODO: Move to grid_data
     inline static int size(Grid_Data *domain, int sdom_id){
       std::string name = IndexTraits<IndexTag>::getName();
       
       return domain->subdomains[sdom_id].index_size[name];      
     }
     
-    inline Index<IndexTag> operator+(int a) const { return Index<IndexTag>(value+a); }
-    
+    // TODO: Move to grid_data
     inline static RAJA::RangeSegment range(Grid_Data *domain, int sdom_id){
 
       int len = Index<IndexTag>::size(domain, sdom_id);
             
       return RAJA::RangeSegment(0, len);
     }
+
+
 
     inline static std::string getName(void){
       return IndexTraits<IndexTag>::getName();

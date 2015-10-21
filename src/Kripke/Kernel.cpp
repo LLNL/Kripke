@@ -107,7 +107,7 @@ void Kernel::LTimes(Grid_Data *domain) {
       typename POL::View_Phi phi(sdom.phi->ptr(), domain, sdom_id);
       typename POL::View_Ell ell(sdom.ell->ptr(), domain, sdom_id);
 
-      forall4T<LTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
+      dForall4<LTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
         domain, sdom_id, 
         [&](IMoment nm, IDirection d, IGroup g, IZone z){
   
@@ -142,7 +142,7 @@ void Kernel::LPlusTimes(Grid_Data *domain) {
       typename POL::View_Phi     phi_out(sdom.phi_out->ptr(), domain, sdom_id);
       typename POL::View_EllPlus ell_plus(sdom.ell_plus->ptr(), domain, sdom_id);
       
-      forall4T<LPlusTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
+      dForall4<LPlusTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
         domain, sdom_id, 
         [&](IMoment nm, IDirection d, IGroup g, IZone z){
   
@@ -185,7 +185,7 @@ void Kernel::scattering(Grid_Data *domain){
       typename POL::View_MixedToFraction mixed_fraction(&sdom.mixed_fraction[0], domain, sdom_id);
       typename POL::View_MomentToCoeff moment_to_coeff((ILegendre*)&domain->moment_to_coeff[0], domain, sdom_id);
       
-      forall4T<ScatteringPolicy<nest_type>, IMoment, IGlobalGroup, IGlobalGroup, IMix>(
+      dForall4<ScatteringPolicy<nest_type>, IMoment, IGlobalGroup, IGlobalGroup, IMix>(
         domain, sdom_id,
         [&](IMoment nm, IGlobalGroup g, IGlobalGroup gp, IMix mix){
         
@@ -225,7 +225,7 @@ void Kernel::source(Grid_Data *domain){
       typename POL::View_MixedToMaterial mixed_material((IMaterial*)&sdom.mixed_material[0], domain, sdom_id);
       typename POL::View_MixedToFraction mixed_fraction(&sdom.mixed_fraction[0], domain, sdom_id);
 
-      forall2T<SourcePolicy<nest_type>, IGlobalGroup, IMix >(
+      dForall2<SourcePolicy<nest_type>, IGlobalGroup, IMix >(
         domain, sdom_id,
         [&](IGlobalGroup g, IMix mix){
           IZone zone = mixed_to_zones(mix);

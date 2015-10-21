@@ -150,7 +150,7 @@ struct DLayout4d : public Layout4d<Perm, IdxLin, IdxI, IdxJ, IdxK, IdxL>{
 
 
 template<typename POL, typename IdxI, typename IdxJ, typename BODY>
-void forall2T(Grid_Data *domain, int sdom_id, BODY const &body){
+void dForall2(Grid_Data *domain, int sdom_id, BODY const &body){
 
   RAJA::RangeSegment seg_i = IdxI::range(domain, sdom_id);
   RAJA::RangeSegment seg_j = IdxJ::range(domain, sdom_id);
@@ -180,7 +180,7 @@ void forall3T(TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
 
 
 template<typename POL, typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename BODY>
-void forall4T(Grid_Data *domain, int sdom_id, BODY const &body){
+void dForall4(Grid_Data *domain, int sdom_id, BODY const &body){
 
   RAJA::RangeSegment seg_i = IdxI::range(domain, sdom_id);
   RAJA::RangeSegment seg_j = IdxJ::range(domain, sdom_id);
