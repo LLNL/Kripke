@@ -40,27 +40,31 @@
 #include<Domain/Index.h>
 
 
-DEF_INDEX(IMaterial);
-DEF_INDEX(ILegendre);
-DEF_INDEX(IMoment);
-DEF_INDEX(IDirection);
-DEF_INDEX(IGlobalGroup);
-DEF_INDEX(IGroup);
-DEF_INDEX(IZone);
-DEF_INDEX(IZoneIdx);
-DEF_INDEX(IMix);
-DEF_INDEX(IZoneI);
-DEF_INDEX(IZoneJ);
-DEF_INDEX(IZoneK);
+/*
+ * Define strongly-typed indices used in Kripke
+ */
+DEF_INDEX(IMaterial);     // Material ID
+DEF_INDEX(ILegendre);     // Legendre expansion coefficient
+DEF_INDEX(IMoment);       // Spherical harmonic moment
+DEF_INDEX(IDirection);    // Local direction
+DEF_INDEX(IGlobalGroup);  // Global energy group
+DEF_INDEX(IGroup);        // Local energy group
+DEF_INDEX(IZone);         // Cannonical zone number
+DEF_INDEX(IZoneIdx);      // Mapped zone index (sequential in hyperplane)
+DEF_INDEX(IMix);          // Mixed element slot
+DEF_INDEX(IZoneI);        // zone on the I boundary face
+DEF_INDEX(IZoneJ);        // zone on the K boundary face
+DEF_INDEX(IZoneK);        // zone on the K boundary face
+
+
 
 /**
  * Layout policies that don't change with nesting.
  */
 struct FixedLayoutPolicy {
-  typedef PERM_JI Layout_Ell;     // d, nm
-  typedef PERM_IJ Layout_EllPlus; // d, nm
-  
-  typedef Layout3d<PERM_KJI> Layout_Zone;
+  typedef TLayout2d<int, PERM_JI, IDirection, IMoment> Layout_Ell;
+  typedef TLayout2d<int, PERM_IJ, IDirection, IMoment> Layout_EllPlus;
+
   typedef TLayout3d<IZone, PERM_KJI, IZoneI, IZoneJ, IZoneK> TLayout_Zone;
 };
 
@@ -73,74 +77,74 @@ struct NestingPolicy{};
 
 template<>
 struct NestingPolicy<NEST_DGZ_T> : public FixedLayoutPolicy {
-  typedef PERM_IJK Layout_Psi;
-  typedef PERM_IJK Layout_Phi;
-  typedef PERM_IJKL Layout_SigS;
-  typedef PERM_IJ Layout_SigT;
+  typedef TLayout3d<int, PERM_IJK, IDirection, IGroup, IZone>    Layout_Psi;
+  typedef TLayout3d<int, PERM_IJK, IMoment, IGlobalGroup, IZone> Layout_Phi;
+  typedef TLayout4d<int, PERM_IJKL, ILegendre, IGlobalGroup, IGlobalGroup, IMaterial> Layout_SigS;
+  typedef TLayout2d<int, PERM_IJ, IGroup, IZone> Layout_SigT;
   
-  typedef PERM_IJLK Layout_FaceI; // d, g, j, k
-  typedef PERM_IJLK Layout_FaceJ; // d, g, i, k
-  typedef PERM_IJLK Layout_FaceK; // d, g, i, j
+  typedef TLayout4d<int, PERM_IJLK, IDirection, IGroup, IZoneJ, IZoneK> Layout_FaceI;
+  typedef TLayout4d<int, PERM_IJLK, IDirection, IGroup, IZoneI, IZoneK> Layout_FaceJ;
+  typedef TLayout4d<int, PERM_IJLK, IDirection, IGroup, IZoneI, IZoneJ> Layout_FaceK;
 };
 
 template<>
 struct NestingPolicy<NEST_DZG_T> : public FixedLayoutPolicy {
-  typedef PERM_IKJ Layout_Psi;
-  typedef PERM_IKJ Layout_Phi;
-  typedef PERM_ILJK Layout_SigS;
-  typedef PERM_JI Layout_SigT;
-  
-  typedef PERM_ILKJ Layout_FaceI; // d, g, j, k
-  typedef PERM_ILKJ Layout_FaceJ; // d, g, i, k
-  typedef PERM_ILKJ Layout_FaceK; // d, g, i, j
+  typedef TLayout3d<int, PERM_IKJ, IDirection, IGroup, IZone>    Layout_Psi;
+  typedef TLayout3d<int, PERM_IKJ, IMoment, IGlobalGroup, IZone> Layout_Phi;
+  typedef TLayout4d<int, PERM_ILJK, ILegendre, IGlobalGroup, IGlobalGroup, IMaterial> Layout_SigS;
+  typedef TLayout2d<int, PERM_JI, IGroup, IZone> Layout_SigT;
+
+  typedef TLayout4d<int, PERM_ILKJ, IDirection, IGroup, IZoneJ, IZoneK> Layout_FaceI;
+  typedef TLayout4d<int, PERM_ILKJ, IDirection, IGroup, IZoneI, IZoneK> Layout_FaceJ;
+  typedef TLayout4d<int, PERM_ILKJ, IDirection, IGroup, IZoneI, IZoneJ> Layout_FaceK;
 };
 
 template<>
 struct NestingPolicy<NEST_GDZ_T> : public FixedLayoutPolicy {
-  typedef PERM_JIK Layout_Psi;
-  typedef PERM_JIK Layout_Phi;
-  typedef PERM_JKIL Layout_SigS;
-  typedef PERM_IJ Layout_SigT;
-  
-  typedef PERM_JILK Layout_FaceI; // d, g, j, k
-  typedef PERM_JILK Layout_FaceJ; // d, g, i, k
-  typedef PERM_JILK Layout_FaceK; // d, g, i, j
+  typedef TLayout3d<int, PERM_JIK, IDirection, IGroup, IZone>    Layout_Psi;
+  typedef TLayout3d<int, PERM_JIK, IMoment, IGlobalGroup, IZone> Layout_Phi;
+  typedef TLayout4d<int, PERM_JKIL, ILegendre, IGlobalGroup, IGlobalGroup, IMaterial> Layout_SigS;
+  typedef TLayout2d<int, PERM_IJ, IGroup, IZone> Layout_SigT;
+
+  typedef TLayout4d<int, PERM_JILK, IDirection, IGroup, IZoneJ, IZoneK> Layout_FaceI;
+  typedef TLayout4d<int, PERM_JILK, IDirection, IGroup, IZoneI, IZoneK> Layout_FaceJ;
+  typedef TLayout4d<int, PERM_JILK, IDirection, IGroup, IZoneI, IZoneJ> Layout_FaceK;
 };
 
 template<>
 struct NestingPolicy<NEST_GZD_T> : public FixedLayoutPolicy {
-  typedef PERM_JKI Layout_Psi;
-  typedef PERM_JKI Layout_Phi;
-  typedef PERM_JKLI Layout_SigS;
-  typedef PERM_IJ Layout_SigT;
-  
-  typedef PERM_JLKI Layout_FaceI; // d, g, j, k
-  typedef PERM_JLKI Layout_FaceJ; // d, g, i, k
-  typedef PERM_JLKI Layout_FaceK; // d, g, i, j
+  typedef TLayout3d<int, PERM_JKI, IDirection, IGroup, IZone>    Layout_Psi;
+  typedef TLayout3d<int, PERM_JKI, IMoment, IGlobalGroup, IZone> Layout_Phi;
+  typedef TLayout4d<int, PERM_JKLI, ILegendre, IGlobalGroup, IGlobalGroup, IMaterial> Layout_SigS;
+  typedef TLayout2d<int, PERM_IJ, IGroup, IZone> Layout_SigT;
+
+  typedef TLayout4d<int, PERM_JLKI, IDirection, IGroup, IZoneJ, IZoneK> Layout_FaceI;
+  typedef TLayout4d<int, PERM_JLKI, IDirection, IGroup, IZoneI, IZoneK> Layout_FaceJ;
+  typedef TLayout4d<int, PERM_JLKI, IDirection, IGroup, IZoneI, IZoneJ> Layout_FaceK;
 };
 
 template<>
 struct NestingPolicy<NEST_ZDG_T> : public FixedLayoutPolicy {
-  typedef PERM_KIJ Layout_Psi;
-  typedef PERM_KIJ Layout_Phi;
-  typedef PERM_LIJK Layout_SigS;
-  typedef PERM_JI Layout_SigT;
-  
-  typedef PERM_LKIJ Layout_FaceI; // d, g, j, k
-  typedef PERM_LKIJ Layout_FaceJ; // d, g, i, k
-  typedef PERM_LKIJ Layout_FaceK; // d, g, i, j
+  typedef TLayout3d<int, PERM_KIJ, IDirection, IGroup, IZone>    Layout_Psi;
+  typedef TLayout3d<int, PERM_KIJ, IMoment, IGlobalGroup, IZone> Layout_Phi;
+  typedef TLayout4d<int, PERM_LIJK, ILegendre, IGlobalGroup, IGlobalGroup, IMaterial> Layout_SigS;
+  typedef TLayout2d<int, PERM_JI, IGroup, IZone> Layout_SigT;
+
+  typedef TLayout4d<int, PERM_LKIJ, IDirection, IGroup, IZoneJ, IZoneK> Layout_FaceI;
+  typedef TLayout4d<int, PERM_LKIJ, IDirection, IGroup, IZoneI, IZoneK> Layout_FaceJ;
+  typedef TLayout4d<int, PERM_LKIJ, IDirection, IGroup, IZoneI, IZoneJ> Layout_FaceK;
 };
 
 template<>
 struct NestingPolicy<NEST_ZGD_T> : public FixedLayoutPolicy {
-  typedef PERM_KJI Layout_Psi;
-  typedef PERM_KJI Layout_Phi;
-  typedef PERM_LJKI Layout_SigS;
-  typedef PERM_JI Layout_SigT;
-  
-  typedef PERM_LKJI Layout_FaceI; // d, g, j, k
-  typedef PERM_LKJI Layout_FaceJ; // d, g, i, k
-  typedef PERM_LKJI Layout_FaceK; // d, g, i, j
+  typedef TLayout3d<int, PERM_KJI, IDirection, IGroup, IZone>    Layout_Psi;
+  typedef TLayout3d<int, PERM_KJI, IMoment, IGlobalGroup, IZone> Layout_Phi;
+  typedef TLayout4d<int, PERM_LJKI, ILegendre, IGlobalGroup, IGlobalGroup, IMaterial> Layout_SigS;
+  typedef TLayout2d<int, PERM_JI, IGroup, IZone> Layout_SigT;
+
+  typedef TLayout4d<int, PERM_LKJI, IDirection, IGroup, IZoneJ, IZoneK> Layout_FaceI;
+  typedef TLayout4d<int, PERM_LKJI, IDirection, IGroup, IZoneI, IZoneK> Layout_FaceJ;
+  typedef TLayout4d<int, PERM_LKJI, IDirection, IGroup, IZoneI, IZoneJ> Layout_FaceK;
 };
 
 
@@ -148,14 +152,19 @@ struct NestingPolicy<NEST_ZGD_T> : public FixedLayoutPolicy {
  * Views that have fixed policies
  */
 struct FixedViewPolicy {
-  typedef TView1d<double, PERM_I, IZoneI> View_dx;
-  typedef TView1d<double, PERM_I, IZoneJ> View_dy;
-  typedef TView1d<double, PERM_I, IZoneK> View_dz;
-  typedef TView1d<Directions, PERM_I, IDirection> View_Directions;
+  typedef TView1d<double, TLayout1d<int, PERM_I, IZoneI> >View_dx;
+  typedef TView1d<double, TLayout1d<int, PERM_I, IZoneJ> > View_dy;
+  typedef TView1d<double, TLayout1d<int, PERM_I, IZoneK> > View_dz;
+  typedef TView1d<Directions, TLayout1d<int, PERM_I, IDirection> > View_Directions;
   
-  typedef TView1d<IZoneI, PERM_I, IZoneIdx> View_IdxToI;
-  typedef TView1d<IZoneJ, PERM_I, IZoneIdx> View_IdxToJ;
-  typedef TView1d<IZoneK, PERM_I, IZoneIdx> View_IdxToK;
+  typedef TView1d<IZoneI, TLayout1d<int, PERM_I, IZoneIdx> > View_IdxToI;
+  typedef TView1d<IZoneJ, TLayout1d<int, PERM_I, IZoneIdx> > View_IdxToJ;
+  typedef TView1d<IZoneK, TLayout1d<int, PERM_I, IZoneIdx> > View_IdxToK;
+
+  typedef TView1d<IZone, TLayout1d<int, PERM_I, IMix> > View_MixedToZones;
+  typedef TView1d<IMaterial, TLayout1d<int, PERM_I, IMix> > View_MixedToMaterial;
+  typedef TView1d<double, TLayout1d<int, PERM_I, IMix> > View_MixedToFraction;
+  typedef TView1d<ILegendre, TLayout1d<int, PERM_I, IMoment> > View_MomentToCoeff;
 };
 
 /**
@@ -163,15 +172,22 @@ struct FixedViewPolicy {
  */
 template<typename T>
 struct ViewPolicy : public FixedViewPolicy {
-  typedef TView3d<double, typename T::Layout_Psi, IDirection, IGroup, IZone> View_Psi;
-  typedef TView4d<double, typename T::Layout_FaceI, IDirection, IGroup, IZoneJ, IZoneK> View_FaceI;
-  typedef TView4d<double, typename T::Layout_FaceJ, IDirection, IGroup, IZoneI, IZoneK> View_FaceJ;
-  typedef TView4d<double, typename T::Layout_FaceK, IDirection, IGroup, IZoneI, IZoneJ> View_FaceK;
-  typedef TView3d<double, typename T::Layout_Phi, IMoment, IGlobalGroup, IZone> View_Phi;
-  typedef TView2d<double, typename T::Layout_Ell, IDirection, IMoment> View_Ell;
-  typedef TView2d<double, typename T::Layout_EllPlus, IDirection, IMoment> View_EllPlus;
-  typedef TView4d<double, typename T::Layout_SigS, ILegendre, IGlobalGroup, IGlobalGroup, IMaterial> View_SigS;
-  typedef TView2d<double, typename T::Layout_EllPlus, IGroup, IZone> View_SigT;
+  // Discrete and Moment Unknowns
+  typedef TView3d<double, typename T::Layout_Psi> View_Psi;
+  typedef TView3d<double, typename T::Layout_Phi> View_Phi;
+
+  // Spatial domain face indices
+  typedef TView4d<double, typename T::Layout_FaceI> View_FaceI;
+  typedef TView4d<double, typename T::Layout_FaceJ> View_FaceJ;
+  typedef TView4d<double, typename T::Layout_FaceK> View_FaceK;
+
+  // L and L+ matrices
+  typedef TView2d<double, typename T::Layout_Ell> View_Ell;
+  typedef TView2d<double, typename T::Layout_EllPlus> View_EllPlus;
+
+  // Data tables
+  typedef TView4d<double, typename T::Layout_SigS> View_SigS;
+  typedef TView2d<double, typename T::Layout_SigT> View_SigT;
 };
 
 

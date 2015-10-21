@@ -53,96 +53,161 @@ class Index {
   typedef Index<NAME##_TAG> NAME;
 
 
-template<typename T, typename L, typename IdxI>
-struct TView1d {
-    inline TView1d(T* ptr, Grid_Data *domain, int sdom_id) :
-      view(ptr, 
-           IdxI::size(domain, sdom_id))
-    {}
-
-    inline T &operator()(IdxI i) const{
-      return view(*i);
-    }
-
-    View1d<T, L> const view;
-};
-
-template<typename T, typename L, typename IdxI, typename IdxJ>
-struct TView2d {
-    inline TView2d(T* ptr, Grid_Data *domain, int sdom_id) :
-      view(ptr, 
-           IdxI::size(domain, sdom_id),
-           IdxJ::size(domain, sdom_id))
-    {}
-
-    inline T &operator()(IdxI i, IdxJ j) const{
-      return view(*i, *j);
-    }
-
-    View2d<T, L> const view;
-};
-
-
-template<typename T, typename L, typename IdxI, typename IdxJ, typename IdxK>
-struct TView3d {
-    inline TView3d(T* ptr, Grid_Data *domain, int sdom_id) :
-      view(ptr, 
-           IdxI::size(domain, sdom_id),
-           IdxJ::size(domain, sdom_id),
-           IdxK::size(domain, sdom_id))
-    {}
-
-    inline T &operator()(IdxI i, IdxJ j, IdxK k) const{
-      return view(*i, *j, *k);
-    }
-
-    View3d<T, L> const view;
-};
-
-template<typename T, typename L, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-struct TView4d {
-    inline TView4d(T* ptr, Grid_Data *domain, int sdom_id) :
-      view(ptr, 
-           IdxI::size(domain, sdom_id),
-           IdxJ::size(domain, sdom_id),
-           IdxK::size(domain, sdom_id),
-           IdxL::size(domain, sdom_id))
-    {}
-
-    inline T &operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const{
-      return view(*i, *j, *k, *l);
-    }
-
-    View4d<T, L> const view;
-};
 
 
 template<typename T, typename L, typename IdxI>
 struct TLayout1d {
-    inline TLayout1d(Grid_Data *domain, int sdom_id) :
-      layout(IdxI::size(domain, sdom_id))
-    {}
+  typedef T    IndexLinear;
+  typedef IdxI IndexI;
 
-    inline T operator()(IdxI i) const{
-      return T(layout(*i));
-    }
+  inline TLayout1d(Grid_Data *domain, int sdom_id) :
+    layout(IdxI::size(domain, sdom_id))
+  {}
 
-    Layout1d<L> const layout;
+  inline T operator()(IdxI i) const{
+    return T(layout(*i));
+  }
+
+  Layout1d<L> const layout;
+};
+
+
+template<typename T, typename L, typename IdxI, typename IdxJ>
+struct TLayout2d {
+  typedef T    IndexLinear;
+  typedef IdxI IndexI;
+  typedef IdxJ IndexJ;
+
+  inline TLayout2d(Grid_Data *domain, int sdom_id) :
+    layout(IdxI::size(domain, sdom_id),
+           IdxJ::size(domain, sdom_id))
+  {}
+
+  inline T operator()(IdxI i, IdxJ j) const{
+    return T(layout(*i, *j));
+  }
+
+  Layout2d<L> const layout;
 };
 
 template<typename T, typename L, typename IdxI, typename IdxJ, typename IdxK>
 struct TLayout3d {
-    inline TLayout3d(Grid_Data *domain, int sdom_id) :
-      layout(IdxI::size(domain, sdom_id),
+  typedef T    IndexLinear;
+  typedef IdxI IndexI;
+  typedef IdxJ IndexJ;
+  typedef IdxK IndexK;
+
+  inline TLayout3d(Grid_Data *domain, int sdom_id) :
+    layout(IdxI::size(domain, sdom_id),
            IdxJ::size(domain, sdom_id),
            IdxK::size(domain, sdom_id))
-    {}
+  {}
 
-    inline T operator()(IdxI i, IdxJ j, IdxK k) const{
-      return T(layout(*i, *j, *k));
-    }
+  inline T operator()(IdxI i, IdxJ j, IdxK k) const{
+    return T(layout(*i, *j, *k));
+  }
 
-    Layout3d<L> const layout;
+  Layout3d<L> const layout;
+};
+
+template<typename T, typename L, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
+struct TLayout4d {
+  typedef T    IndexLinear;
+  typedef IdxI IndexI;
+  typedef IdxJ IndexJ;
+  typedef IdxK IndexK;
+  typedef IdxL IndexL;
+
+  inline TLayout4d(Grid_Data *domain, int sdom_id) :
+    layout(IdxI::size(domain, sdom_id),
+           IdxJ::size(domain, sdom_id),
+           IdxK::size(domain, sdom_id),
+           IdxL::size(domain, sdom_id))
+  {}
+
+  inline T operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const{
+    return T(layout(*i, *j, *k, *l));
+  }
+
+  Layout4d<L> const layout;
+};
+
+
+
+template<typename DataType, typename TL>
+struct TView1d {
+  typedef typename TL::IndexI IndexI;
+
+  inline TView1d(DataType *ptr, Grid_Data *domain, int sdom_id) :
+    layout(domain, sdom_id),
+    data(ptr)
+  {}
+
+  inline DataType &operator()(IndexI i) const{
+    return data[layout(i)];
+  }
+
+  TL const layout;
+  DataType *data;
+};
+
+
+template<typename DataType, typename TL>
+struct TView2d {
+  typedef typename TL::IndexI IndexI;
+  typedef typename TL::IndexJ IndexJ;
+
+  inline TView2d(DataType *ptr, Grid_Data *domain, int sdom_id) :
+    layout(domain, sdom_id),
+    data(ptr)
+  {}
+
+  inline DataType &operator()(IndexI i, IndexJ j) const{
+    return data[layout(i, j)];
+  }
+
+  TL const layout;
+  DataType *data;
+};
+
+
+template<typename DataType, typename TL>
+struct TView3d {
+  typedef typename TL::IndexI IndexI;
+  typedef typename TL::IndexJ IndexJ;
+  typedef typename TL::IndexK IndexK;
+
+  inline TView3d(DataType *ptr, Grid_Data *domain, int sdom_id) :
+    layout(domain, sdom_id),
+    data(ptr)
+  {}
+
+  inline DataType &operator()(IndexI i, IndexJ j, IndexK k) const{
+    return data[layout(i, j, k)];
+  }
+
+  TL const layout;
+  DataType *data;
+};
+
+template<typename DataType, typename TL>
+struct TView4d {
+  typedef typename TL::IndexI IndexI;
+  typedef typename TL::IndexJ IndexJ;
+  typedef typename TL::IndexK IndexK;
+  typedef typename TL::IndexL IndexL;
+
+  inline TView4d(DataType *ptr, Grid_Data *domain, int sdom_id) :
+    layout(domain, sdom_id),
+    data(ptr)
+  {}
+
+  inline DataType &operator()(IndexI i, IndexJ j, IndexK k, IndexL l) const{
+    return data[layout(i, j, k, l)];
+  }
+
+  TL const layout;
+  DataType *data;
 };
 
 
