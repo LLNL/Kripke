@@ -38,7 +38,7 @@
 #include<Domain/Layout.h>
 #include<Domain/Forall.h>
 #include<Domain/Index.h>
-
+#include<Domain/TView.h>
 
 /*
  * Define strongly-typed indices used in Kripke

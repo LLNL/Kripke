@@ -24,13 +24,25 @@
         T *data;
     };
 
-    template<typename T, typename L>
+    template<typename T, typename L, typename IdxI=int, typename IdxJ=int, typename IdxK=int>
     struct View3d {
-        inline View3d(T *data_ptr, int ni, int nj, int nk);
-        inline T &operator()(int i, int j, int k) const;
+      typedef IdxI IndexI;
+      typedef IdxJ IndexJ;
+      typedef IdxK IndexK;
 
-        Layout3d<L> const layout;
-        T *data;
+      inline View3d(T *data_ptr, int ni, int nj, int nk):
+        layout(ni, nj, nk),
+        data(data_ptr)
+      {
+      }
+      inline T &operator()(IdxI i, IdxJ j, IdxK k) const{
+        return(data[ layout(i, j, k) ]);
+      }
+
+      // NOT DONE: perhaps this should get a Layout type as parameter, instead of a permutation
+
+      Layout3d<L> const layout;
+      T *data;
     };
 
     template<typename T, typename L>
@@ -81,17 +93,6 @@
  *  Implementation for View3D
  ******************************************************************/
 
-      template<typename T, typename L>
-      inline View3d<T,L>::View3d(T *data_ptr, int ni, int nj, int nk):
-        layout(ni, nj, nk),
-        data(data_ptr)
-      {
-      }
-
-      template<typename T, typename L>
-      inline T &View3d<T,L>::operator()(int i, int j, int k) const {
-        return(data[layout(i, j, k)]);
-      }
 
 
 /******************************************************************
