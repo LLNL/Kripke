@@ -4,161 +4,148 @@
 #include<string>
 #include<RAJA/RangeSegment.hxx>
 #include<Domain/Index.h>
+#include<Domain/View.h>
 
 
-template<typename T, typename L, typename IdxI>
-struct TLayout1d {
-  typedef T    IndexLinear;
-  typedef IdxI IndexI;
+template<typename DataType, typename Layout>
+struct DView1d : public View1d<DataType, Layout> {
 
-  inline TLayout1d(Grid_Data *domain, int sdom_id) :
-    layout(IdxI::size(domain, sdom_id))
+  typedef typename Layout::Permutation Permutation;
+  typedef typename Layout::IndexI IndexI;
+
+  inline DView1d(DataType *ptr, Grid_Data *domain, int sdom_id) :
+    View1d<DataType, Layout>::View1d(
+        ptr,
+        IndexI::size(domain, sdom_id))
   {}
+};
 
-  inline T operator()(IdxI i) const{
-    return T(layout(*i));
-  }
+template<typename DataType, typename Layout>
+struct DView2d : public View2d<DataType, Layout> {
 
-  Layout1d<L> const layout;
+  typedef typename Layout::Permutation Permutation;
+  typedef typename Layout::IndexI IndexI;
+  typedef typename Layout::IndexJ IndexJ;
+
+  inline DView2d(DataType *ptr, Grid_Data *domain, int sdom_id) :
+    View2d<DataType, Layout>::View2d(
+        ptr,
+        IndexI::size(domain, sdom_id),
+        IndexJ::size(domain, sdom_id))
+  {}
+};
+
+template<typename DataType, typename Layout>
+struct DView3d : public View3d<DataType, Layout> {
+
+  typedef typename Layout::Permutation Permutation;
+  typedef typename Layout::IndexI IndexI;
+  typedef typename Layout::IndexJ IndexJ;
+  typedef typename Layout::IndexK IndexK;
+
+  inline DView3d(DataType *ptr, Grid_Data *domain, int sdom_id) :
+    View3d<DataType, Layout>::View3d(
+        ptr,
+        IndexI::size(domain, sdom_id),
+        IndexJ::size(domain, sdom_id),
+        IndexK::size(domain, sdom_id))
+  {}
+};
+
+template<typename DataType, typename Layout>
+struct DView4d : public View4d<DataType, Layout> {
+
+  typedef typename Layout::Permutation Permutation;
+  typedef typename Layout::IndexI IndexI;
+  typedef typename Layout::IndexJ IndexJ;
+  typedef typename Layout::IndexK IndexK;
+  typedef typename Layout::IndexL IndexL;
+
+  inline DView4d(DataType *ptr, Grid_Data *domain, int sdom_id) :
+    View4d<DataType, Layout>::View4d(
+        ptr,
+        IndexI::size(domain, sdom_id),
+        IndexJ::size(domain, sdom_id),
+        IndexK::size(domain, sdom_id),
+        IndexL::size(domain, sdom_id))
+  {}
 };
 
 
-template<typename T, typename L, typename IdxI, typename IdxJ>
-struct TLayout2d {
-  typedef T    IndexLinear;
-  typedef IdxI IndexI;
-  typedef IdxJ IndexJ;
+/**
+ * Wrapper around Layout1d that provides accessors to Index sizes
+ */
+template<typename Perm, typename IdxLin, typename IdxI>
+struct DLayout1d : public Layout1d<Perm, IdxLin, IdxI>{
 
-  inline TLayout2d(Grid_Data *domain, int sdom_id) :
-    layout(IdxI::size(domain, sdom_id),
-           IdxJ::size(domain, sdom_id))
+  inline DLayout1d(Grid_Data *domain, int sdom_id) :
+    Layout1d<Perm, IdxLin, IdxI>::Layout1d(
+          IdxI::size(domain, sdom_id))
   {}
 
-  inline T operator()(IdxI i, IdxJ j) const{
-    return T(layout(*i, *j));
-  }
-
-  Layout2d<L> const layout;
-};
-
-template<typename T, typename L, typename IdxI, typename IdxJ, typename IdxK>
-struct TLayout3d {
-  typedef T    IndexLinear;
-  typedef IdxI IndexI;
-  typedef IdxJ IndexJ;
-  typedef IdxK IndexK;
-
-  inline TLayout3d(Grid_Data *domain, int sdom_id) :
-    layout(IdxI::size(domain, sdom_id),
-           IdxJ::size(domain, sdom_id),
-           IdxK::size(domain, sdom_id))
+  inline DLayout1d(int ni) :
+    Layout1d<Perm, IdxLin, IdxI>::Layout1d(ni)
   {}
 
-  inline T operator()(IdxI i, IdxJ j, IdxK k) const{
-    return T(layout(convertIndex<int>(i), convertIndex<int>(j), convertIndex<int>(k)));
-  }
-
-  Layout3d<L> const layout;
-};
-
-template<typename T, typename L, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-struct TLayout4d {
-  typedef T    IndexLinear;
-  typedef IdxI IndexI;
-  typedef IdxJ IndexJ;
-  typedef IdxK IndexK;
-  typedef IdxL IndexL;
-
-  inline TLayout4d(Grid_Data *domain, int sdom_id) :
-    layout(IdxI::size(domain, sdom_id),
-           IdxJ::size(domain, sdom_id),
-           IdxK::size(domain, sdom_id),
-           IdxL::size(domain, sdom_id))
-  {}
-
-  inline T operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const{
-    return T(layout(*i, *j, *k, *l));
-  }
-
-  Layout4d<L> const layout;
 };
 
 
+/**
+ * Wrapper around Layout2d that provides accessors to Index sizes
+ */
+template<typename Perm, typename IdxLin, typename IdxI, typename IdxJ>
+struct DLayout2d : public Layout2d<Perm, IdxLin, IdxI, IdxJ>{
 
-template<typename DataType, typename TL>
-struct TView1d {
-  typedef typename TL::IndexI IndexI;
-
-  inline TView1d(DataType *ptr, Grid_Data *domain, int sdom_id) :
-    layout(domain, sdom_id),
-    data(ptr)
+  inline DLayout2d(Grid_Data *domain, int sdom_id) :
+    Layout2d<Perm, IdxLin, IdxI, IdxJ>::Layout2d(
+          IdxI::size(domain, sdom_id),
+          IdxJ::size(domain, sdom_id))
   {}
 
-  inline DataType &operator()(IndexI i) const{
-    return data[layout(i)];
-  }
+  inline DLayout2d(int ni, int nj) :
+    Layout2d<Perm, IdxLin, IdxI, IdxJ>::Layout2d(ni, nj)
+  {}
 
-  TL const layout;
-  DataType *data;
+};
+
+/**
+ * Wrapper around Layout3d that provides accessors to Index sizes
+ */
+template<typename Perm, typename IdxLin, typename IdxI, typename IdxJ, typename IdxK>
+struct DLayout3d : public Layout3d<Perm, IdxLin, IdxI, IdxJ, IdxK>{
+
+  inline DLayout3d(Grid_Data *domain, int sdom_id) :
+    Layout3d<Perm, IdxLin, IdxI, IdxJ, IdxK>::Layout3d(
+        IdxI::size(domain, sdom_id),
+        IdxJ::size(domain, sdom_id),
+        IdxK::size(domain, sdom_id))
+  {}
+
+  inline DLayout3d(int ni, int nj, int nk) :
+    Layout3d<Perm, IdxLin, IdxI, IdxJ, IdxK>::Layout3d(ni, nj, nk)
+  {}
+
 };
 
 
-template<typename DataType, typename TL>
-struct TView2d {
-  typedef typename TL::IndexI IndexI;
-  typedef typename TL::IndexJ IndexJ;
+/**
+ * Wrapper around Layout4d that provides accessors to Index sizes
+ */
+template<typename Perm, typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
+struct DLayout4d : public Layout4d<Perm, IdxLin, IdxI, IdxJ, IdxK, IdxL>{
 
-  inline TView2d(DataType *ptr, Grid_Data *domain, int sdom_id) :
-    layout(domain, sdom_id),
-    data(ptr)
+  inline DLayout4d(Grid_Data *domain, int sdom_id) :
+    Layout4d<Perm, IdxLin, IdxI, IdxJ, IdxK, IdxL>::Layout4d(
+        IdxI::size(domain, sdom_id),
+        IdxJ::size(domain, sdom_id),
+        IdxK::size(domain, sdom_id),
+        IdxL::size(domain, sdom_id))
   {}
 
-  inline DataType &operator()(IndexI i, IndexJ j) const{
-    return data[layout(i, j)];
-  }
-
-  TL const layout;
-  DataType *data;
-};
-
-
-template<typename DataType, typename TL>
-struct TView3d {
-  typedef typename TL::IndexI IndexI;
-  typedef typename TL::IndexJ IndexJ;
-  typedef typename TL::IndexK IndexK;
-
-  inline TView3d(DataType *ptr, Grid_Data *domain, int sdom_id) :
-    layout(domain, sdom_id),
-    data(ptr)
+  inline DLayout4d(int ni, int nj, int nk, int nl) :
+    Layout4d<Perm, IdxLin, IdxI, IdxJ, IdxK, IdxL>::Layout4d(ni, nj, nk, nl)
   {}
 
-  inline DataType &operator()(IndexI i, IndexJ j, IndexK k) const{
-    return data[layout(i, j, k)];
-  }
-
-  TL const layout;
-  DataType *data;
-};
-
-template<typename DataType, typename TL>
-struct TView4d {
-  typedef typename TL::IndexI IndexI;
-  typedef typename TL::IndexJ IndexJ;
-  typedef typename TL::IndexK IndexK;
-  typedef typename TL::IndexL IndexL;
-
-  inline TView4d(DataType *ptr, Grid_Data *domain, int sdom_id) :
-    layout(domain, sdom_id),
-    data(ptr)
-  {}
-
-  inline DataType &operator()(IndexI i, IndexJ j, IndexK k, IndexL l) const{
-    return data[layout(i, j, k, l)];
-  }
-
-  TL const layout;
-  DataType *data;
 };
 
 
