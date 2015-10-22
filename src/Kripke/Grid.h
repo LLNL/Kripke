@@ -37,6 +37,7 @@
 #include <Kripke/Kernel.h>
 #include <Kripke/Subdomain.h>
 #include <Kripke/Timing.h>
+#include <Domain/Index.h>
 #include <mpi.h>
 #include <vector>
 
@@ -97,7 +98,25 @@ public:
   // Per zoneset phi and phi_out (Subdomains point into these arrays)
   std::vector<SubTVec *> phi;               // Moments of psi
   std::vector<SubTVec *> phi_out;           // Scattering source
-  
+
+  template<typename T>
+  inline int indexSize(int sdom_id){
+
+    // Get size of index from hash in the Subdomain object
+    //Subdomain &sdom = subdomains[sdom_id];
+    //sdom.index_size[T::getName()];
+    return subdomains[sdom_id].index_size[T::getName()];
+  }
+
+  template<typename T>
+  inline RAJA::RangeSegment indexRange(int sdom_id){
+
+    // Get size of index from hash in the Subdomain object
+    int len = indexSize<T>(sdom_id);
+
+    // Construct a range covering that Index
+    return RAJA::RangeSegment(0, len);
+  }
 };
 
 #endif
