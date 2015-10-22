@@ -5,6 +5,7 @@
 #include<RAJA/RangeSegment.hxx>
 #include<Domain/Index.h>
 #include<Domain/View.h>
+#include<Domain/Forall.h>
 
 
 template<typename DataType, typename Layout>

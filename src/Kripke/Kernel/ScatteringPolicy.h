@@ -42,16 +42,16 @@ template<typename T>
 struct ScatteringPolicy{}; // nm, g, gp, mat
 
 template<>
-struct ScatteringPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, RAJA::omp_parallel_seq_exec, seq_pol, RAJA::omp_for_nowait_exec, seq_pol>
+struct ScatteringPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, omp_parallel_seq, seq_pol, omp_nowait, seq_pol>
 {};
 
 template<>
 struct ScatteringPolicy<NEST_DZG_T> : ForallPolicy4<PERM_ILJK, omp_pol, seq_pol, seq_pol, seq_pol>
-//struct ScatteringPolicy<NEST_DZG_T> : ForallPolicy4<PERM_ILJK, RAJA::omp_parallel_seq_exec, seq_pol, RAJA::omp_for_nowait_exec, seq_pol>
+//struct ScatteringPolicy<NEST_DZG_T> : ForallPolicy4<PERM_ILJK, omp_parallel_seq, seq_pol, omp_nowait, seq_pol>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_JKIL, seq_pol, RAJA::omp_parallel_seq_exec, RAJA::omp_for_nowait_exec, seq_pol>
+struct ScatteringPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_JKIL, seq_pol, omp_parallel_seq, omp_nowait, seq_pol>
 {};
 
 template<>

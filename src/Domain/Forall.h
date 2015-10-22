@@ -14,13 +14,32 @@
 #define RAJA_LAMBDA [=]
 //#define RAJA_LAMBDA [=] __device__
 
+#ifdef _OPENMP
+
 typedef RAJA::simd_exec seq_pol;
 typedef RAJA::omp_parallel_for_exec omp_pol;
 typedef RAJA::omp_for_nowait_exec omp_nowait;
+typedef RAJA::omp_parallel_seq_exec omp_parallel_seq;
 
 typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::simd_exec> sweep_seq_pol;
 typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::omp_parallel_for_exec> sweep_omp_pol;
 typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::omp_parallel_seq_exec> sweep_parallel_seq_pol;
+
+
+#else
+
+typedef RAJA::simd_exec seq_pol;
+typedef RAJA::simd_exec omp_pol;
+typedef RAJA::simd_exec omp_nowait;
+typedef RAJA::simd_exec omp_parallel_seq;
+
+typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::simd_exec> sweep_seq_pol;
+typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::simd_exec> sweep_omp_pol;
+typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::simd_exec> sweep_parallel_seq_pol;
+
+
+#endif
+
 
 // Include nested forall's
 #include<Domain/Forall2.h>
