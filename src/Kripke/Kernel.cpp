@@ -107,7 +107,7 @@ void Kernel::LTimes(Grid_Data *domain) {
       typename POL::View_Phi phi(sdom.phi->ptr(), domain, sdom_id);
       typename POL::View_Ell ell(sdom.ell->ptr(), domain, sdom_id);
 
-      forall4T<LTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
+      dForall4<LTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
         domain, sdom_id, 
         [&](IMoment nm, IDirection d, IGroup g, IZone z){
   
@@ -142,7 +142,7 @@ void Kernel::LPlusTimes(Grid_Data *domain) {
       typename POL::View_Phi     phi_out(sdom.phi_out->ptr(), domain, sdom_id);
       typename POL::View_EllPlus ell_plus(sdom.ell_plus->ptr(), domain, sdom_id);
       
-      forall4T<LPlusTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
+      dForall4<LPlusTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
         domain, sdom_id, 
         [&](IMoment nm, IDirection d, IGroup g, IZone z){
   
@@ -180,19 +180,19 @@ void Kernel::scattering(Grid_Data *domain){
       typename POL::View_Phi     phi_out(sdom.phi_out->ptr(), domain, sdom_id);
       typename POL::View_SigS    sigs(domain->sigs->ptr(), domain, sdom_id);
 
-      View1d<const int, PERM_I>    const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
-      View1d<const int, PERM_I>    const mixed_material(&sdom.mixed_material[0], 1);
-      View1d<const double, PERM_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
-      View1d<const int, PERM_I>    const moment_to_coeff(&domain->moment_to_coeff[0], 1);
+      typename POL::View_MixedToZones mixed_to_zones((IZone*)&sdom.mixed_to_zones[0], domain, sdom_id);
+      typename POL::View_MixedToMaterial mixed_material((IMaterial*)&sdom.mixed_material[0], domain, sdom_id);
+      typename POL::View_MixedToFraction mixed_fraction(&sdom.mixed_fraction[0], domain, sdom_id);
+      typename POL::View_MomentToCoeff moment_to_coeff((ILegendre*)&domain->moment_to_coeff[0], domain, sdom_id);
       
-      forall4T<ScatteringPolicy<nest_type>, IMoment, IGlobalGroup, IGlobalGroup, IMix>(
+      dForall4<ScatteringPolicy<nest_type>, IMoment, IGlobalGroup, IGlobalGroup, IMix>(
         domain, sdom_id,
         [&](IMoment nm, IGlobalGroup g, IGlobalGroup gp, IMix mix){
         
-          ILegendre n(moment_to_coeff(*nm));
-          IZone zone(mixed_to_zones(*mix));
-          IMaterial material(mixed_material(*mix));
-          double fraction = mixed_fraction(*mix);
+          ILegendre n = moment_to_coeff(nm);
+          IZone zone = mixed_to_zones(mix);
+          IMaterial material = mixed_material(mix);
+          double fraction = mixed_fraction(mix);
 
           phi_out(nm, gp, zone) += 
             sigs(n, g, gp, material) * phi(nm, g, zone) * fraction;                     
@@ -212,28 +212,28 @@ void Kernel::scattering(Grid_Data *domain){
  * Since it's isotropic, we're just adding this to nm=0.
  */
 #include<Kripke/Kernel/SourcePolicy.h>
-void Kernel::source(Grid_Data *grid_data){
+void Kernel::source(Grid_Data *domain){
 
   policyScope(nesting_order, [&](auto nest_tag){
     typedef decltype(nest_tag) nest_type;
     typedef DataPolicy<nest_type> POL;
 
     // Loop over zoneset subdomains
-    forallZoneSets<seq_pol>(grid_data, [&](int zs, int sdom_id, Subdomain &sdom){
-      typename POL::View_Phi     phi_out(sdom.phi_out->ptr(), grid_data, sdom_id);
-      View1d<const int,    PERM_I> const mixed_to_zones(&sdom.mixed_to_zones[0], 1);
-      View1d<const int,    PERM_I> const mixed_material(&sdom.mixed_material[0], 1);
-      View1d<const double, PERM_I> const mixed_fraction(&sdom.mixed_fraction[0], 1);
+    forallZoneSets<seq_pol>(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+      typename POL::View_Phi     phi_out(sdom.phi_out->ptr(), domain, sdom_id);
+      typename POL::View_MixedToZones mixed_to_zones((IZone*)&sdom.mixed_to_zones[0], domain, sdom_id);
+      typename POL::View_MixedToMaterial mixed_material((IMaterial*)&sdom.mixed_material[0], domain, sdom_id);
+      typename POL::View_MixedToFraction mixed_fraction(&sdom.mixed_fraction[0], domain, sdom_id);
 
-      forall2T<SourcePolicy<nest_type>, IGlobalGroup, IMix >(
-        grid_data, sdom_id,
+      dForall2<SourcePolicy<nest_type>, IGlobalGroup, IMix >(
+        domain, sdom_id,
         [&](IGlobalGroup g, IMix mix){
-          int zone = mixed_to_zones(*mix);
-          int material = mixed_material(*mix);
-          double fraction = mixed_fraction(*mix);
+          IZone zone = mixed_to_zones(mix);
+          IMaterial material = mixed_material(mix);
+          double fraction = mixed_fraction(mix);
 
-          if(material == 0){
-            phi_out(IMoment(0), g, IZone(zone)) += 1.0 * fraction;
+          if(*material == 0){
+            phi_out(IMoment(0), g, zone) += 1.0 * fraction;
           }
       }); // forall
 
@@ -250,18 +250,6 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
     typedef DataPolicy<nest_type> POL;
 
     Subdomain *sdom = &domain->subdomains[sdom_id];
-
-    int num_directions = sdom->num_directions;
-    int num_groups = sdom->num_groups;
-    int num_zones = sdom->num_zones;
-
-    int local_imax = sdom->nzones[0];
-    int local_jmax = sdom->nzones[1];
-    int local_kmax = sdom->nzones[2];
-
-    int num_z_i = local_jmax * local_kmax;
-    int num_z_j = local_imax * local_kmax;
-    int num_z_k = local_imax * local_jmax;
 
     typename POL::View_Directions direction(sdom->directions, domain, sdom_id);
 
@@ -286,9 +274,9 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
     typename POL::View_IdxToJ  idx_to_j((IZoneJ*)&extent.idx_to_j[0], domain, sdom_id);
     typename POL::View_IdxToK  idx_to_k((IZoneK*)&extent.idx_to_k[0], domain, sdom_id);
 
-    forall3T<SweepPolicy<nest_type>, IDirection, IGroup, IZoneIdx>(
-      IDirection::range(domain, sdom_id),
-      IGroup::range(domain, sdom_id),
+    forall3<SweepPolicy<nest_type>, IDirection, IGroup, IZoneIdx>(
+      domain->indexRange<IDirection>(sdom_id),
+      domain->indexRange<IGroup>(sdom_id),
       extent.indexset_sweep,
       [&](IDirection d, IGroup g, IZoneIdx zone_idx){
         

@@ -6,109 +6,83 @@
 #include "Layout.h"
 
 
-    template<typename T, typename L>
+    template<typename DataType, typename Layout>
     struct View1d {
-        inline View1d(T *data_ptr, int ni);
-        inline T &operator()(int i) const;
+      typedef typename Layout::Permutation Permutation;
+      typedef typename Layout::IndexI IndexI;
 
-        Layout1d<L> const layout;
-        T *data;
-    };
+      Layout const layout;
+      DataType *data;
 
-    template<typename T, typename L>
-    struct View2d {
-        inline View2d(T *data_ptr, int ni, int nj);
-        inline T &operator()(int i, int j) const;
-
-        Layout2d<L> const layout;
-        T *data;
-    };
-
-    template<typename T, typename L>
-    struct View3d {
-        inline View3d(T *data_ptr, int ni, int nj, int nk);
-        inline T &operator()(int i, int j, int k) const;
-
-        Layout3d<L> const layout;
-        T *data;
-    };
-
-    template<typename T, typename L>
-    struct View4d {
-        inline View4d(T *data_ptr, int ni, int nj, int nk, int nl);
-        inline T &operator()(int i, int j, int k, int l) const;
-
-        Layout4d<L> const layout;
-        T *data;
-    };
-
-
-/******************************************************************
- *  Implementation for View1D
- ******************************************************************/
-
-      template<typename T, typename L>
-      inline View1d<T,L>::View1d(T *data_ptr, int ni):
+      inline View1d(DataType *data_ptr, int ni):
         layout(ni),
         data(data_ptr)
-      {
+      {}
+
+      inline DataType &operator()(IndexI i) const {
+        return data[convertIndex<int>(layout(i))];
       }
+    };
 
-      template<typename T, typename L>
-      inline T &View1d<T,L>::operator()(int i) const {
-        return(data[layout(i)]);
-      }
+    template<typename DataType, typename Layout>
+    struct View2d {
+      typedef typename Layout::Permutation Permutation;
+      typedef typename Layout::IndexI IndexI;
+      typedef typename Layout::IndexJ IndexJ;
 
+      Layout const layout;
+      DataType *data;
 
-/******************************************************************
- *  Implementation for View2D
- ******************************************************************/
-
-      template<typename T, typename L>
-      inline View2d<T,L>::View2d(T *data_ptr, int ni, int nj):
+      inline View2d(DataType *data_ptr, int ni, int nj):
         layout(ni, nj),
         data(data_ptr)
-      {
+      {}
+
+      inline DataType &operator()(IndexI i, IndexJ j) const {
+        return data[convertIndex<int>(layout(i, j))];
       }
+    };
 
-      template<typename T, typename L>
-      inline T &View2d<T,L>::operator()(int i, int j) const {
-        return(data[layout(i, j)]);
-      }
+    template<typename DataType, typename Layout>
+    struct View3d {
+      typedef typename Layout::Permutation Permutation;
+      typedef typename Layout::IndexI IndexI;
+      typedef typename Layout::IndexJ IndexJ;
+      typedef typename Layout::IndexK IndexK;
 
+      Layout const layout;
+      DataType *data;
 
-/******************************************************************
- *  Implementation for View3D
- ******************************************************************/
-
-      template<typename T, typename L>
-      inline View3d<T,L>::View3d(T *data_ptr, int ni, int nj, int nk):
+      inline View3d(DataType *data_ptr, int ni, int nj, int nk):
         layout(ni, nj, nk),
         data(data_ptr)
-      {
+      {}
+
+      inline DataType &operator()(IndexI i, IndexJ j, IndexK k) const {
+        return data[convertIndex<int>(layout(i, j, k))];
       }
+    };
 
-      template<typename T, typename L>
-      inline T &View3d<T,L>::operator()(int i, int j, int k) const {
-        return(data[layout(i, j, k)]);
-      }
+    template<typename DataType, typename Layout>
+    struct View4d {
+      typedef typename Layout::Permutation Permutation;
+      typedef typename Layout::IndexI IndexI;
+      typedef typename Layout::IndexJ IndexJ;
+      typedef typename Layout::IndexK IndexK;
+      typedef typename Layout::IndexL IndexL;
 
+      Layout const layout;
+      DataType *data;
 
-/******************************************************************
- *  Implementation for View4D
- ******************************************************************/
-
-      template<typename T, typename L>
-      inline View4d<T,L>::View4d(T *data_ptr, int ni, int nj, int nk, int nl):
+      inline View4d(DataType *data_ptr, int ni, int nj, int nk, int nl):
         layout(ni, nj, nk, nl),
         data(data_ptr)
-      {
-      }
+      {}
 
-      template<typename T, typename L>
-      inline T &View4d<T,L>::operator()(int i, int j, int k, int l) const {
-        return(data[layout(i, j, k, l)]);
+      inline DataType &operator()(IndexI i, IndexJ j, IndexK k, IndexL l) const {
+        return data[convertIndex<int>(layout(i, j, k, l))];
       }
+    };
 
 
   
