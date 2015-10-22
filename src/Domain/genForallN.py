@@ -14,9 +14,11 @@ def writeForallBase(ndims):
 
   dim_names = getDimNames(ndims)
     
+  args = map(lambda a: "typename Idx%s=int"%a.upper(), dim_names)
+  idxstr = ", ".join(args)    
   args = map(lambda a: "typename T"+a.upper(), dim_names)
   argstr = ", ".join(args)    
-  print "    template<typename POLICY, %s, typename BODY>" % argstr
+  print "    template<typename POLICY, %s, %s, typename BODY>" % (idxstr, argstr)
   
   args = map(lambda a: "T%s const &is_%s"%(a.upper(), a), dim_names)
   argstr = ", ".join(args)
@@ -28,7 +30,17 @@ def writeForallBase(ndims):
   args = map(lambda a: "is_"+a, dim_names)
   argstr2 = ", ".join(args)
   print "      typedef typename POLICY::LoopOrder L;"
-  print "      forall%d_permute<POLICY, %s, BODY>(L(), %s, body);" % (ndims, argstr, argstr2)
+  print "      forall%d_permute<POLICY, %s>(L(), %s, " % (ndims, argstr, argstr2)
+  
+  args = map(lambda a: "int %s"%a, dim_names)
+  argstr = ", ".join(args)
+  print "        [=](%s){" % argstr
+  
+  args = map(lambda a: "Idx%s(%s)"%(a.upper(), a), dim_names)
+  argstr = ", ".join(args)
+  print "          body(%s);" % argstr
+  print "        }"
+  print "      );"
   print "    }"  
   print ""
 

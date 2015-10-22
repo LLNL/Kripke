@@ -414,10 +414,11 @@
     template<typename POLICY, typename IdxI=int, typename IdxJ=int, typename IdxK=int, typename IdxL=int, typename TI, typename TJ, typename TK, typename TL, typename BODY>
     RAJA_INLINE void forall4(TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
       typedef typename POLICY::LoopOrder L;
-      forall4_permute<POLICY, TI, TJ, TK, TL>(L(), is_i, is_j, is_k, is_l,
-          [=](int i, int j, int k, int l){
-              body(IdxI(i), IdxJ(j), IdxK(k), IdxL(l));
-         });
+      forall4_permute<POLICY, TI, TJ, TK, TL>(L(), is_i, is_j, is_k, is_l, 
+        [=](int i, int j, int k, int l){
+          body(IdxI(i), IdxJ(j), IdxK(k), IdxL(l));
+        }
+      );
     }
 
 

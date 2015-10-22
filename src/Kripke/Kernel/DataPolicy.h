@@ -35,10 +35,11 @@
 
 #include<Kripke.h>
 #include<Kripke/Directions.h>
+#include<Kripke/DView.h>
 #include<Domain/Layout.h>
 #include<Domain/Forall.h>
 #include<Domain/Index.h>
-#include<Domain/TView.h>
+
 
 /*
  * Define strongly-typed indices used in Kripke
