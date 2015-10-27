@@ -12,7 +12,7 @@
  ******************************************************************/
 
     template<typename LOOP_ORDER, typename POL_I, typename POL_J, typename POL_K, typename POL_L>
-    struct ForallPolicy4 {
+    struct Forall4_Execute {
       typedef LOOP_ORDER LoopOrder;
       typedef POL_I PolicyI;
       typedef POL_J PolicyJ;

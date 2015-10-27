@@ -11,11 +11,22 @@
  *  Policy base class, forall2()
  ******************************************************************/
 
+    struct Forall2_Execute_Tag {};
+
     template<typename LOOP_ORDER, typename POL_I, typename POL_J>
-    struct ForallPolicy2 {
+    struct Forall2_Execute {
+      typedef Forall2_Execute_Tag PolicyTag;
       typedef LOOP_ORDER LoopOrder;
       typedef POL_I PolicyI;
       typedef POL_J PolicyJ;
+    };
+
+    struct Forall_OMP_Parallel_Tag {};
+
+    template<typename NEXT>
+    struct Forall_OMP_Parallel {
+      typedef Forall_OMP_Parallel_Tag PolicyTag;
+      typedef NEXT NextPolicy;
     };
 
 
@@ -108,14 +119,40 @@
       }
 
 
+
+      // Entry point for Permute/Execute
+      // extracts the loop order and calls the permutation layer
+      template<typename POLICY, typename TI, typename TJ, typename BODY>
+      RAJA_INLINE void forall2(Forall2_Execute_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
+        typedef typename POLICY::LoopOrder L;
+        forall2_permute<POLICY, TI, TJ, BODY>(L(), is_i, is_j, body);
+      }
+
+
 /******************************************************************
- *  User interface, forall2()
+ *  OpenMP Parallel region policy execution
+ ******************************************************************/
+      template<typename POLICY, typename TI, typename TJ, typename BODY>
+      RAJA_INLINE void forall2(Forall_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
+        typedef typename POLICY::NextPolicy NextPolicy;
+        typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
+
+        // create OpenMP Parallel Region
+#pragma omp parallel
+        {
+          // execute the next policy
+          forall2<NextPolicy, TI, TJ, BODY>(NextPolicyTag(), is_i, is_j, body);
+        }
+      }
+
+/******************************************************************
+ *  User interface, forall2(), applies index types
  ******************************************************************/
 
     template<typename POLICY, typename IdxI=int, typename IdxJ=int, typename TI, typename TJ, typename BODY>
     RAJA_INLINE void forall2(TI const &is_i, TJ const &is_j, BODY const &body){
-      typedef typename POLICY::LoopOrder L;
-      forall2_permute<POLICY, TI, TJ>(L(), is_i, is_j, 
+      typedef typename POLICY::PolicyTag PolicyTag;
+      forall2<POLICY, TI, TJ>(PolicyTag(), is_i, is_j,
         [=](int i, int j){
           body(IdxI(i), IdxJ(j));
         }

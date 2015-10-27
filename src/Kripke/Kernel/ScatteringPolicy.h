@@ -42,28 +42,28 @@ template<typename T>
 struct ScatteringPolicy{}; // nm, g, gp, mat
 
 template<>
-struct ScatteringPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, omp_parallel_seq, seq_pol, omp_nowait, seq_pol>
+struct ScatteringPolicy<NEST_DGZ_T> : Forall4_Execute<PERM_IJKL, omp_parallel_seq, seq_pol, omp_nowait, seq_pol>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_DZG_T> : ForallPolicy4<PERM_ILJK, omp_pol, seq_pol, seq_pol, seq_pol>
-//struct ScatteringPolicy<NEST_DZG_T> : ForallPolicy4<PERM_ILJK, omp_parallel_seq, seq_pol, omp_nowait, seq_pol>
+struct ScatteringPolicy<NEST_DZG_T> : Forall4_Execute<PERM_ILJK, omp_pol, seq_pol, seq_pol, seq_pol>
+//struct ScatteringPolicy<NEST_DZG_T> : Forall4_Execute<PERM_ILJK, omp_parallel_seq, seq_pol, omp_nowait, seq_pol>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_JKIL, seq_pol, omp_parallel_seq, omp_nowait, seq_pol>
+struct ScatteringPolicy<NEST_GDZ_T> : Forall4_Execute<PERM_JKIL, seq_pol, omp_parallel_seq, omp_nowait, seq_pol>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_GZD_T> : ForallPolicy4<PERM_JKLI, seq_pol, seq_pol, omp_pol, seq_pol>
+struct ScatteringPolicy<NEST_GZD_T> : Forall4_Execute<PERM_JKLI, seq_pol, seq_pol, omp_pol, seq_pol>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_ZDG_T> : ForallPolicy4<PERM_LIJK, seq_pol, seq_pol, seq_pol, omp_pol>
+struct ScatteringPolicy<NEST_ZDG_T> : Forall4_Execute<PERM_LIJK, seq_pol, seq_pol, seq_pol, omp_pol>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_ZGD_T> : ForallPolicy4<PERM_LJKI, seq_pol, seq_pol, seq_pol, omp_pol>
+struct ScatteringPolicy<NEST_ZGD_T> : Forall4_Execute<PERM_LJKI, seq_pol, seq_pol, seq_pol, omp_pol>
 {};
 
 

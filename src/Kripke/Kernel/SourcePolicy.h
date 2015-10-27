@@ -42,27 +42,29 @@ template<typename T>
 struct SourcePolicy{}; // g,mix
 
 template<>
-struct SourcePolicy<NEST_DGZ_T> : ForallPolicy2<PERM_IJ, omp_pol, seq_pol>
+struct SourcePolicy<NEST_DGZ_T> : Forall_OMP_Parallel<
+                                    Forall2_Execute<PERM_IJ, omp_nowait, seq_pol>
+                                  >
 {};
 
 template<>
-struct SourcePolicy<NEST_DZG_T> : ForallPolicy2<PERM_JI, omp_pol, seq_pol>
+struct SourcePolicy<NEST_DZG_T> : Forall2_Execute<PERM_JI, omp_pol, seq_pol>
 {};
 
 template<>
-struct SourcePolicy<NEST_GDZ_T> : ForallPolicy2<PERM_IJ, seq_pol, seq_pol>
+struct SourcePolicy<NEST_GDZ_T> : Forall2_Execute<PERM_IJ, seq_pol, seq_pol>
 {};
 
 template<>
-struct SourcePolicy<NEST_GZD_T> : ForallPolicy2<PERM_IJ, omp_pol, seq_pol>
+struct SourcePolicy<NEST_GZD_T> : Forall2_Execute<PERM_IJ, omp_pol, seq_pol>
 {};
 
 template<>
-struct SourcePolicy<NEST_ZDG_T> : ForallPolicy2<PERM_JI, omp_pol, seq_pol>
+struct SourcePolicy<NEST_ZDG_T> : Forall2_Execute<PERM_JI, omp_pol, seq_pol>
 {};
 
 template<>
-struct SourcePolicy<NEST_ZGD_T> : ForallPolicy2<PERM_JI, omp_pol, seq_pol>
+struct SourcePolicy<NEST_ZGD_T> : Forall2_Execute<PERM_JI, omp_pol, seq_pol>
 {};
 
 #endif
