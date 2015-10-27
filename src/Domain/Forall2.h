@@ -4,6 +4,7 @@
 #define __DOMAIN_FORALL2_H__
 
 #include<RAJA/RAJA.hxx>
+#include<Domain/Tile.h>
 
 
 
@@ -35,6 +36,8 @@
     struct Forall2_Tile {
       typedef Forall2_Tile_Tag PolicyTag;
       typedef NEXT NextPolicy;
+      typedef TILE_I TileI;
+      typedef TILE_J TileJ;
     };
 
 
@@ -54,27 +57,6 @@
           });
         }
     };
-
-
-/******************************************************************
- *  OpenMP Parallel Region forall2()
- ******************************************************************/
-
-#ifdef _OPENMP
-
-    template<typename POLICY, typename TI, typename TJ, typename BODY>
-    RAJA_INLINE void forall2(Forall2_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
-      typedef typename POLICY::NextPolicy NextPolicy;
-      typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
-      // create OpenMP Parallel Region
-#pragma omp parallel
-      {
-        // execute the next policy
-        forall2<NextPolicy, TI, TJ, BODY>(NextPolicyTag(), is_i, is_j, body);
-      }
-    }
-
-#endif
 
 
 /******************************************************************
@@ -146,6 +128,48 @@
           body(i, j);
         });
       }
+
+
+/******************************************************************
+ *  OpenMP Parallel Region forall2()
+ ******************************************************************/
+
+#ifdef _OPENMP
+
+    template<typename POLICY, typename TI, typename TJ, typename BODY>
+    RAJA_INLINE void forall2(Forall2_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
+      typedef typename POLICY::NextPolicy NextPolicy;
+      typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
+      // create OpenMP Parallel Region
+#pragma omp parallel
+      {
+        // execute the next policy
+        forall2<NextPolicy, TI, TJ, BODY>(NextPolicyTag(), is_i, is_j, body);
+      }
+    }
+
+#endif
+
+
+/******************************************************************
+ *  Tiling Policy for forall2()
+ ******************************************************************/
+
+    template<typename POLICY, typename TI, typename TJ, typename BODY>
+    RAJA_INLINE void forall2(Forall2_Tile_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
+      typedef typename POLICY::NextPolicy NextPolicy;
+      typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
+      typedef typename POLICY::TileI TileI;
+      typedef typename POLICY::TileJ TileJ;
+
+      // execute the next policy
+      forall_tile(TileI(), is_i, [=](auto is_ii){
+        forall_tile(TileJ(), is_j, [=](auto is_jj){
+          forall2<NextPolicy, TI, TJ, BODY>(NextPolicyTag(), is_ii, is_jj, body);
+        });
+      });
+    }
+
 
 
 /******************************************************************

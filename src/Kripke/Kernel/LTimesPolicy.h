@@ -45,10 +45,11 @@ template<>
 struct LTimesPolicy<NEST_DGZ_T> : Forall4_OMP_Parallel<
                                     Forall4_Tile<tile_none, tile_none, tile_none, tile_fixed<2048>,
                                       Forall4_Tile<tile_none, tile_none, tile_none, tile_fixed<256>,
-                                        Forall4_Execute<PERM_IJKL, seq_pol, seq_pol, omp_nowait, seq_pol>
+                                        Forall4_Execute<PERM_KIJL, seq_pol, seq_pol, omp_nowait, seq_pol>
                                       >
                                     > 
                                   > 
+
 //struct LTimesPolicy<NEST_DGZ_T> : Forall4_Execute<PERM_IJKL, seq_pol, seq_pol, omp_pol, omp_pol>
 //struct LTimesPolicy<NEST_DGZ_T> : Forall4_Execute<PERM_IJKL, omp_parallel_seq, seq_pol, omp_nowait, seq_pol>
 {};
