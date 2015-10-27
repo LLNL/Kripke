@@ -4,7 +4,7 @@
 #define __DOMAIN_FORALL4_H__
 
 #include<RAJA/RAJA.hxx>
-
+#include<Domain/Tile.h>
 
 
 /******************************************************************
