@@ -37,6 +37,10 @@
     struct Forall4_Tile {
       typedef Forall4_Tile_Tag PolicyTag;
       typedef NEXT NextPolicy;
+      typedef TILE_I TileI;
+      typedef TILE_J TileJ;
+      typedef TILE_K TileK;
+      typedef TILE_L TileL;
     };
 
 
@@ -455,6 +459,33 @@
     RAJA_INLINE void forall4(Forall4_Execute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
       typedef typename POLICY::LoopOrder L;
       forall4_permute<POLICY, TI, TJ, TK, TL, BODY>(L(), is_i, is_j, is_k, is_l, body);
+    }
+
+/******************************************************************
+ *  Tiling policy, forall4()
+ ******************************************************************/
+
+
+template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
+    RAJA_INLINE void forall4(Forall4_Tile_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+      typedef typename POLICY::NextPolicy NextPolicy;
+      typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
+
+      typedef typename POLICY::TileI TileI;
+      typedef typename POLICY::TileJ TileJ;
+      typedef typename POLICY::TileK TileK;
+      typedef typename POLICY::TileL TileL;
+      
+      forall_tile(TileI(), is_i, [=](auto is_ii){
+        forall_tile(TileJ(), is_j, [=](auto is_jj){
+          forall_tile(TileK(), is_k, [=](auto is_kk){
+            forall_tile(TileL(), is_l, [=](auto is_ll){            
+              // execute the next policy
+              forall4<NextPolicy>(NextPolicyTag(), is_ii, is_jj, is_kk, is_ll, body);
+            });
+          });
+        });
+      });
     }
 
 
