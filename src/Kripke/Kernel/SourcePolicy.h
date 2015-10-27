@@ -42,7 +42,7 @@ template<typename T>
 struct SourcePolicy{}; // g,mix
 
 template<>
-struct SourcePolicy<NEST_DGZ_T> : Forall_OMP_Parallel<
+struct SourcePolicy<NEST_DGZ_T> : Forall2_OMP_Parallel<
                                     Forall2_Execute<PERM_IJ, omp_nowait, seq_pol>
                                   >
 {};

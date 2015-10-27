@@ -11,8 +11,8 @@
  *  Policy base class, forall2()
  ******************************************************************/
 
+    // Interchange-loops and Execute (Base-case for all policies)
     struct Forall2_Execute_Tag {};
-
     template<typename LOOP_ORDER, typename POL_I, typename POL_J>
     struct Forall2_Execute {
       typedef Forall2_Execute_Tag PolicyTag;
@@ -21,11 +21,19 @@
       typedef POL_J PolicyJ;
     };
 
-    struct Forall_OMP_Parallel_Tag {};
-
+    // Begin OpenMP Parallel Block
+    struct Forall2_OMP_Parallel_Tag {};
     template<typename NEXT>
-    struct Forall_OMP_Parallel {
-      typedef Forall_OMP_Parallel_Tag PolicyTag;
+    struct Forall2_OMP_Parallel {
+      typedef Forall2_OMP_Parallel_Tag PolicyTag;
+      typedef NEXT NextPolicy;
+    };
+
+    // Tiling Policy
+    struct Forall2_Tile_Tag {};
+    template<typename TILE_I, typename TILE_J, typename NEXT>
+    struct Forall2_Tile {
+      typedef Forall2_Tile_Tag PolicyTag;
       typedef NEXT NextPolicy;
     };
 
@@ -46,6 +54,27 @@
           });
         }
     };
+
+
+/******************************************************************
+ *  OpenMP Parallel Region forall2()
+ ******************************************************************/
+
+#ifdef _OPENMP
+
+    template<typename POLICY, typename TI, typename TJ, typename BODY>
+    RAJA_INLINE void forall2(Forall2_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
+      typedef typename POLICY::NextPolicy NextPolicy;
+      typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
+      // create OpenMP Parallel Region
+#pragma omp parallel
+      {
+        // execute the next policy
+        forall2<NextPolicy, TI, TJ, BODY>(NextPolicyTag(), is_i, is_j, body);
+      }
+    }
+
+#endif
 
 
 /******************************************************************
@@ -119,40 +148,25 @@
       }
 
 
-
-      // Entry point for Permute/Execute
-      // extracts the loop order and calls the permutation layer
-      template<typename POLICY, typename TI, typename TJ, typename BODY>
-      RAJA_INLINE void forall2(Forall2_Execute_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
-        typedef typename POLICY::LoopOrder L;
-        forall2_permute<POLICY, TI, TJ, BODY>(L(), is_i, is_j, body);
-      }
-
-
 /******************************************************************
- *  OpenMP Parallel region policy execution
+ *  Execute policy, forall2()
  ******************************************************************/
-      template<typename POLICY, typename TI, typename TJ, typename BODY>
-      RAJA_INLINE void forall2(Forall_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
-        typedef typename POLICY::NextPolicy NextPolicy;
-        typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
-        // create OpenMP Parallel Region
-#pragma omp parallel
-        {
-          // execute the next policy
-          forall2<NextPolicy, TI, TJ, BODY>(NextPolicyTag(), is_i, is_j, body);
-        }
-      }
+    template<typename POLICY, typename TI, typename TJ, typename BODY>
+    RAJA_INLINE void forall2(Forall2_Execute_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
+      typedef typename POLICY::LoopOrder L;
+      forall2_permute<POLICY, TI, TJ, BODY>(L(), is_i, is_j, body);
+    }
+
 
 /******************************************************************
- *  User interface, forall2(), applies index types
+ *  User interface, forall2()
  ******************************************************************/
 
     template<typename POLICY, typename IdxI=int, typename IdxJ=int, typename TI, typename TJ, typename BODY>
     RAJA_INLINE void forall2(TI const &is_i, TJ const &is_j, BODY const &body){
       typedef typename POLICY::PolicyTag PolicyTag;
-      forall2<POLICY, TI, TJ>(PolicyTag(), is_i, is_j,
+      forall2<POLICY, TI, TJ>(PolicyTag(), is_i, is_j, 
         [=](int i, int j){
           body(IdxI(i), IdxJ(j));
         }
