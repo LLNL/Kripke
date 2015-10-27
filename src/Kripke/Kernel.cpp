@@ -109,7 +109,7 @@ void Kernel::LTimes(Grid_Data *domain) {
 
       dForall4<LTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
         domain, sdom_id, 
-        [&](IMoment nm, IDirection d, IGroup g, IZone z){
+        [=](IMoment nm, IDirection d, IGroup g, IZone z){
   
           IGlobalGroup g_global( (*g) + group0);
           
@@ -144,7 +144,7 @@ void Kernel::LPlusTimes(Grid_Data *domain) {
       
       dForall4<LPlusTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
         domain, sdom_id, 
-        [&](IMoment nm, IDirection d, IGroup g, IZone z){
+        [=](IMoment nm, IDirection d, IGroup g, IZone z){
   
           IGlobalGroup g_global( (*g) + group0);
   
@@ -187,7 +187,7 @@ void Kernel::scattering(Grid_Data *domain){
       
       dForall4<ScatteringPolicy<nest_type>, IMoment, IGlobalGroup, IGlobalGroup, IMix>(
         domain, sdom_id,
-        [&](IMoment nm, IGlobalGroup g, IGlobalGroup gp, IMix mix){
+        [=](IMoment nm, IGlobalGroup g, IGlobalGroup gp, IMix mix){
         
           ILegendre n = moment_to_coeff(nm);
           IZone zone = mixed_to_zones(mix);
@@ -227,7 +227,7 @@ void Kernel::source(Grid_Data *domain){
 
       dForall2<SourcePolicy<nest_type>, IGlobalGroup, IMix >(
         domain, sdom_id,
-        [&](IGlobalGroup g, IMix mix){
+        [=](IGlobalGroup g, IMix mix){
           IZone zone = mixed_to_zones(mix);
           IMaterial material = mixed_material(mix);
           double fraction = mixed_fraction(mix);
@@ -278,7 +278,7 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
       domain->indexRange<IDirection>(sdom_id),
       domain->indexRange<IGroup>(sdom_id),
       extent.indexset_sweep,
-      [&](IDirection d, IGroup g, IZoneIdx zone_idx){
+      [=](IDirection d, IGroup g, IZoneIdx zone_idx){
         
         IZoneI i = idx_to_i(zone_idx);
         IZoneJ j = idx_to_j(zone_idx);

@@ -74,11 +74,9 @@ def writeForallBase(ndims):
     indent += "  "
     
   # call body with tiled index sets
-  args = map(lambda a: "T"+a.upper(), dim_names)
-  argstr = ", ".join(args)      
   args = map(lambda a: "is_%s%s"%(a,a), dim_names)
   argstr2 = ", ".join(args)  
-  print "%s      forall%d<NextPolicy, %s, BODY>(NextPolicyTag(), %s, body);" % (indent, ndims, argstr, argstr2)
+  print "%s      forall%d<NextPolicy>(NextPolicyTag(), %s, body);" % (indent, ndims, argstr2)
 
   # close forall parenthesis
   close_paren.reverse()

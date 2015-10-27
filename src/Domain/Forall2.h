@@ -165,7 +165,7 @@
       // execute the next policy
       forall_tile(TileI(), is_i, [=](auto is_ii){
         forall_tile(TileJ(), is_j, [=](auto is_jj){
-          forall2<NextPolicy, TI, TJ, BODY>(NextPolicyTag(), is_ii, is_jj, body);
+          forall2<NextPolicy>(NextPolicyTag(), is_ii, is_jj, body);
         });
       });
     }

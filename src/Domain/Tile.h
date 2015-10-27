@@ -13,6 +13,10 @@ template<int TileSize>
 struct tile_fixed {};
 
 
+// Policy to tile over IndexSet segments
+struct tile_indexset {};
+
+
 template<typename TI, typename BODY>
 void forall_tile(tile_none, TI const &is, BODY const &body){
   body(is);
@@ -36,6 +40,57 @@ void forall_tile(tile_fixed<TileSize>, RAJA::RangeSegment const &is, BODY const 
 }
 
 
+template<typename BODY>
+void forall_tile(tile_indexset, RAJA::IndexSet const &iset, BODY const &body){
+     const int num_seg = iset.getNumSegments();
+
+   for ( int isi = 0; isi < num_seg; ++isi ) {
+
+      const RAJA::BaseSegment* iseg = iset.getSegment(isi);
+      RAJA::SegmentType segtype = iseg->getType();
+
+      switch ( segtype ) {
+
+         case RAJA::_RangeSeg_ : {
+            const RAJA::RangeSegment* tseg =
+               static_cast<const RAJA::RangeSegment*>(iseg);
+            
+            // call body with segment
+            body(*tseg);
+            break;
+         }
+
+#if 0  // RDH RETHINK
+         case _RangeStrideSeg_ : {
+            const RangeStrideSegment* tseg =
+               static_cast<const RangeStrideSegment*>(iseg); 
+            forall(
+               SEG_EXEC_POLICY_T(),
+               tseg->getBegin(), tseg->getEnd(), tseg->getStride(),
+               loop_body
+            );
+            break;
+         }
+#endif
+/*
+         case _ListSeg_ : {
+            const ListSegment* tseg =
+               static_cast<const ListSegment*>(iseg);
+            forall(
+               SEG_EXEC_POLICY_T(),
+               tseg->getIndex(), tseg->getLength(), 
+               loop_body
+            );
+            break;
+         }
+*/
+         default : {
+         }
+
+      }  // switch on segment type
+
+   } // iterate over segments of index set  
+}
 
 
 #endif

@@ -470,7 +470,7 @@
         forall_tile(TileJ(), is_j, [=](auto is_jj){
           forall_tile(TileK(), is_k, [=](auto is_kk){
             forall_tile(TileL(), is_l, [=](auto is_ll){
-              forall4<NextPolicy, TI, TJ, TK, TL, BODY>(NextPolicyTag(), is_ii, is_jj, is_kk, is_ll, body);
+              forall4<NextPolicy>(NextPolicyTag(), is_ii, is_jj, is_kk, is_ll, body);
             });
           });
         });

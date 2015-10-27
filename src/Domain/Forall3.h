@@ -256,7 +256,7 @@
       forall_tile(TileI(), is_i, [=](auto is_ii){
         forall_tile(TileJ(), is_j, [=](auto is_jj){
           forall_tile(TileK(), is_k, [=](auto is_kk){
-            forall3<NextPolicy, TI, TJ, TK, BODY>(NextPolicyTag(), is_ii, is_jj, is_kk, body);
+            forall3<NextPolicy>(NextPolicyTag(), is_ii, is_jj, is_kk, body);
           });
         });
       });
