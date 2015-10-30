@@ -198,8 +198,13 @@ struct ViewPolicy : public FixedViewPolicy {
  *
  * A convenience class: makes it easier to include in application.
  */
+struct FixedDataPolicy {
+  static const int memory_alignment = 64;
+};
+
 template<typename T>
-struct DataPolicy : public NestingPolicy<T>, public ViewPolicy<NestingPolicy<T> >
-{};
+struct DataPolicy : public FixedDataPolicy, public NestingPolicy<T>, public ViewPolicy<NestingPolicy<T> >
+{
+};
 
 #endif

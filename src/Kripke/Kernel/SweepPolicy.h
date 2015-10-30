@@ -43,9 +43,9 @@ struct SweepPolicy{}; // d, g, z
 
 template<>
 struct SweepPolicy<NEST_DGZ_T> : Forall3_OMP_Parallel<
-                                   Forall3_Tile<tile_fixed<16>, tile_fixed<16>, tile_none,
-                                     Forall3_Execute<PERM_IJK, omp_nowait, omp_nowait, sweep_seq_pol>
-                                   >
+                                   //Forall3_Tile<tile_fixed<16>, tile_fixed<16>, tile_none,
+                                     Forall3_Execute<PERM_IJK, omp_nowait, seq_pol, sweep_seq_pol>
+                                   //>
                                  >
 {};
 

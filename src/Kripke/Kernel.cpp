@@ -107,8 +107,6 @@ void Kernel::LTimes(Grid_Data *domain) {
       typename POL::View_Phi phi(sdom.phi->ptr(), domain, sdom_id);
       typename POL::View_Ell ell(sdom.ell->ptr(), domain, sdom_id);
 
-      //printf("psi=%p, phi=%p, ell=%p\n", sdom.psi->ptr(), sdom.phi->ptr(), sdom.ell->ptr());
-
       dForall4<LTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
         domain, sdom_id, 
         [=](IMoment nm, IDirection d, IGroup g, IZone z){

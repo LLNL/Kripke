@@ -26,7 +26,7 @@
 
 #include "config.hxx"
 
-#include<complex>
+//#include<complex>
 
 namespace RAJA {
 
@@ -55,7 +55,7 @@ typedef float  Real_type;
 #endif  
 
 ///
-typedef std::complex<Real_type> Complex_type;
+//typedef std::complex<Real_type> Complex_type;
 
 
 /*
@@ -671,8 +671,8 @@ typedef const Real_type* const_UnalignedReal_ptr;
 #elif defined(RAJA_USE_RESTRICT_PTR)
 typedef Real_type* __restrict__ Real_ptr;
 typedef const Real_type* __restrict__ const_Real_ptr;
-typedef Complex_type* __restrict__ Complex_ptr;
-typedef const Complex_type* __restrict__ const_Complex_ptr;
+//typedef Complex_type* __restrict__ Complex_ptr;
+//typedef const Complex_type* __restrict__ const_Complex_ptr;
 
 typedef Real_type* __restrict__ UnalignedReal_ptr;
 typedef const Real_type* __restrict__ const_UnalignedReal_ptr;

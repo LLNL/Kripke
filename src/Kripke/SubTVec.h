@@ -35,7 +35,7 @@
 
 #define KRIPKE_ALIGN_DATA
 
-#define KRIPKE_ALIGN 128
+#define KRIPKE_ALIGN 64
 
 #include <Kripke/Kernel.h>
 #include <algorithm>
