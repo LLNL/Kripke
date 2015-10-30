@@ -33,10 +33,15 @@
 #ifndef KRIPKE_SUBTVEC_H__
 #define KRIPKE_SUBTVEC_H__
 
+#define KRIPKE_ALIGN_DATA
+
+#define KRIPKE_ALIGN 128
+
 #include <Kripke/Kernel.h>
 #include <algorithm>
 #include <vector>
 #include <stdlib.h>
+#include <malloc.h>
 
 /**
  *  A transport vector (used for Psi and Phi, RHS, etc.)
@@ -46,14 +51,25 @@
  *  but in whatever nesting order is specified.
  */
 struct SubTVec {
+private:
+  // disallow
+  SubTVec(SubTVec const &c);
+  SubTVec &operator=(SubTVec const &c);
+
+public:
   SubTVec(Nesting_Order nesting, int ngrps, int ndir_mom, int nzones):
     groups(ngrps),
     directions(ndir_mom),
     zones(nzones),
     elements(groups*directions*zones),
-    data_linear(elements)
+    data_linear(NULL)
   {
-    setupIndices(nesting, &data_linear[0]);
+#ifdef KRIPKE_ALIGN_DATA
+    int status = posix_memalign((void**)&data_linear, KRIPKE_ALIGN, sizeof(double)*elements);
+#else
+    data_linear = (double *) malloc(sizeof(double)*elements);
+#endif
+    setupIndices(nesting, data_linear);
   }
 
 
@@ -67,12 +83,15 @@ struct SubTVec {
     directions(ndir_mom),
     zones(nzones),
     elements(groups*directions*zones),
-    data_linear(0)
+    data_linear(NULL)
   {
     setupIndices(nesting, ptr);
   }
 
   ~SubTVec(){
+    if(data_linear != NULL){
+      free(data_linear);
+    }
   }
 
   void setupIndices(Nesting_Order nesting, double *ptr){
@@ -213,7 +232,8 @@ struct SubTVec {
 
   int groups, directions, zones, elements;
   double *data_pointer;
-  std::vector<double> data_linear;
+  //std::vector<double> data_linear;
+  double *data_linear;
 };
 
 
