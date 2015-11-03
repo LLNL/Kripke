@@ -65,6 +65,10 @@ public:
   {
 #ifdef KRIPKE_ALIGN_DATA
     int status = posix_memalign((void**)&data_linear, KRIPKE_ALIGN, sizeof(double)*elements);
+    if(status != 0){
+    	printf("Error allocating data\n");
+    	data_linear = NULL;
+    }
 #else
     data_linear = (double *) malloc(sizeof(double)*elements);
 #endif

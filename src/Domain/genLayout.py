@@ -92,6 +92,7 @@ def writeLayoutImpl(ndims_list):
         else:
           stride = "stride_%s(1)" % ( perm[i] )
         args.append(stride)
+      args.sort()
           
       # output all initializers
       argstr = ", ".join(args)

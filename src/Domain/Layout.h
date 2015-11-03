@@ -132,7 +132,7 @@
       int const stride_j;
 
       inline Layout2d(int ni, int nj):
-        size_i(ni), size_j(nj), stride_j(ni), stride_i(1)
+        size_i(ni), size_j(nj), stride_i(1), stride_j(ni)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j) const {
@@ -208,7 +208,7 @@
       int const stride_k;
 
       inline Layout3d(int ni, int nj, int nk):
-        size_i(ni), size_j(nj), size_k(nk), stride_i(nk*nj), stride_k(nj), stride_j(1)
+        size_i(ni), size_j(nj), size_k(nk), stride_i(nk*nj), stride_j(1), stride_k(nj)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k) const {
@@ -245,7 +245,7 @@
       int const stride_k;
 
       inline Layout3d(int ni, int nj, int nk):
-        size_i(ni), size_j(nj), size_k(nk), stride_j(ni*nk), stride_i(nk), stride_k(1)
+        size_i(ni), size_j(nj), size_k(nk), stride_i(nk), stride_j(ni*nk), stride_k(1)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k) const {
@@ -282,7 +282,7 @@
       int const stride_k;
 
       inline Layout3d(int ni, int nj, int nk):
-        size_i(ni), size_j(nj), size_k(nk), stride_j(nk*ni), stride_k(ni), stride_i(1)
+        size_i(ni), size_j(nj), size_k(nk), stride_i(1), stride_j(nk*ni), stride_k(ni)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k) const {
@@ -319,7 +319,7 @@
       int const stride_k;
 
       inline Layout3d(int ni, int nj, int nk):
-        size_i(ni), size_j(nj), size_k(nk), stride_k(ni*nj), stride_i(nj), stride_j(1)
+        size_i(ni), size_j(nj), size_k(nk), stride_i(nj), stride_j(1), stride_k(ni*nj)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k) const {
@@ -356,7 +356,7 @@
       int const stride_k;
 
       inline Layout3d(int ni, int nj, int nk):
-        size_i(ni), size_j(nj), size_k(nk), stride_k(nj*ni), stride_j(ni), stride_i(1)
+        size_i(ni), size_j(nj), size_k(nk), stride_i(1), stride_j(ni), stride_k(nj*ni)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k) const {
@@ -444,7 +444,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj*nl*nk), stride_j(nl*nk), stride_l(nk), stride_k(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj*nl*nk), stride_j(nl*nk), stride_k(1), stride_l(nk)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -487,7 +487,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk*nj*nl), stride_k(nj*nl), stride_j(nl), stride_l(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk*nj*nl), stride_j(nl), stride_k(nj*nl), stride_l(1)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -530,7 +530,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk*nl*nj), stride_k(nl*nj), stride_l(nj), stride_j(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk*nl*nj), stride_j(1), stride_k(nl*nj), stride_l(nj)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -573,7 +573,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl*nj*nk), stride_l(nj*nk), stride_j(nk), stride_k(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl*nj*nk), stride_j(nk), stride_k(1), stride_l(nj*nk)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -616,7 +616,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl*nk*nj), stride_l(nk*nj), stride_k(nj), stride_j(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl*nk*nj), stride_j(1), stride_k(nj), stride_l(nk*nj)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -659,7 +659,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_j(ni*nk*nl), stride_i(nk*nl), stride_k(nl), stride_l(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk*nl), stride_j(ni*nk*nl), stride_k(nl), stride_l(1)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -702,7 +702,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_j(ni*nl*nk), stride_i(nl*nk), stride_l(nk), stride_k(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl*nk), stride_j(ni*nl*nk), stride_k(1), stride_l(nk)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -745,7 +745,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_j(nk*ni*nl), stride_k(ni*nl), stride_i(nl), stride_l(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl), stride_j(nk*ni*nl), stride_k(ni*nl), stride_l(1)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -788,7 +788,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_j(nk*nl*ni), stride_k(nl*ni), stride_l(ni), stride_i(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(1), stride_j(nk*nl*ni), stride_k(nl*ni), stride_l(ni)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -831,7 +831,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_j(nl*ni*nk), stride_l(ni*nk), stride_i(nk), stride_k(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk), stride_j(nl*ni*nk), stride_k(1), stride_l(ni*nk)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -874,7 +874,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_j(nl*nk*ni), stride_l(nk*ni), stride_k(ni), stride_i(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(1), stride_j(nl*nk*ni), stride_k(ni), stride_l(nk*ni)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -917,7 +917,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_k(ni*nj*nl), stride_i(nj*nl), stride_j(nl), stride_l(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj*nl), stride_j(nl), stride_k(ni*nj*nl), stride_l(1)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -960,7 +960,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_k(ni*nl*nj), stride_i(nl*nj), stride_l(nj), stride_j(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl*nj), stride_j(1), stride_k(ni*nl*nj), stride_l(nj)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -1003,7 +1003,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_k(nj*ni*nl), stride_j(ni*nl), stride_i(nl), stride_l(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl), stride_j(ni*nl), stride_k(nj*ni*nl), stride_l(1)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -1046,7 +1046,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_k(nj*nl*ni), stride_j(nl*ni), stride_l(ni), stride_i(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(1), stride_j(nl*ni), stride_k(nj*nl*ni), stride_l(ni)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -1089,7 +1089,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_k(nl*ni*nj), stride_l(ni*nj), stride_i(nj), stride_j(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj), stride_j(1), stride_k(nl*ni*nj), stride_l(ni*nj)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -1132,7 +1132,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_k(nl*nj*ni), stride_l(nj*ni), stride_j(ni), stride_i(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(1), stride_j(ni), stride_k(nl*nj*ni), stride_l(nj*ni)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -1175,7 +1175,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_l(ni*nj*nk), stride_i(nj*nk), stride_j(nk), stride_k(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj*nk), stride_j(nk), stride_k(1), stride_l(ni*nj*nk)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -1218,7 +1218,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_l(ni*nk*nj), stride_i(nk*nj), stride_k(nj), stride_j(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk*nj), stride_j(1), stride_k(nj), stride_l(ni*nk*nj)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -1261,7 +1261,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_l(nj*ni*nk), stride_j(ni*nk), stride_i(nk), stride_k(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk), stride_j(ni*nk), stride_k(1), stride_l(nj*ni*nk)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -1304,7 +1304,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_l(nj*nk*ni), stride_j(nk*ni), stride_k(ni), stride_i(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(1), stride_j(nk*ni), stride_k(ni), stride_l(nj*nk*ni)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -1347,7 +1347,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_l(nk*ni*nj), stride_k(ni*nj), stride_i(nj), stride_j(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj), stride_j(1), stride_k(ni*nj), stride_l(nk*ni*nj)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
@@ -1390,7 +1390,7 @@
       int const stride_l;
 
       inline Layout4d(int ni, int nj, int nk, int nl):
-        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_l(nk*nj*ni), stride_k(nj*ni), stride_j(ni), stride_i(1)
+        size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(1), stride_j(ni), stride_k(nj*ni), stride_l(nk*nj*ni)
       {}
 
       inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {

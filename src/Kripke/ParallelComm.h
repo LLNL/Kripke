@@ -36,8 +36,8 @@
 #include<vector>
 #include<mpi.h>
 
-class Grid_Data;
-class Subdomain;
+struct Grid_Data;
+struct Subdomain;
 
 class ParallelComm {
   public:
