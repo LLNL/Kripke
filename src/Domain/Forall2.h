@@ -167,10 +167,10 @@
 
 
 /******************************************************************
- *  forall2() Policy Layer, reentrant
+ *  forall2() Policy Layer, specializations for policy tags
  ******************************************************************/
-    template<typename POLICY, typename PolicyI, typename PolicyJ, typename TI, typename TJ, typename BODY>
-	RAJA_INLINE void forall2_policy(Forall2_Permute_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
+  template<typename POLICY, typename PolicyI, typename PolicyJ, typename TI, typename TJ, typename BODY>
+    RAJA_INLINE void forall2_policy(Forall2_Permute_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
       // pull out loop ordering
 	  typedef typename POLICY::LoopOrder L;
 
