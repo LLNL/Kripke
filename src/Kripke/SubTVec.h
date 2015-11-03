@@ -41,7 +41,6 @@
 #include <algorithm>
 #include <vector>
 #include <stdlib.h>
-#include <malloc.h>
 
 /**
  *  A transport vector (used for Psi and Phi, RHS, etc.)

@@ -42,11 +42,11 @@ template<typename T>
 struct LPlusTimesPolicy{}; // nm, d, g, z
 
 template<>
-struct LPlusTimesPolicy<NEST_DGZ_T> : Forall4_OMP_Parallel<
-                                        Forall4_Tile<tile_none, tile_none, tile_fixed<16>, tile_fixed<512>,
+struct LPlusTimesPolicy<NEST_DGZ_T> : //Forall4_OMP_Parallel<
+                                      //  Forall4_Tile<tile_none, tile_none, tile_fixed<16>, tile_fixed<512>,
                                           Forall4_Execute<PERM_KIJL, seq_pol, seq_pol, omp_nowait, seq_pol>
-                                        >
-                                      >
+                                      //  >
+                                      //>
 {};
 
 template<>

@@ -42,29 +42,31 @@ template<typename T>
 struct SourcePolicy{}; // g,mix
 
 template<>
-struct SourcePolicy<NEST_DGZ_T> : Forall2_OMP_Parallel<
-                                    Forall2_Execute<PERM_IJ, omp_nowait, seq_pol>
-                                  >
+struct SourcePolicy<NEST_DGZ_T> :  Forall2_Policy<omp_nowait, seq_pol,
+									  Forall2_OMP_Parallel<
+									    Forall2_Permute<PERM_IJ>
+									  >
+									>
 {};
 
 template<>
-struct SourcePolicy<NEST_DZG_T> : Forall2_Execute<PERM_JI, omp_pol, seq_pol>
+struct SourcePolicy<NEST_DZG_T> : Forall2_Policy<omp_pol, seq_pol, Forall2_Permute<PERM_JI> >
 {};
 
 template<>
-struct SourcePolicy<NEST_GDZ_T> : Forall2_Execute<PERM_IJ, seq_pol, seq_pol>
+struct SourcePolicy<NEST_GDZ_T> : Forall2_Policy<seq_pol, seq_pol, Forall2_Permute<PERM_IJ> >
 {};
 
 template<>
-struct SourcePolicy<NEST_GZD_T> : Forall2_Execute<PERM_IJ, omp_pol, seq_pol>
+struct SourcePolicy<NEST_GZD_T> : Forall2_Policy<omp_pol, seq_pol, Forall2_Permute<PERM_IJ> >
 {};
 
 template<>
-struct SourcePolicy<NEST_ZDG_T> : Forall2_Execute<PERM_JI, omp_pol, seq_pol>
+struct SourcePolicy<NEST_ZDG_T> : Forall2_Policy<omp_pol, seq_pol, Forall2_Permute<PERM_JI> >
 {};
 
 template<>
-struct SourcePolicy<NEST_ZGD_T> : Forall2_Execute<PERM_JI, omp_pol, seq_pol>
+struct SourcePolicy<NEST_ZGD_T> : Forall2_Policy<omp_pol, seq_pol, Forall2_Permute<PERM_JI> >
 {};
 
 #endif

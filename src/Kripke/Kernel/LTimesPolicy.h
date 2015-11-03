@@ -42,17 +42,17 @@ template<typename T>
 struct LTimesPolicy{}; // nm, d, g, z
 
 template<>
-struct LTimesPolicy<NEST_DGZ_T> : Forall4_OMP_Parallel<
-                                    Forall4_Tile<tile_none, tile_none, tile_fixed<16>, tile_fixed<512>,
+struct LTimesPolicy<NEST_DGZ_T> : //Forall4_OMP_Parallel<
+                                  //  Forall4_Tile<tile_none, tile_none, tile_fixed<16>, tile_fixed<512>,
                                       Forall4_Execute<PERM_IJKL, seq_pol, seq_pol, omp_nowait, seq_pol>
-                                    >
-                                  >
+                                  //  >
+                                  //>
 {};
 
 template<>
-struct LTimesPolicy<NEST_DZG_T> : Forall4_OMP_Parallel<
+struct LTimesPolicy<NEST_DZG_T> : //Forall4_OMP_Parallel<
                                     Forall4_Execute<PERM_LIJK, seq_pol, seq_pol, seq_pol, omp_nowait>
-                                  >
+                                  //>
 {};
 
 template<>
