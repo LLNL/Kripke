@@ -43,7 +43,6 @@
 
 // Foreward Decl
 struct Input_Variables;
-struct Grid_Data;
 struct SubTVec;
 
 

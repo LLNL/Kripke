@@ -39,7 +39,7 @@
 
 
 template<typename T>
-struct SourcePolicy{}; // g,mix
+struct SourcePolicy : Forall2_Policy<> {}; // g,mix
 
 template<>
 struct SourcePolicy<NEST_DGZ_T> :  Forall2_Policy<omp_nowait, seq_pol,
