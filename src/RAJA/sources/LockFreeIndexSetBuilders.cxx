@@ -91,9 +91,9 @@ void buildLockFreeBlockIndexset(RAJA::IndexSet& iset,
          /* We might want to force one thread if the */
          /* profitability ratio is really bad, but for */
          /* now use the brain dead approach. */
-         int numSegments = 3*numThreads ;
-         int segmentSize = midDim / numThreads ;
-         int segmentThresh = midDim % numSegments ;
+         //int numSegments = 3*numThreads ;
+         //int segmentSize = midDim / numThreads ;
+         //int segmentThresh = midDim % numSegments ;
          for (int lane=0; lane<3; ++lane) {
             for (int i=0; i<numThreads; ++i)
             {
@@ -129,9 +129,9 @@ void buildLockFreeBlockIndexset(RAJA::IndexSet& iset,
          /* We might want to force one thread if the */
          /* profitability ratio is really bad, but for */
          /* now use the brain dead approach. */
-         int numSegments = segmentsPerThread*numThreads ;
-         int segmentSize = slowDim / numThreads ;
-         int segmentThresh = slowDim % numSegments ;
+         //int numSegments = segmentsPerThread*numThreads ;
+         //int segmentSize = slowDim / numThreads ;
+         //int segmentThresh = slowDim % numSegments ;
          for (int lane=0; lane<segmentsPerThread; ++lane) {
             for (int i=0; i<numThreads; ++i)
             {

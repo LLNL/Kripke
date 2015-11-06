@@ -292,7 +292,7 @@ void forall(simd_exec,
 {
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type k = 0 ; k < len ; ++k ) {
       loop_body( idx[k] );
    }
@@ -319,7 +319,7 @@ void forall_Icount(simd_exec,
 {
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type k = 0 ; k < len ; ++k ) {
       loop_body( k+icount, idx[k] );
    }
@@ -346,7 +346,7 @@ void forall(simd_exec,
 
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type k = 0 ; k < len ; ++k ) {
       loop_body( idx[k] );
    }
@@ -376,7 +376,7 @@ void forall_Icount(simd_exec,
 
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type k = 0 ; k < len ; ++k ) {
       loop_body( k+icount, idx[k] );
    }

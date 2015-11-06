@@ -548,7 +548,7 @@ void forall(seq_exec,
 
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type ii = begin ; ii < end ; ++ii ) {
       loop_body( ii );
    }
@@ -576,7 +576,7 @@ void forall_Icount(seq_exec,
 
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type ii = 0 ; ii < loop_end ; ++ii ) {
       loop_body( ii+icount, ii+begin );
    }
@@ -611,7 +611,7 @@ void forall(seq_exec,
 
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type ii = begin ; ii < end ; ++ii ) {
       loop_body( ii );
    }
@@ -640,7 +640,7 @@ void forall_Icount(seq_exec,
 
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type ii = 0 ; ii < loop_end ; ++ii ) {
       loop_body( ii+icount, ii+begin );
    }
@@ -674,7 +674,7 @@ void forall(seq_exec,
 
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type ii = begin ; ii < end ; ii += stride ) {
       loop_body( ii );
    }
@@ -705,7 +705,7 @@ void forall_Icount(seq_exec,
 
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type ii = 0 ; ii < loop_end ; ++ii ) {
       loop_body( ii+icount, begin + ii*stride );
    }
@@ -741,7 +741,7 @@ void forall(seq_exec,
 
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type ii = begin ; ii < end ; ii += stride ) {
       loop_body( ii );
    }
@@ -773,7 +773,7 @@ void forall_Icount(seq_exec,
 
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type ii = 0 ; ii < loop_end ; ++ii ) {
       loop_body( ii+icount, begin + ii*stride );
    }
@@ -805,7 +805,7 @@ void forall(seq_exec,
 {
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type k = 0 ; k < len ; ++k ) {
       loop_body( idx[k] );
    }
@@ -832,7 +832,7 @@ void forall_Icount(seq_exec,
 {
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type k = 0 ; k < len ; ++k ) {
       loop_body( k+icount, idx[k] );
    }
@@ -867,7 +867,7 @@ void forall(seq_exec,
 
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type k = 0 ; k < len ; ++k ) {
       loop_body( idx[k] );
    }
@@ -896,7 +896,7 @@ void forall_Icount(seq_exec,
 
    RAJA_FT_BEGIN ;
 
-#pragma novector
+//#pragma novector
    for ( Index_type k = 0 ; k < len ; ++k ) {
       loop_body( k+icount, idx[k] );
    }

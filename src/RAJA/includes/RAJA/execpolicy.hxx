@@ -122,6 +122,10 @@ struct omp_reduce {};
 struct seq_exec {};
 struct simd_exec {};
 struct omp_parallel_for_exec {};
+struct omp_parallel_seq_exec {};
+struct omp_for_exec {};
+struct omp_for_nowait_exec {};
+
 
 //
 // Index set segment iteration policies

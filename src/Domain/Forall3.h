@@ -4,6 +4,7 @@
 #define __DOMAIN_FORALL3_H__
 
 #include<RAJA/RAJA.hxx>
+#include<Domain/Tile.h>
 
 
 
@@ -11,12 +12,34 @@
  *  Policy base class, forall3()
  ******************************************************************/
 
+    // Interchange-loops and Execute (Base-case for all policies)
+    struct Forall3_Execute_Tag {};
     template<typename LOOP_ORDER, typename POL_I, typename POL_J, typename POL_K>
-    struct ForallPolicy3 {
+    struct Forall3_Execute {
+      typedef Forall3_Execute_Tag PolicyTag;
       typedef LOOP_ORDER LoopOrder;
       typedef POL_I PolicyI;
       typedef POL_J PolicyJ;
       typedef POL_K PolicyK;
+    };
+
+    // Begin OpenMP Parallel Block
+    struct Forall3_OMP_Parallel_Tag {};
+    template<typename NEXT>
+    struct Forall3_OMP_Parallel {
+      typedef Forall3_OMP_Parallel_Tag PolicyTag;
+      typedef NEXT NextPolicy;
+    };
+
+    // Tiling Policy
+    struct Forall3_Tile_Tag {};
+    template<typename TILE_I, typename TILE_J, typename TILE_K, typename NEXT>
+    struct Forall3_Tile {
+      typedef Forall3_Tile_Tag PolicyTag;
+      typedef NEXT NextPolicy;
+      typedef TILE_I TileI;
+      typedef TILE_J TileJ;
+      typedef TILE_K TileK;
     };
 
 
@@ -197,13 +220,69 @@
 
 
 /******************************************************************
+ *  OpenMP Parallel Region forall3()
+ ******************************************************************/
+
+#ifdef _OPENMP
+
+    template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
+    RAJA_INLINE void forall3(Forall3_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
+      typedef typename POLICY::NextPolicy NextPolicy;
+      typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
+      // create OpenMP Parallel Region
+#pragma omp parallel
+      {
+        // execute the next policy
+        forall3<NextPolicy, TI, TJ, TK, BODY>(NextPolicyTag(), is_i, is_j, is_k, body);
+      }
+    }
+
+#endif
+
+
+/******************************************************************
+ *  Tiling Policy for forall3()
+ ******************************************************************/
+
+    template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
+    RAJA_INLINE void forall3(Forall3_Tile_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
+      typedef typename POLICY::NextPolicy NextPolicy;
+      typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
+      typedef typename POLICY::TileI TileI;
+      typedef typename POLICY::TileJ TileJ;
+      typedef typename POLICY::TileK TileK;
+
+      // execute the next policy
+      forall_tile(TileI(), is_i, [=](auto is_ii){
+        forall_tile(TileJ(), is_j, [=](auto is_jj){
+          forall_tile(TileK(), is_k, [=](auto is_kk){
+            forall3<NextPolicy>(NextPolicyTag(), is_ii, is_jj, is_kk, body);
+          });
+        });
+      });
+    }
+
+
+
+/******************************************************************
+ *  Execute policy, forall3()
+ ******************************************************************/
+
+    template<typename POLICY, typename TI, typename TJ, typename TK, typename BODY>
+    RAJA_INLINE void forall3(Forall3_Execute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
+      typedef typename POLICY::LoopOrder L;
+      forall3_permute<POLICY, TI, TJ, TK, BODY>(L(), is_i, is_j, is_k, body);
+    }
+
+
+/******************************************************************
  *  User interface, forall3()
  ******************************************************************/
 
     template<typename POLICY, typename IdxI=int, typename IdxJ=int, typename IdxK=int, typename TI, typename TJ, typename TK, typename BODY>
     RAJA_INLINE void forall3(TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body){
-      typedef typename POLICY::LoopOrder L;
-      forall3_permute<POLICY, TI, TJ, TK>(L(), is_i, is_j, is_k, 
+      typedef typename POLICY::PolicyTag PolicyTag;
+      forall3<POLICY, TI, TJ, TK>(PolicyTag(), is_i, is_j, is_k, 
         [=](int i, int j, int k){
           body(IdxI(i), IdxJ(j), IdxK(k));
         }

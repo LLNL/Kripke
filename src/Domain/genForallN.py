@@ -6,14 +6,120 @@ from lperm import *
 
 def writeForallBase(ndims):
 
+  dim_names = getDimNames(ndims)
+
+  print ""
+  print "/******************************************************************"
+  print " *  OpenMP Parallel Region forall%d()" % ndims
+  print " ******************************************************************/"
+  print ""
+  print "#ifdef _OPENMP"
+  print ""
+  
+  args = map(lambda a: "typename T"+a.upper(), dim_names)
+  argstr = ", ".join(args)    
+  print "    template<typename POLICY, %s, typename BODY>" % (argstr)
+  
+  args = map(lambda a: "T%s const &is_%s"%(a.upper(), a), dim_names)
+  argstr = ", ".join(args)
+  print "    RAJA_INLINE void forall%d(Forall%d_OMP_Parallel_Tag, %s, BODY const &body){" % (ndims, ndims, argstr)
+    
+  print "      typedef typename POLICY::NextPolicy NextPolicy;"
+  print "      typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;"
+  print "      // create OpenMP Parallel Region"
+  print "#pragma omp parallel"
+  print "      {"
+  print "        // execute the next policy"
+  
+  args = map(lambda a: "T"+a.upper(), dim_names)
+  argstr = ", ".join(args)    
+  
+  args = map(lambda a: "is_"+a, dim_names)
+  argstr2 = ", ".join(args)  
+  print "        forall%d<NextPolicy, %s, BODY>(NextPolicyTag(), %s, body);" % (ndims, argstr, argstr2)
+  print "      }"
+  print "    }"
+  print ""
+  print "#endif"
+  print ""
+
+
+
+  print ""
+  print "/******************************************************************"
+  print " *  Tiling Policy for forall%d()" % ndims
+  print " ******************************************************************/"
+  print ""
+  
+  args = map(lambda a: "typename T"+a.upper(), dim_names)
+  argstr = ", ".join(args)    
+  print "    template<typename POLICY, %s, typename BODY>" % (argstr)
+  
+  args = map(lambda a: "T%s const &is_%s"%(a.upper(), a), dim_names)
+  argstr = ", ".join(args)
+  print "    RAJA_INLINE void forall%d(Forall%d_Tile_Tag, %s, BODY const &body){" % (ndims, ndims, argstr)
+    
+  print "      typedef typename POLICY::NextPolicy NextPolicy;"
+  print "      typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;"
+  for d in dim_names:
+    print "      typedef typename POLICY::Tile%s Tile%s;" % (d.upper(), d.upper())
+  print ""
+  print "      // execute the next policy"
+  
+  indent = ""
+  close_paren = []
+  for d in dim_names:
+    print "%s      forall_tile(Tile%s(), is_%s, [=](auto is_%s%s){" % (indent, d.upper(), d, d, d)    
+    close_paren.append(indent + "      });")
+    indent += "  "
+    
+  # call body with tiled index sets
+  args = map(lambda a: "is_%s%s"%(a,a), dim_names)
+  argstr2 = ", ".join(args)  
+  print "%s      forall%d<NextPolicy>(NextPolicyTag(), %s, body);" % (indent, ndims, argstr2)
+
+  # close forall parenthesis
+  close_paren.reverse()
+  for c in close_paren:
+    print c
+
+  print "    }"
+  print ""
+  print ""
+
+
+
+    
+  print ""
+  print "/******************************************************************"
+  print " *  Execute policy, forall%d()" % ndims
+  print " ******************************************************************/"
+  print ""
+  
+  args = map(lambda a: "typename T"+a.upper(), dim_names)
+  argstr = ", ".join(args)    
+  print "    template<typename POLICY, %s, typename BODY>" % (argstr)
+  
+  args = map(lambda a: "T%s const &is_%s"%(a.upper(), a), dim_names)
+  argstr = ", ".join(args)
+  print "    RAJA_INLINE void forall%d(Forall%d_Execute_Tag, %s, BODY const &body){" % (ndims, ndims, argstr)
+  
+  args = map(lambda a: "T"+a.upper(), dim_names)
+  argstr = ", ".join(args)    
+  
+  args = map(lambda a: "is_"+a, dim_names)
+  argstr2 = ", ".join(args)
+  print "      typedef typename POLICY::LoopOrder L;"
+  print "      forall%d_permute<POLICY, %s, BODY>(L(), %s, body);" % (ndims, argstr, argstr2)  
+  print "    }"  
+  print ""
+
   print ""
   print "/******************************************************************"
   print " *  User interface, forall%d()" % ndims
   print " ******************************************************************/"
   print ""
 
-  dim_names = getDimNames(ndims)
-    
   args = map(lambda a: "typename Idx%s=int"%a.upper(), dim_names)
   idxstr = ", ".join(args)    
   args = map(lambda a: "typename T"+a.upper(), dim_names)
@@ -29,8 +135,8 @@ def writeForallBase(ndims):
   
   args = map(lambda a: "is_"+a, dim_names)
   argstr2 = ", ".join(args)
-  print "      typedef typename POLICY::LoopOrder L;"
-  print "      forall%d_permute<POLICY, %s>(L(), %s, " % (ndims, argstr, argstr2)
+  print "      typedef typename POLICY::PolicyTag PolicyTag;"
+  print "      forall%d<POLICY, %s>(PolicyTag(), %s, " % (ndims, argstr, argstr2)
   
   args = map(lambda a: "int %s"%a, dim_names)
   argstr = ", ".join(args)
@@ -55,11 +161,14 @@ def writeForallPolicy(ndims):
 
   dim_names = getDimNames(ndims)
 
+  print "    // Interchange-loops and Execute (Base-case for all policies)" 
+  print "    struct Forall%d_Execute_Tag {};" % ndims
   args = map(lambda a: "typename POL_"+(a.upper()), dim_names)
   argstr = ", ".join(args)
   print "    template<typename LOOP_ORDER, %s>" % argstr
-  print "    struct ForallPolicy%d {" % (ndims)
-  
+  print "    struct Forall%d_Execute {" % (ndims)
+  print "      typedef Forall%d_Execute_Tag PolicyTag;" % ndims
+    
   args = map(lambda a: "end_"+a, dim_names)
   argstr = ", ".join(args)
   print "      typedef LOOP_ORDER LoopOrder;"
@@ -68,7 +177,28 @@ def writeForallPolicy(ndims):
   print "    };"
   print ""
   
-
+  print "    // Begin OpenMP Parallel Block"
+  print "    struct Forall%d_OMP_Parallel_Tag {};" % ndims
+  print "    template<typename NEXT>"
+  print "    struct Forall%d_OMP_Parallel {" % ndims
+  print "      typedef Forall%d_OMP_Parallel_Tag PolicyTag;" % ndims
+  print "      typedef NEXT NextPolicy;"
+  print "    };"
+  print ""
+  
+  print "    // Tiling Policy"
+  print "    struct Forall%d_Tile_Tag {};" % ndims
+  args = map(lambda a: "typename TILE_"+(a.upper()), dim_names)
+  argstr = ", ".join(args)
+  print "    template<%s, typename NEXT>" % argstr
+  print "    struct Forall%d_Tile {" % ndims
+  print "      typedef Forall%d_Tile_Tag PolicyTag;" % ndims
+  print "      typedef NEXT NextPolicy;"
+  for dim in dim_names:
+    print "      typedef TILE_%s Tile%s;" % (dim.upper(), dim.upper())
+  print "    };"
+  print ""
+  
 def writeForallPermutations(ndims):
 
   dim_names = getDimNames(ndims)
@@ -168,8 +298,10 @@ def writeForallExecutor(ndims):
   print ""    
 
 
-def writeForallExecutorOpenMPCollapse(ndims):
+def writeForallOpenMP(ndims):
 
+  dim_names = getDimNames(ndims)
+  
   print ""
   print "/******************************************************************"
   print " *  OpenMP Auto-Collapsing Executors for forall%d()" % ndims
@@ -178,8 +310,6 @@ def writeForallExecutorOpenMPCollapse(ndims):
   print "#ifdef _OPENMP"
   print ""
 
-  dim_names = getDimNames(ndims)
-  
   for omp_policy in ['omp_parallel_for_exec', 'omp_for_nowait_exec']:
     for depth in range(2,ndims+1):
     
@@ -273,7 +403,7 @@ def writeForallExecutorOpenMPCollapse(ndims):
         print "        Forall%dExecutor<%s, %s> exec;" % (ndims-depth, polstr, argstr)
       print "    };"
       print ""    
-      
+
   print ""
   print "#endif // _OPENMP"
   print ""
@@ -288,6 +418,7 @@ print """//AUTOGENERATED BY genForallN.py
 #define __DOMAIN_FORALL%d_H__
 
 #include<RAJA/RAJA.hxx>
+#include<Domain/Tile.h>
 
 """ % (ndims, ndims)
 
@@ -296,13 +427,15 @@ print """//AUTOGENERATED BY genForallN.py
 writeForallPolicy(ndims)
 
 # Create the default executor
-writeForallExecutor(ndims)
+writeForallExecute(ndims)
 
 # Create the OpenMP collapse() executors
-writeForallExecutorOpenMPCollapse(ndims)
+writeForallExecuteOMP(ndims)
 
-# Create all permutation MUX's 
-writeForallPermutations(ndims)
+# Create all permutation policies
+writeForallPermutation(ndims)
+
+# Create the forallN_policy functions that unroll the policy type
 
 # Dump out the base function that the user calls directly
 writeForallBase(ndims)

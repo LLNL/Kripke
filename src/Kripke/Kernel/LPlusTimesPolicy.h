@@ -42,30 +42,32 @@ template<typename T>
 struct LPlusTimesPolicy{}; // nm, d, g, z
 
 template<>
-//struct LPlusTimesPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, seq_pol, seq_pol, omp_pol, omp_pol>
-struct LPlusTimesPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, omp_parallel_seq, seq_pol, omp_nowait, seq_pol>
-//struct LPlusTimesPolicy<NEST_DGZ_T> : ForallPolicy4<PERM_IJKL, seq_pol, seq_pol, omp_nowait, omp_nowait>
+struct LPlusTimesPolicy<NEST_DGZ_T> : //Forall4_OMP_Parallel<
+                                      //  Forall4_Tile<tile_none, tile_none, tile_fixed<16>, tile_fixed<512>,
+                                          Forall4_Execute<PERM_KIJL, seq_pol, seq_pol, omp_nowait, seq_pol>
+                                      //  >
+                                      //>
 {};
 
 template<>
-//struct LPlusTimesPolicy<NEST_DZG_T> : ForallPolicy4<PERM_JILK, seq_pol, seq_pol, omp_pol, omp_pol>
-struct LPlusTimesPolicy<NEST_DZG_T> : ForallPolicy4<PERM_JILK, seq_pol, omp_parallel_seq, seq_pol, omp_nowait>
+//struct LPlusTimesPolicy<NEST_DZG_T> : Forall4_Execute<PERM_JILK, seq_pol, seq_pol, omp_pol, omp_pol>
+struct LPlusTimesPolicy<NEST_DZG_T> : Forall4_Execute<PERM_JILK, seq_pol, omp_parallel_seq, seq_pol, omp_nowait>
 {};
 
 template<>
-struct LPlusTimesPolicy<NEST_GDZ_T> : ForallPolicy4<PERM_KIJL, seq_pol, seq_pol, omp_pol, seq_pol>
+struct LPlusTimesPolicy<NEST_GDZ_T> : Forall4_Execute<PERM_KIJL, seq_pol, seq_pol, omp_pol, seq_pol>
 {};
 
 template<>
-struct LPlusTimesPolicy<NEST_GZD_T> : ForallPolicy4<PERM_KLJI, seq_pol, seq_pol, omp_pol, omp_pol>
+struct LPlusTimesPolicy<NEST_GZD_T> : Forall4_Execute<PERM_KLJI, seq_pol, seq_pol, omp_pol, omp_pol>
 {};
 
 template<>
-struct LPlusTimesPolicy<NEST_ZDG_T> : ForallPolicy4<PERM_LJIK, seq_pol, seq_pol, seq_pol, omp_pol>
+struct LPlusTimesPolicy<NEST_ZDG_T> : Forall4_Execute<PERM_LJIK, seq_pol, seq_pol, seq_pol, omp_pol>
 {};
 
 template<>
-struct LPlusTimesPolicy<NEST_ZGD_T> : ForallPolicy4<PERM_LKJI, seq_pol, seq_pol, omp_pol, omp_pol>
+struct LPlusTimesPolicy<NEST_ZGD_T> : Forall4_Execute<PERM_LKJI, seq_pol, seq_pol, omp_pol, omp_pol>
 {};
 
 

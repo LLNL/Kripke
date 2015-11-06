@@ -4,6 +4,7 @@
 #define __DOMAIN_FORALL4_H__
 
 #include<RAJA/RAJA.hxx>
+#include<Domain/Tile.h>
 
 
 
@@ -11,13 +12,36 @@
  *  Policy base class, forall4()
  ******************************************************************/
 
+    // Interchange-loops and Execute (Base-case for all policies)
+    struct Forall4_Execute_Tag {};
     template<typename LOOP_ORDER, typename POL_I, typename POL_J, typename POL_K, typename POL_L>
-    struct ForallPolicy4 {
+    struct Forall4_Execute {
+      typedef Forall4_Execute_Tag PolicyTag;
       typedef LOOP_ORDER LoopOrder;
       typedef POL_I PolicyI;
       typedef POL_J PolicyJ;
       typedef POL_K PolicyK;
       typedef POL_L PolicyL;
+    };
+
+    // Begin OpenMP Parallel Block
+    struct Forall4_OMP_Parallel_Tag {};
+    template<typename NEXT>
+    struct Forall4_OMP_Parallel {
+      typedef Forall4_OMP_Parallel_Tag PolicyTag;
+      typedef NEXT NextPolicy;
+    };
+
+    // Tiling Policy
+    struct Forall4_Tile_Tag {};
+    template<typename TILE_I, typename TILE_J, typename TILE_K, typename TILE_L, typename NEXT>
+    struct Forall4_Tile {
+      typedef Forall4_Tile_Tag PolicyTag;
+      typedef NEXT NextPolicy;
+      typedef TILE_I TileI;
+      typedef TILE_J TileJ;
+      typedef TILE_K TileK;
+      typedef TILE_L TileL;
     };
 
 
@@ -408,13 +432,72 @@
 
 
 /******************************************************************
+ *  OpenMP Parallel Region forall4()
+ ******************************************************************/
+
+#ifdef _OPENMP
+
+    template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
+    RAJA_INLINE void forall4(Forall4_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+      typedef typename POLICY::NextPolicy NextPolicy;
+      typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
+      // create OpenMP Parallel Region
+#pragma omp parallel
+      {
+        // execute the next policy
+        forall4<NextPolicy, TI, TJ, TK, TL, BODY>(NextPolicyTag(), is_i, is_j, is_k, is_l, body);
+      }
+    }
+
+#endif
+
+
+/******************************************************************
+ *  Tiling Policy for forall4()
+ ******************************************************************/
+
+    template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
+    RAJA_INLINE void forall4(Forall4_Tile_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+      typedef typename POLICY::NextPolicy NextPolicy;
+      typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
+      typedef typename POLICY::TileI TileI;
+      typedef typename POLICY::TileJ TileJ;
+      typedef typename POLICY::TileK TileK;
+      typedef typename POLICY::TileL TileL;
+
+      // execute the next policy
+      forall_tile(TileI(), is_i, [=](auto is_ii){
+        forall_tile(TileJ(), is_j, [=](auto is_jj){
+          forall_tile(TileK(), is_k, [=](auto is_kk){
+            forall_tile(TileL(), is_l, [=](auto is_ll){
+              forall4<NextPolicy>(NextPolicyTag(), is_ii, is_jj, is_kk, is_ll, body);
+            });
+          });
+        });
+      });
+    }
+
+
+
+/******************************************************************
+ *  Execute policy, forall4()
+ ******************************************************************/
+
+    template<typename POLICY, typename TI, typename TJ, typename TK, typename TL, typename BODY>
+    RAJA_INLINE void forall4(Forall4_Execute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+      typedef typename POLICY::LoopOrder L;
+      forall4_permute<POLICY, TI, TJ, TK, TL, BODY>(L(), is_i, is_j, is_k, is_l, body);
+    }
+
+
+/******************************************************************
  *  User interface, forall4()
  ******************************************************************/
 
     template<typename POLICY, typename IdxI=int, typename IdxJ=int, typename IdxK=int, typename IdxL=int, typename TI, typename TJ, typename TK, typename TL, typename BODY>
     RAJA_INLINE void forall4(TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
-      typedef typename POLICY::LoopOrder L;
-      forall4_permute<POLICY, TI, TJ, TK, TL>(L(), is_i, is_j, is_k, is_l, 
+      typedef typename POLICY::PolicyTag PolicyTag;
+      forall4<POLICY, TI, TJ, TK, TL>(PolicyTag(), is_i, is_j, is_k, is_l, 
         [=](int i, int j, int k, int l){
           body(IdxI(i), IdxJ(j), IdxK(k), IdxL(l));
         }
