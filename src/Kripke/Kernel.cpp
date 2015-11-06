@@ -290,7 +290,7 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
 
         IZone z = zone_layout(i,j,k);
         
-        /* Calculate new zonal flux */
+        // Calculate new zonal flux
         double const psi_d_g_z = (
               rhs(d,g,z)
             + face_lf(d,g,j,k) * xcos_dxi
@@ -300,7 +300,7 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
 
         psi(d,g,z) = psi_d_g_z;
 
-        /* Apply diamond-difference relationships */
+        // Apply diamond-difference relationships
         face_lf(d,g,j,k) = 2.0 * psi_d_g_z - face_lf(d,g,j,k);
         face_fr(d,g,i,k) = 2.0 * psi_d_g_z - face_fr(d,g,i,k);
         face_bo(d,g,i,j) = 2.0 * psi_d_g_z - face_bo(d,g,i,j);

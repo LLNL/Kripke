@@ -192,7 +192,6 @@ struct ViewPolicy : public FixedViewPolicy {
 };
 
 
-
 /**
  * Combined Policies for Layouts, Views.
  *
