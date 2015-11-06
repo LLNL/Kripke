@@ -14,6 +14,13 @@
 #include <string.h>
 #endif
 
+#ifdef KRIPKE_USE_CUDA
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <nppi.h>
+#include <npps_statistics_functions.h>
+#endif 
+
 
 
 /**
@@ -160,7 +167,8 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
           
 	  #ifdef KRIPKE_USE_CUDA
 	  d_phi[zs] = (double*) get_cudaMalloc((size_t) (phi[zs]->elements)*sizeof(double));
-          d_phi_out[zs] = (double*) get_cudaMalloc((size_t) (phi_out[zs]->elements)*sizeof(double));
+	  //printf ("Allocated d_phi\n");
+          d_phi_out[zs] = (double*) get_cudaMalloc(  phi_out[zs]->elements *sizeof(double));
           #endif
         }
 
@@ -270,20 +278,76 @@ void Grid_Data::randomizeData(void){
 /**
  * Returns the integral of psi.. to look at convergence
  */
-double Grid_Data::particleEdit(void){
+
+double Grid_Data::particleEdit(void)
+{
+
   // sum up particles for psi and rhs
   double part = 0.0;
-  for(int sdom_id = 0;sdom_id < subdomains.size();++ sdom_id){
-    Subdomain &sdom = subdomains[sdom_id];
+  double device_part = 0.0;
 
+  int printed = 0;
+
+  for(int sdom_id = 0;sdom_id < subdomains.size();++ sdom_id){
+
+    Subdomain &sdom = subdomains[sdom_id];
+    
     int num_zones = sdom.num_zones;
     int num_directions = sdom.num_directions;
     int num_groups= sdom.num_groups;
     Directions *dirs = sdom.directions;
 
+    //printf ("num_directions = %d \n", sdom.num_directions);
+
+#ifdef KRIPKE_USE_CUDA
+
+    if (kernel->sweep_mode == SWEEP_GPU) {
+
+      static unsigned char *npp_scratch = NULL;
+      static double *npp_result = NULL;
+      static int npp_length = NULL;
+    
+      int nLength = num_zones * num_directions * num_groups;
+
+      if ( npp_scratch == NULL ) {
+	int nBufferSize;
+	npp_length = nLength;
+	nppsSumGetBufferSize_64f ( nLength, &nBufferSize );
+	cudaMalloc ( (void**)(&npp_scratch), nBufferSize );
+	cudaMalloc ( (void**)(&npp_result), sizeof(double) );
+      }
+
+      if ( nLength != npp_length ) {
+	abort();
+      }
+
+      nppsSum_64f ( sdom.psi->ptr(), nLength, npp_result, npp_scratch );
+
+      // recover sum
+      double local_npp_sum = 0;
+      cudaMemcpy ( &local_npp_sum, npp_result, sizeof(double), cudaMemcpyDeviceToHost );
+      //printf ("local sum = %e \n", local_npp_sum );
+
+      double w = dirs[0].w;
+      device_part += local_npp_sum*w;
+      //printf ("device_part = %e \n", device_part);
+      part = device_part;
+
+      if ( printed == 0 ) {
+	//printf ("GPU particles\n");
+	printed++;
+      }
+
+    }
+    else {
+ 
+#endif
+
+
+    /*    
 #if 0
     if (kernel->NEST_ZDG){
-      #pragma omp parallel for reduction(+:part) 
+#pragma omp parallel for reduction(+:part) 
       for(int z = 0;z < num_zones;++ z){
         for(int d = 0;d < num_directions;++ d){
           double w = dirs[d].w;
@@ -293,30 +357,40 @@ double Grid_Data::particleEdit(void){
           }
         }
       }
-     }
-     else{
+    }
+    else{
 #endif
-       #pragma omp parallel for reduction(+:part) num_threads(1) 
-       for(int z = 0;z < num_zones;++ z){
-         for(int d = 0;d < num_directions;++ d){
-           double w = dirs[d].w;
-           for(int g = 0;g < num_groups;++ g){
-             part += w * (*sdom.psi)(g,d,z);
-           }
-         }
-       }
- //    }
+    */
+
+      if ( printed == 0 ) {
+	printed++;
+      }
+
+#pragma omp parallel for reduction(+:part) num_threads(1) 
+    for(int z = 0;z < num_zones;++ z){
+      for(int d = 0;d < num_directions;++ d){
+	double w = dirs[d].w;
+	for(int g = 0;g < num_groups;++ g){
+	  part += w * (*sdom.psi)(g,d,z);
+	}
+      }
+    }
   }
+
+#ifdef KRIPKE_USE_CUDA
+  }
+#endif
 
   // reduce
   double part_global;
   MPI_Reduce(&part, &part_global, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-
+  
   return part_global;
+
 }
 
-
-/**
+  
+  /**
  * Copies all variables and matrices for testing suite.
  * Correctly copies data from one nesting to another.
  */

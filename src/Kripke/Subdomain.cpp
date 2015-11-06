@@ -78,12 +78,16 @@ Subdomain::Subdomain() :
   d_ell_plus(NULL),
   d_ell(NULL),
   d_phi(NULL),
-  d_phi_out(NULL)
+  d_phi_out(NULL),
+  d_i_plane(NULL),
+  d_psi(NULL)
 #ifdef KRIPKE_USE_CUBLAS
   ,
   d_rhs_ptrs(NULL),
   d_ell_plus_ptrs(NULL),
-  d_phi_out_ptrs(NULL)
+  d_phi_out_ptrs(NULL),
+  d_streams(NULL),
+  d_events(NULL)
 #endif
 {
   plane_data[0] = NULL;

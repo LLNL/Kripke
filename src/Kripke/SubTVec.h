@@ -13,6 +13,9 @@
 
 #ifdef KRIPKE_USE_CUDA
 
+#define KRIPKE_ZGD_FLUX_REGISTERS
+//#define OCTAVE_PROFILING
+
 #define CPUMEMORY 0
 #define CPUPINNED 1
 #define GPUMEMORY 2

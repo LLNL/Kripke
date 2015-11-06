@@ -83,7 +83,7 @@ struct Subdomain {
   // Variables
   SubTVec *psi;         // Solution
   SubTVec *rhs;         // RHS, source term
-  SubTVec *sigt;        // Zonal per-group cross-section
+  SubTVec *sigt;        // Zonal per-group cross-section 
 
 
   // Pointers into directions and directionset data from Grid_Data
@@ -96,13 +96,24 @@ struct Subdomain {
 
 //LG
 #ifdef KRIPKE_USE_CUDA
-  Directions *d_directions; // direction data on GPU
-  double *d_sigt;       // ZOnal per-group cross-sectio, stored on GPU
-  double *d_rhs;        // RHS, on GPU
+  Directions *d_directions;  // direction data on GPU
+  double *d_sigt;            // ZOnal per-group cross-sectio, stored on GPU
+  double *d_rhs;             // RHS, on GPU
   double *d_ell_plus;
   double *d_ell;
   double *d_phi_out;
   double *d_phi;
+  double *d_psi;
+  double *d_i_plane;
+  double *d_j_plane;
+  double *d_k_plane;
+  double *d_streams;
+  double *d_events;
+  double *tempi;
+  double *tempj;
+  double *tempk;
+  cudaStream_t sweepStreams[34];
+  cudaEvent_t sweepEvents[34];
 
   #ifdef KRIPKE_USE_CUBLAS
     double **d_rhs_ptrs,

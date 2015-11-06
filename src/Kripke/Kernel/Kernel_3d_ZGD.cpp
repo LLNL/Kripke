@@ -1,15 +1,29 @@
 #include<Kripke/Kernel/Kernel_3d_ZGD.h>
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
+#include<cuda.h>
+#include<cuda_runtime.h>
+#include<omp.h>
+#include<cublas_v2.h>
+#include<string.h>
 
 #include "Kripke/cu_utils.h"
 
+//#define LPlusTimes_sweep_combined
+
+//Macro for checking cuda errors following a cuda launch or api call
+#define cudaCheckError() {                                              \
+  cudaError_t e=cudaGetLastError();                                     \
+  if(e!=cudaSuccess) {                                                  \
+    printf("Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e)); \
+    exit(EXIT_FAILURE);                                                 \
+  }                                                                     \
+}
 
 #ifdef KRIPKE_USE_CUDA
 
-int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_ell,
-                    int num_zones, int num_groups, int num_local_directions, int num_local_groups, 
-                    int nidx, int group0);
+int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_psi, double *d_ell,
+                    int num_zones, int num_groups, int num_local_directions, int num_local_groups, int nidx, int group0);
 
 int  cuda_LPlusTimes_ZGD(double *rhs, double *phi_out, double *ell_plus,
                     int num_zones, int num_groups, int num_local_directions, int num_local_groups, 
@@ -22,12 +36,33 @@ int cuda_sweep_ZGD( double *rhs, double *phi,
                     int num_zones, int num_directions, int num_groups,
                     int local_imax, int local_jmax, int local_kmax, int Nslices);
 
+int cuda_sweep_ZGD_fluxRegisters ( const int local_imax,
+				   const int local_jmax,
+				   const int local_kmax,
+				   const int num_zones,
+				   const int num_directions,
+				   const int num_groups,
+				   double * __restrict__ d_rhs,
+				   const double * __restrict__ d_sigt,
+				   Directions * __restrict__ d_directions,
+				   double * __restrict__ d_dx,
+				   double * __restrict__ d_dy,
+				   double * __restrict__ d_dz,
+				   double * __restrict__ h_psi,
+				   double * __restrict__ h_i_plane,
+				   double * __restrict__ h_j_plane,
+				   double * __restrict__ h_k_plane,
+				   int i_inc,
+				   int j_inc,
+				   int k_inc,
+				   Subdomain *sdom
+				   );
 
 int cuda_LPlusTimes_sweep_ZGD( double *phi_out, double *ell_plus,
                     double *psi, double *sigt,  Directions *direction,
                     double *i_plane, double *j_plane, double *k_plane,
                     int *ii_jj_kk_z_idx, int *h_offset, int *d_offset, double *dx, double *dy, double *dz,
-                    int num_zones, int num_directions, int num_groups, int num_local_groups, int nidx, int group0,
+			       int num_zones, int num_directions, int num_groups, int num_local_groups, int nidx, int group0,
                     int local_imax, int local_jmax, int local_kmax, int Nslices);
 
 
@@ -39,8 +74,10 @@ int  cuda_scattering_ZGD(int *d_mixed_to_zones, int *d_mixed_material, double *d
 
 int  cuda_source_ZGD(int *d_mixed_to_zones, int *d_mixed_material, double *d_mixed_fraction, 
                     int *d_mixed_offset, double *d_phi_out, 
-                    int total_num_moments,  int num_groups);
+		     int total_num_moments,  int num_groups, int num_mixed );
 
+
+int cuda_scattering_ZGD2 ( Subdomain *sdom, double *d_inflated_materials, int num_moments, int num_groups );
 
 #endif
 
@@ -88,6 +125,7 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
   for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
 #ifdef KRIPKE_USE_CUDA
   if(sweep_mode == SWEEP_GPU)
+    //int i = 0;
     set_cudaMemZeroAsync( (void *) grid_data->d_phi[ds], (size_t)(grid_data->phi[ds]->elements) * sizeof(double));
   else
     grid_data->phi[ds]->clear(0.0);
@@ -112,7 +150,8 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
 
 #ifdef KRIPKE_USE_CUDA
     if(sweep_mode == SWEEP_GPU){
-      cuda_LTimes_ZGD(sdom.d_phi, sdom.psi->ptr(0, 0, 0), sdom.d_ell,
+      //printf ("CALLING cuda_ltimes_zgd\n");
+      cuda_LTimes_ZGD(sdom.d_phi, sdom.psi->ptr(0, 0, 0), sdom.d_psi, sdom.d_ell,
                     num_zones, num_groups, num_local_directions, num_local_groups, nidx, group0);
     }
 #endif
@@ -241,16 +280,23 @@ void Kernel_3d_ZGD::LPlusTimes(Grid_Data *grid_data) {
     d=legendre coeff
     z=destination group
 */
+
+static double *d_inflated_material = NULL;
+
 void Kernel_3d_ZGD::scattering(Grid_Data *grid_data){
+  
   // Loop over zoneset subdomains
+  //printf ("num zone sets = %d \n", grid_data->num_zone_sets);
+  
   for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
+
     // get the phi and phi out references
     SubTVec &phi = *grid_data->phi[zs];
     SubTVec &phi_out = *grid_data->phi_out[zs];
     SubTVec &sigs0 = *grid_data->sigs[0];
     SubTVec &sigs1 = *grid_data->sigs[1];
     SubTVec &sigs2 = *grid_data->sigs[2];
-
+    
     // get material mix information
     int sdom_id = grid_data->zs_to_sdomid[zs];
     Subdomain &sdom = grid_data->subdomains[sdom_id];
@@ -259,16 +305,16 @@ void Kernel_3d_ZGD::scattering(Grid_Data *grid_data){
     double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
 
     // Zero out source terms
-
+    
 #ifdef KRIPKE_USE_CUDA
     if(sweep_mode == SWEEP_GPU)
-       set_cudaMemZeroAsync( (void *) grid_data->d_phi_out[zs], (size_t)(grid_data->phi_out[zs]->elements) * sizeof(double));
+      set_cudaMemZeroAsync( (void *) grid_data->d_phi_out[zs], (size_t)(grid_data->phi_out[zs]->elements) * sizeof(double));
     else
-     phi_out.clear(0.0);
+      phi_out.clear(0.0);
 #else
-     phi_out.clear(0.0);
+    phi_out.clear(0.0);
 #endif
-
+    
     // grab dimensions
     int num_mixed = sdom.mixed_to_zones.size();
     int num_zones = sdom.num_zones;
@@ -276,111 +322,164 @@ void Kernel_3d_ZGD::scattering(Grid_Data *grid_data){
     int num_coeff = grid_data->legendre_order+1;
     int num_moments = grid_data->total_num_moments;
     int const * KRESTRICT moment_to_coeff = &grid_data->moment_to_coeff[0];
-
+    
     double *sigs[3] = {
-        sigs0.ptr(),
-        sigs1.ptr(),
-        sigs2.ptr()
+      sigs0.ptr(),
+      sigs1.ptr(),
+      sigs2.ptr()
     };
-
-
+    
+    
 #ifdef KRIPKE_USE_CUDA
- if(sweep_mode == SWEEP_GPU){
-  if (sdom.d_mixed_offset == NULL){
 
-    int Nwarps, max_Nwarps = 480;
-    if (num_mixed < max_Nwarps)
-      Nwarps = num_mixed;
-    else
-      Nwarps = max_Nwarps;
+    if(sweep_mode == SWEEP_GPU){
 
-    int * offsets =  sdom.mixed_offset;
-    int chunk_size = (num_mixed + Nwarps - 1)/Nwarps;
-    for (int i = 0; i < Nwarps; ++i){
-      offsets[i] = i*chunk_size;
-      if (offsets[i] > num_mixed)  offsets[i] = num_mixed;
-    }
+      if ( sdom.d_psi != NULL ) {
 
-    for (int i = 1; i < Nwarps; ++i){
-      int shift_back = 0;
-      //zone_start
-      int zone = mixed_to_zones[ offsets[i] ];
-      int zone_m1 = mixed_to_zones[ offsets[i] - 1];
-      while (zone == zone_m1){
-        zone_m1 = mixed_to_zones[ offsets[i] - 1 - (shift_back+1) ];
-        shift_back++;
-//        printf("warp_id = %d, zone = %d, zone_m1 = %d, shift_back = %d\n",i,zone, zone_m1, shift_back);
+	if ( d_inflated_material == NULL) {
+	  
+	  //printf ("Inflating material!\n");
+
+	  // create device datastructures to support the source computation (i.e. source_ZGD)	  
+	
+	  double *h_inflated_material = (double *) malloc ( 3 * num_moments * num_moments * sizeof(double) );
+	  memset ( h_inflated_material, 0, num_moments*num_moments*sizeof(double) );
+
+	  // seems there are always 3 materials.
+	  for ( int imat=0; imat<3; imat++ ) {
+	    // inflate the materials (i.e. by moment_to_coeff - since DGEMM can't do that)
+	    for ( int icol=0; icol<num_moments; icol++ ) {
+	      for ( int irow=0; irow<num_moments; irow++ ) {
+		h_inflated_material[ imat*num_moments*num_moments + icol*num_moments+irow ] = sigs[imat][moment_to_coeff[irow]+num_coeff*icol];
+	      }
+	    }
+	  }
+
+	  cudaError_t cuerr;
+
+	  // create space on device for inflated material
+	  // *** always just 3 materials *** 
+	  cuerr = cudaMalloc ( &d_inflated_material, 3*num_moments*num_moments*sizeof(double) );
+	  cudaCheckError();
+
+	  // copy the materials to device
+	  cuerr = cudaMemcpy ( d_inflated_material, h_inflated_material, 3*num_moments*num_moments*sizeof(double), cudaMemcpyHostToDevice );
+	  cudaCheckError();
+	  
+	  free ( h_inflated_material );
+	  
+	}
+
+	cuda_scattering_ZGD2 ( &sdom, d_inflated_material, num_moments, num_groups );
+
       }
-      offsets[i] = offsets[i] - shift_back;
-    }
-    offsets[Nwarps] = num_mixed;
-    for (int i = Nwarps; i <= max_Nwarps; i++)
-       offsets[i+1] = num_mixed;
+      else {
 
-//    for (int i = 0; i <= Nwarps; ++i)
-//       printf("offsets[%d] = %d\n",i,offsets[i]);
-
-
-//LG need to add validation, to make sure that blocks do not overlap
-    for (int i = 1; i < Nwarps; i++){
-      if (offsets[i] < offsets[i-1])
-        printf("ERROR:  offsets are not properly set up\n" );
-    }
-
-//test if different blocks have the same zone
-
-    for (int i = 0; i < Nwarps; i++){
-      for (int j = offsets[i]; j < offsets[i+1]; ++j){
-        int zone_j =  mixed_to_zones[j];
-        for (int k = offsets[i+1]; k < num_mixed; ++k){
-           int zone_k = mixed_to_zones[k];
-           if (zone_j == zone_k)  printf(" block %d zone %d has a duplicate at location %d \n",i,zone_j,k);
-        }
+	if (sdom.d_mixed_offset == NULL){
+	
+	  int Nwarps, max_Nwarps = 480;
+	  if (num_mixed < max_Nwarps)
+	    Nwarps = num_mixed;
+	  else
+	    Nwarps = max_Nwarps;
+	
+	  int * offsets =  sdom.mixed_offset;
+	  int chunk_size = (num_mixed + Nwarps - 1)/Nwarps;
+	  for (int i = 0; i < Nwarps; ++i){
+	    offsets[i] = i*chunk_size;
+	    if (offsets[i] > num_mixed)  offsets[i] = num_mixed;
+	  }
+	
+	  for (int i = 1; i < Nwarps; ++i){
+	    int shift_back = 0;
+	    //zone_start
+	    int zone = mixed_to_zones[ offsets[i] ];
+	    int zone_m1 = mixed_to_zones[ offsets[i] - 1];
+	    while (zone == zone_m1){
+	      zone_m1 = mixed_to_zones[ offsets[i] - 1 - (shift_back+1) ];
+	      shift_back++;
+	      //        printf("warp_id = %d, zone = %d, zone_m1 = %d, shift_back = %d\n",i,zone, zone_m1, shift_back);
+	    }
+	    offsets[i] = offsets[i] - shift_back;
+	  }
+	  offsets[Nwarps] = num_mixed;
+	  for (int i = Nwarps; i <= max_Nwarps; i++)
+	    offsets[i+1] = num_mixed;
+	  
+	  //    for (int i = 0; i <= Nwarps; ++i)
+	  //       printf("offsets[%d] = %d\n",i,offsets[i]);
+	  
+	
+	  //LG need to add validation, to make sure that blocks do not overlap
+	  for (int i = 1; i < Nwarps; i++){
+	    if (offsets[i] < offsets[i-1])
+	      printf("ERROR:  offsets are not properly set up\n" );
+	  }
+	
+	  //test if different blocks have the same zone
+	  
+	  for (int i = 0; i < Nwarps; i++){
+	    for (int j = offsets[i]; j < offsets[i+1]; ++j){
+	      int zone_j =  mixed_to_zones[j];
+	      for (int k = offsets[i+1]; k < num_mixed; ++k){
+		int zone_k = mixed_to_zones[k];
+		if (zone_j == zone_k)  printf(" block %d zone %d has a duplicate at location %d \n",i,zone_j,k);
+	      }
+	    }
+	  }
+	  
+	  sdom.d_mixed_offset = (int*) get_cudaMalloc(size_t   (max_Nwarps+1) * sizeof(int)   );
+	  do_cudaMemcpyH2D( (void *) (sdom.d_mixed_offset), (void *) offsets, (size_t) (max_Nwarps+1) * sizeof(int));
+	}
+	
+	cuda_scattering_ZGD(sdom.d_mixed_to_zones, sdom.d_mixed_material, sdom.d_mixed_fraction, sdom.d_mixed_offset,
+			    sdom.d_phi, sdom.d_phi_out, grid_data->d_sigs[0], grid_data->d_sigs[1], grid_data->d_sigs[2], 
+			    grid_data->d_moment_to_coeff,
+			    sdom.mixed_to_zones.size(), grid_data->total_num_moments, phi.groups, num_coeff);
       }
+      
     }
-
-    sdom.d_mixed_offset = (int*) get_cudaMalloc(size_t   (max_Nwarps+1) * sizeof(int)   );
-    do_cudaMemcpyH2D( (void *) (sdom.d_mixed_offset), (void *) offsets, (size_t) (max_Nwarps+1) * sizeof(int));
-  }
-
-  cuda_scattering_ZGD(sdom.d_mixed_to_zones, sdom.d_mixed_material, sdom.d_mixed_fraction, sdom.d_mixed_offset,
-                      sdom.d_phi, sdom.d_phi_out, grid_data->d_sigs[0], grid_data->d_sigs[1], grid_data->d_sigs[2], 
-                      grid_data->d_moment_to_coeff,
-                      sdom.mixed_to_zones.size(), grid_data->total_num_moments, phi.groups, num_coeff);
- 
-}
-
+    
 #endif
+    
+    if(sweep_mode != SWEEP_GPU){
 
- if(sweep_mode != SWEEP_GPU){
+      for(int mix = 0;mix < num_mixed;++ mix){
 
-    for(int mix = 0;mix < num_mixed;++ mix){
-      int zone = mixed_to_zones[mix];
-      int material = mixed_material[mix];
-      double fraction = mixed_fraction[mix];
-      double *sigs_g_gp = sigs[material];
-      double *phi_z_g = phi.ptr() + zone*num_groups*num_moments;
-
-      for(int g = 0;g < num_groups;++ g){
-        double *phi_out_z_gp = phi_out.ptr() + zone*num_groups*num_moments;
-
-        for(int gp = 0;gp < num_groups;++ gp){
-          for(int nm = 0;nm < num_moments;++ nm){
-            // map nm to n
-            int n = moment_to_coeff[nm];
-
-            phi_out_z_gp[nm] += sigs_g_gp[n] * phi_z_g[nm] * fraction;
-          }
-          sigs_g_gp += num_coeff;
-          phi_out_z_gp += num_moments;
-        }
-        phi_z_g += num_moments;
+	//printf ("mix = %d\n", mix);
+	
+	int zone = mixed_to_zones[mix];
+	int material = mixed_material[mix];
+	double fraction = mixed_fraction[mix];
+	double *sigs_g_gp = sigs[material];
+	double *phi_z_g = phi.ptr() + zone*num_groups*num_moments;
+	
+	for(int g = 0;g < num_groups;++ g){
+	  
+	  double *phi_out_z_gp = phi_out.ptr() + zone*num_groups*num_moments;
+	  
+	  for(int gp = 0;gp < num_groups;++ gp){
+	    for(int nm = 0;nm < num_moments;++ nm){
+	      int n = moment_to_coeff[nm];
+	      phi_out_z_gp[nm] += sigs_g_gp[n] * phi_z_g[nm] * fraction;
+	      
+	    }
+	    
+	    sigs_g_gp += num_coeff;
+	    phi_out_z_gp += num_moments;
+	    
+	  }
+	  
+	  phi_z_g += num_moments;
+	  
+	}
+	
       }
+      
     }
-
+    
   }
 
-  }
 }
 
 /**
@@ -413,7 +512,7 @@ void Kernel_3d_ZGD::source(Grid_Data *grid_data){
 
     cuda_source_ZGD(sdom.d_mixed_to_zones, sdom.d_mixed_material, sdom.d_mixed_fraction, 
                     sdom.d_mixed_offset, sdom.d_phi_out, 
-                    grid_data->total_num_moments, phi_out.groups);
+                    grid_data->total_num_moments, phi_out.groups, sdom.mixed_to_zones.size() );
 
     //double *tphi_out = grid_data->phi_out[zs]->ptr();
     //do_cudaMemcpyD2H ( (void *) tphi_out, (void*) grid_data->d_phi_out[zs], grid_data->phi_out[zs]->elements * sizeof(double));
@@ -422,7 +521,8 @@ void Kernel_3d_ZGD::source(Grid_Data *grid_data){
 
     if(sweep_mode != SWEEP_GPU){
 
-      for(int mix = 0;mix < num_mixed;++ mix){
+      for(int mix = 0; mix < num_mixed; ++mix){
+
         int material = mixed_material[mix];
 
         if(material == 0){
@@ -486,7 +586,7 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
 
   if(sweep_mode == SWEEP_GPU){
 
-  //LG allocate deltas on GPU
+  //LG allocate deltas on GPU 
      if (sdom->d_delta_x == NULL){
        sdom->d_delta_x = (double*) get_cudaMalloc(size_t   (local_imax+2) * sizeof(double)   );
        do_cudaMemcpyH2D( (void *) (sdom->d_delta_x), (void *) dx, (size_t) (local_imax+2) * sizeof(double));
@@ -511,6 +611,36 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
         do_cudaMemcpyH2D( (void*) sdom->d_sigt,  (void *)  sdom->sigt->ptr(), (size_t) (num_zones*num_groups) * sizeof(double));
      }
 
+#ifdef  KRIPKE_ZGD_FLUX_REGISTERS
+
+     cudaCheckError();
+
+     cuda_sweep_ZGD_fluxRegisters ( local_imax,
+				    local_jmax,
+				    local_kmax,
+				    num_zones,
+				    num_directions,
+				    num_groups,
+				    sdom->d_rhs,
+				    sdom->d_sigt,
+				    sdom->d_directions,
+				    sdom->d_delta_x,
+				    sdom->d_delta_y,
+				    sdom->d_delta_z,
+				    sdom->psi->ptr(),
+				    i_plane.ptr(),
+				    j_plane.ptr(),
+				    k_plane.ptr(),
+				    sdom->sweep_block.start_i,
+				    sdom->sweep_block.start_j,
+				    sdom->sweep_block.start_k,
+				    sdom
+				    );
+
+#else
+
+     cudaCheckError();
+
      cuda_sweep_ZGD( sdom->d_rhs, sdom->phi->ptr(),
                      sdom->psi->ptr(), sdom->d_sigt,  sdom->d_directions,
                      i_plane.ptr(),j_plane.ptr(),k_plane.ptr(),
@@ -520,13 +650,21 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
                      local_imax,local_jmax, local_kmax,
                      Nslices);
 
+#endif
+
+     sweep_mode = SWEEP_GPU;
+     return;
+
 
 
      // say what we really did
      sweep_mode = SWEEP_GPU;
      return;
+
   }
+
 #endif
+
 
   if(sweep_mode == SWEEP_HYPERPLANE){
 
@@ -734,15 +872,29 @@ void Kernel_3d_ZGD::LPlusTimes_sweep(Subdomain *sdom) {
         do_cudaMemcpyH2D( (void*) sdom->d_sigt,  (void *)  sdom->sigt->ptr(), (size_t) (num_zones*num_local_groups) * sizeof(double));
      }
 
-     cuda_LPlusTimes_sweep_ZGD( sdom->d_phi_out, sdom->d_ell_plus,
-                     sdom->psi->ptr(), sdom->d_sigt,  sdom->d_directions,
-                     i_plane.ptr(),j_plane.ptr(),k_plane.ptr(),
-                     extent.d_ii_jj_kk_z_idx, offset, extent.d_offset,
-                     sdom->d_delta_x, sdom->d_delta_y, sdom->d_delta_z,
-                     num_zones, num_directions, num_groups, num_local_groups, 
-                     sdom->ell_plus->groups, sdom->group0,
-                     local_imax,local_jmax, local_kmax,
-                     Nslices);
+     cuda_LPlusTimes_sweep_ZGD( sdom->d_phi_out, 
+				sdom->d_ell_plus,
+				sdom->psi->ptr(), 
+				sdom->d_sigt,  
+				sdom->d_directions,
+				i_plane.ptr(),
+				j_plane.ptr(),
+				k_plane.ptr(),
+				extent.d_ii_jj_kk_z_idx, 
+				offset, 
+				extent.d_offset,
+				sdom->d_delta_x, 
+				sdom->d_delta_y, 
+				sdom->d_delta_z,
+				num_zones, 
+				num_directions, 
+				num_groups, 
+				num_local_groups, 
+				sdom->ell_plus->groups, sdom->group0,
+				local_imax,
+				local_jmax, 
+				local_kmax,
+				Nslices);
 
 
 

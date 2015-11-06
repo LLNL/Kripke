@@ -11,7 +11,7 @@ if(ENABLE_CUDA)
 
 	set(KRIPKE_LIBS ${KRIPKE_LIBS} cukripkelib)
 #        set(KRIPKE_LIBS ${KRIPKE_LIBS} /usr/local/cuda/lib64/libcublas.so)
-        set(KRIPKE_LIBS ${KRIPKE_LIBS} /opt/cudatoolkit-7.0/lib64/libcublas.so)
+        set(KRIPKE_LIBS ${KRIPKE_LIBS} /opt/cudatoolkit-7.0/lib64/libcublas.so /opt/cudatoolkit-7.0/lib64/libnpps.so /opt/cudatoolkit-7.0/lib64/libnvToolsExt.so)
 
 endif()
 
