@@ -83,10 +83,9 @@ Kernel::~Kernel(){
 }
 
 
-
 #include<Kripke/Kernel/LTimesPolicy.h>
 void Kernel::LTimes(Grid_Data *domain) { 
-  
+
   policyScope(nesting_order, [&](auto nest_tag){
     typedef decltype(nest_tag) nest_type;
     typedef DataPolicy<nest_type> POL;

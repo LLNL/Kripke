@@ -233,9 +233,9 @@
       typedef typename POLICY::TileJ TileJ;
 
       // execute the next policy
-      forall_tile(TileI(), is_i, [=](auto is_ii){
-        forall_tile(TileJ(), is_j, [=](auto is_jj){
-          forall2_policy<NextPolicy, PolicyI, PolicyJ>(NextPolicyTag(), is_i, is_j, body);
+      forall_tile(TileI(), is_i, [=](RAJA::RangeSegment is_ii){
+        forall_tile(TileJ(), is_j, [=](RAJA::RangeSegment is_jj){
+          forall2_policy<NextPolicy, PolicyI, PolicyJ>(NextPolicyTag(), is_ii, is_jj, body);
         });
       });
     }

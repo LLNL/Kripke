@@ -646,11 +646,11 @@
       typedef typename POLICY::TileL TileL;
 
       // execute the next policy
-      forall_tile(TileI(), is_i, [=](auto is_ii){
-        forall_tile(TileJ(), is_j, [=](auto is_jj){
-          forall_tile(TileK(), is_k, [=](auto is_kk){
-            forall_tile(TileL(), is_l, [=](auto is_ll){
-              forall4_policy<NextPolicy, PolicyI, PolicyJ, PolicyK, PolicyL>(NextPolicyTag(), is_i, is_j, is_k, is_l, body);
+      forall_tile(TileI(), is_i, [=](RAJA::RangeSegment is_ii){
+        forall_tile(TileJ(), is_j, [=](RAJA::RangeSegment is_jj){
+          forall_tile(TileK(), is_k, [=](RAJA::RangeSegment is_kk){
+            forall_tile(TileL(), is_l, [=](RAJA::RangeSegment is_ll){
+              forall4_policy<NextPolicy, PolicyI, PolicyJ, PolicyK, PolicyL>(NextPolicyTag(), is_ii, is_jj, is_kk, is_ll, body);
             });
           });
         });

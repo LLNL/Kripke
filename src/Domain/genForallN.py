@@ -412,12 +412,13 @@ def writeForall_policy(ndims):
   indent = ""
   close_paren = []
   for d in dim_names:
-    print "%s      forall_tile(Tile%s(), is_%s, [=](auto is_%s%s){" % (indent, d.upper(), d, d, d)
+    print "%s      forall_tile(Tile%s(), is_%s, [=](RAJA::RangeSegment is_%s%s){" % (indent, d.upper(), d, d, d)
     close_paren.append(indent + "      });")
     indent += "  "
 
   # call body with tiled index sets
-  print "%s      forall%d_policy<NextPolicy, %s>(NextPolicyTag(), %s, body);" % (indent, ndims, polstr, varstr)
+  t_varstr = ", ".join(map(lambda a: "is_"+a+a, dim_names))
+  print "%s      forall%d_policy<NextPolicy, %s>(NextPolicyTag(), %s, body);" % (indent, ndims, polstr, t_varstr)
 
   # close forall parenthesis
   close_paren.reverse()

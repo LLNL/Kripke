@@ -343,10 +343,10 @@
       typedef typename POLICY::TileK TileK;
 
       // execute the next policy
-      forall_tile(TileI(), is_i, [=](auto is_ii){
-        forall_tile(TileJ(), is_j, [=](auto is_jj){
-          forall_tile(TileK(), is_k, [=](auto is_kk){
-            forall3_policy<NextPolicy, PolicyI, PolicyJ, PolicyK>(NextPolicyTag(), is_i, is_j, is_k, body);
+      forall_tile(TileI(), is_i, [=](RAJA::RangeSegment is_ii){
+        forall_tile(TileJ(), is_j, [=](RAJA::RangeSegment is_jj){
+          forall_tile(TileK(), is_k, [=](RAJA::RangeSegment is_kk){
+            forall3_policy<NextPolicy, PolicyI, PolicyJ, PolicyK>(NextPolicyTag(), is_ii, is_jj, is_kk, body);
           });
         });
       });
