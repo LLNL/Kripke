@@ -42,7 +42,7 @@ template<typename T>
 struct SweepPolicy{}; // d, g, z
 
 template<>
-struct SweepPolicy<NEST_DGZ_T> : Forall3_Policy<omp_nowait, seq_pol, sweep_seq_pol>
+struct SweepPolicy<NEST_DGZ_T> : Forall3_Policy<omp_nowait, seq_pol, sweep_seq_pol, Forall3_Permute<PERM_IJK>>
 {};
 
 template<>
