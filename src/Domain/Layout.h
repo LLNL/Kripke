@@ -40,16 +40,16 @@
     struct PERM_LKIJ {};
     struct PERM_LKJI {};
 
-    template<typename Perm, typename IdxLin=int, typename IdxI=int>
+    template<typename Perm, typename IdxI=int, typename IdxLin=int>
     struct Layout1d {};
 
-    template<typename Perm, typename IdxLin=int, typename IdxI=int, typename IdxJ=int>
+    template<typename Perm, typename IdxI=int, typename IdxJ=int, typename IdxLin=int>
     struct Layout2d {};
 
-    template<typename Perm, typename IdxLin=int, typename IdxI=int, typename IdxJ=int, typename IdxK=int>
+    template<typename Perm, typename IdxI=int, typename IdxJ=int, typename IdxK=int, typename IdxLin=int>
     struct Layout3d {};
 
-    template<typename Perm, typename IdxLin=int, typename IdxI=int, typename IdxJ=int, typename IdxK=int, typename IdxL=int>
+    template<typename Perm, typename IdxI=int, typename IdxJ=int, typename IdxK=int, typename IdxL=int, typename IdxLin=int>
     struct Layout4d {};
 
 
@@ -57,8 +57,8 @@
  *  Implementation for Layout1D
  ******************************************************************/
 
-    template<typename IdxLin, typename IdxI>
-    struct Layout1d<PERM_I, IdxLin, IdxI> {
+    template<typename IdxI, typename IdxLin>
+    struct Layout1d<PERM_I, IdxI, IdxLin> {
       typedef PERM_I Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -87,8 +87,8 @@
  *  Implementation for Layout2D
  ******************************************************************/
 
-    template<typename IdxLin, typename IdxI, typename IdxJ>
-    struct Layout2d<PERM_IJ, IdxLin, IdxI, IdxJ> {
+    template<typename IdxI, typename IdxJ, typename IdxLin>
+    struct Layout2d<PERM_IJ, IdxI, IdxJ, IdxLin> {
       typedef PERM_IJ Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -118,8 +118,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ>
-    struct Layout2d<PERM_JI, IdxLin, IdxI, IdxJ> {
+    template<typename IdxI, typename IdxJ, typename IdxLin>
+    struct Layout2d<PERM_JI, IdxI, IdxJ, IdxLin> {
       typedef PERM_JI Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -154,8 +154,8 @@
  *  Implementation for Layout3D
  ******************************************************************/
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK>
-    struct Layout3d<PERM_IJK, IdxLin, IdxI, IdxJ, IdxK> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxLin>
+    struct Layout3d<PERM_IJK, IdxI, IdxJ, IdxK, IdxLin> {
       typedef PERM_IJK Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -191,8 +191,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK>
-    struct Layout3d<PERM_IKJ, IdxLin, IdxI, IdxJ, IdxK> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxLin>
+    struct Layout3d<PERM_IKJ, IdxI, IdxJ, IdxK, IdxLin> {
       typedef PERM_IKJ Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -228,8 +228,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK>
-    struct Layout3d<PERM_JIK, IdxLin, IdxI, IdxJ, IdxK> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxLin>
+    struct Layout3d<PERM_JIK, IdxI, IdxJ, IdxK, IdxLin> {
       typedef PERM_JIK Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -265,8 +265,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK>
-    struct Layout3d<PERM_JKI, IdxLin, IdxI, IdxJ, IdxK> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxLin>
+    struct Layout3d<PERM_JKI, IdxI, IdxJ, IdxK, IdxLin> {
       typedef PERM_JKI Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -302,8 +302,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK>
-    struct Layout3d<PERM_KIJ, IdxLin, IdxI, IdxJ, IdxK> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxLin>
+    struct Layout3d<PERM_KIJ, IdxI, IdxJ, IdxK, IdxLin> {
       typedef PERM_KIJ Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -339,8 +339,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK>
-    struct Layout3d<PERM_KJI, IdxLin, IdxI, IdxJ, IdxK> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxLin>
+    struct Layout3d<PERM_KJI, IdxI, IdxJ, IdxK, IdxLin> {
       typedef PERM_KJI Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -381,8 +381,8 @@
  *  Implementation for Layout4D
  ******************************************************************/
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_IJKL, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_IJKL, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_IJKL Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -424,8 +424,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_IJLK, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_IJLK, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_IJLK Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -467,8 +467,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_IKJL, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_IKJL, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_IKJL Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -510,8 +510,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_IKLJ, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_IKLJ, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_IKLJ Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -553,8 +553,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_ILJK, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_ILJK, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_ILJK Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -596,8 +596,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_ILKJ, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_ILKJ, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_ILKJ Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -639,8 +639,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_JIKL, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_JIKL, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_JIKL Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -682,8 +682,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_JILK, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_JILK, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_JILK Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -725,8 +725,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_JKIL, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_JKIL, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_JKIL Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -768,8 +768,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_JKLI, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_JKLI, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_JKLI Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -811,8 +811,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_JLIK, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_JLIK, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_JLIK Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -854,8 +854,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_JLKI, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_JLKI, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_JLKI Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -897,8 +897,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_KIJL, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_KIJL, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_KIJL Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -940,8 +940,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_KILJ, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_KILJ, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_KILJ Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -983,8 +983,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_KJIL, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_KJIL, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_KJIL Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -1026,8 +1026,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_KJLI, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_KJLI, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_KJLI Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -1069,8 +1069,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_KLIJ, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_KLIJ, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_KLIJ Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -1112,8 +1112,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_KLJI, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_KLJI, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_KLJI Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -1155,8 +1155,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_LIJK, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_LIJK, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_LIJK Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -1198,8 +1198,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_LIKJ, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_LIKJ, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_LIKJ Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -1241,8 +1241,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_LJIK, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_LJIK, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_LJIK Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -1284,8 +1284,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_LJKI, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_LJKI, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_LJKI Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -1327,8 +1327,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_LKIJ, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_LKIJ, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_LKIJ Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;
@@ -1370,8 +1370,8 @@
     };
 
 
-    template<typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-    struct Layout4d<PERM_LKJI, IdxLin, IdxI, IdxJ, IdxK, IdxL> {
+    template<typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin>
+    struct Layout4d<PERM_LKJI, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
       typedef PERM_LKJI Permutation;
       typedef IdxLin IndexLinear;
       typedef IdxI IndexI;

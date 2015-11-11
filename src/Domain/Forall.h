@@ -1,6 +1,7 @@
 #ifndef DOMAIN_FORALL_H__
 #define DOMAIN_FORALL_H__
 
+#include<Kripke/Grid.h>
 #include<Kripke/Subdomain.h>
 #include<Domain/Layout.h>
 #include<Domain/View.h>
@@ -154,6 +155,29 @@ RAJA_INLINE void executeScope(T1 t1, L1 const &l1, REST... rest){
  * The specializations are executed if any of their types match the nesting order tag.
  * The default is executed if none of the specializations match.
  *
+ * Example:
+ *    // Generic-only implementation
+ *    policyScope(nest_order,
+ *      RAJA_LAMBDA(auto tag){
+ *        typedef decltype(tag) nest_tag;
+ *        // generic implementation for all tags
+ *      }
+ *    );
+ *
+ *
+ *    // Single specialized, plus generic implementation
+ *    policyScope(nest_order,
+ *
+ *      NEST_DGZ_T(),
+ *      RAJA_LAMBDA(NEST_DGZ_T){
+ *        // DGZ specialization
+ *      }
+ *
+ *      RAJA_LAMBDA(auto tag){
+ *        typedef decltype(tag) nest_tag;
+ *        // generic implementation (not generated for DGZ)
+ *      }
+ *    );
  */
 template<typename... REST>
 RAJA_INLINE void policyScope(Nesting_Order nest, REST... rest){

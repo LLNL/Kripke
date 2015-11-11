@@ -9,7 +9,8 @@ add_library(lib_kripke
   Subdomain.cpp  
   Sweep_Solver.cpp
   ParallelComm.cpp  
-  Timing.cpp  
+  Timing.cpp
+  example.cpp  
     
   Kernel/Kernel_3d_GDZ.cpp
   Kernel/Kernel_3d_DGZ.cpp

@@ -23,7 +23,7 @@ def writeLayoutDecl(ndims_list):
   
     args = map(lambda a: "typename Idx%s=int"%a.upper(), dim_names)
     argstr = ", ".join(args)
-    print "    template<typename Perm, typename IdxLin=int, %s>" % argstr
+    print "    template<typename Perm, %s, typename IdxLin=int>" % argstr
     print "    struct Layout%dd {};" % ndims
     print 
        
@@ -49,11 +49,11 @@ def writeLayoutImpl(ndims_list):
       # Start the partial specialization
       args = map(lambda a: "typename Idx%s"%a.upper(), dim_names)
       argstr = ", ".join(args)
-      print "    template<typename IdxLin, %s>" % argstr
+      print "    template<%s, typename IdxLin>" % argstr
       
       args = map(lambda a: "Idx%s"%a.upper(), dim_names)
       argstr = ", ".join(args)
-      print "    struct Layout%dd<%s, IdxLin, %s> {" % (ndims, enum, argstr)
+      print "    struct Layout%dd<%s, %s, IdxLin> {" % (ndims, enum, argstr)
     
       # Create typedefs to capture the template parameters
       print "      typedef %s Permutation;" % enum

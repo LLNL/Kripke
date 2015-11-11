@@ -76,16 +76,16 @@ struct DView4d : public View4d<DataType, Layout> {
 /**
  * Wrapper around Layout1d that provides accessors to Index sizes
  */
-template<typename Perm, typename IdxLin, typename IdxI>
-struct DLayout1d : public Layout1d<Perm, IdxLin, IdxI>{
+template<typename Perm, typename IdxI, typename IdxLin = int>
+struct DLayout1d : public Layout1d<Perm, IdxI, IdxLin>{
 
   inline DLayout1d(Grid_Data *domain, int sdom_id) :
-    Layout1d<Perm, IdxLin, IdxI>::Layout1d(
+    Layout1d<Perm, IdxI, IdxLin>::Layout1d(
           domain->indexSize<IdxI>(sdom_id))
   {}
 
   inline DLayout1d(int ni) :
-    Layout1d<Perm, IdxLin, IdxI>::Layout1d(ni)
+    Layout1d<Perm, IdxI, IdxLin>::Layout1d(ni)
   {}
 
 };
@@ -94,17 +94,17 @@ struct DLayout1d : public Layout1d<Perm, IdxLin, IdxI>{
 /**
  * Wrapper around Layout2d that provides accessors to Index sizes
  */
-template<typename Perm, typename IdxLin, typename IdxI, typename IdxJ>
-struct DLayout2d : public Layout2d<Perm, IdxLin, IdxI, IdxJ>{
+template<typename Perm, typename IdxI, typename IdxJ, typename IdxLin = int>
+struct DLayout2d : public Layout2d<Perm, IdxI, IdxJ, IdxLin>{
 
   inline DLayout2d(Grid_Data *domain, int sdom_id) :
-    Layout2d<Perm, IdxLin, IdxI, IdxJ>::Layout2d(
+    Layout2d<Perm, IdxI, IdxJ, IdxLin>::Layout2d(
           domain->indexSize<IdxI>(sdom_id),
           domain->indexSize<IdxJ>(sdom_id))
   {}
 
   inline DLayout2d(int ni, int nj) :
-    Layout2d<Perm, IdxLin, IdxI, IdxJ>::Layout2d(ni, nj)
+    Layout2d<Perm, IdxI, IdxJ, IdxLin>::Layout2d(ni, nj)
   {}
 
 };
@@ -112,18 +112,18 @@ struct DLayout2d : public Layout2d<Perm, IdxLin, IdxI, IdxJ>{
 /**
  * Wrapper around Layout3d that provides accessors to Index sizes
  */
-template<typename Perm, typename IdxLin, typename IdxI, typename IdxJ, typename IdxK>
-struct DLayout3d : public Layout3d<Perm, IdxLin, IdxI, IdxJ, IdxK>{
+template<typename Perm, typename IdxI, typename IdxJ, typename IdxK, typename IdxLin = int>
+struct DLayout3d : public Layout3d<Perm, IdxI, IdxJ, IdxK, IdxLin>{
 
   inline DLayout3d(Grid_Data *domain, int sdom_id) :
-    Layout3d<Perm, IdxLin, IdxI, IdxJ, IdxK>::Layout3d(
+    Layout3d<Perm, IdxI, IdxJ, IdxK, IdxLin>::Layout3d(
         domain->indexSize<IdxI>(sdom_id),
         domain->indexSize<IdxJ>(sdom_id),
         domain->indexSize<IdxK>(sdom_id))
   {}
 
   inline DLayout3d(int ni, int nj, int nk) :
-    Layout3d<Perm, IdxLin, IdxI, IdxJ, IdxK>::Layout3d(ni, nj, nk)
+    Layout3d<Perm, IdxI, IdxJ, IdxK, IdxLin>::Layout3d(ni, nj, nk)
   {}
 
 };
@@ -132,11 +132,11 @@ struct DLayout3d : public Layout3d<Perm, IdxLin, IdxI, IdxJ, IdxK>{
 /**
  * Wrapper around Layout4d that provides accessors to Index sizes
  */
-template<typename Perm, typename IdxLin, typename IdxI, typename IdxJ, typename IdxK, typename IdxL>
-struct DLayout4d : public Layout4d<Perm, IdxLin, IdxI, IdxJ, IdxK, IdxL>{
+template<typename Perm, typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin = int>
+struct DLayout4d : public Layout4d<Perm, IdxI, IdxJ, IdxK, IdxL, IdxLin>{
 
   inline DLayout4d(Grid_Data *domain, int sdom_id) :
-    Layout4d<Perm, IdxLin, IdxI, IdxJ, IdxK, IdxL>::Layout4d(
+    Layout4d<Perm, IdxI, IdxJ, IdxK, IdxL, IdxLin>::Layout4d(
         domain->indexSize<IdxI>(sdom_id),
         domain->indexSize<IdxJ>(sdom_id),
         domain->indexSize<IdxK>(sdom_id),
@@ -144,7 +144,7 @@ struct DLayout4d : public Layout4d<Perm, IdxLin, IdxI, IdxJ, IdxK, IdxL>{
   {}
 
   inline DLayout4d(int ni, int nj, int nk, int nl) :
-    Layout4d<Perm, IdxLin, IdxI, IdxJ, IdxK, IdxL>::Layout4d(ni, nj, nk, nl)
+    Layout4d<Perm, IdxI, IdxJ, IdxK, IdxL, IdxLin>::Layout4d(ni, nj, nk, nl)
   {}
 
 };
