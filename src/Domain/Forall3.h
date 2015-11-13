@@ -57,6 +57,43 @@
 
 
 /******************************************************************
+ *  forall3_policy() Foreward declarations
+ ******************************************************************/
+
+    template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename TI, typename TJ, typename TK, typename BODY>
+    RAJA_INLINE void forall3_policy(Forall3_Execute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body);
+
+    template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename TI, typename TJ, typename TK, typename BODY>
+    RAJA_INLINE void forall3_policy(Forall3_Permute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body);
+
+    template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename TI, typename TJ, typename TK, typename BODY>
+    RAJA_INLINE void forall3_policy(Forall3_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body);
+
+    template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename TI, typename TJ, typename TK, typename BODY>
+    RAJA_INLINE void forall3_policy(Forall3_Tile_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body);
+
+
+/******************************************************************
+ *  Forall3Executor(): Default Executor for loops
+ ******************************************************************/
+
+    template<typename POLICY_I, typename POLICY_J, typename POLICY_K, typename TI, typename TJ, typename TK>
+    struct Forall3Executor {
+      template<typename BODY>
+      inline void operator()(TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body) const {
+        RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(int i){
+          exec(is_j, is_k, RAJA_LAMBDA(int j, int k){
+            body(i, j, k);
+          });
+        });
+      }
+
+      private:
+        Forall2Executor<POLICY_J, POLICY_K, TJ, TK> exec;
+    };
+
+
+/******************************************************************
  *  OpenMP Auto-Collapsing Executors for forall3()
  ******************************************************************/
 
@@ -156,43 +193,6 @@
 
 
 #endif // _OPENMP
-
-
-/******************************************************************
- *  forall3_policy() Foreward declarations
- ******************************************************************/
-
-    template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename TI, typename TJ, typename TK, typename BODY>
-    RAJA_INLINE void forall3_policy(Forall3_Execute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body);
-
-    template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename TI, typename TJ, typename TK, typename BODY>
-    RAJA_INLINE void forall3_policy(Forall3_Permute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body);
-
-    template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename TI, typename TJ, typename TK, typename BODY>
-    RAJA_INLINE void forall3_policy(Forall3_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body);
-
-    template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename TI, typename TJ, typename TK, typename BODY>
-    RAJA_INLINE void forall3_policy(Forall3_Tile_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body);
-
-
-/******************************************************************
- *  Forall3Executor(): Default Executor for loops
- ******************************************************************/
-
-    template<typename POLICY_I, typename POLICY_J, typename POLICY_K, typename TI, typename TJ, typename TK>
-    struct Forall3Executor {
-      template<typename BODY>
-      inline void operator()(TI const &is_i, TJ const &is_j, TK const &is_k, BODY const &body) const {
-        RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(int i){
-          exec(is_j, is_k, RAJA_LAMBDA(int j, int k){
-            body(i, j, k);
-          });
-        });
-      }
-
-      private:
-        Forall2Executor<POLICY_J, POLICY_K, TJ, TK> exec;
-    };
 
 
 /******************************************************************
