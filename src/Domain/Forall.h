@@ -84,6 +84,8 @@ RAJA_INLINE void forallZoneSets(Grid_Data *grid_data, BODY const &body){
 
 
 
+
+
 // Foreward decl
 template<typename TAG, typename BODY>
 RAJA_INLINE void executeScope(BODY const &body);
@@ -191,5 +193,51 @@ RAJA_INLINE void policyScope(Nesting_Order nest, REST... rest){
   }
 }
 
+
+
+
+//#define KRIPKE_USE_PSCOPE
+
+#ifdef KRIPKE_USE_PSCOPE
+
+// most flexible version, but req c++14 and breaks nvcc (currently)
+#define BEGIN_POLICY(NVAR, NTYPE) \
+  policyScope(NVAR, [&](auto pscope_tag){ \
+    typedef decltype(pscope_tag) NTYPE;
+#define END_POLICY });
+
+
+#define FORALL_SUBDOMAINS(SDOM_POL, DOMAIN, ID, SDOM) \
+  forallSubdomains<SDOM_POL>(DOMAIN, [&](int ID, Subdomain &SDOM){
+
+#define FORALL_ZONESETS(SDOM_POL, DOMAIN, ID, SDOM) \
+  forallZoneSets<SDOM_POL>(DOMAIN, [&](int ID, Subdomain &SDOM){
+
+
+#define END_FORALL });
+
+#else
+
+// Eliminates policy scope outer lambda,
+#define BEGIN_POLICY(NVAR, NTYPE) \
+  { \
+    typedef NEST_DGZ_T NTYPE;
+
+#define END_POLICY }
+
+
+#define FORALL_SUBDOMAINS(SDOM_POL, DOMAIN, ID, SDOM) \
+  for(int ID = 0;ID < domain->subdomains.size();++ ID){ \
+    Subdomain &SDOM = domain->subdomains[ID];
+
+#define FORALL_ZONESETS(SDOM_POL, DOMAIN, ID, SDOM) \
+  for(int _zset_idx = 0;_zset_idx < domain->num_zone_sets;++ _zset_idx){ \
+    int ID = DOMAIN->zs_to_sdomid[_zset_idx]; \
+    Subdomain &SDOM = domain->subdomains[ID];
+
+
+#define END_FORALL }
+
+#endif
 
 #endif

@@ -83,20 +83,20 @@ Kernel::~Kernel(){
 }
 
 
+
 #include<Kripke/Kernel/LTimesPolicy.h>
 void Kernel::LTimes(Grid_Data *domain) { 
 
-  policyScope(nesting_order, [&](auto nest_tag){
-    typedef decltype(nest_tag) nest_type;
+  BEGIN_POLICY(nesting_order, nest_type)
     typedef DataPolicy<nest_type> POL;
 
     // Zero Phi
-    forallZoneSets<seq_pol>(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+    FORALL_ZONESETS(seq_pol, domain, sdom_id, sdom)
       sdom.phi->clear(0.0);
-    });
+    END_FORALL
 
     // Loop over Subdomains
-    forallSubdomains<seq_pol>(domain, [&](int sdom_id, Subdomain &sdom){
+    FORALL_SUBDOMAINS(seq_pol, domain, sdom_id, sdom)
 
       // Get dimensioning
       int group0 = sdom.group0;
@@ -115,23 +115,22 @@ void Kernel::LTimes(Grid_Data *domain) {
           phi(nm, g_global, z) += ell(d, nm) * psi(d, g, z);
       });
 
-    }); // sdom
-
-  }); // policy
+    END_FORALL
+  END_POLICY
 }
 
 #include<Kripke/Kernel/LPlusTimesPolicy.h>
 void Kernel::LPlusTimes(Grid_Data *domain) {
-  policyScope(nesting_order, [&](auto nest_tag){
-    typedef decltype(nest_tag) nest_type;
+
+  BEGIN_POLICY(nesting_order, nest_type)
     typedef DataPolicy<nest_type> POL;
 
     // Loop over Subdomains
-    forallSubdomains<seq_pol>(domain, [&](int sdom_id, Subdomain &sdom){
+    FORALL_SUBDOMAINS(seq_pol, domain, sdom_id, sdom)
       sdom.rhs->clear(0.0);
-    });
+    END_FORALL
 
-    forallSubdomains<seq_pol>(domain, [&](int sdom_id, Subdomain &sdom){
+    FORALL_SUBDOMAINS(seq_pol, domain, sdom_id, sdom)
 
       // Get dimensioning
       int group0 = sdom.group0;
@@ -150,9 +149,8 @@ void Kernel::LPlusTimes(Grid_Data *domain) {
           rhs(d, g, z) += ell_plus(d, nm) * phi_out(nm, g_global, z);  
       });
 
-    }); // sdom
-
-  }); // policy
+    END_FORALL
+  END_POLICY
 }
 
 
@@ -163,17 +161,16 @@ void Kernel::LPlusTimes(Grid_Data *domain) {
 #include<Kripke/Kernel/ScatteringPolicy.h>
 void Kernel::scattering(Grid_Data *domain){
   
-  policyScope(nesting_order, [&](auto nest_tag){
-    typedef decltype(nest_tag) nest_type;
+  BEGIN_POLICY(nesting_order, nest_type)
     typedef DataPolicy<nest_type> POL;
 
     // Zero out source terms
-    forallZoneSets<seq_pol>(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+    FORALL_ZONESETS(seq_pol, domain, sdom_id, sdom)
       sdom.phi_out->clear(0.0);
-    });
+    END_FORALL
 
     // Loop over zoneset subdomains
-    forallZoneSets<seq_pol>(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+    FORALL_ZONESETS(seq_pol, domain, sdom_id, sdom)
 
       typename POL::View_Phi     phi(sdom.phi->ptr(), domain, sdom_id);
       typename POL::View_Phi     phi_out(sdom.phi_out->ptr(), domain, sdom_id);
@@ -198,9 +195,9 @@ void Kernel::scattering(Grid_Data *domain){
                              
         });  // forall
           
-    }); // zonesets
+    END_FORALL // zonesets
 
-  }); // policy
+  END_POLICY
 }
 
   
@@ -210,15 +207,81 @@ void Kernel::scattering(Grid_Data *domain){
  *
  * Since it's isotropic, we're just adding this to nm=0.
  */
+
+
+/*
+ * Struct with abstracting function.
+ *
+ * Requires a 'frontend' function for every kernel.
+ *
+ * Probably not what anyone wants to do.
+ */
+/*
+struct kernFcn{
+
+
+  template<typename nest_type>
+  void actualKernel(void){
+
+    typedef DataPolicy<nest_type> POL;
+
+    // do stuff based on POL
+  }
+
+  void runKernel(Nesting_Order nest_order){
+    switch(nest_order){
+      case NEST_DGZ: actualKernel<NEST_DGZ_T>(); break;
+    }
+  }
+
+};
+*/
+
+/*
+ * Factory + Interface Approach
+ *
+ * This method allows the factory to house the policyScope logic.
+ * A kernel object must be created.
+ *
+ * Pros:
+ * - Object probably can have no storage, so it's lightweight
+ *
+ * Cons:
+ * - Polymorphism disallows mapping of this object to device (omp and cuda), so it can only be accessed from host code
+ * - Have to group kernels together into one class in order to reduce number of factory functions,
+ *   this may or may not be easy to do.
+ *
+ */
+struct kernBase {
+  virtual ~kernBase(){}
+
+  virtual void runKernel(void) = 0;
+};
+
+template<typename nest_type>
+struct kernTmpl : public kernBase {
+  typedef DataPolicy<nest_type> POL;
+  virtual void runKernel(void){
+    // do stuff based on POL
+
+  }
+};
+
+kernBase *kernFact(Nesting_Order nest_order){
+  policyScope(nest_order, [](auto nest_tag){
+    return new kernTmpl<decltype(nest_tag)>;
+  });
+  return nullptr;
+}
+
 #include<Kripke/Kernel/SourcePolicy.h>
 void Kernel::source(Grid_Data *domain){
 
-  policyScope(nesting_order, [&](auto nest_tag){
-    typedef decltype(nest_tag) nest_type;
+  BEGIN_POLICY(nesting_order, nest_type)
     typedef DataPolicy<nest_type> POL;
 
     // Loop over zoneset subdomains
-    forallZoneSets<seq_pol>(domain, [&](int zs, int sdom_id, Subdomain &sdom){
+    FORALL_ZONESETS(seq_pol, domain, sdom_id, sdom)
       typename POL::View_Phi     phi_out(sdom.phi_out->ptr(), domain, sdom_id);
       typename POL::View_MixedToZones mixed_to_zones((IZone*)&sdom.mixed_to_zones[0], domain, sdom_id);
       typename POL::View_MixedToMaterial mixed_material((IMaterial*)&sdom.mixed_material[0], domain, sdom_id);
@@ -236,16 +299,14 @@ void Kernel::source(Grid_Data *domain){
           }
       }); // forall
 
-    }); // zonesets
-
-  }); // policy
+    END_FORALL
+  END_POLICY
 }
 
 
 #include<Kripke/Kernel/SweepPolicy.h>
 void Kernel::sweep(Grid_Data *domain, int sdom_id) {
-  policyScope(nesting_order, [&](auto nest_tag){
-    typedef decltype(nest_tag) nest_type;
+  BEGIN_POLICY(nesting_order, nest_type)
     typedef DataPolicy<nest_type> POL;
 
     Subdomain *sdom = &domain->subdomains[sdom_id];
@@ -304,6 +365,6 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
         face_fr(d,g,i,k) = 2.0 * psi_d_g_z - face_fr(d,g,i,k);
         face_bo(d,g,i,j) = 2.0 * psi_d_g_z - face_bo(d,g,i,j);
     }); // forall3
-  }); // policy  
+  END_POLICY
 }
 
