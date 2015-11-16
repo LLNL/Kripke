@@ -174,6 +174,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
 
         // Set the variables for this subdomain
         sdom.setVars(ell[ds], ell_plus[ds], phi[zs], phi_out[zs]);
+
 #ifdef KRIPKE_USE_CUDA
         sdom.d_phi = d_phi[zs];
         sdom.d_phi_out = d_phi_out[zs];
@@ -286,8 +287,6 @@ double Grid_Data::particleEdit(void)
   double part = 0.0;
   double device_part = 0.0;
 
-  int printed = 0;
-
   for(int sdom_id = 0;sdom_id < subdomains.size();++ sdom_id){
 
     Subdomain &sdom = subdomains[sdom_id];
@@ -321,50 +320,24 @@ double Grid_Data::particleEdit(void)
 	abort();
       }
 
+#ifdef KRIPKE_ZGD_FLUX_REGISTERS
+      nppsSum_64f ( sdom.d_psi, nLength, npp_result, npp_scratch );
+#else
       nppsSum_64f ( sdom.psi->ptr(), nLength, npp_result, npp_scratch );
+#endif
 
       // recover sum
       double local_npp_sum = 0;
       cudaMemcpy ( &local_npp_sum, npp_result, sizeof(double), cudaMemcpyDeviceToHost );
-      //printf ("local sum = %e \n", local_npp_sum );
 
       double w = dirs[0].w;
       device_part += local_npp_sum*w;
-      //printf ("device_part = %e \n", device_part);
       part = device_part;
-
-      if ( printed == 0 ) {
-	//printf ("GPU particles\n");
-	printed++;
-      }
 
     }
     else {
  
 #endif
-
-
-    /*    
-#if 0
-    if (kernel->NEST_ZDG){
-#pragma omp parallel for reduction(+:part) 
-      for(int z = 0;z < num_zones;++ z){
-        for(int d = 0;d < num_directions;++ d){
-          double w = dirs[d].w;
-          double *psi_zd = sdom.psi->ptr(0,d,z);
-          for(int g = 0;g < num_groups;++ g){
-            part += w * psi_zd[g];//    (*sdom.psi)(g,d,z);
-          }
-        }
-      }
-    }
-    else{
-#endif
-    */
-
-      if ( printed == 0 ) {
-	printed++;
-      }
 
 #pragma omp parallel for reduction(+:part) num_threads(1) 
     for(int z = 0;z < num_zones;++ z){

@@ -127,6 +127,7 @@ void Kernel_3d_ZGD::LTimes(Grid_Data *grid_data) {
   if(sweep_mode == SWEEP_GPU)
     //int i = 0;
     set_cudaMemZeroAsync( (void *) grid_data->d_phi[ds], (size_t)(grid_data->phi[ds]->elements) * sizeof(double));
+    //int i=0;
   else
     grid_data->phi[ds]->clear(0.0);
 #else
@@ -431,7 +432,7 @@ void Kernel_3d_ZGD::scattering(Grid_Data *grid_data){
 	  sdom.d_mixed_offset = (int*) get_cudaMalloc(size_t   (max_Nwarps+1) * sizeof(int)   );
 	  do_cudaMemcpyH2D( (void *) (sdom.d_mixed_offset), (void *) offsets, (size_t) (max_Nwarps+1) * sizeof(int));
 	}
-	
+
 	cuda_scattering_ZGD(sdom.d_mixed_to_zones, sdom.d_mixed_material, sdom.d_mixed_fraction, sdom.d_mixed_offset,
 			    sdom.d_phi, sdom.d_phi_out, grid_data->d_sigs[0], grid_data->d_sigs[1], grid_data->d_sigs[2], 
 			    grid_data->d_moment_to_coeff,
@@ -600,7 +601,6 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
        do_cudaMemcpyH2D( (void *) (sdom->d_delta_z), (void *) dz, (size_t) (local_kmax+2) * sizeof(double));
      }
 
-
   //LG allocate directions on GPU
      if ( sdom->d_directions == NULL){
          sdom->d_directions = (Directions*) get_cudaMalloc((size_t)  num_directions * sizeof(Directions) );
@@ -612,8 +612,6 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
      }
 
 #ifdef  KRIPKE_ZGD_FLUX_REGISTERS
-
-     cudaCheckError();
 
      cuda_sweep_ZGD_fluxRegisters ( local_imax,
 				    local_jmax,
@@ -638,8 +636,6 @@ void Kernel_3d_ZGD::sweep(Subdomain *sdom) {
 				    );
 
 #else
-
-     cudaCheckError();
 
      cuda_sweep_ZGD( sdom->d_rhs, sdom->phi->ptr(),
                      sdom->psi->ptr(), sdom->d_sigt,  sdom->d_directions,

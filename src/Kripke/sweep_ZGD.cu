@@ -8,14 +8,127 @@
 #include <Kripke/SubTVec.h>
 
 
+/*
+
+  DEVELOPMENT OPTIONS - GPU
+
+
+  Towards fastest DD solution for problem sets which fit in GPU memory.
+  ---------------------------------------------------------------------
+
+  0.   Optimize MPI operation such that completed subdomains communicate boundary fluxes immediately.
+  
+  0.   Measure flux-register kernel bandwidth.
+       + fully characterize where any missing bandwidth is coming from.
+       + try to include all data transferred from GMEM - and match with nprof measurements
+       = 
+
+  1.   Scalability studies.
+       + These need to be ongoing as they are the ultimate indicator of overall performance.
+       + 1-D studies on surface can currently achieve Manhattan distances of 128
+         - larger than the nominal full-scale, 3d, Manhattan distance on Sierra. 
+       + can be expanded to 256 just by using the second K40/node
+       + can be expanded to 2k (16 cores * 128 nodes ... really 160 nodes?) and using MPS
+         - likely config for size would be something like 157 nodes * 14 ranks/node w/ 7ranks/GPU w/ 2 SMs per rank
+	   . 72M zones arranged as 416 x 416 x 416 w/ 4 directions and 2 groups. 
+	 - likely config for throughput would be something like 108 nodes w/ 2 ranks/node, 1rank/GPU and 15 SMs per rank
+	   . 7M zones arranged as 192 x 192 x 192 zones w/ 16 directions and 128 groups 
+       + scalabilitie studies needed on both Intel/Nvidia and Power/Nvidia
+
+  1.   Scaling model
+       + is the sweep operation still as important/dominant as in the past?
+       + what perf/FOM do we expect from Sierra?
+
+  1.   Launch 15 blocks simultaneously - expect one per SMs.  
+       + this should minimize launch latency
+       + this will also permit using a single stream per subdomain for H2D, Kernels, D2H - help claifiy code.
+         - just attach a single stream to each sdom.
+       [DONE]
+
+  1.   Cache i-fluxes in SMEM at start/end of kernel.  Currently these fluxes are read from GMEM when needed 
+       + this potentially (fairly sure) adds significant latency.
+
+  2.   Cache sigma.  Too big for SMEM?  So probably need some new scheme to make efficient.
+       + independent of direction?  So maybe works best when directions used in sets of 16?
+       + sigma will likely need to be restrided as zones first?  Need to look at this.  Might be difficult.
+
+  2.   Investigate alternatives for batched GEMM.
+       + currently only seeing 122 GF/s using cublasDgemmBatched.  Way off device poential of 1.4 TF/s.
+       + Benchmark kernel from CHOLMOD - Darko reports better perf.
+       + Investigate benefits of caching L and L+ 
+       + can go arbitrarily deep here
+
+  2.   Fold ParticleEdit into sweep.  
+       + classic parallel reduction operation
+       + Should be essentially free
+
+  3.   General code cleanup.  requires ADAM
+
+  4.   Clean up templatization of octants.
+       + current code is easy to debug, but very verbose - makes it look like a lot of CUDA code (which it isn't)
+
+  7.   Generalize handling of large numbers of materials.
+       + likely easy if cublasDgemmBatched is successfully replaced
+
+  9.   Generalize the flux register kernel such that it treats groups and directions the same.  
+       + this would eliminate the need for directions to be multiples of 4/16
+       + this would permit the kernel to be efficiently applied to 'isotropic' problems.
+       [NOT REQUIRED?  As soon as the directions are complete, it moves to the next group in the subdomain, 
+       which constitutes coalesced access already.]
+
+  10.  Generalize flux register kernel for arbitrary plane dimensions.
+       + this would minimize the perf effects when zones are not multiples of 8/16 
+
+
+
+  Towards DD of problem sets which don't fit in GPU memory
+  --------------------------------------------------------
+
+  0.   Paper studies.  
+       + SOL time to copy moment-condensed subdomain data to/from host.  
+       + How does this compare to currently measured kernel times?  (Scatter/Source/L+/Sweep/L)
+       + potentially investigate opportunities for further data compression
+       + gets a bit messy when groups and directions are combined - maybe best to still keep these seperate for now.
+       + can only condense one octant worth at a time - so this is only useful when num_moments < num_directions_per_octant?  
+         - Unclear.  Need to examine code.
+       
+  0.   Re-architect Sweep_Solver loop.
+       - the GPU operations need to start and stop at (either right before or right after) Scatter/Source
+       - this is were the state exists in (typically) most compact form - moments*groups*zones.
+
+
+
+  Towards Support for Semi-stuctured 
+  ----------------------------------
+
+  0.   Gated by implementation of TriLinear DG in Kripke
+
+  1.   Paper studies / evaluation
+       + flop counts vs. bandwidth requirements.  What is the SOL limiter?
+
+
+
+  Towards Support for Fully Unstructured
+  --------------------------------------
+
+  0.   Gated / completely dependent on support for Semi-structured?
+
+  1.   Paper studies / evaluation
+
+
+*/
+
+
+
 #define KRESTRICT __restrict__
 
 //#define USE_PSI_HOST_MEM
 
 //#define CU_TIMING
 
-#define FluxPlaneDim 8
-#define FluxGroupDim 16
+#define FluxPlaneDim 16
+#define FluxGroupDim 4
+#define NumSMs 15
   
 #define MAX ((a<b)?b:a)
 #define MIN ((a>b)?b:a)
@@ -192,7 +305,7 @@ int cuda_scattering_ZGD2 ( Subdomain *sdom, double *d_inflated_material, int num
   // accepts a pointer to a list of alpha values - shouldn't be too hard.)
   for ( int imix=0; imix<num_mixed; imix++ ) {
 
-    const double beta = 1.0;
+    const double beta = 1.0;  
 
     double fraction = sdom->mixed_fraction[imix];
     
@@ -252,6 +365,9 @@ int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_psi, double *d_ell,
     static double ** d_Carray = NULL;
     static int ref_num_zones = 0;
 
+    static cudaStream_t ltimesStream[8];
+    static int ltimesstream = 0;
+
     if ( ! h_Aarray ) {
 
       // batched operation is the same every time - so only need to do this once.
@@ -261,7 +377,7 @@ int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_psi, double *d_ell,
       ref_num_zones = num_zones;
       h_Aarray = (double **) malloc (3*num_zones*sizeof(double*));
       h_Barray = h_Aarray + num_zones;
-      h_Carray = h_Barray + num_zones;
+      h_Carray = h_Barray + num_zones; 
       
       cudaMalloc ((void**)&d_Aarray, 3*num_zones*sizeof(double*) ); 
       d_Barray = d_Aarray + num_zones;
@@ -279,12 +395,27 @@ int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_psi, double *d_ell,
       }
       
       cudaMemcpy(d_Aarray, h_Aarray, 3*num_zones*sizeof(double*), cudaMemcpyHostToDevice);
+
+      cudaError_t cuerr;
+      for ( int i=0; i<8; i++ ) {
+	cuerr = cudaStreamCreate ( &(ltimesStream[i]) );
+	if ( cuerr ) abort();
+      }
     }
+
+    //double runtime = -1.0 * omp_get_wtime();
+    
+    cublasSetStream(kripke_cbhandle, ltimesStream[ltimesstream]);
+    ltimesstream++;
+    ltimesstream = ltimesstream%8;
+
+    //printf ("LTimes cublasDgemmBatched m = %d, n = %d, k = %d, zones = %d \n", nidx, num_local_groups, num_local_directions, num_zones);
 
     custat = cublasDgemmBatched ( kripke_cbhandle, CUBLAS_OP_N, CUBLAS_OP_N, nidx, num_local_groups, num_local_directions, &alpha, (const double **) d_Aarray, nidx, 
     				  (const double **) d_Barray, num_local_directions, &beta, 
     				  d_Carray, nidx, num_zones );
     
+    //cudaDeviceSynchronize();
     if ( custat ) {
       printf ("custat = %d \n", custat);
     }
@@ -292,8 +423,9 @@ int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_psi, double *d_ell,
     // terminate cuBLAS - need to move to some cleanup routine
     //cublasDestroy (cbhandle);
     
-    cudaDeviceSynchronize();
-
+    // runtime += omp_get_wtime();
+    // printf ("cublasDgemmBatche LTimes performance = %e GF/s\n", 2.0e-9*nidx*num_local_groups*num_local_directions*num_zones/runtime);
+      
     cudaCheckError();
 
   }
@@ -370,7 +502,6 @@ int  cuda_scattering_ZGD(int *d_mixed_to_zones, int *d_mixed_material, double *d
 
     int y_dim = 6;
     dim3 threadsPerBlock(32,y_dim);
-    
     
     scattering_ZGD_step3<<<480,threadsPerBlock,num_groups*y_dim*sizeof(double)>>>(d_mixed_to_zones,d_mixed_material,d_mixed_fraction,d_mixed_offset,
 										  d_phi,d_phi_out,d_sigs0, d_sigs1, d_sigs2, d_moment_to_coeff,num_mixed,num_moments,num_groups,num_coeff);
@@ -575,7 +706,6 @@ int  cuda_source_ZGD(int *d_mixed_to_zones, int *d_mixed_material, double *d_mix
 		     double *d_phi_out, int num_moments, int num_groups, int num_mixed )
 {
 
-  // printf ("calling cuda_source_ZGD \n");
 
   if ( 0 ) {
     
@@ -639,8 +769,6 @@ int  cuda_LPlusTimes_ZGD(double *d_rhs, double *d_phi_out, double *d_ell_plus,
 #ifndef KRIPKE_ZGD_FLUX_REGISTERS
     
     dim3 threadsPerBlock(32);
-
-    printf ("SLOW\n");
 
     LPlusTimes_ZGD<<<num_zones,threadsPerBlock,num_local_directions*sizeof(double)>>>(d_rhs,d_phi_out,d_ell_plus,num_zones,num_groups, 
 										      num_local_directions, num_local_groups, nidx, group0);
@@ -762,8 +890,8 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
 							  const int i_inc,
 							  const int j_inc,
 							  const int k_inc,
-							  const int direction_offset,
-							  const int group, 
+							  const int direction_offsetX,
+							  const int groupX, 
 							  const int num_groups,
 							  const int num_directions,
 							  const int local_imax,
@@ -778,7 +906,9 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
 							  double * __restrict__ d_psi, 
 							  double * __restrict__ flux_boundary_i,
 							  double * __restrict__ flux_boundary_j,
-							  double * __restrict__ flux_boundary_k
+							  double * __restrict__ flux_boundary_k,
+							  int kernelIn, 
+							  int nKernels
 							  )
 
 /*
@@ -804,6 +934,22 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
   int jBlock, kBlock;
   int i, z;
   double flux_i, flux_j, flux_k;
+
+  //	      (kernel%(num_directions/FluxGroupDim))*FluxGroupDim,
+  //	      kernel/(num_directions/FluxGroupDim),
+
+  
+  int kernel, direction_offset, group;
+
+  kernel = kernelIn + blockIdx.x;
+
+  if ( kernel >= nKernels ) {
+    return;
+  }
+
+  direction_offset = (kernel%(num_directions/FluxGroupDim))*FluxGroupDim;
+  group = kernel/(num_directions/FluxGroupDim);
+  
 
   // Octant-specific rules
   if ( iOct == 0 ) {
@@ -831,7 +977,8 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
   extern __shared__ double smem[];
  
   double * smem_flux_j = (double*) smem;
-  double * smem_flux_k = (double*) &smem_flux_j[FluxPlaneDim*FluxPlaneDim*FluxGroupDim];
+  double * smem_flux_k = (double*) &smem_flux_j [FluxPlaneDim*FluxPlaneDim*FluxGroupDim];
+
 
   const int tid = threadIdx.x ;                                               // local (i.e. rank) thread index
   const int d = tid%FluxGroupDim + direction_offset;                          // direction index (1/2 warp)
@@ -1292,11 +1439,11 @@ int cuda_sweep_ZGD_fluxRegisters ( const int local_imax,
 
   cudaCheckError();
 
-  cudaEventRecord( sdom->sweepEvents[0], sdom->sweepStreams[0] );
+  //cudaEventRecord( sdom->sweepEvents[0], sdom->sweepStreams[0] );
 
-  for ( int i=0; i<32; i++ ) {
-    cudaStreamWaitEvent( sdom->sweepStreams[i], sdom->sweepEvents[0], 0 );
-  }
+  //for ( int i=0; i<32; i++ ) {
+  //  cudaStreamWaitEvent( sdom->sweepStreams[i], sdom->sweepEvents[0], 0 );
+  //}
 
   cudaCheckError();
 
@@ -1329,45 +1476,74 @@ int cuda_sweep_ZGD_fluxRegisters ( const int local_imax,
   double mpi_time_start = MPI_Wtime();
 
   // Required shared memory to hold y and z fluxes (* group size * bytes).  
-  int required_smem = FluxPlaneDim * FluxPlaneDim * FluxGroupDim * 8 * 2;
+  int required_smem = FluxPlaneDim * FluxPlaneDim * FluxGroupDim * 8 * 2 ;
 
-  for ( int kernel=0; kernel<nKernels; kernel++ ) {
+  double omptime = -1.0 * omp_get_wtime();
+
+  cudaCheckError();
+
+  for ( int kernel=0; kernel<nKernels; kernel+=NumSMs ) {
 
     if ( i_inc == 0 ) {
       if ( j_inc == 0 ) {
 	if ( k_inc == 0 ) {
-	  sweep_over_hyperplane_ZGD_fluxRegisters <0,0,0>
-	    <<< 1, threadsPerBlock, required_smem, sdom->sweepStreams[kernel%32] >>> 
-	    ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
-	      local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane);
+	  if ( kernel%NumSMs == 0 ) {
+  cudaCheckError();
+	    sweep_over_hyperplane_ZGD_fluxRegisters <0,0,0>
+	      //	      <<< NumSMs, threadsPerBlock, required_smem, sdom->sweepStreams[kernel%32] >>> 
+	      <<< NumSMs, threadsPerBlock, required_smem, sdom->subDStream >>> 
+	      ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, 
+		kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
+		local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane, kernel, nKernels);
+  cudaCheckError();
+	  }
 	}
 	else {
+	  if ( kernel%NumSMs == 0 ) {
+  cudaCheckError();
 	  sweep_over_hyperplane_ZGD_fluxRegisters <0,0,1>
-	    <<< 1, threadsPerBlock, required_smem, sdom->sweepStreams[kernel%32] >>> 
-	    ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
-	      local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane);
+	    <<< NumSMs, threadsPerBlock, required_smem, sdom->subDStream >>> 
+	    ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, 
+	      kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
+	      local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane, kernel, nKernels);
+  cudaCheckError();
+	  }
 	}
       }
       else {
 	if ( k_inc == 0 ) {
+	  if ( kernel%NumSMs == 0 ) {
+  cudaCheckError();
 	  sweep_over_hyperplane_ZGD_fluxRegisters <0,1,0>
-	    <<< 1, threadsPerBlock, required_smem, sdom->sweepStreams[kernel%32] >>> 
-	    ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
-	      local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane);	
+	    <<< NumSMs, threadsPerBlock, required_smem, sdom->subDStream >>> 
+	    ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, 
+	      kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
+	      local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane, kernel, nKernels);	
+  cudaCheckError();
+	  }
 	}
 	else {
+	  if ( kernel%NumSMs == 0 ) {
+  cudaCheckError();
 	  sweep_over_hyperplane_ZGD_fluxRegisters <0,1,1>
-	    <<< 1, threadsPerBlock, required_smem, sdom->sweepStreams[kernel%32] >>> 
-	    ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
-	      local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane);	
+	    <<< NumSMs, threadsPerBlock, required_smem, sdom->subDStream >>> 
+	    ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, 
+	      kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
+	      local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane, kernel, nKernels);
+
+	  cudaCheckError();
+
+	  }
 	}
       }
     }
     else {
       if ( j_inc == 0 ) {
 	if ( k_inc == 0 ) {
+	  if ( kernel%NumSMs == 0 ) {
+  cudaCheckError();
 	  sweep_over_hyperplane_ZGD_fluxRegisters <1,0,0>
-	    <<< 1, threadsPerBlock, required_smem, sdom->sweepStreams[kernel%32] >>> 
+	    <<< NumSMs, threadsPerBlock, required_smem, sdom->subDStream >>> 
 	    ( nBlocks_j,
 	      nBlocks_k,
 	      i_inc,
@@ -1389,34 +1565,58 @@ int cuda_sweep_ZGD_fluxRegisters ( const int local_imax,
 	      d_psi, 
 	      d_i_plane,                            
 	      d_j_plane,                            
-	      d_k_plane                             
+	      d_k_plane,
+	      kernel,
+	      nKernels
 	      );
+  cudaCheckError();
+	  }
 	}
 	else {
+	  if ( kernel%NumSMs == 0 ) {
+  cudaCheckError();
 	sweep_over_hyperplane_ZGD_fluxRegisters <1,0,1>
-	  <<< 1, threadsPerBlock, required_smem, sdom->sweepStreams[kernel%32] >>> 
-	  ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
-	    local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane);	
+	  <<< NumSMs, threadsPerBlock, required_smem, sdom->subDStream >>> 
+	  ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, 
+	    kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
+	    local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane, kernel, nKernels);	
+  cudaCheckError();
+	  }
 	}
       }
       else {
 	if ( k_inc == 0  ) {
+	  if ( kernel%NumSMs == 0 ) {
+  cudaCheckError();
 	  sweep_over_hyperplane_ZGD_fluxRegisters <1,1,0>
-	    <<< 1, threadsPerBlock, required_smem, sdom->sweepStreams[kernel%32] >>> 
-	    ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
-	      local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane);	
+	    <<< NumSMs, threadsPerBlock, required_smem, sdom->subDStream >>> 
+	    ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, 
+	      kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
+	      local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane, kernel, nKernels);	
+  cudaCheckError();
+	  }
 	}
 	else {
+	  if ( kernel%NumSMs == 0 ) {
+  cudaCheckError();
 	sweep_over_hyperplane_ZGD_fluxRegisters <1,1,1>
-	  <<< 1, threadsPerBlock, required_smem, sdom->sweepStreams[kernel%32] >>> 
-	  ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
-	    local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane);	
+	  <<< NumSMs, threadsPerBlock, required_smem, sdom->subDStream >>> 
+	  ( nBlocks_j, nBlocks_k, i_inc, j_inc, k_inc, (kernel%(num_directions/FluxGroupDim))*FluxGroupDim, 
+	    kernel/(num_directions/FluxGroupDim), num_groups, num_directions,
+	    local_imax, local_jmax, local_kmax, d_dx, d_dy, d_dz, d_rhs, d_sigt, d_direction, d_psi, d_i_plane, d_j_plane, d_k_plane, kernel, nKernels);	
+  cudaCheckError();
+	  }
 	}
       }
     }
     
   }
-  
+
+  cudaCheckError();
+  //cudaDeviceSynchronize();  
+  omptime += omp_get_wtime();
+  //  printf ("bandwidth achieved = %e GB/s, %d, %d, %d, %d, %d, %e \n",
+  //	  16.0e-9/omptime*local_imax*local_jmax*local_kmax*num_directions*num_groups, local_imax, local_jmax, local_kmax, num_directions, num_groups, omptime);
 
   int ierr, my_id;
 
@@ -1916,10 +2116,10 @@ __global__ void LPlusTimes_sweep_over_hyperplane_ZGD(int sliceID, int * __restri
             double psi_fr_z_g_d = psi_fr_z[gd];
             double psi_bo_z_g_d = psi_bo_z[gd];
 
-            /* Calculate new zonal flux */
+            /* Calculate new zonal flux */ 
             double psi_z_g_d = (rhs_local_group[d]
                 + psi_lf_z_g_d * xcos_dxi
-                + psi_fr_z_g_d * ycos_dyj
+                + psi_fr_z_g_d * ycos_dyj 
                 + psi_bo_z_g_d * zcos_dzk)
                 / (xcos_dxi + ycos_dyj + zcos_dzk + block_sigt[group]);
 

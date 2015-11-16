@@ -114,6 +114,8 @@ struct Subdomain {
   double *tempk;
   cudaStream_t sweepStreams[34];
   cudaEvent_t sweepEvents[34];
+  cudaStream_t subDStream;
+  int stream_id;
 
   #ifdef KRIPKE_USE_CUBLAS
     double **d_rhs_ptrs,

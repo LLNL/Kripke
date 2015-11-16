@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
- * Sweep-based solver routine.
- *--------------------------------------------------------------------------*/
+ * Swep-based solver routine.
+ *--------------------------------------------------------------------------*/ 
 
 #include <Kripke.h>
 #include <Kripke/Subdomain.h>
@@ -23,6 +23,7 @@
 #endif
 
 cudaStream_t GlobalStreams[34];
+int sdom_id_inflight[34];
 
 //#define KRIPKE_USE_CUDA_TIMING
 
@@ -89,7 +90,9 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
 							  double * __restrict__ d_psi, 
 							  double * __restrict__ flux_boundary_i,
 							  double * __restrict__ flux_boundary_j,
-							  double * __restrict__ flux_boundary_k
+							  double * __restrict__ flux_boundary_k,
+							  int kernel,
+							  int nKernels
 							  );
 
 double mysecond (void)
@@ -115,6 +118,7 @@ int SweepSolver (Grid_Data *grid_data)
   for ( int i=0; i<34; i++ ) {
     cudaStreamCreate ( &(GlobalStreams[i]) );
     cudaCheckError();
+    sdom_id_inflight[i] = -1;
   }
   // Loop over iterations
   double part_last = 0.0;
@@ -208,7 +212,7 @@ int SweepSolver (Grid_Data *grid_data)
 
       double part = grid_data->particleEdit();
       if(mpi_rank==0){
-        printf("iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
+        printf("iter %d: particle count=%24.16e, change=%e\n", iter, part, (part-part_last)/part);
       }
 
       part_last = part;
@@ -230,7 +234,7 @@ int SweepSolver (Grid_Data *grid_data)
 int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
 {
   //printf ("Entering Sweep Subdomains \n");
-  // Create a new sweep communicator object
+  // Create a new sweep communicator object 
   SweepComm sweep_comm(grid_data);
 
   // Add all subdomains in our list
@@ -241,7 +245,7 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
 
 #ifdef KRIPKE_USE_CUDA
 
-    if(grid_data->kernel->sweep_mode == SWEEP_GPU){
+    if(grid_data->kernel->sweep_mode == SWEEP_GPU){ 
       //LG  copy RHS to device
       double *dptr_h_rhs = sdomA.rhs->ptr();
       if ( sdomA.d_rhs == NULL){ // allocate
@@ -291,11 +295,18 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
 
       }
 
+      static int streamRoundRobin = 0;
+
       if ( sdom->d_streams == NULL ) {
 	for ( int i=0; i<34; i++ ) {
 	  sdom->sweepStreams[i] = GlobalStreams[i]; 
-	}
+	} 
 	sdom->d_streams = new (double);
+
+	sdom->subDStream = GlobalStreams[streamRoundRobin];
+	sdom->stream_id = streamRoundRobin;
+	streamRoundRobin++;
+	streamRoundRobin = streamRoundRobin%32;
       }
 
       if ( sdom->d_events == NULL ) {
@@ -340,6 +351,7 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
 
       cudaCheckError();
 
+      //*
       cudaFuncSetCacheConfig ( sweep_over_hyperplane_ZGD_fluxRegisters<0,0,0>, cudaFuncCachePreferShared );
       cudaFuncSetCacheConfig ( sweep_over_hyperplane_ZGD_fluxRegisters<0,0,1>, cudaFuncCachePreferShared );
       cudaFuncSetCacheConfig ( sweep_over_hyperplane_ZGD_fluxRegisters<1,0,0>, cudaFuncCachePreferShared );
@@ -348,6 +360,7 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
       cudaFuncSetCacheConfig ( sweep_over_hyperplane_ZGD_fluxRegisters<0,1,1>, cudaFuncCachePreferShared );
       cudaFuncSetCacheConfig ( sweep_over_hyperplane_ZGD_fluxRegisters<1,1,0>, cudaFuncCachePreferShared );
       cudaFuncSetCacheConfig ( sweep_over_hyperplane_ZGD_fluxRegisters<1,1,1>, cudaFuncCachePreferShared );
+      //*/
 
     }
 #endif
@@ -368,110 +381,70 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
   /* Loop until we have finished all of our work */
   while(sweep_comm.workRemaining()){
 
-#ifdef KRIPKE_ZGD_FLUX_REGISTERS
-   
-    int  ierr, my_id;
-
-    if(grid_data->kernel->sweep_mode == SWEEP_GPU){
-      cudaCheckError();
-      nvtxRangePushA ("readySubdomains");
-    }
-
-#endif
-
     std::vector<int> sdom_ready = sweep_comm.readySubdomains();
 
-#ifdef KRIPKE_ZGD_FLUX_REGISTERS
-
-    if(grid_data->kernel->sweep_mode == SWEEP_GPU){
-
-      nvtxRangePop();
-
-      cudaCheckError();
-
-      // copy up first boundary planes
-      if ( sdom_ready.size() > 0 ) {
-
-	// ADD boundary plane data here
-	int sdom_id = sdom_ready[0];
-	Subdomain &sdomA = grid_data->subdomains[sdom_id];
-	Subdomain * sdom = &sdomA;
-	int num_directions = sdom->num_directions;
-	int num_groups = sdom->num_groups;
-	int local_imax = sdom->nzones[0];
-	int local_jmax = sdom->nzones[1];
-	int local_kmax = sdom->nzones[2];
-	double *h_i_plane = sdom->plane_data[0]->ptr();
-	double *h_j_plane = sdom->plane_data[1]->ptr();
-	double *h_k_plane = sdom->plane_data[2]->ptr();
-	double *d_i_plane,  *d_j_plane, *d_k_plane;
-	d_i_plane = sdom->d_i_plane;
-	d_j_plane = sdom->d_j_plane;
-	d_k_plane = sdom->d_k_plane;
-	size_t groups_dirs = num_directions * num_groups;
-	int i_plane_zones = local_jmax * local_kmax * groups_dirs;
-	int j_plane_zones = local_imax * local_kmax * groups_dirs;
-	int k_plane_zones = local_imax * local_jmax * groups_dirs; 
-	cudaCheckError();
-	cudaMemcpyAsync(d_i_plane, h_i_plane, i_plane_zones * sizeof(double), cudaMemcpyHostToDevice, sdom->sweepStreams[32]);
-	cudaCheckError();
-	cudaMemcpyAsync(d_j_plane, h_j_plane, j_plane_zones * sizeof(double), cudaMemcpyHostToDevice, sdom->sweepStreams[32]);
-	cudaCheckError();
-	cudaMemcpyAsync(d_k_plane, h_k_plane, k_plane_zones * sizeof(double), cudaMemcpyHostToDevice, sdom->sweepStreams[32]);
-	cudaCheckError();
-
-      }
-
-      cudaDeviceSynchronize();
-
-      nvtxRangePushA("sweepLoop");
-      cudaCheckError();
-
-    }
-#endif
+    cudaCheckError();
 
     for(int idx = 0;idx < sdom_ready.size();++ idx){
+
       double mpi_time_start = MPI_Wtime();
+
       int sdom_id = sdom_ready[idx];
 
 #ifdef KRIPKE_ZGD_FLUX_REGISTERS
 
       Subdomain * sdom;
+      double *h_i_plane;
+      double *h_j_plane;
+      double *h_k_plane;
+      double *d_i_plane,  *d_j_plane, *d_k_plane;
+      int i_plane_zones;
+      int j_plane_zones;
+      int k_plane_zones;
+
       if(grid_data->kernel->sweep_mode == SWEEP_GPU){
 	cudaCheckError();
 
 	Subdomain &sdomA = grid_data->subdomains[sdom_id];
 	sdom = &sdomA;
-	for ( int i=0; i<34; i++ ) {
-	  cudaStreamWaitEvent( sdom->sweepStreams[i], sdom->sweepEvents[0], 0 );
-	}
 
-	// copy up boundary data for NEXT subdomain - overlaps with compute
-	if ( idx+1 < sdom_ready.size() ) {
-	  int sdom_id = sdom_ready[idx+1];
-	  Subdomain &sdomA = grid_data->subdomains[sdom_id];
-	  Subdomain * sdom = &sdomA;
-	  int num_directions = sdom->num_directions;
-	  int num_groups = sdom->num_groups;
-	  int local_imax = sdom->nzones[0];
-	  int local_jmax = sdom->nzones[1];
-	  int local_kmax = sdom->nzones[2];
-	  double *h_i_plane = sdom->plane_data[0]->ptr();
-	  double *h_j_plane = sdom->plane_data[1]->ptr();
-	  double *h_k_plane = sdom->plane_data[2]->ptr();
-	  double *d_i_plane,  *d_j_plane, *d_k_plane;
-	  d_i_plane = sdom->d_i_plane;
-	  d_j_plane = sdom->d_j_plane;
-	  d_k_plane = sdom->d_k_plane;
-	  size_t groups_dirs = num_directions * num_groups;
-	  int i_plane_zones = local_jmax * local_kmax * groups_dirs;
-	  int j_plane_zones = local_imax * local_kmax * groups_dirs;
-	  int k_plane_zones = local_imax * local_jmax * groups_dirs; 
-	  cudaMemcpyAsync(d_i_plane, h_i_plane, i_plane_zones * sizeof(double), cudaMemcpyHostToDevice, sdom->sweepStreams[32]);
-	  cudaMemcpyAsync(d_j_plane, h_j_plane, j_plane_zones * sizeof(double), cudaMemcpyHostToDevice, sdom->sweepStreams[32]);
-	  cudaMemcpyAsync(d_k_plane, h_k_plane, k_plane_zones * sizeof(double), cudaMemcpyHostToDevice, sdom->sweepStreams[32]);
-	  cudaEventRecord( sdom->sweepEvents[0], sdom->sweepStreams[32] );
+	if ( sdom_id_inflight[sdom->stream_id] >= 0 ) {
+	  //printf ("waiting on stream id = %d \n", sdom->stream_id);
+	  // this stream is already being used
+	  // so wait for the stream to finish
+	  cudaStreamSynchronize (sdom->subDStream);
+
+	  // now mark the subdomain which just finished on the GPU as comlete
+	  sweep_comm.markComplete(sdom_id_inflight[sdom->stream_id]);
+
+	  // now mark the stream as in-flight with this subdomain
+	  sdom_id_inflight[sdom->stream_id] = sdom_id;
+
 	}
+	else {
+	  //printf ("NOT waiting on stream id = %d \n", sdom->stream_id);
+	  sdom_id_inflight[sdom->stream_id] = sdom_id;
+	}
+      
+	int num_directions = sdom->num_directions;
+	int num_groups = sdom->num_groups;
+	int local_imax = sdom->nzones[0];
+	int local_jmax = sdom->nzones[1];
+	int local_kmax = sdom->nzones[2];
+	h_i_plane = sdom->plane_data[0]->ptr();
+	h_j_plane = sdom->plane_data[1]->ptr();
+	h_k_plane = sdom->plane_data[2]->ptr();
+	d_i_plane = sdom->d_i_plane;
+	d_j_plane = sdom->d_j_plane;
+	d_k_plane = sdom->d_k_plane;
+	size_t groups_dirs = num_directions * num_groups;
+	i_plane_zones = local_jmax * local_kmax * groups_dirs;
+	j_plane_zones = local_imax * local_kmax * groups_dirs;
+	k_plane_zones = local_imax * local_jmax * groups_dirs; 
+	cudaMemcpyAsync(d_i_plane, h_i_plane, i_plane_zones * sizeof(double), cudaMemcpyHostToDevice, sdom->subDStream);
+	cudaMemcpyAsync(d_j_plane, h_j_plane, j_plane_zones * sizeof(double), cudaMemcpyHostToDevice, sdom->subDStream);
+	cudaMemcpyAsync(d_k_plane, h_k_plane, k_plane_zones * sizeof(double), cudaMemcpyHostToDevice, sdom->subDStream);
+	cudaEventRecord( sdom->sweepEvents[0], sdom->sweepStreams[32] );
 
 #ifdef OCTAVE_PROFILING
 	ierr = MPI_Comm_rank (MPI_COMM_WORLD, &my_id);
@@ -480,55 +453,38 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
 #endif
 
 	cudaCheckError();
+
       }
+
 #endif
 
       /* Use standard Diamond-Difference sweep */
       {
         BLOCK_TIMER(grid_data->timing, Sweep_Kernel);
 
+	cudaCheckError();
         Subdomain &sdom = grid_data->subdomains[sdom_id];
+	cudaCheckError();
         grid_data->kernel->sweep(&sdom);                  // SWEEP 
+	cudaCheckError();
       }
 
 #ifdef KRIPKE_ZGD_FLUX_REGISTERS
 
+      cudaCheckError();
       if(grid_data->kernel->sweep_mode == SWEEP_GPU){
 
-	if ( idx > 0 ) {
-	  // So long as this is not the first domain, then a previous domain is nearing completion
-	  // So wait for the D2H stream to clear and then mark the previous domain as complete
-	  int sdom_id = sdom_ready[idx-1];
-	  Subdomain &sdomA = grid_data->subdomains[sdom_id];
-	  Subdomain * sdom = &sdomA;
-	  cudaStreamSynchronize(sdom->sweepStreams[33]);
-	  sweep_comm.markComplete(sdom_id);
-	}
+	cudaCheckError();
 
-	cudaDeviceSynchronize();
-      
 	// copy down the boundary data.  no need to unswizzle.  asynchronously in dedicated copy down stream
 	mpi_time_start = MPI_Wtime();
       
-	int num_directions = sdom->num_directions;
-	int num_groups = sdom->num_groups;
-	int local_imax = sdom->nzones[0];
-	int local_jmax = sdom->nzones[1];
-	int local_kmax = sdom->nzones[2];
-	double *h_i_plane = sdom->plane_data[0]->ptr();
-	double *h_j_plane = sdom->plane_data[1]->ptr();
-	double *h_k_plane = sdom->plane_data[2]->ptr();
-	double *d_i_plane,  *d_j_plane, *d_k_plane;
-	d_i_plane = sdom->d_i_plane;
-	d_j_plane = sdom->d_j_plane;
-	d_k_plane = sdom->d_k_plane;
-	size_t groups_dirs = num_directions * num_groups;
-	int i_plane_zones = local_jmax * local_kmax * groups_dirs;
-	int j_plane_zones = local_imax * local_kmax * groups_dirs;
-	int k_plane_zones = local_imax * local_jmax * groups_dirs; 
-	cudaMemcpyAsync(h_i_plane, d_i_plane, i_plane_zones * sizeof(double), cudaMemcpyDeviceToHost, sdom->sweepStreams[33]);
-	cudaMemcpyAsync(h_j_plane, d_j_plane, j_plane_zones * sizeof(double), cudaMemcpyDeviceToHost, sdom->sweepStreams[33]);
-	cudaMemcpyAsync(h_k_plane, d_k_plane, k_plane_zones * sizeof(double), cudaMemcpyDeviceToHost, sdom->sweepStreams[33]);
+	cudaCheckError();
+
+	cudaMemcpyAsync(h_i_plane, d_i_plane, i_plane_zones * sizeof(double), cudaMemcpyDeviceToHost, sdom->subDStream);
+	cudaMemcpyAsync(h_j_plane, d_j_plane, j_plane_zones * sizeof(double), cudaMemcpyDeviceToHost, sdom->subDStream);
+	cudaMemcpyAsync(h_k_plane, d_k_plane, k_plane_zones * sizeof(double), cudaMemcpyDeviceToHost, sdom->subDStream);
+	cudaCheckError();
 
 #ifdef OCTAVE_PROFILING
 	ierr = MPI_Comm_rank (MPI_COMM_WORLD, &my_id);
@@ -536,17 +492,10 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
 		mpi_time_start, 1.0*my_id, MPI_Wtime()-mpi_time_start, 1.0, .8,.8,.8, 0.0, 1.0, 0.0 );
 #endif
 
-	// Mark as complete (and do any communication)
-	if ( idx+1 ==  sdom_ready.size() ){
-	  cudaStreamSynchronize(sdom->sweepStreams[33]);
-	  sweep_comm.markComplete(sdom_id);
-	}
       }
       else {
-
 	// Mark as complete (and do any communication)
 	sweep_comm.markComplete(sdom_id);
-
       }
 
 #else
@@ -558,29 +507,23 @@ int SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data)
 
     }
 
-  }
+    for ( int idx=0; idx<32; idx++ ) {
 
-#ifdef KRIPKE_ZGD_FLUX_REGISTERS
+      if ( sdom_id_inflight[idx] >= 0 ) {
+	// this stream is already being used
+	// so wait for the stream to finish
+	cudaStreamSynchronize (GlobalStreams[idx]);
 
+	// now mark the subdomain which just finished on the GPU as comlete
+	sweep_comm.markComplete(sdom_id_inflight[idx]);
 
-  if(grid_data->kernel->sweep_mode == SWEEP_GPU){
-    nvtxRangePop();
-      
-    // Add all subdomains in our list
-    for(int i = 0;i < subdomain_list.size();++ i){
-      
-      int sdom_id = subdomain_list[i];
-      Subdomain &sdomA = grid_data->subdomains[sdom_id];
-      
-      // SR - copy back Psi data      
-      Subdomain * sdom = &sdomA;
-      cudaMemcpyAsync(sdom->psi->ptr(), sdom->d_psi, sdom->num_groups * sdom->num_zones * sdom->num_directions * sizeof(double), cudaMemcpyDeviceToHost, sdom->sweepStreams[0] );
-      
+	// now mark the stream as in-flight with this subdomain
+	sdom_id_inflight[idx] = -1;
+
+      }
     }
-    
-  }
 
-#endif
+  }
 
   return(0);
 }
