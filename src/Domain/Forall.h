@@ -196,7 +196,7 @@ RAJA_INLINE void policyScope(Nesting_Order nest, REST... rest){
 
 
 
-//#define KRIPKE_USE_PSCOPE
+#define KRIPKE_USE_PSCOPE
 
 #ifdef KRIPKE_USE_PSCOPE
 
@@ -211,7 +211,7 @@ RAJA_INLINE void policyScope(Nesting_Order nest, REST... rest){
   forallSubdomains<SDOM_POL>(DOMAIN, [&](int ID, Subdomain &SDOM){
 
 #define FORALL_ZONESETS(SDOM_POL, DOMAIN, ID, SDOM) \
-  forallZoneSets<SDOM_POL>(DOMAIN, [&](int ID, Subdomain &SDOM){
+  forallZoneSets<SDOM_POL>(DOMAIN, [&](int zone_set, int ID, Subdomain &SDOM){
 
 
 #define END_FORALL });
