@@ -69,7 +69,8 @@ const int num_colors = sizeof(colors)/sizeof(uint32_t);
 
 
 template <int iOct, int jOct, int kOct>
-__global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
+//__global__ 
+void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
 							  const int nBlocks_k,
 							  const int i_inc,
 							  const int j_inc,
@@ -81,16 +82,16 @@ __global__ void sweep_over_hyperplane_ZGD_fluxRegisters ( const int nBlocks_j,
 							  const int local_imax,
 							  const int local_jmax,
 							  const int local_kmax,
-							  double * __restrict__ d_dx, 
-							  double * __restrict__ d_dy, 
-							  double * __restrict__ d_dz, 
-							  double * __restrict__ d_rhs, 
-							  const double * __restrict__ d_sigt, 
-							  Directions * __restrict__  d_direction,
-							  double * __restrict__ d_psi, 
-							  double * __restrict__ flux_boundary_i,
-							  double * __restrict__ flux_boundary_j,
-							  double * __restrict__ flux_boundary_k,
+							  double * d_dx, 
+							  double * d_dy, 
+							  double * d_dz, 
+							  double * d_rhs, 
+							  const double * d_sigt, 
+							  Directions * d_direction,
+							  double * d_psi, 
+							  double * flux_boundary_i,
+							  double * flux_boundary_j,
+							  double * flux_boundary_k,
 							  int kernel,
 							  int nKernels
 							  );

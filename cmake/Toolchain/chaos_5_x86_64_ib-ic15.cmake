@@ -1,14 +1,14 @@
-set(ICC_VER 15.0.133)
+set(ICC_VER 15.0.223 CACHE STRING foobar FORCE)
 
-set(CMAKE_C_COMPILER mpiicc-${ICC_VER})
-set(CMAKE_CXX_COMPILER mpiicpc-${ICC_VER})
-set(CMAKE_LINKER mpiicpc-${ICC_VER})
+set(CMAKE_C_COMPILER "mpiicc-${ICC_VER}" CACHE STRING barfoo FORCE)
+set(CMAKE_CXX_COMPILER "mpiicpc-${ICC_VER}" CACHE STRING barfoo FORCE)
+set(CMAKE_LINKER "mpiicpc-${ICC_VER}" CACHE STRING barfoo FORCE)
 
-set(MPI "-mpi=mvapich2-intel-1.9")
+set(CMAKE_CXX_FLAGS "-mpi=mvapich2-intel-1.9 -gxx-name=g++-4.6.1 -gcc-name=gcc-4.6.1 -g -O3 -unroll-aggressive -finline-functions -axAVX -msse4.2" CACHE STRING barfoo FORCE)
 
-set(CMAKE_C_FLAGS "${MPI} -g -fno-omit-frame-pointer -unroll-aggressive -finline-functions -axAVX -msse4.2 -no-fma ${CMAKE_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "${MPI} -g -qopt-report=5 -std=c++11 -unroll-aggressive -finline-functions -axAVX -msse4.2  ${CMAKE_CXX_FLAGS}")
+set(CMAKE_LINKER_FLAGS "-mpi=mvapich2-intel-1.9 -gxx-name=g++-4.6.1 -gcc-name=gcc-4.6.1" CACHE STRING barfoo FORCE)
 
-set(PKG_PATH "/usr/gapps/bdiv/${SYS_TYPE}/icc-14.0-opt-mvapich2-intel-1.9")
-
+# CUDA Compiler Setup
+set(CUDA_NVCC_FLAGS "-arch compute_35" CACHE STRING foobar FORCE)
+set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE STRING barfoo FORCE)
 
