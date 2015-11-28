@@ -65,7 +65,7 @@
     class Forall2Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, RAJA::RangeSegment, RAJA::RangeSegment> {
       public:  
         template<typename BODY>
-        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY const &body) const {
+        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY body) const {
           int const i_start = is_i.getBegin();
           int const i_end   = is_i.getEnd();
 
@@ -85,7 +85,7 @@
     class Forall2Executor<RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec, RAJA::RangeSegment, RAJA::RangeSegment> {
       public:  
         template<typename BODY>
-        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY const &body) const {
+        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY body) const {
           int const i_start = is_i.getBegin();
           int const i_end   = is_i.getEnd();
 
@@ -109,16 +109,16 @@
  ******************************************************************/
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename TI, typename TJ, typename BODY>
-    RAJA_INLINE void forall2_policy(Forall2_Execute_Tag, TI const &is_i, TJ const &is_j, BODY const &body);
+    RAJA_INLINE void forall2_policy(Forall2_Execute_Tag, TI const &is_i, TJ const &is_j, BODY body);
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename TI, typename TJ, typename BODY>
-    RAJA_INLINE void forall2_policy(Forall2_Permute_Tag, TI const &is_i, TJ const &is_j, BODY const &body);
+    RAJA_INLINE void forall2_policy(Forall2_Permute_Tag, TI const &is_i, TJ const &is_j, BODY body);
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename TI, typename TJ, typename BODY>
-    RAJA_INLINE void forall2_policy(Forall2_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, BODY const &body);
+    RAJA_INLINE void forall2_policy(Forall2_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, BODY body);
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename TI, typename TJ, typename BODY>
-    RAJA_INLINE void forall2_policy(Forall2_Tile_Tag, TI const &is_i, TJ const &is_j, BODY const &body);
+    RAJA_INLINE void forall2_policy(Forall2_Tile_Tag, TI const &is_i, TJ const &is_j, BODY body);
 
 
 /******************************************************************
@@ -128,7 +128,7 @@
     template<typename POLICY_I, typename POLICY_J, typename TI, typename TJ>
     struct Forall2Executor {
       template<typename BODY>
-      inline void operator()(TI const &is_i, TJ const &is_j, BODY const &body) const {
+      inline void operator()(TI const &is_i, TJ const &is_j, BODY body) const {
         RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(int i){
           RAJA::forall<POLICY_J>(is_j, RAJA_LAMBDA(int j){
             body(i, j);
@@ -143,7 +143,7 @@
  ******************************************************************/
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename TI, typename TJ, typename BODY>
-    RAJA_INLINE void forall2_permute(PERM_IJ, TI const &is_i, TJ const &is_j, BODY const &body){
+    RAJA_INLINE void forall2_permute(PERM_IJ, TI const &is_i, TJ const &is_j, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -156,7 +156,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename TI, typename TJ, typename BODY>
-    RAJA_INLINE void forall2_permute(PERM_JI, TI const &is_i, TJ const &is_j, BODY const &body){
+    RAJA_INLINE void forall2_permute(PERM_JI, TI const &is_i, TJ const &is_j, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -179,7 +179,7 @@
      * This is the default termination case.
      */
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename TI, typename TJ, typename BODY>
-    RAJA_INLINE void forall2_policy(Forall2_Execute_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
+    RAJA_INLINE void forall2_policy(Forall2_Execute_Tag, TI const &is_i, TJ const &is_j, BODY body){
 
       // Create executor object to launch loops
       Forall2Executor<PolicyI, PolicyJ, TI, TJ> exec;
@@ -194,7 +194,7 @@
      * Provides loop interchange.
      */
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename TI, typename TJ, typename BODY>
-    RAJA_INLINE void forall2_policy(Forall2_Permute_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
+    RAJA_INLINE void forall2_policy(Forall2_Permute_Tag, TI const &is_i, TJ const &is_j, BODY body){
       // Get the loop permutation
       typedef typename POLICY::LoopOrder LoopOrder;
 
@@ -207,7 +207,7 @@
      * OpenMP Parallel Region Section policy function.
      */
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename TI, typename TJ, typename BODY>
-    RAJA_INLINE void forall2_policy(Forall2_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
+    RAJA_INLINE void forall2_policy(Forall2_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -226,7 +226,7 @@
      * Tiling policy function.
      */
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename TI, typename TJ, typename BODY>
-    RAJA_INLINE void forall2_policy(Forall2_Tile_Tag, TI const &is_i, TJ const &is_j, BODY const &body){
+    RAJA_INLINE void forall2_policy(Forall2_Tile_Tag, TI const &is_i, TJ const &is_j, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
       typedef typename POLICY::TileI TileI;
@@ -248,7 +248,7 @@
  ******************************************************************/
 
     template<typename POLICY, typename IdxI=int, typename IdxJ=int, typename TI, typename TJ, typename BODY>
-    RAJA_INLINE void forall2(TI const &is_i, TJ const &is_j, BODY const &body){
+    RAJA_INLINE void forall2(TI const &is_i, TJ const &is_j, BODY body){
       // extract next policy
       typedef typename POLICY::NextPolicy             NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag  NextPolicyTag;

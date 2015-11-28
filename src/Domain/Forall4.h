@@ -69,7 +69,7 @@
     class Forall4Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, POLICY_K, POLICY_L, RAJA::RangeSegment, RAJA::RangeSegment, TK, TL> {
       public:  
         template<typename BODY>
-        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, TK const &is_k, TL const &is_l, BODY const &body) const {
+        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, TK const &is_k, TL const &is_l, BODY body) const {
           int const i_start = is_i.getBegin();
           int const i_end   = is_i.getEnd();
 
@@ -94,7 +94,7 @@
     class Forall4Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, POLICY_L, RAJA::RangeSegment, RAJA::RangeSegment, RAJA::RangeSegment, TL> {
       public:  
         template<typename BODY>
-        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, TL const &is_l, BODY const &body) const {
+        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, TL const &is_l, BODY body) const {
           int const i_start = is_i.getBegin();
           int const i_end   = is_i.getEnd();
 
@@ -120,7 +120,7 @@
     class Forall4Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, RAJA::RangeSegment, RAJA::RangeSegment, RAJA::RangeSegment, RAJA::RangeSegment> {
       public:  
         template<typename BODY>
-        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, RAJA::RangeSegment const &is_l, BODY const &body) const {
+        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, RAJA::RangeSegment const &is_l, BODY body) const {
           int const i_start = is_i.getBegin();
           int const i_end   = is_i.getEnd();
 
@@ -148,7 +148,7 @@
     class Forall4Executor<RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec, POLICY_K, POLICY_L, RAJA::RangeSegment, RAJA::RangeSegment, TK, TL> {
       public:  
         template<typename BODY>
-        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, TK const &is_k, TL const &is_l, BODY const &body) const {
+        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, TK const &is_k, TL const &is_l, BODY body) const {
           int const i_start = is_i.getBegin();
           int const i_end   = is_i.getEnd();
 
@@ -173,7 +173,7 @@
     class Forall4Executor<RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec, POLICY_L, RAJA::RangeSegment, RAJA::RangeSegment, RAJA::RangeSegment, TL> {
       public:  
         template<typename BODY>
-        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, TL const &is_l, BODY const &body) const {
+        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, TL const &is_l, BODY body) const {
           int const i_start = is_i.getBegin();
           int const i_end   = is_i.getEnd();
 
@@ -199,7 +199,7 @@
     class Forall4Executor<RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec, RAJA::RangeSegment, RAJA::RangeSegment, RAJA::RangeSegment, RAJA::RangeSegment> {
       public:  
         template<typename BODY>
-        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, RAJA::RangeSegment const &is_l, BODY const &body) const {
+        inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, RAJA::RangeSegment const &is_l, BODY body) const {
           int const i_start = is_i.getBegin();
           int const i_end   = is_i.getEnd();
 
@@ -231,16 +231,16 @@
  ******************************************************************/
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_policy(Forall4_Execute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body);
+    RAJA_INLINE void forall4_policy(Forall4_Execute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body);
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_policy(Forall4_Permute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body);
+    RAJA_INLINE void forall4_policy(Forall4_Permute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body);
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_policy(Forall4_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body);
+    RAJA_INLINE void forall4_policy(Forall4_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body);
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_policy(Forall4_Tile_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body);
+    RAJA_INLINE void forall4_policy(Forall4_Tile_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body);
 
 
 /******************************************************************
@@ -250,7 +250,7 @@
     template<typename POLICY_I, typename POLICY_J, typename POLICY_K, typename POLICY_L, typename TI, typename TJ, typename TK, typename TL>
     struct Forall4Executor {
       template<typename BODY>
-      inline void operator()(TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body) const {
+      inline void operator()(TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body) const {
         RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(int i){
           exec(is_j, is_k, is_l, RAJA_LAMBDA(int j, int k, int l){
             body(i, j, k, l);
@@ -268,7 +268,7 @@
  ******************************************************************/
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_IJKL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_IJKL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -281,7 +281,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_IJLK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_IJLK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -294,7 +294,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_IKJL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_IKJL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -307,7 +307,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_IKLJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_IKLJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -320,7 +320,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_ILJK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_ILJK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -333,7 +333,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_ILKJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_ILKJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -346,7 +346,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_JIKL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_JIKL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -359,7 +359,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_JILK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_JILK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -372,7 +372,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_JKIL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_JKIL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -385,7 +385,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_JKLI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_JKLI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -398,7 +398,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_JLIK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_JLIK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -411,7 +411,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_JLKI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_JLKI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -424,7 +424,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_KIJL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_KIJL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -437,7 +437,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_KILJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_KILJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -450,7 +450,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_KJIL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_KJIL, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -463,7 +463,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_KJLI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_KJLI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -476,7 +476,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_KLIJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_KLIJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -489,7 +489,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_KLJI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_KLJI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -502,7 +502,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_LIJK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_LIJK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -515,7 +515,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_LIKJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_LIKJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -528,7 +528,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_LJIK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_LJIK, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -541,7 +541,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_LJKI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_LJKI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -554,7 +554,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_LKIJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_LKIJ, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -567,7 +567,7 @@
     }
 
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_permute(PERM_LKJI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_permute(PERM_LKJI, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -590,7 +590,7 @@
      * This is the default termination case.
      */
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_policy(Forall4_Execute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_policy(Forall4_Execute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
 
       // Create executor object to launch loops
       Forall4Executor<PolicyI, PolicyJ, PolicyK, PolicyL, TI, TJ, TK, TL> exec;
@@ -605,7 +605,7 @@
      * Provides loop interchange.
      */
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_policy(Forall4_Permute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_policy(Forall4_Permute_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       // Get the loop permutation
       typedef typename POLICY::LoopOrder LoopOrder;
 
@@ -618,7 +618,7 @@
      * OpenMP Parallel Region Section policy function.
      */
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_policy(Forall4_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_policy(Forall4_OMP_Parallel_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
 
@@ -637,7 +637,7 @@
      * Tiling policy function.
      */
     template<typename POLICY, typename PolicyI, typename PolicyJ, typename PolicyK, typename PolicyL, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4_policy(Forall4_Tile_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4_policy(Forall4_Tile_Tag, TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       typedef typename POLICY::NextPolicy            NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag NextPolicyTag;
       typedef typename POLICY::TileI TileI;
@@ -665,7 +665,7 @@
  ******************************************************************/
 
     template<typename POLICY, typename IdxI=int, typename IdxJ=int, typename IdxK=int, typename IdxL=int, typename TI, typename TJ, typename TK, typename TL, typename BODY>
-    RAJA_INLINE void forall4(TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY const &body){
+    RAJA_INLINE void forall4(TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
       // extract next policy
       typedef typename POLICY::NextPolicy             NextPolicy;
       typedef typename POLICY::NextPolicy::PolicyTag  NextPolicyTag;

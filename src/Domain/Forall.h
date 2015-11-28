@@ -51,7 +51,7 @@ typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::simd_exec> sweep_paral
 
 // Subdomain loops
 template<typename SubdomainPolicy, typename BODY>
-RAJA_INLINE void forallSubdomains(Grid_Data *grid_data, BODY const &body){
+RAJA_INLINE void forallSubdomains(Grid_Data *grid_data, BODY body){
 
   RAJA::forall<SubdomainPolicy>(
     RAJA::RangeSegment(0, grid_data->subdomains.size()),
@@ -66,7 +66,7 @@ RAJA_INLINE void forallSubdomains(Grid_Data *grid_data, BODY const &body){
 
 // Loop over zoneset subdomains
 template<typename SubdomainPolicy, typename BODY>
-RAJA_INLINE void forallZoneSets(Grid_Data *grid_data, BODY const &body){
+RAJA_INLINE void forallZoneSets(Grid_Data *grid_data, BODY body){
 
   RAJA::forall<SubdomainPolicy>(
     RAJA::RangeSegment(0, grid_data->num_zone_sets),
@@ -88,17 +88,17 @@ RAJA_INLINE void forallZoneSets(Grid_Data *grid_data, BODY const &body){
 
 // Foreward decl
 template<typename TAG, typename BODY>
-RAJA_INLINE void executeScope(BODY const &body);
+RAJA_INLINE void executeScope(BODY body);
 
 // Foreward decl
 template<typename TAG, typename T1, typename L1, typename... REST>
-RAJA_INLINE void executeScope(T1 t1, L1 const &l1, REST... rest);
+RAJA_INLINE void executeScope(T1 t1, L1 l1, REST... rest);
 
 
 template<typename T, typename TAG>
 struct ExecuteIfMatches{
     template<typename BODY>
-    RAJA_INLINE void match(BODY const &body) const {
+    RAJA_INLINE void match(BODY body) const {
       // nop
     }
 
@@ -112,7 +112,7 @@ struct ExecuteIfMatches{
 template<typename T>
 struct ExecuteIfMatches<T, T>{
     template<typename BODY>
-    RAJA_INLINE void match(BODY const &body) const {
+    RAJA_INLINE void match(BODY body) const {
       body(T());
     }
 
@@ -129,7 +129,7 @@ struct ExecuteIfMatches<T, T>{
  * This handles the default policyScope lambd
  */
 template<typename TAG, typename BODY>
-RAJA_INLINE void executeScope(BODY const &body){
+RAJA_INLINE void executeScope(BODY body){
   body(TAG());
 }
 
@@ -139,7 +139,7 @@ RAJA_INLINE void executeScope(BODY const &body){
  * If they are not the same, it recursively calls itself with the remaining types and arguments in REST... and rest...
  */
 template<typename TAG, typename T1, typename L1, typename... REST>
-RAJA_INLINE void executeScope(T1 t1, L1 const &l1, REST... rest){
+RAJA_INLINE void executeScope(T1 t1, L1 l1, REST... rest){
   ExecuteIfMatches<T1, TAG> test;
   test.match(l1); // execute l1(T1()) if it matches
   test.not_match(rest...); // otherwise, try the remaining specializations

@@ -90,7 +90,7 @@ def writeForallExecutor(ndims):
   args = map(lambda a: "T%s const &is_%s"%(a.upper(), a), dim_names)
   argstr = ", ".join(args)  
   print "      template<typename BODY>"
-  print "      inline void operator()(%s, BODY const &body) const {" % argstr
+  print "      inline void operator()(%s, BODY body) const {" % argstr
   print "        RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(int i){"
   if ndims == 2:  # 2 dimension termination case:
     print "          RAJA::forall<POLICY_J>(is_j, RAJA_LAMBDA(int j){"
@@ -159,7 +159,7 @@ def writeForallExecuteOMP(ndims):
       args = map(lambda a: "RAJA::RangeSegment const &is_"+ a, dim_names[0:depth])
       args.extend(map(lambda a: "T%s const &is_%s"%(a.upper(),a), dim_names[depth:ndims]))
       argstr = ", ".join(args)  
-      print "        inline void operator()(%s, BODY const &body) const {" % argstr
+      print "        inline void operator()(%s, BODY body) const {" % argstr
   #    print "          printf(\"collapse(%d)\\n\");" % depth
       
       # get begin and end indices each collapsed RangeSegment
@@ -241,7 +241,7 @@ def writeForallPermutations(ndims):
   isstr = ", ".join(map(lambda a: "T%s const &is_%s"%(a.upper(), a) , dim_names))
   
   template_string = "    template<typename POLICY, %s, %s, typename BODY>" % (polstr, setstr)
-  fcnargs_string = "%s, BODY const &body" % isstr
+  fcnargs_string = "%s, BODY body" % isstr
 
 
   print ""
@@ -292,7 +292,7 @@ def writeForall_policyForeward(ndims):
   isstr = ", ".join(map(lambda a: "T%s const &is_%s"%(a.upper(), a) , dim_names))
   
   template_string = "    template<typename POLICY, %s, %s, typename BODY>" % (polstr, setstr)
-  fcnargs_string = "%s, BODY const &body" % isstr
+  fcnargs_string = "%s, BODY body" % isstr
   
   
   print ""
@@ -329,7 +329,7 @@ def writeForall_policy(ndims):
   isstr = ", ".join(map(lambda a: "T%s const &is_%s"%(a.upper(), a) , dim_names))
 
   template_string = "    template<typename POLICY, %s, %s, typename BODY>" % (polstr, setstr)
-  fcnargs_string = "%s, BODY const &body" % isstr
+  fcnargs_string = "%s, BODY body" % isstr
   
   
   print ""
@@ -450,7 +450,7 @@ def writeUserIface(ndims):
   
   args = map(lambda a: "T%s const &is_%s"%(a.upper(), a), dim_names)
   argstr = ", ".join(args)
-  print "    RAJA_INLINE void forall%d(%s, BODY const &body){" % (ndims, argstr)
+  print "    RAJA_INLINE void forall%d(%s, BODY body){" % (ndims, argstr)
   
   args = map(lambda a: "T"+a.upper(), dim_names)
   argstr = ", ".join(args)
