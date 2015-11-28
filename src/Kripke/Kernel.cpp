@@ -108,12 +108,12 @@ void Kernel::LTimes(Grid_Data *domain) {
 
       dForall4<LTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
         domain, sdom_id, 
-        [=](auto nm, auto d, auto g, auto z){
+        RAJA_LAMBDA (auto nm, auto d, auto g, auto z){
   
           IGlobalGroup g_global( (*g) + group0);
           
           phi(nm, g_global, z) += ell(d, nm) * psi(d, g, z);
-      });
+        });
 
     END_FORALL
   END_POLICY
@@ -142,12 +142,12 @@ void Kernel::LPlusTimes(Grid_Data *domain) {
       
       dForall4<LPlusTimesPolicy<nest_type>, IMoment, IDirection, IGroup, IZone>(
         domain, sdom_id, 
-        [=](auto nm, auto d, auto g, auto z){
+        RAJA_LAMBDA (auto nm, auto d, auto g, auto z){
   
           IGlobalGroup g_global( (*g) + group0);
   
           rhs(d, g, z) += ell_plus(d, nm) * phi_out(nm, g_global, z);  
-      });
+        });
 
     END_FORALL
   END_POLICY
@@ -183,7 +183,7 @@ void Kernel::scattering(Grid_Data *domain){
       
       dForall4<ScatteringPolicy<nest_type>, IMoment, IGlobalGroup, IGlobalGroup, IMix>(
         domain, sdom_id,
-        [=](auto nm, auto g, auto gp, auto mix){
+        RAJA_LAMBDA (auto nm, auto g, auto gp, auto mix){
         
           ILegendre n = moment_to_coeff(nm);
           IZone zone = mixed_to_zones(mix);
@@ -222,7 +222,7 @@ void Kernel::source(Grid_Data *domain){
 
       dForall2<SourcePolicy<nest_type>, IGlobalGroup, IMix >(
         domain, sdom_id,
-        [=](auto g, auto mix){
+        RAJA_LAMBDA (auto g, auto mix){
           IZone zone = mixed_to_zones(mix);
           IMaterial material = mixed_material(mix);
           double fraction = mixed_fraction(mix);
@@ -271,7 +271,7 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
       domain->indexRange<IDirection>(sdom_id),
       domain->indexRange<IGroup>(sdom_id),
       extent.indexset_sweep,
-      [=](auto d, auto g, auto zone_idx){
+      RAJA_LAMBDA (auto d, auto g, auto zone_idx){
         
         IZoneI i = idx_to_i(zone_idx);
         IZoneJ j = idx_to_j(zone_idx);
@@ -297,7 +297,7 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
         face_lf(d,g,j,k) = 2.0 * psi_d_g_z - face_lf(d,g,j,k);
         face_fr(d,g,i,k) = 2.0 * psi_d_g_z - face_fr(d,g,i,k);
         face_bo(d,g,i,j) = 2.0 * psi_d_g_z - face_bo(d,g,i,j);
-    }); // forall3
+      }); // forall3
   END_POLICY
 }
 
