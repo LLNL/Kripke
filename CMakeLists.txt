@@ -3,7 +3,29 @@ cmake_minimum_required(VERSION 3.1)
 project(KRIPKE VERSION 1.1 LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules" ${CMAKE_MODULE_PATH})
-message(STATUS ${CMAKE_MODULE_PATH})
+message(STATUS "Using module path ${CMAKE_MODULE_PATH}")
+
+
+message(STATUS "Selected toolchain file ${CMAKE_TOOLCHAIN_FILE}")
+message(STATUS "Selected Build Type ${CMAKE_BUILD_TYPE}")
+message(STATUS "Selected C++ Compiler ${CMAKE_CXX_COMPILER}")
+message(STATUS "Selected C++ Flags: ${CMAKE_CXX_FLAGS}")
+
+
+#
+# Cuda
+# 
+option(ENABLE_CUDA "Turn on compiler support for CUDA" OFF)
+message(STATUS "CUDA Support is ${ENABLE_CUDA}")
+
+if(${ENABLE_CUDA})
+  find_package(CUDA QUIET REQUIRED)
+  if (CUDA_FOUND)    
+      add_definitions (-DKRIPKE_USE_CUDA -DRAJA_CUDA -DLPlusTimes_sweep_combined_ -DLPlusTimes_sweep_LTimes_combined__  -DKRIPKE_USE_CUBLAS)
+  endif()
+  message(STATUS "Selected NVCC Compiler ${CUDA_NVCC_EXECUTABLE}")
+  message(STATUS "Selected CUDA NVCC Flags: ${CUDA_NVCC_FLAGS}")
+endif()
 
 # MPI Support (Required)
 # If the ENABLE_MPI is turned off, you must use the mpi* compiler wrappers, since

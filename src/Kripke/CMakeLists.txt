@@ -24,7 +24,21 @@ add_library(lib_kripke
   
   Test/TestKernels.cpp
 )
-
-#target_compile_features(lib_kripke PUBLIC cxx_auto_type cxx_attributes cxx_lambdas)
                                                                                                           
 set(KRIPKE_LIBS ${KRIPKE_LIBS} lib_kripke PARENT_SCOPE) 
+
+
+#if(ENABLE_CUDA)
+#	set(CUDA_KRIPKE_SOURCE ${CUDA_KRIPKE_SOURCE}
+#	  Kripke/cu_utils.cu
+#	  Kripke/sweep_ZGD.cu
+#	  Kripke/sweep_ZDG.cu 
+#     Kripke/sweep_GZD.cu
+#	)
+
+#	set(CUDA_KRIPKE_SOURCE ${CUDA_KRIPKE_SOURCE} PARENT_SCOPE)
+#endif()
+
+
+
+ 
