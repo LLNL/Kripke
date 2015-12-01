@@ -67,9 +67,11 @@ Subdomain::Subdomain() :
   ell(NULL),
   ell_plus(NULL),
   phi(NULL),
-  phi_out(NULL),
+  phi_out(NULL)
 
-  d_rhs(NULL),
+#ifdef KRIPKE_USE_CUDA
+	,
+	d_rhs(NULL),
   d_delta_x(NULL),
   d_delta_y(NULL),
   d_delta_z(NULL),
@@ -81,6 +83,8 @@ Subdomain::Subdomain() :
   d_phi_out(NULL),
   d_i_plane(NULL),
   d_psi(NULL)
+#endif // CUDA
+
 #ifdef KRIPKE_USE_CUBLAS
   ,
   d_rhs_ptrs(NULL),
@@ -88,7 +92,7 @@ Subdomain::Subdomain() :
   d_phi_out_ptrs(NULL),
   d_streams(NULL),
   d_events(NULL)
-#endif
+#endif // CUBLAS
 {
   plane_data[0] = NULL;
   plane_data[1] = NULL;

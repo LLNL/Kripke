@@ -27,9 +27,9 @@
 #else
 
 #define CPUMEMORY 0
-#define CPUPINNED 0
-#define GPUMEMORY 0
-#define CUMNGMEM  0
+#define CPUPINNED -1 
+#define GPUMEMORY -1
+#define CUMNGMEM  -1
 #define NVRAMMEM  3
 #define NOMEMORY  5
 
