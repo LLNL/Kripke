@@ -18,13 +18,13 @@ struct tile_indexset {};
 
 
 template<typename TI, typename BODY>
-void forall_tile(tile_none, TI const &is, BODY const &body){
+void forall_tile(tile_none, TI const &is, BODY body){
   body(is);
 }
 
 
 template<int TileSize, typename BODY>
-void forall_tile(tile_fixed<TileSize>, RAJA::RangeSegment const &is, BODY const &body){
+void forall_tile(tile_fixed<TileSize>, RAJA::RangeSegment const &is, BODY body){
   // tile loop
   int i_begin = is.getBegin();
   int i_end = is.getEnd();
@@ -41,7 +41,7 @@ void forall_tile(tile_fixed<TileSize>, RAJA::RangeSegment const &is, BODY const 
 
 
 template<typename BODY>
-void forall_tile(tile_indexset, RAJA::IndexSet const &iset, BODY const &body){
+void forall_tile(tile_indexset, RAJA::IndexSet const &iset, BODY body){
      const int num_seg = iset.getNumSegments();
 
    for ( int isi = 0; isi < num_seg; ++isi ) {
