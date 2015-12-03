@@ -1,4 +1,4 @@
 #!/bin/bash
 
-cmake $@
+cmake -DCMAKE_TOOLCHAIN_FILE="cmake/Toolchain/macos-clang.cmake" $@
 
