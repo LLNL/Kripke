@@ -25,20 +25,19 @@ add_library(lib_kripke
   Test/TestKernels.cpp
 )
                                                                                                           
-set(KRIPKE_LIBS ${KRIPKE_LIBS} lib_kripke PARENT_SCOPE) 
+list(APPEND KRIPKE_LIBS lib_kripke) 
 
 
-#if(ENABLE_CUDA)
-#	set(CUDA_KRIPKE_SOURCE ${CUDA_KRIPKE_SOURCE}
-#	  Kripke/cu_utils.cu
-#	  Kripke/sweep_ZGD.cu
-#	  Kripke/sweep_ZDG.cu 
-#     Kripke/sweep_GZD.cu
-#	)
+if(ENABLE_CUDA)
+	cuda_add_library(cukripke
+	  Kernel.cu
+	)
 
-#	set(CUDA_KRIPKE_SOURCE ${CUDA_KRIPKE_SOURCE} PARENT_SCOPE)
-#endif()
+	list(APPEND KRIPKE_LIBS cukripke) 
+
+endif()
 
 
-
+# Propagate to parent directory
+set(KRIPKE_LIBS ${KRIPKE_LIBS} PARENT_SCOPE) 
  
