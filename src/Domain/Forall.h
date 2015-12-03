@@ -194,9 +194,10 @@ RAJA_INLINE void policyScope(Nesting_Order nest, REST... rest){
 }
 
 
-
-
+// Only enable the full policyScope function if we are NOT using nvcc
+#ifndef KRIPKE_USE_CUDA
 #define KRIPKE_USE_PSCOPE
+#endif
 
 #ifdef KRIPKE_USE_PSCOPE
 

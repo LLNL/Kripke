@@ -4,7 +4,7 @@ add_library(lib_kripke
   Directions.cpp  
   Grid.cpp  
   Input_Variables.cpp
-  Kernel.cpp
+#  Kernel.cpp
   Layout.cpp
   Subdomain.cpp  
   Sweep_Solver.cpp
@@ -34,7 +34,6 @@ if(ENABLE_CUDA)
 	)
 
 	list(APPEND KRIPKE_LIBS cukripke) 
-
 endif()
 
 
