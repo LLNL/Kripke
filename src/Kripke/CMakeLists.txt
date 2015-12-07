@@ -29,7 +29,8 @@ if(ENABLE_CUDA)
 	  cu_utils.cu
 	  sweep_ZGD.cu
 	  sweep_ZDG.cu 
-    sweep_GZD.cu
+          sweep_GZD.cu
+          dgemm_custom_simple_1block_batch.cu
 	)
 
 	list(APPEND KRIPKE_LIBS cukripkelib PARENT_SCOPE) 

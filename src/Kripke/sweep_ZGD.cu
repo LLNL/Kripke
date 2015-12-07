@@ -143,7 +143,19 @@
   }                                                                     \
 }
 
+/* function declarations */
 
+extern "C" {
+void dgemm_custom_simple_1block_batch (cudaStream_t stream, 
+  		     	               cublasOperation_t transa, 
+				       cublasOperation_t transb, 
+				       int *mlist, int *nlist, int *klist, 
+				       const double *alpha, 
+				       const double **Alist, int *ldalist, 
+				       const double **Blist, int *ldblist, 
+				       const double *beta, 
+				       double **Clist, int *ldclist, int nbatch);
+}
 
 __global__ void  LTimes_ZGD(double *phi, double * __restrict__ psi, const double * __restrict__ ell,
                                 int num_zones, int num_groups, int num_local_directions, int num_local_groups, 
@@ -411,13 +423,106 @@ int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_psi, double *d_ell,
 
     //printf ("LTimes cublasDgemmBatched m = %d, n = %d, k = %d, zones = %d \n", nidx, num_local_groups, num_local_directions, num_zones);
 
-    custat = cublasDgemmBatched ( kripke_cbhandle, CUBLAS_OP_N, CUBLAS_OP_N, nidx, num_local_groups, num_local_directions, &alpha, (const double **) d_Aarray, nidx, 
-    				  (const double **) d_Barray, num_local_directions, &beta, 
-    				  d_Carray, nidx, num_zones );
+    if ( 1 ) {
+      custat = cublasDgemmBatched ( kripke_cbhandle, CUBLAS_OP_N, CUBLAS_OP_N, nidx, num_local_groups, 
+				    num_local_directions, &alpha, (const double **) d_Aarray, nidx, 
+				    (const double **) d_Barray, num_local_directions, &beta, 
+				    d_Carray, nidx, num_zones );
+      //cudaDeviceSynchronize();
+      if ( custat ) {
+	printf ("custat = %d \n", custat);
+      }
     
-    //cudaDeviceSynchronize();
-    if ( custat ) {
-      printf ("custat = %d \n", custat);
+    }
+    else {
+
+      static int * d_mlist = NULL;
+      static int * d_nlist = NULL;
+      static int * d_klist = NULL;
+      static int * d_ldalist = NULL;
+      static int * d_ldblist = NULL;
+      static int * d_ldclist = NULL;
+
+      if ( d_mlist == NULL ) {
+	
+	int *mlist, *nlist, *klist, *ldalist, *ldblist, *ldclist;
+	mlist = (int *) malloc ( num_zones * sizeof(int));
+	nlist = (int *) malloc ( num_zones * sizeof(int));
+	klist = (int *) malloc ( num_zones * sizeof(int));
+	ldalist = (int *) malloc ( num_zones * sizeof(int));
+	ldblist = (int *) malloc ( num_zones * sizeof(int));
+	ldclist = (int *) malloc ( num_zones * sizeof(int));
+	
+	cudaMalloc ((void**) &d_mlist, num_zones*sizeof(int));
+	cudaMalloc ((void**) &d_nlist, num_zones*sizeof(int));
+	cudaMalloc ((void**) &d_klist, num_zones*sizeof(int));
+	cudaMalloc ((void**) &d_ldalist, num_zones*sizeof(int));
+	cudaMalloc ((void**) &d_ldblist, num_zones*sizeof(int));
+	cudaMalloc ((void**) &d_ldclist, num_zones*sizeof(int));
+	
+	printf (" m = %d, n = %d, k = %d \n", nidx, num_local_groups, num_local_directions);
+	
+	for ( int i=0; i<num_zones; i++ ) {
+	  mlist[i] = nidx;
+	  nlist[i] = num_local_groups;
+	  klist[i] = num_local_directions;
+	  ldalist[i] = nidx;
+	  ldblist[i] = num_local_directions;
+	  ldclist[i] = nidx;
+	}
+	
+	cudaError_t cuerr8 = cudaGetLastError();
+	if ( cuerr8 ) {
+	  printf ("dangling error \n");
+	}
+
+	cudaMemcpy ( d_mlist, mlist, num_zones*sizeof(int), cudaMemcpyHostToDevice );
+	cudaMemcpy ( d_nlist, nlist, num_zones*sizeof(int), cudaMemcpyHostToDevice );
+	cudaMemcpy ( d_klist, klist, num_zones*sizeof(int), cudaMemcpyHostToDevice );
+	cudaMemcpy ( d_ldalist, ldalist, num_zones*sizeof(int), cudaMemcpyHostToDevice );
+	cudaMemcpy ( d_ldblist, ldblist, num_zones*sizeof(int), cudaMemcpyHostToDevice );
+	cudaMemcpy ( d_ldclist, ldclist, num_zones*sizeof(int), cudaMemcpyHostToDevice );
+	cudaDeviceSynchronize();
+	cuerr8 = cudaGetLastError();
+	if ( cuerr8 ) {
+	  printf ("Error after cudaMemcpy \n");
+	  abort();
+	}
+
+	free ( mlist );
+	free ( nlist );
+	free ( klist );
+	free ( ldalist );
+	free ( ldblist );
+	free ( ldclist );
+
+      }
+      
+      //printf ("Calling simple 1block batch \n");
+
+      dgemm_custom_simple_1block_batch ( ltimesStream[ltimesstream],
+					 CUBLAS_OP_N,
+					 CUBLAS_OP_N,
+					 d_mlist,
+					 d_nlist,
+					 d_klist,
+					 &alpha,
+					 (const double **) d_Aarray,
+					 d_ldalist,
+					 (const double **) d_Barray, 
+					 d_ldblist,
+					 &beta,
+					 d_Carray, 
+					 d_ldclist,
+					 num_zones );
+
+      //cudaDeviceSynchronize();
+      cudaError_t cuerr8 = cudaGetLastError();
+      if ( cuerr8 ) {
+	printf ("Error after 1block batch \n");
+	//abort();
+      }
+      
     }
     
     // terminate cuBLAS - need to move to some cleanup routine
