@@ -114,7 +114,7 @@ def writeLayoutImpl(ndims_list):
           idxparts.append("convertIndex<int>(%s)" % perm[i])
       idx = " + ".join(idxparts)  
 
-      print "      inline IdxLin operator()(%s) const {" % (argstr)
+      print "      RAJA_HOST_DEVICE inline IdxLin operator()(%s) const {" % (argstr)
       print "        return convertIndex<IdxLin>(" + idx + ");"
       print "      }"
       print ""

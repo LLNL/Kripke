@@ -31,9 +31,6 @@
  */
 
 #include<Kripke/Kernel/Kernel_3d_ZGD.h>
-#include<Kripke/Grid.h>
-#include<Kripke/SubTVec.h>
-#include<Domain/View.h>
 
 Kernel_3d_ZGD::Kernel_3d_ZGD() :
   Kernel(NEST_ZGD)

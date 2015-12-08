@@ -4,6 +4,9 @@
 #include<string>
 #include<RAJA/RangeSegment.hxx>
 
+#ifdef RAJA_USE_CUDA
+#define RAJA_HOST_DEVICE  __host__ __device__
+#endif
 
 template<typename IndexTag>
 struct IndexTraits {
@@ -21,11 +24,11 @@ template<typename IndexTag>
 class Index {
 
   public:
-    explicit Index(int v) : value(v) {}
+    RAJA_HOST_DEVICE explicit Index(int v) : value(v) {}
     
-    inline int operator*(void) const {return value;}
+    RAJA_HOST_DEVICE inline int operator*(void) const {return value;}
 
-    inline Index<IndexTag> operator+(int a) const { return Index<IndexTag>(value+a); }
+    RAJA_HOST_DEVICE inline Index<IndexTag> operator+(int a) const { return Index<IndexTag>(value+a); }
 
     inline static std::string getName(void){
       return IndexTraits<IndexTag>::getName();
@@ -42,7 +45,7 @@ class Index {
  * convert it to another type, possibly another Index or an int.
  */
 template<typename TO>
-inline TO convertIndex(int val){return TO(val);}
+RAJA_HOST_DEVICE inline TO convertIndex(int val){return TO(val);}
 
 
 #define DEF_INDEX(NAME) \
@@ -53,7 +56,7 @@ inline TO convertIndex(int val){return TO(val);}
   };\
   typedef Index<NAME##_TAG> NAME;\
   template<typename TO> \
-  inline TO convertIndex(Index<NAME##_TAG> const &val){return TO(*val);}
+  RAJA_HOST_DEVICE inline TO convertIndex(Index<NAME##_TAG> const &val){return TO(*val);}
 
 
 

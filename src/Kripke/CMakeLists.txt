@@ -6,7 +6,7 @@ add_library(lib_kripke
   Input_Variables.cpp
 #  Kernel.cpp
   Layout.cpp
-  Subdomain.cpp  
+#  Subdomain.cpp  
   Sweep_Solver.cpp
   ParallelComm.cpp  
   Timing.cpp
@@ -31,6 +31,7 @@ list(APPEND KRIPKE_LIBS lib_kripke)
 if(ENABLE_CUDA)
 	cuda_add_library(cukripke
 	  Kernel.cu
+	  Subdomain.cu
 	)
 
 	list(APPEND KRIPKE_LIBS cukripke) 
