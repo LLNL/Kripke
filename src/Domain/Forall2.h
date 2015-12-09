@@ -130,24 +130,91 @@ struct cuda_y_exec : RAJA::cuda_exec {
 struct CUDAForallDim {
   dim3 num_threads;
   dim3 num_blocks;
-};
-
-struct ExtractBlockX {
-  __device__ int operator()(void){
-    return blockIdx.x;
+  
+  __host__ __device__ void print(void){
+    printf("<<< (%d,%d,%d), (%d,%d,%d) >>>\n",
+      num_blocks.x, num_blocks.y, num_blocks.z,
+      num_threads.x, num_threads.y, num_threads.z);
   }
 };
 
-struct ExtractBlockY {
-  __device__ int operator()(void){
-    return blockIdx.y;
+
+struct ViewDim3x {
+  __host__ __device__ inline unsigned int &operator()(dim3 &dim){
+    return dim.x;
+  }
+  
+  __host__ __device__ inline unsigned int operator()(dim3 const &dim){
+    return dim.x;
   }
 };
+
+
+struct ViewDim3y {
+  __host__ __device__ inline unsigned int &operator()(dim3 &dim){
+    return dim.y;
+  }
+  
+  __host__ __device__ inline unsigned int operator()(dim3 const &dim){
+    return dim.y;
+  }
+};
+
+struct ViewDim3z {
+  __host__ __device__ inline unsigned int &operator()(dim3 &dim){
+    return dim.z;
+  }
+  
+  __host__ __device__ inline unsigned int operator()(dim3 const &dim){
+    return dim.z;
+  }
+};
+
+template<typename VIEWDIM, int threads_per_block>
+struct ExtractBlock {
+  int begin;
+  int end;
+  
+  VIEWDIM view;
+  
+  ExtractBlock(int begin0, int end0) : begin(begin0), end(end0){}
+
+  __device__ inline int operator()(void){
+    
+    int idx = begin + view(blockIdx) * threads_per_block + view(threadIdx);
+    if(idx >= end){
+      idx = -1;
+    }
+    return idx;
+  }
+  
+  void inline setDims(CUDAForallDim &dims){
+    int n = end-begin;
+    if(n < threads_per_block){
+      view(dims.num_threads) = n;
+      view(dims.num_blocks) = 1;
+    }
+    else{
+      view(dims.num_threads) = threads_per_block;
+      
+      int blocks = n / threads_per_block;
+      if(n % threads_per_block){
+        ++ blocks;
+      }
+      view(dims.num_blocks) = blocks;
+    }
+  }  
+};
+
 
 // Simple launcher, that maps thread (x,y) to indices
 template <typename CI, typename CJ, typename BODY>
 __global__ void launcher_Forall2Executor(CI ci, CJ cj, BODY body){
-  body(ci(), cj());
+  int i = ci();
+  int j = cj();
+  if(i >= 0 && j >= 0){
+    body(ci(), cj());
+  }
 }
 
 template<typename POLICY_I, typename POLICY_J, typename TI, typename TJ>
@@ -159,17 +226,16 @@ template<typename POLICY_I, typename POLICY_J, typename TI, typename TJ>
     struct Forall2ExecutorCUDA<RAJA::cuda_exec, RAJA::cuda_exec, RAJA::RangeSegment, RAJA::RangeSegment> {
       template<typename BODY>
       inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY body) const {
-        /*RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(int i){
-          RAJA::forall<POLICY_J>(is_j, RAJA_LAMBDA(int j){
-            body(i, j);
-          });
-        });*/
+                        
+        ExtractBlock<ViewDim3x, 16> ci(is_i.getBegin(), is_i.getEnd());
+        ExtractBlock<ViewDim3y, 16> cj(is_j.getBegin(), is_j.getEnd());
         
         CUDAForallDim dims; 
-        dims.num_threads = dim3(1);
-        dims.num_blocks = dim3(is_i.getEnd() - is_i.getBegin(),  is_j.getEnd() - is_j.getBegin());                
+        ci.setDims(dims);
+        cj.setDims(dims);                
+        dims.print();
         
-        launcher_Forall2Executor<<<dims.num_blocks, dims.num_threads>>>(ExtractBlockX(), ExtractBlockY(), body);
+        launcher_Forall2Executor<<<dims.num_blocks, dims.num_threads>>>(ci, cj, body);
       }
     };
     
