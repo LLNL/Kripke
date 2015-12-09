@@ -39,50 +39,13 @@ def writeView(ndims_list):
     # Define () Operator (const)
     args = map(lambda a: "Index%s %s"%(a.upper(), a), dim_names)
     argstr = ", ".join(args)
-    print "      inline DataType &operator()(%s) const {" % argstr
+    print "      RAJA_HOST_DEVICE inline DataType &operator()(%s) const {" % argstr
     argstr = ", ".join(dim_names)
     print "        return data[convertIndex<int>(layout(%s))];" % argstr
     print "      }"
         
     print "    };"
     print ""
-
-
-def writeViewImpl(ndims_list):
-
-  for ndims in ndims_list:
-    dim_names = getDimNames(ndims)
-    
-    print ""
-    print "/******************************************************************"
-    print " *  Implementation for View%dD" % ndims
-    print " ******************************************************************/"
-    print ""
-                
-    # Define constructor
-    args = map(lambda a: "int n"+a, dim_names)
-    argstr = ", ".join(args)    
-    print "      template<typename T, typename L>"
-    print "      inline View%dd<T,L>::View%dd(T *data_ptr, %s):" % (ndims, ndims, argstr)    
-    args = map(lambda a: "n"+a, dim_names)
-    argstr = ", ".join(args)
-    print "        layout(%s)," % argstr
-    print "        data(data_ptr)"
-    print "      {"
-    print "      }"
-    print ""
-
-    # Define () Operator (const)
-    args = map(lambda a: "int "+a, dim_names)
-    argstr = ", ".join(args)      
-    print "      template<typename T, typename L>"
-    print "      inline T &View%dd<T,L>::operator()(%s) const {" % (ndims, argstr)
-    argstr = ", ".join(dim_names)
-    print "        return(data[layout(%s)]);" % argstr
-    print "      }"
-    print ""
-               
-  
  
 
 

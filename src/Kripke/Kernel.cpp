@@ -83,10 +83,48 @@ Kernel::~Kernel(){
 }
 
 
+struct TestPolicy : Forall2_Policy<RAJA::cuda_exec, RAJA::cuda_exec,
+                      Forall2_Permute<PERM_JI>
+                    > 
+{};
 
 #include<Kripke/Kernel/LTimesPolicy.h>
 void Kernel::LTimes(Grid_Data *domain) { 
-
+ 
+ 
+  double *p = NULL;
+  cudaMallocManaged((void**)&p, sizeof(double)*1000);
+  for(int i = 0;i < 1000;++ i){
+    p[i] = 0.0;
+  }
+ 
+  View2d<double, Layout2d<PERM_IJ, IMoment, IMoment> > bar(p, 4,4);
+   
+  /*
+  RAJA::forall<RAJA::cuda_exec>(0, 16, [=]   RAJA_DEVICE  (int nm) {
+    IMoment i(nm%4);
+    IMoment j(nm/4);
+    bar(i,j) = nm;
+  });  
+  
+  typedForall<RAJA::cuda_exec, IMoment>(0, 16, [=]  RAJA_DEVICE (IMoment nm) {
+    bar(IMoment(0),nm) = *nm * 10.0;
+  });*/
+  
+  forall2<TestPolicy, IMoment, IMoment>(
+    RAJA::RangeSegment(0,4),
+    RAJA::RangeSegment(0,4),
+    [=]  RAJA_DEVICE  (IMoment i, IMoment j){
+      bar(i,j) = (*i) + (0.001* (*j));
+    });
+  
+  cudaDeviceSynchronize();
+  for(int i = 0;i < 16;++ i){
+    printf("HOST: %d = %lf\n", i, p[i]);
+  }
+  
+  cudaFree(p);
+/*
   BEGIN_POLICY(nesting_order, nest_type)
     typedef DataPolicy<nest_type> POL;
 
@@ -116,12 +154,12 @@ void Kernel::LTimes(Grid_Data *domain) {
         });
 
     END_FORALL
-  END_POLICY
+  END_POLICY*/
 }
 
 #include<Kripke/Kernel/LPlusTimesPolicy.h>
 void Kernel::LPlusTimes(Grid_Data *domain) {
-
+/*
   BEGIN_POLICY(nesting_order, nest_type)
     typedef DataPolicy<nest_type> POL;
 
@@ -150,7 +188,7 @@ void Kernel::LPlusTimes(Grid_Data *domain) {
         });
 
     END_FORALL
-  END_POLICY
+  END_POLICY*/
 }
 
 
@@ -160,7 +198,7 @@ void Kernel::LPlusTimes(Grid_Data *domain) {
 */
 #include<Kripke/Kernel/ScatteringPolicy.h>
 void Kernel::scattering(Grid_Data *domain){
-  
+  /*
   BEGIN_POLICY(nesting_order, nest_type)
     typedef DataPolicy<nest_type> POL;
 
@@ -197,7 +235,7 @@ void Kernel::scattering(Grid_Data *domain){
           
     END_FORALL // zonesets
 
-  END_POLICY
+  END_POLICY */
 }
 
   
@@ -209,7 +247,7 @@ void Kernel::scattering(Grid_Data *domain){
  */
 #include<Kripke/Kernel/SourcePolicy.h>
 void Kernel::source(Grid_Data *domain){
-
+/*
   BEGIN_POLICY(nesting_order, nest_type)
     typedef DataPolicy<nest_type> POL;
 
@@ -233,12 +271,13 @@ void Kernel::source(Grid_Data *domain){
       }); // forall
 
     END_FORALL
-  END_POLICY
+  END_POLICY*/
 }
 
 
 #include<Kripke/Kernel/SweepPolicy.h>
 void Kernel::sweep(Grid_Data *domain, int sdom_id) {
+/*
   BEGIN_POLICY(nesting_order, nest_type)
     typedef DataPolicy<nest_type> POL;
 
@@ -298,6 +337,6 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
         face_fr(d,g,i,k) = 2.0 * psi_d_g_z - face_fr(d,g,i,k);
         face_bo(d,g,i,j) = 2.0 * psi_d_g_z - face_bo(d,g,i,j);
       }); // forall3
-  END_POLICY
+  END_POLICY */
 }
 

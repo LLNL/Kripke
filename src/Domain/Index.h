@@ -2,11 +2,9 @@
 #define __DOMAIN_INDEX_H__
 
 #include<string>
-#include<RAJA/RangeSegment.hxx>
+#include<RAJA/RAJA.hxx>
 
-#ifdef RAJA_USE_CUDA
-#define RAJA_HOST_DEVICE  __host__ __device__
-#endif
+
 
 template<typename IndexTag>
 struct IndexTraits {

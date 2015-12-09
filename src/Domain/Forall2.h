@@ -87,6 +87,39 @@
       }
     };
 
+#ifdef RAJA_USE_CUDA
+
+
+// Simple launcher, that maps thread (x,y) to indices
+template <typename BODY>
+__global__ void launcher_Forall2Executor(BODY body){
+  body(threadIdx.x, threadIdx.y);
+}
+
+
+    // CUDA executor
+    template<>
+    struct Forall2Executor<RAJA::cuda_exec, RAJA::cuda_exec, RAJA::RangeSegment, RAJA::RangeSegment> {
+      template<typename BODY>
+      inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY body) const {
+        /*RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(int i){
+          RAJA::forall<POLICY_J>(is_j, RAJA_LAMBDA(int j){
+            body(i, j);
+          });
+        });*/
+        
+        dim3 num_threads(is_i.getEnd() - is_i.getBegin(),  is_j.getEnd() - is_j.getBegin());
+        
+        printf("Starting CUDA\n");
+        
+        launcher_Forall2Executor<<<1, num_threads>>>(body);
+        
+        printf("Ending CUDA\n");
+      }
+    };
+    
+    
+#endif
 
 /******************************************************************
  *  OpenMP Auto-Collapsing Executors for forall2()
@@ -149,7 +182,7 @@
 
       // Call next policy with permuted indices and policies
       forall2_policy<NextPolicy, PolicyI, PolicyJ>(NextPolicyTag(), is_i, is_j,
-        RAJA_LAMBDA(int i, int j){
+        RAJA_LAMBDA RAJA_DEVICE (int i, int j){
           // Call body with non-permuted indices
           body(i, j);
         });
@@ -162,7 +195,7 @@
 
       // Call next policy with permuted indices and policies
       forall2_policy<NextPolicy, PolicyJ, PolicyI>(NextPolicyTag(), is_j, is_i,
-        RAJA_LAMBDA(int j, int i){
+        RAJA_LAMBDA RAJA_DEVICE (int j, int i){
           // Call body with non-permuted indices
           body(i, j);
         });
@@ -259,7 +292,7 @@
 
       // call 'policy' layer with next policy
       forall2_policy<NextPolicy, PolicyI, PolicyJ>(NextPolicyTag(), is_i, is_j, 
-        [=](int i, int j){
+        [=] RAJA_DEVICE (int i, int j){
           body(IdxI(i), IdxJ(j));
         }
       );

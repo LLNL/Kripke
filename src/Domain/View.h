@@ -19,7 +19,7 @@
         data(data_ptr)
       {}
 
-      inline DataType &operator()(IndexI i) const {
+      RAJA_HOST_DEVICE inline DataType &operator()(IndexI i) const {
         return data[convertIndex<int>(layout(i))];
       }
     };
@@ -38,7 +38,7 @@
         data(data_ptr)
       {}
 
-      inline DataType &operator()(IndexI i, IndexJ j) const {
+      RAJA_HOST_DEVICE inline DataType &operator()(IndexI i, IndexJ j) const {
         return data[convertIndex<int>(layout(i, j))];
       }
     };
@@ -58,7 +58,7 @@
         data(data_ptr)
       {}
 
-      inline DataType &operator()(IndexI i, IndexJ j, IndexK k) const {
+      RAJA_HOST_DEVICE inline DataType &operator()(IndexI i, IndexJ j, IndexK k) const {
         return data[convertIndex<int>(layout(i, j, k))];
       }
     };
@@ -79,7 +79,7 @@
         data(data_ptr)
       {}
 
-      inline DataType &operator()(IndexI i, IndexJ j, IndexK k, IndexL l) const {
+      RAJA_HOST_DEVICE inline DataType &operator()(IndexI i, IndexJ j, IndexK k, IndexL l) const {
         return data[convertIndex<int>(layout(i, j, k, l))];
       }
     };
