@@ -17,6 +17,14 @@
     struct Forall2_Execute {
       typedef Forall2_Execute_Tag PolicyTag;
     };
+    
+#ifdef RAJA_USE_CUDA
+    // Execute CUDA
+    struct Forall2_ExecuteCUDA_Tag {};
+    struct Forall2_ExecuteCUDA {
+      typedef Forall2_ExecuteCUDA_Tag PolicyTag;
+    };
+#endif
 
     // Starting (outer) policy for all forall2 policies
     template<typename POL_I=RAJA::seq_exec, typename POL_J=RAJA::seq_exec, typename NEXT=Forall2_Execute>
@@ -89,17 +97,66 @@
 
 #ifdef RAJA_USE_CUDA
 
+namespace RAJA{
 
-// Simple launcher, that maps thread (x,y) to indices
-template <typename BODY>
-__global__ void launcher_Forall2Executor(BODY body){
-  body(threadIdx.x, threadIdx.y);
+/*
+
+  Need to abstract the mapping from index-sets to threadsIdx and blockIdx.
+  
+  So we need components that will:
+    - compute the number of threads and blocks
+    - compute indices from threadIdx and blockIdx
+    - assign the indices to the correct input's in the loop body
+
+*/
+
+
+template<int THREADS_PER_BLOCK>
+struct cuda_x_exec : RAJA::cuda_exec {
+  const static int threads_per_block = THREADS_PER_BLOCK;
+   
+};
+
+
+template<int THREADS_PER_BLOCK>
+struct cuda_y_exec : RAJA::cuda_exec {
+  const static int threads_per_block = THREADS_PER_BLOCK;
+   
+};
+
 }
 
 
+struct CUDAForallDim {
+  dim3 num_threads;
+  dim3 num_blocks;
+};
+
+struct ExtractBlockX {
+  __device__ int operator()(void){
+    return blockIdx.x;
+  }
+};
+
+struct ExtractBlockY {
+  __device__ int operator()(void){
+    return blockIdx.y;
+  }
+};
+
+// Simple launcher, that maps thread (x,y) to indices
+template <typename CI, typename CJ, typename BODY>
+__global__ void launcher_Forall2Executor(CI ci, CJ cj, BODY body){
+  body(ci(), cj());
+}
+
+template<typename POLICY_I, typename POLICY_J, typename TI, typename TJ>
+    struct Forall2ExecutorCUDA;
+    
+    
     // CUDA executor
     template<>
-    struct Forall2Executor<RAJA::cuda_exec, RAJA::cuda_exec, RAJA::RangeSegment, RAJA::RangeSegment> {
+    struct Forall2ExecutorCUDA<RAJA::cuda_exec, RAJA::cuda_exec, RAJA::RangeSegment, RAJA::RangeSegment> {
       template<typename BODY>
       inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY body) const {
         /*RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(int i){
@@ -108,13 +165,11 @@ __global__ void launcher_Forall2Executor(BODY body){
           });
         });*/
         
-        dim3 num_threads(is_i.getEnd() - is_i.getBegin(),  is_j.getEnd() - is_j.getBegin());
+        CUDAForallDim dims; 
+        dims.num_threads = dim3(1);
+        dims.num_blocks = dim3(is_i.getEnd() - is_i.getBegin(),  is_j.getEnd() - is_j.getBegin());                
         
-        printf("Starting CUDA\n");
-        
-        launcher_Forall2Executor<<<1, num_threads>>>(body);
-        
-        printf("Ending CUDA\n");
+        launcher_Forall2Executor<<<dims.num_blocks, dims.num_threads>>>(ExtractBlockX(), ExtractBlockY(), body);
       }
     };
     
@@ -221,6 +276,21 @@ __global__ void launcher_Forall2Executor(BODY body){
       exec(is_i, is_j, body);
     }
 
+
+#ifdef RAJA_USE_CUDA    
+    /**
+     * Execute inner loops policy function, mapping iterations space to GPU threads.    
+     */
+    template<typename POLICY, typename PolicyI, typename PolicyJ, typename TI, typename TJ, typename BODY>
+    RAJA_INLINE void forall2_policy(Forall2_ExecuteCUDA_Tag, TI const &is_i, TJ const &is_j, BODY body){
+
+      // Create executor object to launch loops
+      Forall2ExecutorCUDA<PolicyI, PolicyJ, TI, TJ> exec;
+
+      // Launch loop body
+      exec(is_i, is_j, body);
+    }
+#endif
 
     /**
      * Permutation policy function.

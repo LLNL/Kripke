@@ -84,21 +84,24 @@ Kernel::~Kernel(){
 
 
 struct TestPolicy : Forall2_Policy<RAJA::cuda_exec, RAJA::cuda_exec,
-                      Forall2_Permute<PERM_JI>
+                      Forall2_Permute<PERM_JI,
+                        Forall2_ExecuteCUDA
+                      >
                     > 
 {};
 
 #include<Kripke/Kernel/LTimesPolicy.h>
 void Kernel::LTimes(Grid_Data *domain) { 
  
- 
+  int n = 1000;
+  int N = n*n;
   double *p = NULL;
-  cudaMallocManaged((void**)&p, sizeof(double)*1000);
-  for(int i = 0;i < 1000;++ i){
+  cudaMallocManaged((void**)&p, sizeof(double)*N);
+  for(int i = 0;i < N;++ i){
     p[i] = 0.0;
   }
  
-  View2d<double, Layout2d<PERM_IJ, IMoment, IMoment> > bar(p, 4,4);
+  View2d<double, Layout2d<PERM_IJ, IMoment, IMoment> > bar(p, n,n);
    
   /*
   RAJA::forall<RAJA::cuda_exec>(0, 16, [=]   RAJA_DEVICE  (int nm) {
@@ -110,13 +113,15 @@ void Kernel::LTimes(Grid_Data *domain) {
   typedForall<RAJA::cuda_exec, IMoment>(0, 16, [=]  RAJA_DEVICE (IMoment nm) {
     bar(IMoment(0),nm) = *nm * 10.0;
   });*/
-  
+
+for(int a = 0;a < 10;++ a)  
   forall2<TestPolicy, IMoment, IMoment>(
-    RAJA::RangeSegment(0,4),
-    RAJA::RangeSegment(0,4),
+    RAJA::RangeSegment(0,n),
+    RAJA::RangeSegment(0,n),
     [=]  RAJA_DEVICE  (IMoment i, IMoment j){
       bar(i,j) = (*i) + (0.001* (*j));
     });
+
   
   cudaDeviceSynchronize();
   for(int i = 0;i < 16;++ i){
