@@ -83,10 +83,9 @@ Kernel::~Kernel(){
 }
 
 
-struct TestPolicy : Forall2_Policy<RAJA::cuda_exec, RAJA::cuda_exec,
-                      Forall2_Permute<PERM_JI,
-                        Forall2_ExecuteCUDA
-                      >
+struct TestPolicy : //Forall2_Policy<RAJA::cuda_exec, RAJA::cuda_exec
+                    Forall2_Policy<CudaPolicy<CudaThreadBlock<Dim3x, 16>>, 
+                                   CudaPolicy<CudaThreadBlock<Dim3y, 16>>
                     > 
 {};
 
@@ -119,7 +118,12 @@ for(int a = 0;a < 10;++ a)
     RAJA::RangeSegment(0,n),
     RAJA::RangeSegment(0,n),
     [=]  RAJA_DEVICE  (IMoment i, IMoment j){
+    //[=]  RAJA_DEVICE  (int _i, int _j){
+    //  IMoment i(_i);
+    //  IMoment j(_j);
+      
       bar(i,j) = (*i) + (0.001* (*j));
+      //bar(IMoment(i), IMoment(j)) = i + 0.001*j;
     });
 
   
