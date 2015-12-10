@@ -83,9 +83,16 @@ Kernel::~Kernel(){
 }
 
 
-struct TestPolicy : //Forall2_Policy<RAJA::cuda_exec, RAJA::cuda_exec
-                    Forall2_Policy<CudaPolicy<CudaThreadBlock<Dim3x, 16>>, 
+struct TestPolicy : Forall2_Policy<CudaPolicy<CudaThreadBlock<Dim3x, 16>>, 
+                                   CudaPolicy<CudaThreadBlock<Dim3y, 16>>,
+                      Forall2_Permute<PERM_JI>                             
+                    >                                         
+{};
+
+struct TestPolicy3 : Forall3_Policy<RAJA::seq_exec,
+                                   CudaPolicy<CudaThreadBlock<Dim3x, 16>>, 
                                    CudaPolicy<CudaThreadBlock<Dim3y, 16>>
+                      //Forall3_Permute<PERM_IKJ>                             
                     > 
 {};
 
@@ -102,28 +109,14 @@ void Kernel::LTimes(Grid_Data *domain) {
  
   View2d<double, Layout2d<PERM_IJ, IMoment, IMoment> > bar(p, n,n);
    
-  /*
-  RAJA::forall<RAJA::cuda_exec>(0, 16, [=]   RAJA_DEVICE  (int nm) {
-    IMoment i(nm%4);
-    IMoment j(nm/4);
-    bar(i,j) = nm;
-  });  
-  
-  typedForall<RAJA::cuda_exec, IMoment>(0, 16, [=]  RAJA_DEVICE (IMoment nm) {
-    bar(IMoment(0),nm) = *nm * 10.0;
-  });*/
-
-for(int a = 0;a < 10;++ a)  
-  forall2<TestPolicy, IMoment, IMoment>(
+  //for(int a = 0;a < 10;++ a)  
+  forall3<TestPolicy3, int, IMoment, IMoment>(
+    RAJA::RangeSegment(0,10),
+  //forall2<TestPolicy, IMoment, IMoment>(
     RAJA::RangeSegment(0,n),
     RAJA::RangeSegment(0,n),
-    [=]  RAJA_DEVICE  (IMoment i, IMoment j){
-    //[=]  RAJA_DEVICE  (int _i, int _j){
-    //  IMoment i(_i);
-    //  IMoment j(_j);
-      
+    [=]  RAJA_DEVICE  (int iter, IMoment i, IMoment j){
       bar(i,j) = (*i) + (0.001* (*j));
-      //bar(IMoment(i), IMoment(j)) = i + 0.001*j;
     });
 
   
@@ -133,6 +126,8 @@ for(int a = 0;a < 10;++ a)
   }
   
   cudaFree(p);
+
+
 /*
   BEGIN_POLICY(nesting_order, nest_type)
     typedef DataPolicy<nest_type> POL;

@@ -6,6 +6,9 @@
 #include<RAJA/RAJA.hxx>
 #include<Domain/Tile.h>
 
+#ifdef RAJA_USE_CUDA
+#include<Domain/CudaCommon.h>
+#endif
 
 
 /******************************************************************
@@ -90,113 +93,30 @@
 #ifdef RAJA_USE_CUDA
 
 
-struct CudaDim {
-  dim3 num_threads;
-  dim3 num_blocks;
-  
-  __host__ __device__ void print(void){
-    printf("<<< (%d,%d,%d), (%d,%d,%d) >>>\n",
-      num_blocks.x, num_blocks.y, num_blocks.z,
-      num_threads.x, num_threads.y, num_threads.z);
-  }
-};
-
-
-struct Dim3x {
-  __host__ __device__ inline unsigned int &operator()(dim3 &dim){
-    return dim.x;
-  }
-  
-  __host__ __device__ inline unsigned int operator()(dim3 const &dim){
-    return dim.x;
-  }
-};
-
-
-struct Dim3y {
-  __host__ __device__ inline unsigned int &operator()(dim3 &dim){
-    return dim.y;
-  }
-  
-  __host__ __device__ inline unsigned int operator()(dim3 const &dim){
-    return dim.y;
-  }
-};
-
-struct Dim3z {
-  __host__ __device__ inline unsigned int &operator()(dim3 &dim){
-    return dim.z;
-  }
-  
-  __host__ __device__ inline unsigned int operator()(dim3 const &dim){
-    return dim.z;
-  }
-};
-
-template<typename VIEWDIM, int threads_per_block>
-struct CudaThreadBlock {
-  int begin;
-  int end;
-  
-  VIEWDIM view;
-  
-  CudaThreadBlock(int begin0, int end0) : begin(begin0), end(end0){}
-
-  __device__ inline int operator()(void){
-    
-    int idx = begin + view(blockIdx) * threads_per_block + view(threadIdx);
-    if(idx >= end){
-      idx = -1;
-    }
-    return idx;
-  }
-  
-  void inline setDims(CudaDim &dims){
-    int n = end-begin;
-    if(n < threads_per_block){
-      view(dims.num_threads) = n;
-      view(dims.num_blocks) = 1;
-    }
-    else{
-      view(dims.num_threads) = threads_per_block;
-      
-      int blocks = n / threads_per_block;
-      if(n % threads_per_block){
-        ++ blocks;
+    // Simple launcher, that maps thread (x,y) to indices
+    template <typename CI, typename CJ, typename BODY>
+    __global__ void cudaLauncher2(CI ci, CJ cj, BODY body){
+      int i = ci();
+      int j = cj();
+      if(i >= 0 && j >= 0){
+        body(ci(), cj());
       }
-      view(dims.num_blocks) = blocks;
     }
-  }  
-};
 
-// Simple launcher, that maps thread (x,y) to indices
-template <typename CI, typename CJ, typename BODY>
-__global__ void cudaLauncher2(CI ci, CJ cj, BODY body){
-  int i = ci();
-  int j = cj();
-  if(i >= 0 && j >= 0){
-    body(ci(), cj());
-  }
-}
-
-
-    template<typename POL>
-    struct CudaPolicy {};
-    
+        
     // CUDA executor
     template<typename PI, typename PJ>
     struct Forall2Executor<CudaPolicy<PI>, CudaPolicy<PJ>, RAJA::RangeSegment, RAJA::RangeSegment> {
       template<typename BODY>
       inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY body) const {
-                        
-        //CudaThreadBlock<Dim3x, 16> ci(is_i.getBegin(), is_i.getEnd());
+                               
         PI ci(is_i.getBegin(), is_i.getEnd());
         PJ cj(is_j.getBegin(), is_j.getEnd());
         
         CudaDim dims; 
         ci.setDims(dims);
         cj.setDims(dims);                
-        dims.print();        
+        //dims.print();        
         
         cudaLauncher2<<<dims.num_blocks, dims.num_threads>>>(ci, cj, body);
       }

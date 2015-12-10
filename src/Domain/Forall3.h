@@ -79,12 +79,18 @@
 
     template<typename POLICY_I, typename POLICY_J, typename POLICY_K, typename TI, typename TJ, typename TK>
     struct Forall3Executor {
+    
+      template<typename BODY>
+      inline void doExec(int i, TJ const &is_j, TK const &is_k, BODY body) const {
+        exec(is_j, is_k, RAJA_LAMBDA RAJA_DEVICE(int j, int k){
+            body(i, j, k);
+         });
+      }
+    
       template<typename BODY>
       inline void operator()(TI const &is_i, TJ const &is_j, TK const &is_k, BODY body) const {
-        RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(int i){
-          exec(is_j, is_k, RAJA_LAMBDA(int j, int k){
-            body(i, j, k);
-          });
+        RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA (int i){
+          doExec(i, is_j, is_k, body);
         });
       }
 
@@ -206,7 +212,7 @@
 
       // Call next policy with permuted indices and policies
       forall3_policy<NextPolicy, PolicyI, PolicyJ, PolicyK>(NextPolicyTag(), is_i, is_j, is_k,
-        RAJA_LAMBDA(int i, int j, int k){
+        RAJA_LAMBDA RAJA_DEVICE(int i, int j, int k){
           // Call body with non-permuted indices
           body(i, j, k);
         });
@@ -219,7 +225,7 @@
 
       // Call next policy with permuted indices and policies
       forall3_policy<NextPolicy, PolicyI, PolicyK, PolicyJ>(NextPolicyTag(), is_i, is_k, is_j,
-        RAJA_LAMBDA(int i, int k, int j){
+        RAJA_LAMBDA RAJA_DEVICE(int i, int k, int j){
           // Call body with non-permuted indices
           body(i, j, k);
         });
@@ -232,7 +238,7 @@
 
       // Call next policy with permuted indices and policies
       forall3_policy<NextPolicy, PolicyJ, PolicyI, PolicyK>(NextPolicyTag(), is_j, is_i, is_k,
-        RAJA_LAMBDA(int j, int i, int k){
+        RAJA_LAMBDA RAJA_DEVICE(int j, int i, int k){
           // Call body with non-permuted indices
           body(i, j, k);
         });
@@ -245,7 +251,7 @@
 
       // Call next policy with permuted indices and policies
       forall3_policy<NextPolicy, PolicyJ, PolicyK, PolicyI>(NextPolicyTag(), is_j, is_k, is_i,
-        RAJA_LAMBDA(int j, int k, int i){
+        RAJA_LAMBDA RAJA_DEVICE(int j, int k, int i){
           // Call body with non-permuted indices
           body(i, j, k);
         });
@@ -258,7 +264,7 @@
 
       // Call next policy with permuted indices and policies
       forall3_policy<NextPolicy, PolicyK, PolicyI, PolicyJ>(NextPolicyTag(), is_k, is_i, is_j,
-        RAJA_LAMBDA(int k, int i, int j){
+        RAJA_LAMBDA RAJA_DEVICE(int k, int i, int j){
           // Call body with non-permuted indices
           body(i, j, k);
         });
@@ -271,7 +277,7 @@
 
       // Call next policy with permuted indices and policies
       forall3_policy<NextPolicy, PolicyK, PolicyJ, PolicyI>(NextPolicyTag(), is_k, is_j, is_i,
-        RAJA_LAMBDA(int k, int j, int i){
+        RAJA_LAMBDA RAJA_DEVICE(int k, int j, int i){
           // Call body with non-permuted indices
           body(i, j, k);
         });
@@ -372,7 +378,7 @@
 
       // call 'policy' layer with next policy
       forall3_policy<NextPolicy, PolicyI, PolicyJ, PolicyK>(NextPolicyTag(), is_i, is_j, is_k, 
-        [=](int i, int j, int k){
+        [=] RAJA_DEVICE (int i, int j, int k){
           body(IdxI(i), IdxJ(j), IdxK(k));
         }
       );
