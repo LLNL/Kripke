@@ -44,18 +44,18 @@
 /*
  * Define strongly-typed indices used in Kripke
  */
-DEF_INDEX(IMaterial);     // Material ID
-DEF_INDEX(ILegendre);     // Legendre expansion coefficient
-DEF_INDEX(IMoment);       // Spherical harmonic moment
-DEF_INDEX(IDirection);    // Local direction
-DEF_INDEX(IGlobalGroup);  // Global energy group
-DEF_INDEX(IGroup);        // Local energy group
-DEF_INDEX(IZone);         // Cannonical zone number
-DEF_INDEX(IZoneIdx);      // Mapped zone index (sequential in hyperplane)
-DEF_INDEX(IMix);          // Mixed element slot
-DEF_INDEX(IZoneI);        // zone on the I boundary face
-DEF_INDEX(IZoneJ);        // zone on the K boundary face
-DEF_INDEX(IZoneK);        // zone on the K boundary face
+RAJA_INDEX_VALUE(IMaterial);     // Material ID
+RAJA_INDEX_VALUE(ILegendre);     // Legendre expansion coefficient
+RAJA_INDEX_VALUE(IMoment);       // Spherical harmonic moment
+RAJA_INDEX_VALUE(IDirection);    // Local direction
+RAJA_INDEX_VALUE(IGlobalGroup);  // Global energy group
+RAJA_INDEX_VALUE(IGroup);        // Local energy group
+RAJA_INDEX_VALUE(IZone);         // Cannonical zone number
+RAJA_INDEX_VALUE(IZoneIdx);      // Mapped zone index (sequential in hyperplane)
+RAJA_INDEX_VALUE(IMix);          // Mixed element slot
+RAJA_INDEX_VALUE(IZoneI);        // zone on the I boundary face
+RAJA_INDEX_VALUE(IZoneJ);        // zone on the K boundary face
+RAJA_INDEX_VALUE(IZoneK);        // zone on the K boundary face
 
 
 

@@ -84,7 +84,17 @@ Kernel::~Kernel(){
 
 
 #include<Kripke/Kernel/LTimesPolicy.h>
-void Kernel::LTimes(Grid_Data *domain) { 
+void Kernel::LTimes(Grid_Data *domain) {
+
+  IMoment foo(4);
+  (foo ++) ++;
+  printf("Foo=%d\n", *foo);
+  if(foo == 5){
+    printf("hello\n");
+  }
+  if(foo == IMoment(6)){
+    printf("Goodbye\n");
+  }
 
   BEGIN_POLICY(nesting_order, nest_type)
     typedef DataPolicy<nest_type> POL;

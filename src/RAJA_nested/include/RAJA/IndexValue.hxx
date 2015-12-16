@@ -1,6 +1,7 @@
 #ifndef RAJA_INDEX_HXX__
 #define RAJA_INDEX_HXX__
 
+#include<RAJA/int_datatypes.hxx>
 #include<RAJA/RangeSegment.hxx>
 #include<string>
 
@@ -21,19 +22,253 @@ template<typename TYPE>
 class IndexValue {
 
   public:
-    inline explicit IndexValue(int v) : value(v) {}
+    /**
+     * Default constructor.
+     * Initializes value to 0.
+     */
+    inline IndexValue() : value(0) {}
+
+    /**
+     * Explicit constructor.
+     * \param v   Initial value
+     */
+    inline explicit IndexValue(Index_type v) : value(v) {}
 
     /**
      * Dereference provides cast-to-integer.
      */
-    inline int operator*(void) const {return value;}
+    inline Index_type operator*(void) const {return value;}
 
-    inline TYPE operator+(int a) const { return TYPE(value+a); }
 
-    //static std::string getName(void);
+    /**
+     * Increment by one.
+     */
+    inline TYPE &operator++(int){
+      value++;
+      return *static_cast<TYPE *>(this);
+    }
+
+    /**
+     * Increment by one.
+     */
+    inline TYPE &operator++(){
+      value++;
+      return *static_cast<TYPE *>(this);
+    }
+
+    /**
+     * Decrement by one.
+     */
+    inline TYPE &operator--(int){
+      value--;
+      return *static_cast<TYPE *>(this);
+    }
+
+    /**
+     * Decrement by one.
+     */
+    inline TYPE &operator--(){
+      value--;
+      return *static_cast<TYPE *>(this);
+    }
+
+    /**
+     * Addition.
+     */
+    inline TYPE operator+(Index_type a) const { return TYPE(value+a); }
+
+    /**
+     * Addition.
+     */
+    inline TYPE operator+(TYPE a) const { return TYPE(value+a.value); }
+
+    /**
+     * Subtraction.
+     */
+    inline TYPE operator-(Index_type a) const { return TYPE(value-a); }
+
+    /**
+     * Subtraction.
+     */
+    inline TYPE operator-(TYPE a) const { return TYPE(value-a.value); }
+
+    /**
+     * Multiply.
+     */
+    inline TYPE operator*(Index_type a) const { return TYPE(value*a); }
+
+    /**
+     * Multiply.
+     */
+    inline TYPE operator*(TYPE a) const { return TYPE(value*a.value); }
+
+    /**
+     * Divide.
+     */
+    inline TYPE operator/(Index_type a) const { return TYPE(value/a); }
+
+    /**
+     * Divide.
+     */
+    inline TYPE operator/(TYPE a) const { return TYPE(value/a.value); }
+
+
+
+    /**
+     * Add to.
+     */
+    inline TYPE &operator+=(Index_type x){
+      value += x;
+      return *static_cast<TYPE *>(this);
+    }
+
+    /**
+     * Add to.
+     */
+    inline TYPE &operator+=(TYPE x){
+      value += x.value;
+      return *static_cast<TYPE *>(this);
+    }
+
+    /**
+     * Subtract from.
+     */
+    inline TYPE &operator-=(Index_type x){
+      value -= x;
+      return *static_cast<TYPE *>(this);
+    }
+
+    /**
+     * Subtract from.
+     */
+    inline TYPE &operator-=(TYPE x){
+      value -= x.value;
+      return *static_cast<TYPE *>(this);
+    }
+
+    /**
+     * Multiply by.
+     */
+    inline TYPE &operator*=(Index_type x){
+      value *= x;
+      return *static_cast<TYPE *>(this);
+    }
+
+    /**
+     * Multiply by.
+     */
+    inline TYPE &operator*=(TYPE x){
+      value *= x.value;
+      return *static_cast<TYPE *>(this);
+    }
+
+    /**
+     * Divide by.
+     */
+    inline TYPE &operator/=(Index_type x){
+      value /= x;
+      return *static_cast<TYPE *>(this);
+    }
+
+    /**
+     * Divide by.
+     */
+    inline TYPE &operator/=(TYPE x){
+      value /= x.value;
+      return *static_cast<TYPE *>(this);
+    }
+
+    /**
+     * Less-than.
+     */
+    inline bool operator<(Index_type x) const {
+      return( value < x);
+    }
+
+    /**
+     * Less-than.
+     */
+    inline bool operator<(TYPE x) const {
+      return( value < x.value);
+    }
+
+    /**
+     * Less-than or equals.
+     */
+    inline bool operator<=(Index_type x) const {
+      return( value <= x);
+    }
+
+    /**
+     * Less-than or equals.
+     */
+    inline bool operator<=(TYPE x) const {
+      return( value <= x.value);
+    }
+
+    /**
+     * Greater-than.
+     */
+    inline bool operator>(Index_type x) const {
+      return( value > x);
+    }
+
+    /**
+     * Greater-than.
+     */
+    inline bool operator>(TYPE x) const {
+      return( value > x.value);
+    }
+
+    /**
+     * Greater-than or equals.
+     */
+    inline bool operator>=(Index_type x) const {
+      return( value >= x);
+    }
+
+    /**
+     * Greater-than or equals.
+     */
+    inline bool operator>=(TYPE x) const {
+      return( value >= x.value);
+    }
+
+    /**
+     * Equal to.
+     */
+    inline bool operator==(Index_type x) const {
+      return( value == x);
+    }
+
+    /**
+     * Equal to.
+     */
+    inline bool operator==(TYPE x) const {
+      return( value == x.value);
+    }
+
+    /**
+     * Not equal to.
+     */
+    inline bool operator!=(Index_type x) const {
+      return( value != x);
+    }
+
+    /**
+     * Not equal to.
+     */
+    inline bool operator!=(TYPE x) const {
+      return( value != x.value);
+    }
+
+
+    // This is not implemented... but should be by the derived type
+    // this is done by the macro
+    static std::string getName(void);
   
   private:
-    int value;
+    Index_type value;
 
 };
 
@@ -50,8 +285,8 @@ struct ConvertIndexHelper {
 };
 
 template<typename TO>
-struct ConvertIndexHelper<TO, int> {
-  static inline TO convert(int val){
+struct ConvertIndexHelper<TO, Index_type> {
+  static inline TO convert(Index_type val){
     return TO(val);
   }
 };
@@ -75,10 +310,10 @@ inline TO convertIndex(FROM val){
 /**
  * Helper Macro to create new Index types.
  */
-#define DEF_INDEX(NAME) \
+#define RAJA_INDEX_VALUE(NAME) \
   class NAME : public RAJA::IndexValue<NAME>{ \
   public: \
-    inline explicit NAME(int v) : RAJA::IndexValue<NAME>::IndexValue(v) {} \
+    inline explicit NAME(RAJA::Index_type v) : RAJA::IndexValue<NAME>::IndexValue(v) {} \
     static inline std::string getName(void){return #NAME;} \
   };
 
