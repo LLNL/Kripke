@@ -3,7 +3,7 @@
 #ifndef RAJA_VIEW_HXX__
 #define RAJA_VIEW_HXX__
 
-#include "RAJA/Layout.hxx"
+#include <RAJA/Layout.hxx>
 
 namespace RAJA {
 

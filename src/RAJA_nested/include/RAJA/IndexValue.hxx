@@ -18,10 +18,10 @@ namespace RAJA {
  * Yes, this uses the curiosly-recurring template pattern.
  */
 template<typename TYPE>
-class Index {
+class IndexValue {
 
   public:
-    inline explicit Index(int v) : value(v) {}
+    inline explicit IndexValue(int v) : value(v) {}
 
     /**
      * Dereference provides cast-to-integer.
@@ -76,9 +76,9 @@ inline TO convertIndex(FROM val){
  * Helper Macro to create new Index types.
  */
 #define DEF_INDEX(NAME) \
-  class NAME : public RAJA::Index<NAME>{ \
+  class NAME : public RAJA::IndexValue<NAME>{ \
   public: \
-    inline explicit NAME(int v) : RAJA::Index<NAME>::Index(v) {} \
+    inline explicit NAME(int v) : RAJA::IndexValue<NAME>::IndexValue(v) {} \
     static inline std::string getName(void){return #NAME;} \
   };
 

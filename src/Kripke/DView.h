@@ -3,7 +3,7 @@
 
 #include<string>
 #include<RAJA/RangeSegment.hxx>
-#include<RAJA/Index.hxx>
+#include<RAJA/IndexValue.hxx>
 #include<RAJA/View.hxx>
 #include<RAJA/Forall.hxx>
 

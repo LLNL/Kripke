@@ -38,7 +38,7 @@
 #include<Kripke/DView.h>
 #include<RAJA/Layout.hxx>
 #include<RAJA/Forall.hxx>
-#include<RAJA/Index.hxx>
+#include<RAJA/IndexValue.hxx>
 
 
 /*
