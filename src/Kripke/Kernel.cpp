@@ -267,7 +267,7 @@ void Kernel::sweep(Grid_Data *domain, int sdom_id) {
     typename POL::View_IdxToJ  idx_to_j((IZoneJ*)&extent.idx_to_j[0], domain, sdom_id);
     typename POL::View_IdxToK  idx_to_k((IZoneK*)&extent.idx_to_k[0], domain, sdom_id);
 
-    forall3<SweepPolicy<nest_type>, IDirection, IGroup, IZoneIdx>(
+    RAJA::forall3<SweepPolicy<nest_type>, IDirection, IGroup, IZoneIdx>(
       domain->indexRange<IDirection>(sdom_id),
       domain->indexRange<IGroup>(sdom_id),
       extent.indexset_sweep,

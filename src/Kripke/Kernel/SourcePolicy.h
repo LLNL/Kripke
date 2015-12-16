@@ -39,34 +39,34 @@
 
 
 template<typename T>
-struct SourcePolicy : Forall2_Policy<> {}; // g,mix
+struct SourcePolicy : RAJA::Forall2_Policy<> {}; // g,mix
 
 template<>
-struct SourcePolicy<NEST_DGZ_T> :  Forall2_Policy<omp_nowait, seq_pol,
-									  Forall2_OMP_Parallel<
-									    Forall2_Permute<PERM_IJ>
+struct SourcePolicy<NEST_DGZ_T> :  RAJA::Forall2_Policy<omp_nowait, seq_pol,
+                      RAJA::Forall2_OMP_Parallel<
+                      RAJA::Forall2_Permute<RAJA::PERM_IJ>
 									  >
 									>
 {};
 
 template<>
-struct SourcePolicy<NEST_DZG_T> : Forall2_Policy<omp_pol, seq_pol, Forall2_Permute<PERM_JI> >
+struct SourcePolicy<NEST_DZG_T> : RAJA::Forall2_Policy<omp_pol, seq_pol, RAJA::Forall2_Permute<RAJA::PERM_JI> >
 {};
 
 template<>
-struct SourcePolicy<NEST_GDZ_T> : Forall2_Policy<seq_pol, seq_pol, Forall2_Permute<PERM_IJ> >
+struct SourcePolicy<NEST_GDZ_T> : RAJA::Forall2_Policy<seq_pol, seq_pol, RAJA::Forall2_Permute<RAJA::PERM_IJ> >
 {};
 
 template<>
-struct SourcePolicy<NEST_GZD_T> : Forall2_Policy<omp_pol, seq_pol, Forall2_Permute<PERM_IJ> >
+struct SourcePolicy<NEST_GZD_T> : RAJA::Forall2_Policy<omp_pol, seq_pol, RAJA::Forall2_Permute<RAJA::PERM_IJ> >
 {};
 
 template<>
-struct SourcePolicy<NEST_ZDG_T> : Forall2_Policy<omp_pol, seq_pol, Forall2_Permute<PERM_JI> >
+struct SourcePolicy<NEST_ZDG_T> : RAJA::Forall2_Policy<omp_pol, seq_pol, RAJA::Forall2_Permute<RAJA::PERM_JI> >
 {};
 
 template<>
-struct SourcePolicy<NEST_ZGD_T> : Forall2_Policy<omp_pol, seq_pol, Forall2_Permute<PERM_JI> >
+struct SourcePolicy<NEST_ZGD_T> : RAJA::Forall2_Policy<omp_pol, seq_pol, RAJA::Forall2_Permute<RAJA::PERM_JI> >
 {};
 
 #endif

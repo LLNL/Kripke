@@ -1,13 +1,11 @@
-#ifndef __DOMAIN_INDEX_H__
-#define __DOMAIN_INDEX_H__
+#ifndef RAJA_INDEX_HXX__
+#define RAJA_INDEX_HXX__
 
-#include<string>
 #include<RAJA/RangeSegment.hxx>
+#include<string>
 
 
-template<typename IndexTag>
-struct IndexTraits {
-};
+namespace RAJA {
 
 /**
  * Strongly typed Index class.
@@ -16,45 +14,73 @@ struct IndexTraits {
  * conversion.
  *
  * Use the DEF_INDEX(NAME) macro to define new indices.
+ *
+ * Yes, this uses the curiosly-recurring template pattern.
  */
-template<typename IndexTag>
+template<typename TYPE>
 class Index {
 
   public:
-    explicit Index(int v) : value(v) {}
-    
+    inline explicit Index(int v) : value(v) {}
+
+    /**
+     * Dereference provides cast-to-integer.
+     */
     inline int operator*(void) const {return value;}
 
-    inline Index<IndexTag> operator+(int a) const { return Index<IndexTag>(value+a); }
+    inline TYPE operator+(int a) const { return TYPE(value+a); }
 
-    inline static std::string getName(void){
-      return IndexTraits<IndexTag>::getName();
-    }
-
+    //static std::string getName(void);
   
   private:
     int value;
 
 };
 
+
+/**
+ * Helper class for convertIndex, since functions cannot be partially
+ * specialized
+ */
+template<typename TO, typename FROM>
+struct ConvertIndexHelper {
+  static inline TO convert(FROM val){
+    return TO(*val);
+  }
+};
+
+template<typename TO>
+struct ConvertIndexHelper<TO, int> {
+  static inline TO convert(int val){
+    return TO(val);
+  }
+};
+
 /**
  * Function provides a way to take either an int or any Index<> type, and
  * convert it to another type, possibly another Index or an int.
  */
-template<typename TO>
-inline TO convertIndex(int val){return TO(val);}
+template<typename TO, typename FROM>
+inline TO convertIndex(FROM val){
+  return ConvertIndexHelper<TO, FROM>::convert(val);
+}
 
 
+
+
+} // namespace RAJA
+
+
+
+/**
+ * Helper Macro to create new Index types.
+ */
 #define DEF_INDEX(NAME) \
-  struct NAME##_TAG {};\
-  template<>\
-  struct IndexTraits<NAME##_TAG>{\
-    static inline std::string getName(void){return #NAME;}\
-  };\
-  typedef Index<NAME##_TAG> NAME;\
-  template<typename TO> \
-  inline TO convertIndex(Index<NAME##_TAG> const &val){return TO(*val);}
-
+  class NAME : public RAJA::Index<NAME>{ \
+  public: \
+    inline explicit NAME(int v) : RAJA::Index<NAME>::Index(v) {} \
+    static inline std::string getName(void){return #NAME;} \
+  };
 
 
 #endif

@@ -42,27 +42,27 @@ template<typename T>
 struct ScatteringPolicy{}; // nm, g, gp, mat
 
 template<>
-struct ScatteringPolicy<NEST_DGZ_T> : Forall4_Policy<seq_pol, seq_pol, omp_nowait, seq_pol, Forall4_Permute<PERM_IJKL>>
+struct ScatteringPolicy<NEST_DGZ_T> : RAJA::Forall4_Policy<seq_pol, seq_pol, omp_nowait, seq_pol, RAJA::Forall4_Permute<RAJA::PERM_IJKL>>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_DZG_T> : Forall4_Policy<omp_pol, seq_pol, seq_pol, seq_pol, Forall4_Permute<PERM_ILJK>>
+struct ScatteringPolicy<NEST_DZG_T> : RAJA::Forall4_Policy<omp_pol, seq_pol, seq_pol, seq_pol, RAJA::Forall4_Permute<RAJA::PERM_ILJK>>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_GDZ_T> : Forall4_Policy<seq_pol, omp_parallel_seq, omp_nowait, seq_pol, Forall4_Permute<PERM_JKIL>>
+struct ScatteringPolicy<NEST_GDZ_T> : RAJA::Forall4_Policy<seq_pol, omp_parallel_seq, omp_nowait, seq_pol, RAJA::Forall4_Permute<RAJA::PERM_JKIL>>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_GZD_T> : Forall4_Policy<seq_pol, seq_pol, omp_pol, seq_pol, Forall4_Permute<PERM_JKLI>>
+struct ScatteringPolicy<NEST_GZD_T> : RAJA::Forall4_Policy<seq_pol, seq_pol, omp_pol, seq_pol, RAJA::Forall4_Permute<RAJA::PERM_JKLI>>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_ZDG_T> : Forall4_Policy<seq_pol, seq_pol, seq_pol, omp_pol, Forall4_Permute<PERM_LIJK>>
+struct ScatteringPolicy<NEST_ZDG_T> : RAJA::Forall4_Policy<seq_pol, seq_pol, seq_pol, omp_pol, RAJA::Forall4_Permute<RAJA::PERM_LIJK>>
 {};
 
 template<>
-struct ScatteringPolicy<NEST_ZGD_T> : Forall4_Policy<seq_pol, seq_pol, seq_pol, omp_pol, Forall4_Permute<PERM_LJKI>>
+struct ScatteringPolicy<NEST_ZGD_T> : RAJA::Forall4_Policy<seq_pol, seq_pol, seq_pol, omp_pol, RAJA::Forall4_Permute<RAJA::PERM_LJKI>>
 {};
 
 

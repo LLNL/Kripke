@@ -1,8 +1,10 @@
-#ifndef DOMAIN_TILE_H__
-#define DOMAIN_TILE_H__
+#ifndef RAJA_TILE_HXX__
+#define RAJA_TILE_HXX__
 
 #include<RAJA/RAJA.hxx>
+#include<algorithm>
 
+namespace RAJA {
 
 // Policy for no tiling
 struct tile_none {};
@@ -92,6 +94,8 @@ void forall_tile(tile_indexset, RAJA::IndexSet const &iset, BODY body){
    } // iterate over segments of index set  
 }
 
+
+} // namespace RAJA
 
 #endif
 

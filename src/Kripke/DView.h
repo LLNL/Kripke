@@ -9,27 +9,27 @@
 
 
 template<typename DataType, typename Layout>
-struct DView1d : public View1d<DataType, Layout> {
+struct DView1d : public RAJA::View1d<DataType, Layout> {
 
   typedef typename Layout::Permutation Permutation;
   typedef typename Layout::IndexI IndexI;
 
   inline DView1d(DataType *ptr, Grid_Data *domain, int sdom_id) :
-    View1d<DataType, Layout>::View1d(
+    RAJA::View1d<DataType, Layout>::View1d(
         ptr,
         domain->indexSize<IndexI>(sdom_id))
   {}
 };
 
 template<typename DataType, typename Layout>
-struct DView2d : public View2d<DataType, Layout> {
+struct DView2d : public RAJA::View2d<DataType, Layout> {
 
   typedef typename Layout::Permutation Permutation;
   typedef typename Layout::IndexI IndexI;
   typedef typename Layout::IndexJ IndexJ;
 
   inline DView2d(DataType *ptr, Grid_Data *domain, int sdom_id) :
-    View2d<DataType, Layout>::View2d(
+    RAJA::View2d<DataType, Layout>::View2d(
         ptr,
         domain->indexSize<IndexI>(sdom_id),
         domain->indexSize<IndexJ>(sdom_id))
@@ -37,7 +37,7 @@ struct DView2d : public View2d<DataType, Layout> {
 };
 
 template<typename DataType, typename Layout>
-struct DView3d : public View3d<DataType, Layout> {
+struct DView3d : public RAJA::View3d<DataType, Layout> {
 
   typedef typename Layout::Permutation Permutation;
   typedef typename Layout::IndexI IndexI;
@@ -45,7 +45,7 @@ struct DView3d : public View3d<DataType, Layout> {
   typedef typename Layout::IndexK IndexK;
 
   inline DView3d(DataType *ptr, Grid_Data *domain, int sdom_id) :
-    View3d<DataType, Layout>::View3d(
+    RAJA::View3d<DataType, Layout>::View3d(
         ptr,
         domain->indexSize<IndexI>(sdom_id),
         domain->indexSize<IndexJ>(sdom_id),
@@ -54,7 +54,7 @@ struct DView3d : public View3d<DataType, Layout> {
 };
 
 template<typename DataType, typename Layout>
-struct DView4d : public View4d<DataType, Layout> {
+struct DView4d : public RAJA::View4d<DataType, Layout> {
 
   typedef typename Layout::Permutation Permutation;
   typedef typename Layout::IndexI IndexI;
@@ -63,7 +63,7 @@ struct DView4d : public View4d<DataType, Layout> {
   typedef typename Layout::IndexL IndexL;
 
   inline DView4d(DataType *ptr, Grid_Data *domain, int sdom_id) :
-    View4d<DataType, Layout>::View4d(
+    RAJA::View4d<DataType, Layout>::View4d(
         ptr,
         domain->indexSize<IndexI>(sdom_id),
         domain->indexSize<IndexJ>(sdom_id),
@@ -77,15 +77,15 @@ struct DView4d : public View4d<DataType, Layout> {
  * Wrapper around Layout1d that provides accessors to Index sizes
  */
 template<typename Perm, typename IdxI, typename IdxLin = int>
-struct DLayout1d : public Layout1d<Perm, IdxI, IdxLin>{
+struct DLayout1d : public RAJA::Layout1d<Perm, IdxI, IdxLin>{
 
   inline DLayout1d(Grid_Data *domain, int sdom_id) :
-    Layout1d<Perm, IdxI, IdxLin>::Layout1d(
+    RAJA::Layout1d<Perm, IdxI, IdxLin>::Layout1d(
           domain->indexSize<IdxI>(sdom_id))
   {}
 
   inline DLayout1d(int ni) :
-    Layout1d<Perm, IdxI, IdxLin>::Layout1d(ni)
+    RAJA::Layout1d<Perm, IdxI, IdxLin>::Layout1d(ni)
   {}
 
 };
@@ -95,16 +95,16 @@ struct DLayout1d : public Layout1d<Perm, IdxI, IdxLin>{
  * Wrapper around Layout2d that provides accessors to Index sizes
  */
 template<typename Perm, typename IdxI, typename IdxJ, typename IdxLin = int>
-struct DLayout2d : public Layout2d<Perm, IdxI, IdxJ, IdxLin>{
+struct DLayout2d : public RAJA::Layout2d<Perm, IdxI, IdxJ, IdxLin>{
 
   inline DLayout2d(Grid_Data *domain, int sdom_id) :
-    Layout2d<Perm, IdxI, IdxJ, IdxLin>::Layout2d(
+    RAJA::Layout2d<Perm, IdxI, IdxJ, IdxLin>::Layout2d(
           domain->indexSize<IdxI>(sdom_id),
           domain->indexSize<IdxJ>(sdom_id))
   {}
 
   inline DLayout2d(int ni, int nj) :
-    Layout2d<Perm, IdxI, IdxJ, IdxLin>::Layout2d(ni, nj)
+    RAJA::Layout2d<Perm, IdxI, IdxJ, IdxLin>::Layout2d(ni, nj)
   {}
 
 };
@@ -113,17 +113,17 @@ struct DLayout2d : public Layout2d<Perm, IdxI, IdxJ, IdxLin>{
  * Wrapper around Layout3d that provides accessors to Index sizes
  */
 template<typename Perm, typename IdxI, typename IdxJ, typename IdxK, typename IdxLin = int>
-struct DLayout3d : public Layout3d<Perm, IdxI, IdxJ, IdxK, IdxLin>{
+struct DLayout3d : public RAJA::Layout3d<Perm, IdxI, IdxJ, IdxK, IdxLin>{
 
   inline DLayout3d(Grid_Data *domain, int sdom_id) :
-    Layout3d<Perm, IdxI, IdxJ, IdxK, IdxLin>::Layout3d(
+    RAJA::Layout3d<Perm, IdxI, IdxJ, IdxK, IdxLin>::Layout3d(
         domain->indexSize<IdxI>(sdom_id),
         domain->indexSize<IdxJ>(sdom_id),
         domain->indexSize<IdxK>(sdom_id))
   {}
 
   inline DLayout3d(int ni, int nj, int nk) :
-    Layout3d<Perm, IdxI, IdxJ, IdxK, IdxLin>::Layout3d(ni, nj, nk)
+    RAJA::Layout3d<Perm, IdxI, IdxJ, IdxK, IdxLin>::Layout3d(ni, nj, nk)
   {}
 
 };
@@ -133,10 +133,10 @@ struct DLayout3d : public Layout3d<Perm, IdxI, IdxJ, IdxK, IdxLin>{
  * Wrapper around Layout4d that provides accessors to Index sizes
  */
 template<typename Perm, typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename IdxLin = int>
-struct DLayout4d : public Layout4d<Perm, IdxI, IdxJ, IdxK, IdxL, IdxLin>{
+struct DLayout4d : public RAJA::Layout4d<Perm, IdxI, IdxJ, IdxK, IdxL, IdxLin>{
 
   inline DLayout4d(Grid_Data *domain, int sdom_id) :
-    Layout4d<Perm, IdxI, IdxJ, IdxK, IdxL, IdxLin>::Layout4d(
+    RAJA::Layout4d<Perm, IdxI, IdxJ, IdxK, IdxL, IdxLin>::Layout4d(
         domain->indexSize<IdxI>(sdom_id),
         domain->indexSize<IdxJ>(sdom_id),
         domain->indexSize<IdxK>(sdom_id),
@@ -144,7 +144,7 @@ struct DLayout4d : public Layout4d<Perm, IdxI, IdxJ, IdxK, IdxL, IdxLin>{
   {}
 
   inline DLayout4d(int ni, int nj, int nk, int nl) :
-    Layout4d<Perm, IdxI, IdxJ, IdxK, IdxL, IdxLin>::Layout4d(ni, nj, nk, nl)
+    RAJA::Layout4d<Perm, IdxI, IdxJ, IdxK, IdxL, IdxLin>::Layout4d(ni, nj, nk, nl)
   {}
 
 };
@@ -156,7 +156,7 @@ void dForall2(Grid_Data *domain, int sdom_id, BODY const &body){
   RAJA::RangeSegment seg_j = domain->indexRange<IdxJ>(sdom_id);
 
   // Call underlying forall, extracting ranges from domain
-  forall2<POL, IdxI, IdxJ>(seg_i, seg_j, body);
+  RAJA::forall2<POL, IdxI, IdxJ>(seg_i, seg_j, body);
 }
 
 template<typename POL, typename IdxI, typename IdxJ, typename IdxK, typename BODY>
@@ -167,7 +167,7 @@ void dForall3(Grid_Data *domain, int sdom_id, BODY const &body){
   RAJA::RangeSegment seg_k = domain->indexRange<IdxK>(sdom_id);
 
   // Call underlying forall, extracting ranges from domain
-  forall3<POL, IdxI, IdxJ, IdxK>(seg_i, seg_j, seg_k, body);
+  RAJA::forall3<POL, IdxI, IdxJ, IdxK>(seg_i, seg_j, seg_k, body);
 }
 
 template<typename POL, typename IdxI, typename IdxJ, typename IdxK, typename IdxL, typename BODY>
@@ -179,7 +179,7 @@ void dForall4(Grid_Data *domain, int sdom_id, BODY const &body){
   RAJA::RangeSegment seg_l = domain->indexRange<IdxL>(sdom_id);
 
   // Call underlying forall, extracting ranges from domain
-  forall4<POL, IdxI, IdxJ, IdxK, IdxL>(seg_i, seg_j, seg_k, seg_l, body);
+  RAJA::forall4<POL, IdxI, IdxJ, IdxK, IdxL>(seg_i, seg_j, seg_k, seg_l, body);
 }
 
 #endif

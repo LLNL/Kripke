@@ -42,27 +42,27 @@ template<typename T>
 struct SweepPolicy{}; // d, g, z
 
 template<>
-struct SweepPolicy<NEST_DGZ_T> : Forall3_Policy<omp_nowait, seq_pol, sweep_seq_pol, Forall3_Permute<PERM_IJK>>
+struct SweepPolicy<NEST_DGZ_T> : RAJA::Forall3_Policy<omp_nowait, seq_pol, sweep_seq_pol, RAJA::Forall3_Permute<RAJA::PERM_IJK>>
 {};
 
 template<>
-struct SweepPolicy<NEST_DZG_T> : Forall3_Policy<omp_pol, seq_pol, sweep_seq_pol, Forall3_Permute<PERM_IKJ>>
+struct SweepPolicy<NEST_DZG_T> : RAJA::Forall3_Policy<omp_pol, seq_pol, sweep_seq_pol, RAJA::Forall3_Permute<RAJA::PERM_IKJ>>
 {};
 
 template<>
-struct SweepPolicy<NEST_GDZ_T> : Forall3_Policy<omp_pol, omp_pol, sweep_seq_pol, Forall3_Permute<PERM_JIK>>
+struct SweepPolicy<NEST_GDZ_T> : RAJA::Forall3_Policy<omp_pol, omp_pol, sweep_seq_pol, RAJA::Forall3_Permute<RAJA::PERM_JIK>>
 {};
 
 template<>
-struct SweepPolicy<NEST_GZD_T> : Forall3_Policy<seq_pol, omp_pol, sweep_seq_pol, Forall3_Permute<PERM_JKI>>
+struct SweepPolicy<NEST_GZD_T> : RAJA::Forall3_Policy<seq_pol, omp_pol, sweep_seq_pol, RAJA::Forall3_Permute<RAJA::PERM_JKI>>
 {};
 
 template<>
-struct SweepPolicy<NEST_ZDG_T> : Forall3_Policy<seq_pol, seq_pol, sweep_omp_pol, Forall3_Permute<PERM_KIJ>>
+struct SweepPolicy<NEST_ZDG_T> : RAJA::Forall3_Policy<seq_pol, seq_pol, sweep_omp_pol, RAJA::Forall3_Permute<RAJA::PERM_KIJ>>
 {};
 
 template<>
-struct SweepPolicy<NEST_ZGD_T> : Forall3_Policy<seq_pol, seq_pol, sweep_omp_pol, Forall3_Permute<PERM_KJI>>
+struct SweepPolicy<NEST_ZGD_T> : RAJA::Forall3_Policy<seq_pol, seq_pol, sweep_omp_pol, RAJA::Forall3_Permute<RAJA::PERM_KJI>>
 {};
 
 

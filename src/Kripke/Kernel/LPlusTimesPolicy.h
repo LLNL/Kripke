@@ -42,27 +42,27 @@ template<typename T>
 struct LPlusTimesPolicy{}; // nm, d, g, z
 
 template<>
-struct LPlusTimesPolicy<NEST_DGZ_T> : Forall4_Policy<seq_pol, seq_pol, omp_nowait, seq_pol, Forall4_Permute<PERM_IJKL>>
+struct LPlusTimesPolicy<NEST_DGZ_T> : RAJA::Forall4_Policy<seq_pol, seq_pol, omp_nowait, seq_pol, RAJA::Forall4_Permute<RAJA::PERM_IJKL>>
 {};
 
 template<>
-struct LPlusTimesPolicy<NEST_DZG_T> : Forall4_Policy<seq_pol, seq_pol, seq_pol, omp_nowait, Forall4_Permute<PERM_LIJK>>
+struct LPlusTimesPolicy<NEST_DZG_T> : RAJA::Forall4_Policy<seq_pol, seq_pol, seq_pol, omp_nowait, RAJA::Forall4_Permute<RAJA::PERM_LIJK>>
 {};
 
 template<>
-struct LPlusTimesPolicy<NEST_GDZ_T> : Forall4_Policy<seq_pol, seq_pol, omp_pol, seq_pol, Forall4_Permute<PERM_KIJL>>
+struct LPlusTimesPolicy<NEST_GDZ_T> : RAJA::Forall4_Policy<seq_pol, seq_pol, omp_pol, seq_pol, RAJA::Forall4_Permute<RAJA::PERM_KIJL>>
 {};
 
 template<>
-struct LPlusTimesPolicy<NEST_GZD_T> : Forall4_Policy<seq_pol, seq_pol, omp_pol, omp_pol, Forall4_Permute<PERM_KLIJ>>
+struct LPlusTimesPolicy<NEST_GZD_T> : RAJA::Forall4_Policy<seq_pol, seq_pol, omp_pol, omp_pol, RAJA::Forall4_Permute<RAJA::PERM_KLIJ>>
 {};
 
 template<>
-struct LPlusTimesPolicy<NEST_ZDG_T> : Forall4_Policy<omp_pol, seq_pol, seq_pol, omp_pol, Forall4_Permute<PERM_LIJK>>
+struct LPlusTimesPolicy<NEST_ZDG_T> : RAJA::Forall4_Policy<omp_pol, seq_pol, seq_pol, omp_pol, RAJA::Forall4_Permute<RAJA::PERM_LIJK>>
 {};
 
 template<>
-struct LPlusTimesPolicy<NEST_ZGD_T> : Forall4_Policy<seq_pol, seq_pol, omp_pol, omp_pol, Forall4_Permute<PERM_LKIJ>>
+struct LPlusTimesPolicy<NEST_ZGD_T> : RAJA::Forall4_Policy<seq_pol, seq_pol, omp_pol, omp_pol, RAJA::Forall4_Permute<RAJA::PERM_LKIJ>>
 {};
 
 
