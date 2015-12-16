@@ -8,6 +8,6 @@ set(CMAKE_CXX_FLAGS "-mpi=mvapich2-gnu-2.1 -g -O3 -std=c++11 -mtune=native -mavx
 set(CMAKE_LINKER_FLAGS "-mpi=mvapich2-gnu-2.1" CACHE STRING barfoo FORCE)
 
 # CUDA Compiler Setup
-set(CUDA_NVCC_FLAGS "-arch compute_35 -std=c++11 --expt-extended-lambda" CACHE STRING foobar FORCE)
+set(CUDA_NVCC_FLAGS "-arch compute_35 -std=c++11 --expt-extended-lambda -x=cu" CACHE STRING foobar FORCE)
 set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE STRING barfoo FORCE)
 

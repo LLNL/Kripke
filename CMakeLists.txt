@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 3.1)
 
 project(KRIPKE VERSION 1.1 LANGUAGES CXX)
 
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules" ${CMAKE_MODULE_PATH})
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules")
+list(APPEND CMAKE_MODULE_PATH "/usr/local/tools/cmake-3.1.2/share/cmake-3.1/Modules")
+#list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_PREFIX}")
+
 message(STATUS "Using module path ${CMAKE_MODULE_PATH}")
 
 
@@ -21,7 +24,7 @@ message(STATUS "CUDA Support is ${ENABLE_CUDA}")
 if(${ENABLE_CUDA})
   find_package(CUDA QUIET REQUIRED)
   if (CUDA_FOUND)    
-      add_definitions (-DKRIPKE_USE_CUDA -DRAJA_USE_CUDA -DLPlusTimes_sweep_combined_ -DLPlusTimes_sweep_LTimes_combined__  -DKRIPKE_USE_CUBLAS)
+      add_definitions (-DKRIPKE_USE_CUDA -DRAJA_USE_CUDA)
   endif()
   message(STATUS "Selected NVCC Compiler ${CUDA_NVCC_EXECUTABLE}")
   message(STATUS "Selected CUDA NVCC Flags: ${CUDA_NVCC_FLAGS}")
@@ -153,9 +156,13 @@ include_directories(src)
 add_subdirectory(src)
 
 # Setup the kripke target
-add_executable(kripke "src/kripke.cpp")
-target_link_libraries(kripke ${KRIPKE_LIBS} ${KRIPKE_LIBS})
-
+if(ENABLE_CUDA)
+  cuda_add_executable(kripke "src/kripke.cpp")
+  target_link_libraries(kripke ${KRIPKE_LIBS} ${KRIPKE_LIBS})
+else()
+  add_executable(kripke "src/kripke.cpp")
+  target_link_libraries(kripke ${KRIPKE_LIBS} ${KRIPKE_LIBS})
+endif()
 
 #
 # Testing suite
