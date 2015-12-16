@@ -34,8 +34,8 @@
 #define KERNEL_LPLUSTIMES_POLICY_H__
 
 #include<Kripke.h>
-#include<Domain/Layout.h>
-#include<Domain/Forall.h>
+#include<RAJA/Layout.hxx>
+#include<RAJA/Forall.hxx>
 
 
 template<typename T>

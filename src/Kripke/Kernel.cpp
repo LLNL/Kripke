@@ -34,10 +34,9 @@
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 
-#include<Domain/View.h>
-#include<Domain/Forall.h>
-
 #include<RAJA/RAJA.hxx>
+#include<RAJA/View.hxx>
+#include<RAJA/Forall.hxx>
 
 #include<Kripke/Kernel/Kernel_3d_GDZ.h>
 #include<Kripke/Kernel/Kernel_3d_DGZ.h>

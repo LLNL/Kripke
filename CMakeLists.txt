@@ -143,6 +143,7 @@ endif()
 # RAJA Stuff
 add_definitions (-DRAJA_USE_DOUBLE -DRAJA_USE_RESTRICT_PTR)
 include_directories(./src/RAJA/includes)
+include_directories(./src/RAJA_nested/include)
 
 #
 # Other Build Options

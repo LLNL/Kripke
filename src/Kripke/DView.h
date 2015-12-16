@@ -3,9 +3,9 @@
 
 #include<string>
 #include<RAJA/RangeSegment.hxx>
-#include<Domain/Index.h>
-#include<Domain/View.h>
-#include<Domain/Forall.h>
+#include<RAJA/Index.hxx>
+#include<RAJA/View.hxx>
+#include<RAJA/Forall.hxx>
 
 
 template<typename DataType, typename Layout>

@@ -3,8 +3,8 @@
 
 #include<Kripke/Grid.h>
 #include<Kripke/Subdomain.h>
-#include<Domain/Layout.h>
-#include<Domain/View.h>
+#include<RAJA/Layout.hxx>
+#include<RAJA/View.hxx>
 
 #include<RAJA/RAJA.hxx>
 
@@ -43,9 +43,9 @@ typedef RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::simd_exec> sweep_paral
 
 
 // Include nested forall's
-#include<Domain/Forall2.h>
-#include<Domain/Forall3.h>
-#include<Domain/Forall4.h>
+#include<RAJA/Forall2.hxx>
+#include<RAJA/Forall3.hxx>
+#include<RAJA/Forall4.hxx>
 
 
 

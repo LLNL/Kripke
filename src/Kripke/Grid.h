@@ -37,7 +37,7 @@
 #include <Kripke/Kernel.h>
 #include <Kripke/Subdomain.h>
 #include <Kripke/Timing.h>
-#include <Domain/Index.h>
+#include <RAJA/Index.hxx>
 #include <mpi.h>
 #include <vector>
 

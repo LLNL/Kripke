@@ -36,9 +36,9 @@
 #include<Kripke.h>
 #include<Kripke/Directions.h>
 #include<Kripke/DView.h>
-#include<Domain/Layout.h>
-#include<Domain/Forall.h>
-#include<Domain/Index.h>
+#include<RAJA/Layout.hxx>
+#include<RAJA/Forall.hxx>
+#include<RAJA/Index.hxx>
 
 
 /*

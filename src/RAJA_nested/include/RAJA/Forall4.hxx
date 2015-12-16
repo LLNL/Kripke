@@ -4,7 +4,7 @@
 #define RAJA_DOMAIN_FORALL4_HXX__
 
 #include<RAJA/RAJA.hxx>
-#include<Domain/Tile.h>
+#include<RAJA/Tile.hxx>
 
 namespace RAJA {
 

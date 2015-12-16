@@ -3,7 +3,7 @@
 #ifndef RAJA_LAYOUT_HXX__
 #define RAJA_LAYOUT_HXX__
 
-#include <Domain/Index.h>
+#include <RAJA/Index.hxx>
 
 namespace RAJA {
 
