@@ -1,5 +1,5 @@
-#ifndef RAJA_INDEX_HXX__
-#define RAJA_INDEX_HXX__
+#ifndef RAJA_INDEXVALUE_HXX__
+#define RAJA_INDEXVALUE_HXX__
 
 #include<RAJA/int_datatypes.hxx>
 #include<RAJA/RangeSegment.hxx>
@@ -9,14 +9,14 @@
 namespace RAJA {
 
 /**
- * Strongly typed Index class.
+ * Strongly typed "integer" class.
  *
- * Allows integers to be associated with a type, and dissalows automatic
+ * Allows integers to be associated with a type, and disallows automatic
  * conversion.
  *
- * Use the DEF_INDEX(NAME) macro to define new indices.
+ * Use the RAJA_INDEX_VALUE(NAME) macro to define new indices.
  *
- * Yes, this uses the curiosly-recurring template pattern.
+ * Yes, this uses the curiously-recurring template pattern.
  */
 template<typename TYPE>
 class IndexValue {
