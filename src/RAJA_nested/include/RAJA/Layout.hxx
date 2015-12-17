@@ -42,16 +42,16 @@ struct PERM_LJKI {};
 struct PERM_LKIJ {};
 struct PERM_LKJI {};
 
-template<typename Perm, typename IdxI=int, typename IdxLin=int>
+template<typename Perm, typename IdxI=Index_type, typename IdxLin=Index_type>
 struct Layout1d {};
 
-template<typename Perm, typename IdxI=int, typename IdxJ=int, typename IdxLin=int>
+template<typename Perm, typename IdxI=Index_type, typename IdxJ=Index_type, typename IdxLin=Index_type>
 struct Layout2d {};
 
-template<typename Perm, typename IdxI=int, typename IdxJ=int, typename IdxK=int, typename IdxLin=int>
+template<typename Perm, typename IdxI=Index_type, typename IdxJ=Index_type, typename IdxK=Index_type, typename IdxLin=Index_type>
 struct Layout3d {};
 
-template<typename Perm, typename IdxI=int, typename IdxJ=int, typename IdxK=int, typename IdxL=int, typename IdxLin=int>
+template<typename Perm, typename IdxI=Index_type, typename IdxJ=Index_type, typename IdxK=Index_type, typename IdxL=Index_type, typename IdxLin=Index_type>
 struct Layout4d {};
 
 
@@ -65,20 +65,20 @@ struct Layout1d<PERM_I, IdxI, IdxLin> {
   typedef IdxLin IndexLinear;
   typedef IdxI IndexI;
 
-  int const size_i;
+  Index_type const size_i;
 
-  int const stride_i;
+  Index_type const stride_i;
 
-  inline Layout1d(int ni):
+  inline Layout1d(Index_type ni):
     size_i(ni), stride_i(1)
   {}
 
   inline IdxLin operator()(IdxI i) const {
-    return convertIndex<IdxLin>(convertIndex<int>(i));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(i));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i) const {
-    int linear = convertIndex<int>(lin);
+    Index_type linear = convertIndex<Index_type>(lin);
     i = IdxI(linear);
   }
 };
@@ -96,23 +96,23 @@ struct Layout2d<PERM_IJ, IdxI, IdxJ, IdxLin> {
   typedef IdxI IndexI;
   typedef IdxJ IndexJ;
 
-  int const size_i;
-  int const size_j;
+  Index_type const size_i;
+  Index_type const size_j;
 
-  int const stride_i;
-  int const stride_j;
+  Index_type const stride_i;
+  Index_type const stride_j;
 
-  inline Layout2d(int ni, int nj):
+  inline Layout2d(Index_type ni, Index_type nj):
     size_i(ni), size_j(nj), stride_i(nj), stride_j(1)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j) const {
-    return convertIndex<IdxLin>(convertIndex<int>(i)*stride_i + convertIndex<int>(j));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(j));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j) const {
-    int linear = convertIndex<int>(lin);
-    int _i = linear / (size_j);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _i = linear / (size_j);
     i = IdxI(_i);
     linear -= _i*(size_j);
     j = IdxJ(linear);
@@ -127,23 +127,23 @@ struct Layout2d<PERM_JI, IdxI, IdxJ, IdxLin> {
   typedef IdxI IndexI;
   typedef IdxJ IndexJ;
 
-  int const size_i;
-  int const size_j;
+  Index_type const size_i;
+  Index_type const size_j;
 
-  int const stride_i;
-  int const stride_j;
+  Index_type const stride_i;
+  Index_type const stride_j;
 
-  inline Layout2d(int ni, int nj):
+  inline Layout2d(Index_type ni, Index_type nj):
     size_i(ni), size_j(nj), stride_i(1), stride_j(ni)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j) const {
-    return convertIndex<IdxLin>(convertIndex<int>(j)*stride_j + convertIndex<int>(i));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(i));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j) const {
-    int linear = convertIndex<int>(lin);
-    int _j = linear / (size_i);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _j = linear / (size_i);
     j = IdxJ(_j);
     linear -= _j*(size_i);
     i = IdxI(linear);
@@ -164,28 +164,28 @@ struct Layout3d<PERM_IJK, IdxI, IdxJ, IdxK, IdxLin> {
   typedef IdxJ IndexJ;
   typedef IdxK IndexK;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
 
-  inline Layout3d(int ni, int nj, int nk):
+  inline Layout3d(Index_type ni, Index_type nj, Index_type nk):
     size_i(ni), size_j(nj), size_k(nk), stride_i(nj*nk), stride_j(nk), stride_k(1)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k) const {
-    return convertIndex<IdxLin>(convertIndex<int>(i)*stride_i + convertIndex<int>(j)*stride_j + convertIndex<int>(k));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(k));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k) const {
-    int linear = convertIndex<int>(lin);
-    int _i = linear / (size_j*size_k);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _i = linear / (size_j*size_k);
     i = IdxI(_i);
     linear -= _i*(size_j*size_k);
-    int _j = linear / (size_k);
+    Index_type _j = linear / (size_k);
     j = IdxJ(_j);
     linear -= _j*(size_k);
     k = IdxK(linear);
@@ -201,28 +201,28 @@ struct Layout3d<PERM_IKJ, IdxI, IdxJ, IdxK, IdxLin> {
   typedef IdxJ IndexJ;
   typedef IdxK IndexK;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
 
-  inline Layout3d(int ni, int nj, int nk):
+  inline Layout3d(Index_type ni, Index_type nj, Index_type nk):
     size_i(ni), size_j(nj), size_k(nk), stride_i(nk*nj), stride_j(1), stride_k(nj)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k) const {
-    return convertIndex<IdxLin>(convertIndex<int>(i)*stride_i + convertIndex<int>(k)*stride_k + convertIndex<int>(j));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(j));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k) const {
-    int linear = convertIndex<int>(lin);
-    int _i = linear / (size_k*size_j);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _i = linear / (size_k*size_j);
     i = IdxI(_i);
     linear -= _i*(size_k*size_j);
-    int _k = linear / (size_j);
+    Index_type _k = linear / (size_j);
     k = IdxK(_k);
     linear -= _k*(size_j);
     j = IdxJ(linear);
@@ -238,28 +238,28 @@ struct Layout3d<PERM_JIK, IdxI, IdxJ, IdxK, IdxLin> {
   typedef IdxJ IndexJ;
   typedef IdxK IndexK;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
 
-  inline Layout3d(int ni, int nj, int nk):
+  inline Layout3d(Index_type ni, Index_type nj, Index_type nk):
     size_i(ni), size_j(nj), size_k(nk), stride_i(nk), stride_j(ni*nk), stride_k(1)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k) const {
-    return convertIndex<IdxLin>(convertIndex<int>(j)*stride_j + convertIndex<int>(i)*stride_i + convertIndex<int>(k));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(k));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k) const {
-    int linear = convertIndex<int>(lin);
-    int _j = linear / (size_i*size_k);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _j = linear / (size_i*size_k);
     j = IdxJ(_j);
     linear -= _j*(size_i*size_k);
-    int _i = linear / (size_k);
+    Index_type _i = linear / (size_k);
     i = IdxI(_i);
     linear -= _i*(size_k);
     k = IdxK(linear);
@@ -275,28 +275,28 @@ struct Layout3d<PERM_JKI, IdxI, IdxJ, IdxK, IdxLin> {
   typedef IdxJ IndexJ;
   typedef IdxK IndexK;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
 
-  inline Layout3d(int ni, int nj, int nk):
+  inline Layout3d(Index_type ni, Index_type nj, Index_type nk):
     size_i(ni), size_j(nj), size_k(nk), stride_i(1), stride_j(nk*ni), stride_k(ni)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k) const {
-    return convertIndex<IdxLin>(convertIndex<int>(j)*stride_j + convertIndex<int>(k)*stride_k + convertIndex<int>(i));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(i));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k) const {
-    int linear = convertIndex<int>(lin);
-    int _j = linear / (size_k*size_i);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _j = linear / (size_k*size_i);
     j = IdxJ(_j);
     linear -= _j*(size_k*size_i);
-    int _k = linear / (size_i);
+    Index_type _k = linear / (size_i);
     k = IdxK(_k);
     linear -= _k*(size_i);
     i = IdxI(linear);
@@ -312,28 +312,28 @@ struct Layout3d<PERM_KIJ, IdxI, IdxJ, IdxK, IdxLin> {
   typedef IdxJ IndexJ;
   typedef IdxK IndexK;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
 
-  inline Layout3d(int ni, int nj, int nk):
+  inline Layout3d(Index_type ni, Index_type nj, Index_type nk):
     size_i(ni), size_j(nj), size_k(nk), stride_i(nj), stride_j(1), stride_k(ni*nj)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k) const {
-    return convertIndex<IdxLin>(convertIndex<int>(k)*stride_k + convertIndex<int>(i)*stride_i + convertIndex<int>(j));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(j));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k) const {
-    int linear = convertIndex<int>(lin);
-    int _k = linear / (size_i*size_j);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _k = linear / (size_i*size_j);
     k = IdxK(_k);
     linear -= _k*(size_i*size_j);
-    int _i = linear / (size_j);
+    Index_type _i = linear / (size_j);
     i = IdxI(_i);
     linear -= _i*(size_j);
     j = IdxJ(linear);
@@ -349,28 +349,28 @@ struct Layout3d<PERM_KJI, IdxI, IdxJ, IdxK, IdxLin> {
   typedef IdxJ IndexJ;
   typedef IdxK IndexK;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
 
-  inline Layout3d(int ni, int nj, int nk):
+  inline Layout3d(Index_type ni, Index_type nj, Index_type nk):
     size_i(ni), size_j(nj), size_k(nk), stride_i(1), stride_j(ni), stride_k(nj*ni)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k) const {
-    return convertIndex<IdxLin>(convertIndex<int>(k)*stride_k + convertIndex<int>(j)*stride_j + convertIndex<int>(i));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(i));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k) const {
-    int linear = convertIndex<int>(lin);
-    int _k = linear / (size_j*size_i);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _k = linear / (size_j*size_i);
     k = IdxK(_k);
     linear -= _k*(size_j*size_i);
-    int _j = linear / (size_i);
+    Index_type _j = linear / (size_i);
     j = IdxJ(_j);
     linear -= _j*(size_i);
     i = IdxI(linear);
@@ -392,33 +392,33 @@ struct Layout4d<PERM_IJKL, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj*nk*nl), stride_j(nk*nl), stride_k(nl), stride_l(1)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(i)*stride_i + convertIndex<int>(j)*stride_j + convertIndex<int>(k)*stride_k + convertIndex<int>(l));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(l));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _i = linear / (size_j*size_k*size_l);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _i = linear / (size_j*size_k*size_l);
     i = IdxI(_i);
     linear -= _i*(size_j*size_k*size_l);
-    int _j = linear / (size_k*size_l);
+    Index_type _j = linear / (size_k*size_l);
     j = IdxJ(_j);
     linear -= _j*(size_k*size_l);
-    int _k = linear / (size_l);
+    Index_type _k = linear / (size_l);
     k = IdxK(_k);
     linear -= _k*(size_l);
     l = IdxL(linear);
@@ -435,33 +435,33 @@ struct Layout4d<PERM_IJLK, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj*nl*nk), stride_j(nl*nk), stride_k(1), stride_l(nk)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(i)*stride_i + convertIndex<int>(j)*stride_j + convertIndex<int>(l)*stride_l + convertIndex<int>(k));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(k));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _i = linear / (size_j*size_l*size_k);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _i = linear / (size_j*size_l*size_k);
     i = IdxI(_i);
     linear -= _i*(size_j*size_l*size_k);
-    int _j = linear / (size_l*size_k);
+    Index_type _j = linear / (size_l*size_k);
     j = IdxJ(_j);
     linear -= _j*(size_l*size_k);
-    int _l = linear / (size_k);
+    Index_type _l = linear / (size_k);
     l = IdxL(_l);
     linear -= _l*(size_k);
     k = IdxK(linear);
@@ -478,33 +478,33 @@ struct Layout4d<PERM_IKJL, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk*nj*nl), stride_j(nl), stride_k(nj*nl), stride_l(1)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(i)*stride_i + convertIndex<int>(k)*stride_k + convertIndex<int>(j)*stride_j + convertIndex<int>(l));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(l));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _i = linear / (size_k*size_j*size_l);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _i = linear / (size_k*size_j*size_l);
     i = IdxI(_i);
     linear -= _i*(size_k*size_j*size_l);
-    int _k = linear / (size_j*size_l);
+    Index_type _k = linear / (size_j*size_l);
     k = IdxK(_k);
     linear -= _k*(size_j*size_l);
-    int _j = linear / (size_l);
+    Index_type _j = linear / (size_l);
     j = IdxJ(_j);
     linear -= _j*(size_l);
     l = IdxL(linear);
@@ -521,33 +521,33 @@ struct Layout4d<PERM_IKLJ, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk*nl*nj), stride_j(1), stride_k(nl*nj), stride_l(nj)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(i)*stride_i + convertIndex<int>(k)*stride_k + convertIndex<int>(l)*stride_l + convertIndex<int>(j));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(j));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _i = linear / (size_k*size_l*size_j);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _i = linear / (size_k*size_l*size_j);
     i = IdxI(_i);
     linear -= _i*(size_k*size_l*size_j);
-    int _k = linear / (size_l*size_j);
+    Index_type _k = linear / (size_l*size_j);
     k = IdxK(_k);
     linear -= _k*(size_l*size_j);
-    int _l = linear / (size_j);
+    Index_type _l = linear / (size_j);
     l = IdxL(_l);
     linear -= _l*(size_j);
     j = IdxJ(linear);
@@ -564,33 +564,33 @@ struct Layout4d<PERM_ILJK, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl*nj*nk), stride_j(nk), stride_k(1), stride_l(nj*nk)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(i)*stride_i + convertIndex<int>(l)*stride_l + convertIndex<int>(j)*stride_j + convertIndex<int>(k));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(k));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _i = linear / (size_l*size_j*size_k);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _i = linear / (size_l*size_j*size_k);
     i = IdxI(_i);
     linear -= _i*(size_l*size_j*size_k);
-    int _l = linear / (size_j*size_k);
+    Index_type _l = linear / (size_j*size_k);
     l = IdxL(_l);
     linear -= _l*(size_j*size_k);
-    int _j = linear / (size_k);
+    Index_type _j = linear / (size_k);
     j = IdxJ(_j);
     linear -= _j*(size_k);
     k = IdxK(linear);
@@ -607,33 +607,33 @@ struct Layout4d<PERM_ILKJ, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl*nk*nj), stride_j(1), stride_k(nj), stride_l(nk*nj)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(i)*stride_i + convertIndex<int>(l)*stride_l + convertIndex<int>(k)*stride_k + convertIndex<int>(j));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(j));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _i = linear / (size_l*size_k*size_j);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _i = linear / (size_l*size_k*size_j);
     i = IdxI(_i);
     linear -= _i*(size_l*size_k*size_j);
-    int _l = linear / (size_k*size_j);
+    Index_type _l = linear / (size_k*size_j);
     l = IdxL(_l);
     linear -= _l*(size_k*size_j);
-    int _k = linear / (size_j);
+    Index_type _k = linear / (size_j);
     k = IdxK(_k);
     linear -= _k*(size_j);
     j = IdxJ(linear);
@@ -650,33 +650,33 @@ struct Layout4d<PERM_JIKL, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk*nl), stride_j(ni*nk*nl), stride_k(nl), stride_l(1)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(j)*stride_j + convertIndex<int>(i)*stride_i + convertIndex<int>(k)*stride_k + convertIndex<int>(l));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(l));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _j = linear / (size_i*size_k*size_l);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _j = linear / (size_i*size_k*size_l);
     j = IdxJ(_j);
     linear -= _j*(size_i*size_k*size_l);
-    int _i = linear / (size_k*size_l);
+    Index_type _i = linear / (size_k*size_l);
     i = IdxI(_i);
     linear -= _i*(size_k*size_l);
-    int _k = linear / (size_l);
+    Index_type _k = linear / (size_l);
     k = IdxK(_k);
     linear -= _k*(size_l);
     l = IdxL(linear);
@@ -693,33 +693,33 @@ struct Layout4d<PERM_JILK, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl*nk), stride_j(ni*nl*nk), stride_k(1), stride_l(nk)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(j)*stride_j + convertIndex<int>(i)*stride_i + convertIndex<int>(l)*stride_l + convertIndex<int>(k));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(k));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _j = linear / (size_i*size_l*size_k);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _j = linear / (size_i*size_l*size_k);
     j = IdxJ(_j);
     linear -= _j*(size_i*size_l*size_k);
-    int _i = linear / (size_l*size_k);
+    Index_type _i = linear / (size_l*size_k);
     i = IdxI(_i);
     linear -= _i*(size_l*size_k);
-    int _l = linear / (size_k);
+    Index_type _l = linear / (size_k);
     l = IdxL(_l);
     linear -= _l*(size_k);
     k = IdxK(linear);
@@ -736,33 +736,33 @@ struct Layout4d<PERM_JKIL, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl), stride_j(nk*ni*nl), stride_k(ni*nl), stride_l(1)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(j)*stride_j + convertIndex<int>(k)*stride_k + convertIndex<int>(i)*stride_i + convertIndex<int>(l));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(l));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _j = linear / (size_k*size_i*size_l);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _j = linear / (size_k*size_i*size_l);
     j = IdxJ(_j);
     linear -= _j*(size_k*size_i*size_l);
-    int _k = linear / (size_i*size_l);
+    Index_type _k = linear / (size_i*size_l);
     k = IdxK(_k);
     linear -= _k*(size_i*size_l);
-    int _i = linear / (size_l);
+    Index_type _i = linear / (size_l);
     i = IdxI(_i);
     linear -= _i*(size_l);
     l = IdxL(linear);
@@ -779,33 +779,33 @@ struct Layout4d<PERM_JKLI, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(1), stride_j(nk*nl*ni), stride_k(nl*ni), stride_l(ni)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(j)*stride_j + convertIndex<int>(k)*stride_k + convertIndex<int>(l)*stride_l + convertIndex<int>(i));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(i));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _j = linear / (size_k*size_l*size_i);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _j = linear / (size_k*size_l*size_i);
     j = IdxJ(_j);
     linear -= _j*(size_k*size_l*size_i);
-    int _k = linear / (size_l*size_i);
+    Index_type _k = linear / (size_l*size_i);
     k = IdxK(_k);
     linear -= _k*(size_l*size_i);
-    int _l = linear / (size_i);
+    Index_type _l = linear / (size_i);
     l = IdxL(_l);
     linear -= _l*(size_i);
     i = IdxI(linear);
@@ -822,33 +822,33 @@ struct Layout4d<PERM_JLIK, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk), stride_j(nl*ni*nk), stride_k(1), stride_l(ni*nk)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(j)*stride_j + convertIndex<int>(l)*stride_l + convertIndex<int>(i)*stride_i + convertIndex<int>(k));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(k));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _j = linear / (size_l*size_i*size_k);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _j = linear / (size_l*size_i*size_k);
     j = IdxJ(_j);
     linear -= _j*(size_l*size_i*size_k);
-    int _l = linear / (size_i*size_k);
+    Index_type _l = linear / (size_i*size_k);
     l = IdxL(_l);
     linear -= _l*(size_i*size_k);
-    int _i = linear / (size_k);
+    Index_type _i = linear / (size_k);
     i = IdxI(_i);
     linear -= _i*(size_k);
     k = IdxK(linear);
@@ -865,33 +865,33 @@ struct Layout4d<PERM_JLKI, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(1), stride_j(nl*nk*ni), stride_k(ni), stride_l(nk*ni)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(j)*stride_j + convertIndex<int>(l)*stride_l + convertIndex<int>(k)*stride_k + convertIndex<int>(i));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(i));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _j = linear / (size_l*size_k*size_i);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _j = linear / (size_l*size_k*size_i);
     j = IdxJ(_j);
     linear -= _j*(size_l*size_k*size_i);
-    int _l = linear / (size_k*size_i);
+    Index_type _l = linear / (size_k*size_i);
     l = IdxL(_l);
     linear -= _l*(size_k*size_i);
-    int _k = linear / (size_i);
+    Index_type _k = linear / (size_i);
     k = IdxK(_k);
     linear -= _k*(size_i);
     i = IdxI(linear);
@@ -908,33 +908,33 @@ struct Layout4d<PERM_KIJL, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj*nl), stride_j(nl), stride_k(ni*nj*nl), stride_l(1)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(k)*stride_k + convertIndex<int>(i)*stride_i + convertIndex<int>(j)*stride_j + convertIndex<int>(l));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(l));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _k = linear / (size_i*size_j*size_l);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _k = linear / (size_i*size_j*size_l);
     k = IdxK(_k);
     linear -= _k*(size_i*size_j*size_l);
-    int _i = linear / (size_j*size_l);
+    Index_type _i = linear / (size_j*size_l);
     i = IdxI(_i);
     linear -= _i*(size_j*size_l);
-    int _j = linear / (size_l);
+    Index_type _j = linear / (size_l);
     j = IdxJ(_j);
     linear -= _j*(size_l);
     l = IdxL(linear);
@@ -951,33 +951,33 @@ struct Layout4d<PERM_KILJ, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl*nj), stride_j(1), stride_k(ni*nl*nj), stride_l(nj)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(k)*stride_k + convertIndex<int>(i)*stride_i + convertIndex<int>(l)*stride_l + convertIndex<int>(j));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(j));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _k = linear / (size_i*size_l*size_j);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _k = linear / (size_i*size_l*size_j);
     k = IdxK(_k);
     linear -= _k*(size_i*size_l*size_j);
-    int _i = linear / (size_l*size_j);
+    Index_type _i = linear / (size_l*size_j);
     i = IdxI(_i);
     linear -= _i*(size_l*size_j);
-    int _l = linear / (size_j);
+    Index_type _l = linear / (size_j);
     l = IdxL(_l);
     linear -= _l*(size_j);
     j = IdxJ(linear);
@@ -994,33 +994,33 @@ struct Layout4d<PERM_KJIL, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nl), stride_j(ni*nl), stride_k(nj*ni*nl), stride_l(1)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(k)*stride_k + convertIndex<int>(j)*stride_j + convertIndex<int>(i)*stride_i + convertIndex<int>(l));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(l));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _k = linear / (size_j*size_i*size_l);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _k = linear / (size_j*size_i*size_l);
     k = IdxK(_k);
     linear -= _k*(size_j*size_i*size_l);
-    int _j = linear / (size_i*size_l);
+    Index_type _j = linear / (size_i*size_l);
     j = IdxJ(_j);
     linear -= _j*(size_i*size_l);
-    int _i = linear / (size_l);
+    Index_type _i = linear / (size_l);
     i = IdxI(_i);
     linear -= _i*(size_l);
     l = IdxL(linear);
@@ -1037,33 +1037,33 @@ struct Layout4d<PERM_KJLI, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(1), stride_j(nl*ni), stride_k(nj*nl*ni), stride_l(ni)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(k)*stride_k + convertIndex<int>(j)*stride_j + convertIndex<int>(l)*stride_l + convertIndex<int>(i));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(i));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _k = linear / (size_j*size_l*size_i);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _k = linear / (size_j*size_l*size_i);
     k = IdxK(_k);
     linear -= _k*(size_j*size_l*size_i);
-    int _j = linear / (size_l*size_i);
+    Index_type _j = linear / (size_l*size_i);
     j = IdxJ(_j);
     linear -= _j*(size_l*size_i);
-    int _l = linear / (size_i);
+    Index_type _l = linear / (size_i);
     l = IdxL(_l);
     linear -= _l*(size_i);
     i = IdxI(linear);
@@ -1080,33 +1080,33 @@ struct Layout4d<PERM_KLIJ, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj), stride_j(1), stride_k(nl*ni*nj), stride_l(ni*nj)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(k)*stride_k + convertIndex<int>(l)*stride_l + convertIndex<int>(i)*stride_i + convertIndex<int>(j));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(j));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _k = linear / (size_l*size_i*size_j);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _k = linear / (size_l*size_i*size_j);
     k = IdxK(_k);
     linear -= _k*(size_l*size_i*size_j);
-    int _l = linear / (size_i*size_j);
+    Index_type _l = linear / (size_i*size_j);
     l = IdxL(_l);
     linear -= _l*(size_i*size_j);
-    int _i = linear / (size_j);
+    Index_type _i = linear / (size_j);
     i = IdxI(_i);
     linear -= _i*(size_j);
     j = IdxJ(linear);
@@ -1123,33 +1123,33 @@ struct Layout4d<PERM_KLJI, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(1), stride_j(ni), stride_k(nl*nj*ni), stride_l(nj*ni)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(k)*stride_k + convertIndex<int>(l)*stride_l + convertIndex<int>(j)*stride_j + convertIndex<int>(i));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(i));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _k = linear / (size_l*size_j*size_i);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _k = linear / (size_l*size_j*size_i);
     k = IdxK(_k);
     linear -= _k*(size_l*size_j*size_i);
-    int _l = linear / (size_j*size_i);
+    Index_type _l = linear / (size_j*size_i);
     l = IdxL(_l);
     linear -= _l*(size_j*size_i);
-    int _j = linear / (size_i);
+    Index_type _j = linear / (size_i);
     j = IdxJ(_j);
     linear -= _j*(size_i);
     i = IdxI(linear);
@@ -1166,33 +1166,33 @@ struct Layout4d<PERM_LIJK, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj*nk), stride_j(nk), stride_k(1), stride_l(ni*nj*nk)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(l)*stride_l + convertIndex<int>(i)*stride_i + convertIndex<int>(j)*stride_j + convertIndex<int>(k));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(k));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _l = linear / (size_i*size_j*size_k);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _l = linear / (size_i*size_j*size_k);
     l = IdxL(_l);
     linear -= _l*(size_i*size_j*size_k);
-    int _i = linear / (size_j*size_k);
+    Index_type _i = linear / (size_j*size_k);
     i = IdxI(_i);
     linear -= _i*(size_j*size_k);
-    int _j = linear / (size_k);
+    Index_type _j = linear / (size_k);
     j = IdxJ(_j);
     linear -= _j*(size_k);
     k = IdxK(linear);
@@ -1209,33 +1209,33 @@ struct Layout4d<PERM_LIKJ, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk*nj), stride_j(1), stride_k(nj), stride_l(ni*nk*nj)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(l)*stride_l + convertIndex<int>(i)*stride_i + convertIndex<int>(k)*stride_k + convertIndex<int>(j));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(j));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _l = linear / (size_i*size_k*size_j);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _l = linear / (size_i*size_k*size_j);
     l = IdxL(_l);
     linear -= _l*(size_i*size_k*size_j);
-    int _i = linear / (size_k*size_j);
+    Index_type _i = linear / (size_k*size_j);
     i = IdxI(_i);
     linear -= _i*(size_k*size_j);
-    int _k = linear / (size_j);
+    Index_type _k = linear / (size_j);
     k = IdxK(_k);
     linear -= _k*(size_j);
     j = IdxJ(linear);
@@ -1252,33 +1252,33 @@ struct Layout4d<PERM_LJIK, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nk), stride_j(ni*nk), stride_k(1), stride_l(nj*ni*nk)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(l)*stride_l + convertIndex<int>(j)*stride_j + convertIndex<int>(i)*stride_i + convertIndex<int>(k));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(k));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _l = linear / (size_j*size_i*size_k);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _l = linear / (size_j*size_i*size_k);
     l = IdxL(_l);
     linear -= _l*(size_j*size_i*size_k);
-    int _j = linear / (size_i*size_k);
+    Index_type _j = linear / (size_i*size_k);
     j = IdxJ(_j);
     linear -= _j*(size_i*size_k);
-    int _i = linear / (size_k);
+    Index_type _i = linear / (size_k);
     i = IdxI(_i);
     linear -= _i*(size_k);
     k = IdxK(linear);
@@ -1295,33 +1295,33 @@ struct Layout4d<PERM_LJKI, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(1), stride_j(nk*ni), stride_k(ni), stride_l(nj*nk*ni)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(l)*stride_l + convertIndex<int>(j)*stride_j + convertIndex<int>(k)*stride_k + convertIndex<int>(i));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(i));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _l = linear / (size_j*size_k*size_i);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _l = linear / (size_j*size_k*size_i);
     l = IdxL(_l);
     linear -= _l*(size_j*size_k*size_i);
-    int _j = linear / (size_k*size_i);
+    Index_type _j = linear / (size_k*size_i);
     j = IdxJ(_j);
     linear -= _j*(size_k*size_i);
-    int _k = linear / (size_i);
+    Index_type _k = linear / (size_i);
     k = IdxK(_k);
     linear -= _k*(size_i);
     i = IdxI(linear);
@@ -1338,33 +1338,33 @@ struct Layout4d<PERM_LKIJ, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(nj), stride_j(1), stride_k(ni*nj), stride_l(nk*ni*nj)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(l)*stride_l + convertIndex<int>(k)*stride_k + convertIndex<int>(i)*stride_i + convertIndex<int>(j));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(i)*stride_i + convertIndex<Index_type>(j));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _l = linear / (size_k*size_i*size_j);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _l = linear / (size_k*size_i*size_j);
     l = IdxL(_l);
     linear -= _l*(size_k*size_i*size_j);
-    int _k = linear / (size_i*size_j);
+    Index_type _k = linear / (size_i*size_j);
     k = IdxK(_k);
     linear -= _k*(size_i*size_j);
-    int _i = linear / (size_j);
+    Index_type _i = linear / (size_j);
     i = IdxI(_i);
     linear -= _i*(size_j);
     j = IdxJ(linear);
@@ -1381,33 +1381,33 @@ struct Layout4d<PERM_LKJI, IdxI, IdxJ, IdxK, IdxL, IdxLin> {
   typedef IdxK IndexK;
   typedef IdxL IndexL;
 
-  int const size_i;
-  int const size_j;
-  int const size_k;
-  int const size_l;
+  Index_type const size_i;
+  Index_type const size_j;
+  Index_type const size_k;
+  Index_type const size_l;
 
-  int const stride_i;
-  int const stride_j;
-  int const stride_k;
-  int const stride_l;
+  Index_type const stride_i;
+  Index_type const stride_j;
+  Index_type const stride_k;
+  Index_type const stride_l;
 
-  inline Layout4d(int ni, int nj, int nk, int nl):
+  inline Layout4d(Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     size_i(ni), size_j(nj), size_k(nk), size_l(nl), stride_i(1), stride_j(ni), stride_k(nj*ni), stride_l(nk*nj*ni)
   {}
 
   inline IdxLin operator()(IdxI i, IdxJ j, IdxK k, IdxL l) const {
-    return convertIndex<IdxLin>(convertIndex<int>(l)*stride_l + convertIndex<int>(k)*stride_k + convertIndex<int>(j)*stride_j + convertIndex<int>(i));
+    return convertIndex<IdxLin>(convertIndex<Index_type>(l)*stride_l + convertIndex<Index_type>(k)*stride_k + convertIndex<Index_type>(j)*stride_j + convertIndex<Index_type>(i));
   }
 
   inline void toIndices(IdxLin lin, IdxI &i, IdxJ &j, IdxK &k, IdxL &l) const {
-    int linear = convertIndex<int>(lin);
-    int _l = linear / (size_k*size_j*size_i);
+    Index_type linear = convertIndex<Index_type>(lin);
+    Index_type _l = linear / (size_k*size_j*size_i);
     l = IdxL(_l);
     linear -= _l*(size_k*size_j*size_i);
-    int _k = linear / (size_j*size_i);
+    Index_type _k = linear / (size_j*size_i);
     k = IdxK(_k);
     linear -= _k*(size_j*size_i);
-    int _j = linear / (size_i);
+    Index_type _j = linear / (size_i);
     j = IdxJ(_j);
     linear -= _j*(size_i);
     i = IdxI(linear);

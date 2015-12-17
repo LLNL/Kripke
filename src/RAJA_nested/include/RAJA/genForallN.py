@@ -91,13 +91,13 @@ def writeForallExecutor(ndims):
   argstr = ", ".join(args)  
   print "  template<typename BODY>"
   print "  inline void operator()(%s, BODY body) const {" % argstr
-  print "    RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(int i){"
+  print "    RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(Index_type i){"
   if ndims == 2:  # 2 dimension termination case:
-    print "      RAJA::forall<POLICY_J>(is_j, RAJA_LAMBDA(int j){"
+    print "      RAJA::forall<POLICY_J>(is_j, RAJA_LAMBDA(Index_type j){"
   else: # more than 2 dimensions, we just peel off the outer loop, and call an N-1 executor
     args = map(lambda a: "is_"+a, dim_names[1:])
     setstr = ", ".join(args)
-    args = map(lambda a: "int "+a, dim_names[1:])
+    args = map(lambda a: "Index_type "+a, dim_names[1:])
     idxstr = ", ".join(args)  
     print "      exec(%s, RAJA_LAMBDA(%s){" % (setstr, idxstr)
   
@@ -164,8 +164,8 @@ def writeForallExecuteOMP(ndims):
       
       # get begin and end indices each collapsed RangeSegment
       for a in dim_names[0:depth]:
-        print "      int const %s_start = is_%s.getBegin();" % (a,a)
-        print "      int const %s_end   = is_%s.getEnd();" % (a,a)
+        print "      Index_type const %s_start = is_%s.getBegin();" % (a,a)
+        print "      Index_type const %s_end   = is_%s.getEnd();" % (a,a)
         print ""
       
       # Generate nested collapsed for loops
@@ -175,7 +175,7 @@ def writeForallExecuteOMP(ndims):
         print "#pragma omp for schedule(static) collapse(%d) nowait" % depth
       indent = ""
       for d in dim_names[0:depth]:
-        print "      %sfor(int %s = %s_start;%s < %s_end;++ %s){" % (indent, d, d, d, d, d)
+        print "      %sfor(Index_type %s = %s_start;%s < %s_end;++ %s){" % (indent, d, d, d, d, d)
         indent += "  "
       
       # No more inner loops, so call the loop body directly
@@ -186,20 +186,16 @@ def writeForallExecuteOMP(ndims):
       # Just one inner loop, so issue a RAJA::forall
       elif remainder_ndims == 1:      
         d = dim_names[depth]
-        print "      %sRAJA::forall<POLICY_%s>(is_%s, RAJA_LAMBDA(int %s){" % (indent, d.upper(), d, d)
+        print "      %sRAJA::forall<POLICY_%s>(is_%s, RAJA_LAMBDA(Index_type %s){" % (indent, d.upper(), d, d)
         argstr = argstr = ", ".join(dim_names)
         print "      %s  body(%s);" % (indent, argstr)
         print "      %s});" % (indent)
       
       # More than one inner loop, so call an inner executor
-      else:      
-        #    exec(is_j, is_k, is_l, RAJA_LAMBDA(int j, int k, int l){
-        #      body(i, j, k, l);
-        #    });
-        
+      else:              
         args = map(lambda a: "is_"+a, dim_names[depth:])
         setstr = ", ".join(args)
-        args = map(lambda a: "int "+a, dim_names[depth:])
+        args = map(lambda a: "Index_type "+a, dim_names[depth:])
         argstr = ", ".join(args)      
         print "      %sexec(%s, RAJA_LAMBDA(%s){" % (indent, setstr, argstr)
         argstr = argstr = ", ".join(dim_names)
@@ -266,7 +262,7 @@ def writeForallPermutations(ndims):
     # Call next policy with permuted indices and policies
     p_polstr  = ", ".join(map(lambda a: "Policy"+a.upper(), perm))
     p_varstr  = ", ".join(map(lambda a: "is_"+a, perm))
-    p_argstr  = ", ".join(map(lambda a: "int "+a, perm))
+    p_argstr  = ", ".join(map(lambda a: "Index_type "+a, perm))
     argstr    = ", ".join(dim_names)
 
     print ""
@@ -442,7 +438,7 @@ def writeUserIface(ndims):
   print " ******************************************************************/"
   print ""
   
-  args = map(lambda a: "typename Idx%s=int"%a.upper(), dim_names)
+  args = map(lambda a: "typename Idx%s=Index_type"%a.upper(), dim_names)
   idxstr = ", ".join(args)
   args = map(lambda a: "typename T"+a.upper(), dim_names)
   argstr = ", ".join(args)
@@ -473,7 +469,7 @@ def writeUserIface(ndims):
   isetstr = ", ".join(args)
   print "  forall%d_policy<NextPolicy, %s>(NextPolicyTag(), %s, " % (ndims, polstr, isetstr)
   
-  args = map(lambda a: "int %s"%a, dim_names)
+  args = map(lambda a: "Index_type %s"%a, dim_names)
   argstr = ", ".join(args)
   print "    [=](%s){" % argstr
   

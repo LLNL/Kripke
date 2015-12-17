@@ -85,8 +85,8 @@ template<typename POLICY_I, typename POLICY_J, typename POLICY_K, typename POLIC
 struct Forall4Executor {
   template<typename BODY>
   inline void operator()(TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body) const {
-    RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(int i){
-      exec(is_j, is_k, is_l, RAJA_LAMBDA(int j, int k, int l){
+    RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(Index_type i){
+      exec(is_j, is_k, is_l, RAJA_LAMBDA(Index_type j, Index_type k, Index_type l){
         body(i, j, k, l);
       });
     });
@@ -109,16 +109,16 @@ class Forall4Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, 
   public:  
     template<typename BODY>
     inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, TK const &is_k, TL const &is_l, BODY body) const {
-      int const i_start = is_i.getBegin();
-      int const i_end   = is_i.getEnd();
+      Index_type const i_start = is_i.getBegin();
+      Index_type const i_end   = is_i.getEnd();
 
-      int const j_start = is_j.getBegin();
-      int const j_end   = is_j.getEnd();
+      Index_type const j_start = is_j.getBegin();
+      Index_type const j_end   = is_j.getEnd();
 
 #pragma omp parallel for schedule(static) collapse(2)
-      for(int i = i_start;i < i_end;++ i){
-        for(int j = j_start;j < j_end;++ j){
-          exec(is_k, is_l, RAJA_LAMBDA(int k, int l){
+      for(Index_type i = i_start;i < i_end;++ i){
+        for(Index_type j = j_start;j < j_end;++ j){
+          exec(is_k, is_l, RAJA_LAMBDA(Index_type k, Index_type l){
             body(i, j, k, l);
           });
       } } 
@@ -134,20 +134,20 @@ class Forall4Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, 
   public:  
     template<typename BODY>
     inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, TL const &is_l, BODY body) const {
-      int const i_start = is_i.getBegin();
-      int const i_end   = is_i.getEnd();
+      Index_type const i_start = is_i.getBegin();
+      Index_type const i_end   = is_i.getEnd();
 
-      int const j_start = is_j.getBegin();
-      int const j_end   = is_j.getEnd();
+      Index_type const j_start = is_j.getBegin();
+      Index_type const j_end   = is_j.getEnd();
 
-      int const k_start = is_k.getBegin();
-      int const k_end   = is_k.getEnd();
+      Index_type const k_start = is_k.getBegin();
+      Index_type const k_end   = is_k.getEnd();
 
 #pragma omp parallel for schedule(static) collapse(3)
-      for(int i = i_start;i < i_end;++ i){
-        for(int j = j_start;j < j_end;++ j){
-          for(int k = k_start;k < k_end;++ k){
-            RAJA::forall<POLICY_L>(is_l, RAJA_LAMBDA(int l){
+      for(Index_type i = i_start;i < i_end;++ i){
+        for(Index_type j = j_start;j < j_end;++ j){
+          for(Index_type k = k_start;k < k_end;++ k){
+            RAJA::forall<POLICY_L>(is_l, RAJA_LAMBDA(Index_type l){
               body(i, j, k, l);
             });
       } } } 
@@ -160,23 +160,23 @@ class Forall4Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, 
   public:  
     template<typename BODY>
     inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, RAJA::RangeSegment const &is_l, BODY body) const {
-      int const i_start = is_i.getBegin();
-      int const i_end   = is_i.getEnd();
+      Index_type const i_start = is_i.getBegin();
+      Index_type const i_end   = is_i.getEnd();
 
-      int const j_start = is_j.getBegin();
-      int const j_end   = is_j.getEnd();
+      Index_type const j_start = is_j.getBegin();
+      Index_type const j_end   = is_j.getEnd();
 
-      int const k_start = is_k.getBegin();
-      int const k_end   = is_k.getEnd();
+      Index_type const k_start = is_k.getBegin();
+      Index_type const k_end   = is_k.getEnd();
 
-      int const l_start = is_l.getBegin();
-      int const l_end   = is_l.getEnd();
+      Index_type const l_start = is_l.getBegin();
+      Index_type const l_end   = is_l.getEnd();
 
 #pragma omp parallel for schedule(static) collapse(4)
-      for(int i = i_start;i < i_end;++ i){
-        for(int j = j_start;j < j_end;++ j){
-          for(int k = k_start;k < k_end;++ k){
-            for(int l = l_start;l < l_end;++ l){
+      for(Index_type i = i_start;i < i_end;++ i){
+        for(Index_type j = j_start;j < j_end;++ j){
+          for(Index_type k = k_start;k < k_end;++ k){
+            for(Index_type l = l_start;l < l_end;++ l){
               body(i, j, k, l);
       } } } } 
     }
@@ -188,16 +188,16 @@ class Forall4Executor<RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec, POLI
   public:  
     template<typename BODY>
     inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, TK const &is_k, TL const &is_l, BODY body) const {
-      int const i_start = is_i.getBegin();
-      int const i_end   = is_i.getEnd();
+      Index_type const i_start = is_i.getBegin();
+      Index_type const i_end   = is_i.getEnd();
 
-      int const j_start = is_j.getBegin();
-      int const j_end   = is_j.getEnd();
+      Index_type const j_start = is_j.getBegin();
+      Index_type const j_end   = is_j.getEnd();
 
 #pragma omp for schedule(static) collapse(2) nowait
-      for(int i = i_start;i < i_end;++ i){
-        for(int j = j_start;j < j_end;++ j){
-          exec(is_k, is_l, RAJA_LAMBDA(int k, int l){
+      for(Index_type i = i_start;i < i_end;++ i){
+        for(Index_type j = j_start;j < j_end;++ j){
+          exec(is_k, is_l, RAJA_LAMBDA(Index_type k, Index_type l){
             body(i, j, k, l);
           });
       } } 
@@ -213,20 +213,20 @@ class Forall4Executor<RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec, RAJA
   public:  
     template<typename BODY>
     inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, TL const &is_l, BODY body) const {
-      int const i_start = is_i.getBegin();
-      int const i_end   = is_i.getEnd();
+      Index_type const i_start = is_i.getBegin();
+      Index_type const i_end   = is_i.getEnd();
 
-      int const j_start = is_j.getBegin();
-      int const j_end   = is_j.getEnd();
+      Index_type const j_start = is_j.getBegin();
+      Index_type const j_end   = is_j.getEnd();
 
-      int const k_start = is_k.getBegin();
-      int const k_end   = is_k.getEnd();
+      Index_type const k_start = is_k.getBegin();
+      Index_type const k_end   = is_k.getEnd();
 
 #pragma omp for schedule(static) collapse(3) nowait
-      for(int i = i_start;i < i_end;++ i){
-        for(int j = j_start;j < j_end;++ j){
-          for(int k = k_start;k < k_end;++ k){
-            RAJA::forall<POLICY_L>(is_l, RAJA_LAMBDA(int l){
+      for(Index_type i = i_start;i < i_end;++ i){
+        for(Index_type j = j_start;j < j_end;++ j){
+          for(Index_type k = k_start;k < k_end;++ k){
+            RAJA::forall<POLICY_L>(is_l, RAJA_LAMBDA(Index_type l){
               body(i, j, k, l);
             });
       } } } 
@@ -239,23 +239,23 @@ class Forall4Executor<RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec, RAJA
   public:  
     template<typename BODY>
     inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, RAJA::RangeSegment const &is_k, RAJA::RangeSegment const &is_l, BODY body) const {
-      int const i_start = is_i.getBegin();
-      int const i_end   = is_i.getEnd();
+      Index_type const i_start = is_i.getBegin();
+      Index_type const i_end   = is_i.getEnd();
 
-      int const j_start = is_j.getBegin();
-      int const j_end   = is_j.getEnd();
+      Index_type const j_start = is_j.getBegin();
+      Index_type const j_end   = is_j.getEnd();
 
-      int const k_start = is_k.getBegin();
-      int const k_end   = is_k.getEnd();
+      Index_type const k_start = is_k.getBegin();
+      Index_type const k_end   = is_k.getEnd();
 
-      int const l_start = is_l.getBegin();
-      int const l_end   = is_l.getEnd();
+      Index_type const l_start = is_l.getBegin();
+      Index_type const l_end   = is_l.getEnd();
 
 #pragma omp for schedule(static) collapse(4) nowait
-      for(int i = i_start;i < i_end;++ i){
-        for(int j = j_start;j < j_end;++ j){
-          for(int k = k_start;k < k_end;++ k){
-            for(int l = l_start;l < l_end;++ l){
+      for(Index_type i = i_start;i < i_end;++ i){
+        for(Index_type j = j_start;j < j_end;++ j){
+          for(Index_type k = k_start;k < k_end;++ k){
+            for(Index_type l = l_start;l < l_end;++ l){
               body(i, j, k, l);
       } } } } 
     }
@@ -276,7 +276,7 @@ RAJA_INLINE void forall4_permute(PERM_IJKL, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyI, PolicyJ, PolicyK, PolicyL>(NextPolicyTag(), is_i, is_j, is_k, is_l,
-    RAJA_LAMBDA(int i, int j, int k, int l){
+    RAJA_LAMBDA(Index_type i, Index_type j, Index_type k, Index_type l){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -289,7 +289,7 @@ RAJA_INLINE void forall4_permute(PERM_IJLK, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyI, PolicyJ, PolicyL, PolicyK>(NextPolicyTag(), is_i, is_j, is_l, is_k,
-    RAJA_LAMBDA(int i, int j, int l, int k){
+    RAJA_LAMBDA(Index_type i, Index_type j, Index_type l, Index_type k){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -302,7 +302,7 @@ RAJA_INLINE void forall4_permute(PERM_IKJL, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyI, PolicyK, PolicyJ, PolicyL>(NextPolicyTag(), is_i, is_k, is_j, is_l,
-    RAJA_LAMBDA(int i, int k, int j, int l){
+    RAJA_LAMBDA(Index_type i, Index_type k, Index_type j, Index_type l){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -315,7 +315,7 @@ RAJA_INLINE void forall4_permute(PERM_IKLJ, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyI, PolicyK, PolicyL, PolicyJ>(NextPolicyTag(), is_i, is_k, is_l, is_j,
-    RAJA_LAMBDA(int i, int k, int l, int j){
+    RAJA_LAMBDA(Index_type i, Index_type k, Index_type l, Index_type j){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -328,7 +328,7 @@ RAJA_INLINE void forall4_permute(PERM_ILJK, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyI, PolicyL, PolicyJ, PolicyK>(NextPolicyTag(), is_i, is_l, is_j, is_k,
-    RAJA_LAMBDA(int i, int l, int j, int k){
+    RAJA_LAMBDA(Index_type i, Index_type l, Index_type j, Index_type k){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -341,7 +341,7 @@ RAJA_INLINE void forall4_permute(PERM_ILKJ, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyI, PolicyL, PolicyK, PolicyJ>(NextPolicyTag(), is_i, is_l, is_k, is_j,
-    RAJA_LAMBDA(int i, int l, int k, int j){
+    RAJA_LAMBDA(Index_type i, Index_type l, Index_type k, Index_type j){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -354,7 +354,7 @@ RAJA_INLINE void forall4_permute(PERM_JIKL, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyJ, PolicyI, PolicyK, PolicyL>(NextPolicyTag(), is_j, is_i, is_k, is_l,
-    RAJA_LAMBDA(int j, int i, int k, int l){
+    RAJA_LAMBDA(Index_type j, Index_type i, Index_type k, Index_type l){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -367,7 +367,7 @@ RAJA_INLINE void forall4_permute(PERM_JILK, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyJ, PolicyI, PolicyL, PolicyK>(NextPolicyTag(), is_j, is_i, is_l, is_k,
-    RAJA_LAMBDA(int j, int i, int l, int k){
+    RAJA_LAMBDA(Index_type j, Index_type i, Index_type l, Index_type k){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -380,7 +380,7 @@ RAJA_INLINE void forall4_permute(PERM_JKIL, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyJ, PolicyK, PolicyI, PolicyL>(NextPolicyTag(), is_j, is_k, is_i, is_l,
-    RAJA_LAMBDA(int j, int k, int i, int l){
+    RAJA_LAMBDA(Index_type j, Index_type k, Index_type i, Index_type l){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -393,7 +393,7 @@ RAJA_INLINE void forall4_permute(PERM_JKLI, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyJ, PolicyK, PolicyL, PolicyI>(NextPolicyTag(), is_j, is_k, is_l, is_i,
-    RAJA_LAMBDA(int j, int k, int l, int i){
+    RAJA_LAMBDA(Index_type j, Index_type k, Index_type l, Index_type i){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -406,7 +406,7 @@ RAJA_INLINE void forall4_permute(PERM_JLIK, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyJ, PolicyL, PolicyI, PolicyK>(NextPolicyTag(), is_j, is_l, is_i, is_k,
-    RAJA_LAMBDA(int j, int l, int i, int k){
+    RAJA_LAMBDA(Index_type j, Index_type l, Index_type i, Index_type k){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -419,7 +419,7 @@ RAJA_INLINE void forall4_permute(PERM_JLKI, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyJ, PolicyL, PolicyK, PolicyI>(NextPolicyTag(), is_j, is_l, is_k, is_i,
-    RAJA_LAMBDA(int j, int l, int k, int i){
+    RAJA_LAMBDA(Index_type j, Index_type l, Index_type k, Index_type i){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -432,7 +432,7 @@ RAJA_INLINE void forall4_permute(PERM_KIJL, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyK, PolicyI, PolicyJ, PolicyL>(NextPolicyTag(), is_k, is_i, is_j, is_l,
-    RAJA_LAMBDA(int k, int i, int j, int l){
+    RAJA_LAMBDA(Index_type k, Index_type i, Index_type j, Index_type l){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -445,7 +445,7 @@ RAJA_INLINE void forall4_permute(PERM_KILJ, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyK, PolicyI, PolicyL, PolicyJ>(NextPolicyTag(), is_k, is_i, is_l, is_j,
-    RAJA_LAMBDA(int k, int i, int l, int j){
+    RAJA_LAMBDA(Index_type k, Index_type i, Index_type l, Index_type j){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -458,7 +458,7 @@ RAJA_INLINE void forall4_permute(PERM_KJIL, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyK, PolicyJ, PolicyI, PolicyL>(NextPolicyTag(), is_k, is_j, is_i, is_l,
-    RAJA_LAMBDA(int k, int j, int i, int l){
+    RAJA_LAMBDA(Index_type k, Index_type j, Index_type i, Index_type l){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -471,7 +471,7 @@ RAJA_INLINE void forall4_permute(PERM_KJLI, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyK, PolicyJ, PolicyL, PolicyI>(NextPolicyTag(), is_k, is_j, is_l, is_i,
-    RAJA_LAMBDA(int k, int j, int l, int i){
+    RAJA_LAMBDA(Index_type k, Index_type j, Index_type l, Index_type i){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -484,7 +484,7 @@ RAJA_INLINE void forall4_permute(PERM_KLIJ, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyK, PolicyL, PolicyI, PolicyJ>(NextPolicyTag(), is_k, is_l, is_i, is_j,
-    RAJA_LAMBDA(int k, int l, int i, int j){
+    RAJA_LAMBDA(Index_type k, Index_type l, Index_type i, Index_type j){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -497,7 +497,7 @@ RAJA_INLINE void forall4_permute(PERM_KLJI, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyK, PolicyL, PolicyJ, PolicyI>(NextPolicyTag(), is_k, is_l, is_j, is_i,
-    RAJA_LAMBDA(int k, int l, int j, int i){
+    RAJA_LAMBDA(Index_type k, Index_type l, Index_type j, Index_type i){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -510,7 +510,7 @@ RAJA_INLINE void forall4_permute(PERM_LIJK, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyL, PolicyI, PolicyJ, PolicyK>(NextPolicyTag(), is_l, is_i, is_j, is_k,
-    RAJA_LAMBDA(int l, int i, int j, int k){
+    RAJA_LAMBDA(Index_type l, Index_type i, Index_type j, Index_type k){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -523,7 +523,7 @@ RAJA_INLINE void forall4_permute(PERM_LIKJ, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyL, PolicyI, PolicyK, PolicyJ>(NextPolicyTag(), is_l, is_i, is_k, is_j,
-    RAJA_LAMBDA(int l, int i, int k, int j){
+    RAJA_LAMBDA(Index_type l, Index_type i, Index_type k, Index_type j){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -536,7 +536,7 @@ RAJA_INLINE void forall4_permute(PERM_LJIK, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyL, PolicyJ, PolicyI, PolicyK>(NextPolicyTag(), is_l, is_j, is_i, is_k,
-    RAJA_LAMBDA(int l, int j, int i, int k){
+    RAJA_LAMBDA(Index_type l, Index_type j, Index_type i, Index_type k){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -549,7 +549,7 @@ RAJA_INLINE void forall4_permute(PERM_LJKI, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyL, PolicyJ, PolicyK, PolicyI>(NextPolicyTag(), is_l, is_j, is_k, is_i,
-    RAJA_LAMBDA(int l, int j, int k, int i){
+    RAJA_LAMBDA(Index_type l, Index_type j, Index_type k, Index_type i){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -562,7 +562,7 @@ RAJA_INLINE void forall4_permute(PERM_LKIJ, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyL, PolicyK, PolicyI, PolicyJ>(NextPolicyTag(), is_l, is_k, is_i, is_j,
-    RAJA_LAMBDA(int l, int k, int i, int j){
+    RAJA_LAMBDA(Index_type l, Index_type k, Index_type i, Index_type j){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -575,7 +575,7 @@ RAJA_INLINE void forall4_permute(PERM_LKJI, TI const &is_i, TJ const &is_j, TK c
 
   // Call next policy with permuted indices and policies
   forall4_policy<NextPolicy, PolicyL, PolicyK, PolicyJ, PolicyI>(NextPolicyTag(), is_l, is_k, is_j, is_i,
-    RAJA_LAMBDA(int l, int k, int j, int i){
+    RAJA_LAMBDA(Index_type l, Index_type k, Index_type j, Index_type i){
       // Call body with non-permuted indices
       body(i, j, k, l);
     });
@@ -666,7 +666,7 @@ RAJA_INLINE void forall4_policy(Forall4_Tile_Tag, TI const &is_i, TJ const &is_j
  * Provides index typing, and initial nested policy unwrapping
  ******************************************************************/
 
-template<typename POLICY, typename IdxI=int, typename IdxJ=int, typename IdxK=int, typename IdxL=int, typename TI, typename TJ, typename TK, typename TL, typename BODY>
+template<typename POLICY, typename IdxI=Index_type, typename IdxJ=Index_type, typename IdxK=Index_type, typename IdxL=Index_type, typename TI, typename TJ, typename TK, typename TL, typename BODY>
 RAJA_INLINE void forall4(TI const &is_i, TJ const &is_j, TK const &is_k, TL const &is_l, BODY body){
   // extract next policy
   typedef typename POLICY::NextPolicy             NextPolicy;
@@ -680,7 +680,7 @@ RAJA_INLINE void forall4(TI const &is_i, TJ const &is_j, TK const &is_k, TL cons
 
   // call 'policy' layer with next policy
   forall4_policy<NextPolicy, PolicyI, PolicyJ, PolicyK, PolicyL>(NextPolicyTag(), is_i, is_j, is_k, is_l, 
-    [=](int i, int j, int k, int l){
+    [=](Index_type i, Index_type j, Index_type k, Index_type l){
       body(IdxI(i), IdxJ(j), IdxK(k), IdxL(l));
     }
   );

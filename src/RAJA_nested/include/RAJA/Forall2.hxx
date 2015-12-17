@@ -81,8 +81,8 @@ template<typename POLICY_I, typename POLICY_J, typename TI, typename TJ>
 struct Forall2Executor {
   template<typename BODY>
   inline void operator()(TI const &is_i, TJ const &is_j, BODY body) const {
-    RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(int i){
-      RAJA::forall<POLICY_J>(is_j, RAJA_LAMBDA(int j){
+    RAJA::forall<POLICY_I>(is_i, RAJA_LAMBDA(Index_type i){
+      RAJA::forall<POLICY_J>(is_j, RAJA_LAMBDA(Index_type j){
         body(i, j);
       });
     });
@@ -102,15 +102,15 @@ class Forall2Executor<RAJA::omp_parallel_for_exec, RAJA::omp_parallel_for_exec, 
   public:  
     template<typename BODY>
     inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY body) const {
-      int const i_start = is_i.getBegin();
-      int const i_end   = is_i.getEnd();
+      Index_type const i_start = is_i.getBegin();
+      Index_type const i_end   = is_i.getEnd();
 
-      int const j_start = is_j.getBegin();
-      int const j_end   = is_j.getEnd();
+      Index_type const j_start = is_j.getBegin();
+      Index_type const j_end   = is_j.getEnd();
 
 #pragma omp parallel for schedule(static) collapse(2)
-      for(int i = i_start;i < i_end;++ i){
-        for(int j = j_start;j < j_end;++ j){
+      for(Index_type i = i_start;i < i_end;++ i){
+        for(Index_type j = j_start;j < j_end;++ j){
           body(i, j);
       } } 
     }
@@ -122,15 +122,15 @@ class Forall2Executor<RAJA::omp_for_nowait_exec, RAJA::omp_for_nowait_exec, RAJA
   public:  
     template<typename BODY>
     inline void operator()(RAJA::RangeSegment const &is_i, RAJA::RangeSegment const &is_j, BODY body) const {
-      int const i_start = is_i.getBegin();
-      int const i_end   = is_i.getEnd();
+      Index_type const i_start = is_i.getBegin();
+      Index_type const i_end   = is_i.getEnd();
 
-      int const j_start = is_j.getBegin();
-      int const j_end   = is_j.getEnd();
+      Index_type const j_start = is_j.getBegin();
+      Index_type const j_end   = is_j.getEnd();
 
 #pragma omp for schedule(static) collapse(2) nowait
-      for(int i = i_start;i < i_end;++ i){
-        for(int j = j_start;j < j_end;++ j){
+      for(Index_type i = i_start;i < i_end;++ i){
+        for(Index_type j = j_start;j < j_end;++ j){
           body(i, j);
       } } 
     }
@@ -151,7 +151,7 @@ RAJA_INLINE void forall2_permute(PERM_IJ, TI const &is_i, TJ const &is_j, BODY b
 
   // Call next policy with permuted indices and policies
   forall2_policy<NextPolicy, PolicyI, PolicyJ>(NextPolicyTag(), is_i, is_j,
-    RAJA_LAMBDA(int i, int j){
+    RAJA_LAMBDA(Index_type i, Index_type j){
       // Call body with non-permuted indices
       body(i, j);
     });
@@ -164,7 +164,7 @@ RAJA_INLINE void forall2_permute(PERM_JI, TI const &is_i, TJ const &is_j, BODY b
 
   // Call next policy with permuted indices and policies
   forall2_policy<NextPolicy, PolicyJ, PolicyI>(NextPolicyTag(), is_j, is_i,
-    RAJA_LAMBDA(int j, int i){
+    RAJA_LAMBDA(Index_type j, Index_type i){
       // Call body with non-permuted indices
       body(i, j);
     });
@@ -249,7 +249,7 @@ RAJA_INLINE void forall2_policy(Forall2_Tile_Tag, TI const &is_i, TJ const &is_j
  * Provides index typing, and initial nested policy unwrapping
  ******************************************************************/
 
-template<typename POLICY, typename IdxI=int, typename IdxJ=int, typename TI, typename TJ, typename BODY>
+template<typename POLICY, typename IdxI=Index_type, typename IdxJ=Index_type, typename TI, typename TJ, typename BODY>
 RAJA_INLINE void forall2(TI const &is_i, TJ const &is_j, BODY body){
   // extract next policy
   typedef typename POLICY::NextPolicy             NextPolicy;
@@ -261,7 +261,7 @@ RAJA_INLINE void forall2(TI const &is_i, TJ const &is_j, BODY body){
 
   // call 'policy' layer with next policy
   forall2_policy<NextPolicy, PolicyI, PolicyJ>(NextPolicyTag(), is_i, is_j, 
-    [=](int i, int j){
+    [=](Index_type i, Index_type j){
       body(IdxI(i), IdxJ(j));
     }
   );

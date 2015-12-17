@@ -15,13 +15,13 @@ struct View1d {
   Layout const layout;
   DataType *data;
 
-  inline View1d(DataType *data_ptr, int ni):
+  inline View1d(DataType *data_ptr, Index_type ni):
     layout(ni),
     data(data_ptr)
   {}
 
   inline DataType &operator()(IndexI i) const {
-    return data[convertIndex<int>(layout(i))];
+    return data[convertIndex<Index_type>(layout(i))];
   }
 };
 
@@ -34,13 +34,13 @@ struct View2d {
   Layout const layout;
   DataType *data;
 
-  inline View2d(DataType *data_ptr, int ni, int nj):
+  inline View2d(DataType *data_ptr, Index_type ni, Index_type nj):
     layout(ni, nj),
     data(data_ptr)
   {}
 
   inline DataType &operator()(IndexI i, IndexJ j) const {
-    return data[convertIndex<int>(layout(i, j))];
+    return data[convertIndex<Index_type>(layout(i, j))];
   }
 };
 
@@ -54,13 +54,13 @@ struct View3d {
   Layout const layout;
   DataType *data;
 
-  inline View3d(DataType *data_ptr, int ni, int nj, int nk):
+  inline View3d(DataType *data_ptr, Index_type ni, Index_type nj, Index_type nk):
     layout(ni, nj, nk),
     data(data_ptr)
   {}
 
   inline DataType &operator()(IndexI i, IndexJ j, IndexK k) const {
-    return data[convertIndex<int>(layout(i, j, k))];
+    return data[convertIndex<Index_type>(layout(i, j, k))];
   }
 };
 
@@ -75,13 +75,13 @@ struct View4d {
   Layout const layout;
   DataType *data;
 
-  inline View4d(DataType *data_ptr, int ni, int nj, int nk, int nl):
+  inline View4d(DataType *data_ptr, Index_type ni, Index_type nj, Index_type nk, Index_type nl):
     layout(ni, nj, nk, nl),
     data(data_ptr)
   {}
 
   inline DataType &operator()(IndexI i, IndexJ j, IndexK k, IndexL l) const {
-    return data[convertIndex<int>(layout(i, j, k, l))];
+    return data[convertIndex<Index_type>(layout(i, j, k, l))];
   }
 };
 

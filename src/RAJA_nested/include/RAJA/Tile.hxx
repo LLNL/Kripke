@@ -28,12 +28,12 @@ void forall_tile(tile_none, TI const &is, BODY body){
 template<int TileSize, typename BODY>
 void forall_tile(tile_fixed<TileSize>, RAJA::RangeSegment const &is, BODY body){
   // tile loop
-  int i_begin = is.getBegin();
-  int i_end = is.getEnd();
-  for(int i0 = i_begin;i0 < i_end;i0 += TileSize){
+  Index_type i_begin = is.getBegin();
+  Index_type i_end = is.getEnd();
+  for(Index_type i0 = i_begin;i0 < i_end;i0 += TileSize){
   
     // Create a new tile
-    int i1 = std::min(i0+TileSize, i_end);
+    Index_type i1 = std::min(i0+TileSize, i_end);
     RAJA::RangeSegment is_tile(i0, i1);
       
     // Pass tile index set to body        
@@ -44,9 +44,9 @@ void forall_tile(tile_fixed<TileSize>, RAJA::RangeSegment const &is, BODY body){
 
 template<typename BODY>
 void forall_tile(tile_indexset, RAJA::IndexSet const &iset, BODY body){
-     const int num_seg = iset.getNumSegments();
+   const Index_type num_seg = iset.getNumSegments();
 
-   for ( int isi = 0; isi < num_seg; ++isi ) {
+   for ( Index_type isi = 0; isi < num_seg; ++isi ) {
 
       const RAJA::BaseSegment* iseg = iset.getSegment(isi);
       RAJA::SegmentType segtype = iseg->getType();

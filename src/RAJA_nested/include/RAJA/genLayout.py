@@ -21,9 +21,9 @@ def writeLayoutDecl(ndims_list):
   for ndims in ndims_list:
     dim_names = getDimNames(ndims)
   
-    args = map(lambda a: "typename Idx%s=int"%a.upper(), dim_names)
+    args = map(lambda a: "typename Idx%s=Index_type"%a.upper(), dim_names)
     argstr = ", ".join(args)
-    print "template<typename Perm, %s, typename IdxLin=int>" % argstr
+    print "template<typename Perm, %s, typename IdxLin=Index_type>" % argstr
     print "struct Layout%dd {};" % ndims
     print 
        
@@ -64,19 +64,19 @@ def writeLayoutImpl(ndims_list):
 
 
       # Add local variables
-      args = map(lambda a: "int const size_"+a, dim_names)
+      args = map(lambda a: "Index_type const size_"+a, dim_names)
       for arg in args:
         print "  %s;" % arg
         
       # Add stride variables
       print ""
-      args = map(lambda a: "int const stride_"+a, dim_names)
+      args = map(lambda a: "Index_type const stride_"+a, dim_names)
       for arg in args:
         print "  %s;" % arg
       print ""
     
       # Define constructor
-      args = map(lambda a: "int n"+a, dim_names)
+      args = map(lambda a: "Index_type n"+a, dim_names)
       argstr = ", ".join(args)    
       print "  inline Layout%dd(%s):" % (ndims, argstr)    
       
@@ -109,9 +109,9 @@ def writeLayoutImpl(ndims_list):
       for i in range(0,ndims):
         remain = perm[i+1:]        
         if len(remain) > 0:
-          idxparts.append("convertIndex<int>(%s)*stride_%s" % (perm[i], perm[i]))
+          idxparts.append("convertIndex<Index_type>(%s)*stride_%s" % (perm[i], perm[i]))
         else:
-          idxparts.append("convertIndex<int>(%s)" % perm[i])
+          idxparts.append("convertIndex<Index_type>(%s)" % perm[i])
       idx = " + ".join(idxparts)  
 
       print "  inline IdxLin operator()(%s) const {" % (argstr)
@@ -125,12 +125,12 @@ def writeLayoutImpl(ndims_list):
       args = map(lambda a: "Idx%s &%s"%(a.upper(), a), dim_names)
       argstr = ", ".join(args)
       print "  inline void toIndices(IdxLin lin, %s) const {" % (argstr)
-      print "    int linear = convertIndex<int>(lin);"
+      print "    Index_type linear = convertIndex<Index_type>(lin);"
       for i in range(0, ndims):
         idx = perm[i]
         prod = "*".join(map(lambda a: "size_%s"%a, perm[i+1 : ndims]))
         if prod != '':
-          print "    int _%s = linear / (%s);" % (idx, prod)
+          print "    Index_type _%s = linear / (%s);" % (idx, prod)
           print "    %s = Idx%s(_%s);" % (idx, idx.upper(), idx)
           print "    linear -= _%s*(%s);" % (idx, prod)
       print "    %s = Idx%s(linear);" % (perm[ndims-1], perm[ndims-1].upper()) 

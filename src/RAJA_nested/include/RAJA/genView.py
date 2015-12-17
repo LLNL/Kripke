@@ -26,7 +26,7 @@ def writeView(ndims_list):
     print ""
         
     # Define constructor
-    args = map(lambda a: "int n"+a, dim_names)
+    args = map(lambda a: "Index_type n"+a, dim_names)
     argstr = ", ".join(args)
     print "  inline View%dd(DataType *data_ptr, %s):" % (ndims, argstr)
     args = map(lambda a: "n"+a, dim_names)
@@ -41,7 +41,7 @@ def writeView(ndims_list):
     argstr = ", ".join(args)
     print "  inline DataType &operator()(%s) const {" % argstr
     argstr = ", ".join(dim_names)
-    print "    return data[convertIndex<int>(layout(%s))];" % argstr
+    print "    return data[convertIndex<Index_type>(layout(%s))];" % argstr
     print "  }"
         
     print "};"
@@ -60,7 +60,7 @@ def writeViewImpl(ndims_list):
     print ""
                 
     # Define constructor
-    args = map(lambda a: "int n"+a, dim_names)
+    args = map(lambda a: "Index_type n"+a, dim_names)
     argstr = ", ".join(args)    
     print "  template<typename T, typename L>"
     print "  inline View%dd<T,L>::View%dd(T *data_ptr, %s):" % (ndims, ndims, argstr)    
@@ -73,7 +73,7 @@ def writeViewImpl(ndims_list):
     print ""
 
     # Define () Operator (const)
-    args = map(lambda a: "int "+a, dim_names)
+    args = map(lambda a: "Index_type "+a, dim_names)
     argstr = ", ".join(args)      
     print "  template<typename T, typename L>"
     print "  inline T &View%dd<T,L>::operator()(%s) const {" % (ndims, argstr)
