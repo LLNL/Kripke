@@ -2,7 +2,6 @@
 #define RAJA_INDEXVALUE_HXX__
 
 #include<RAJA/int_datatypes.hxx>
-#include<RAJA/RangeSegment.hxx>
 #include<string>
 
 
