@@ -309,11 +309,11 @@ inline TO convertIndex(FROM val){
 /**
  * Helper Macro to create new Index types.
  */
-#define RAJA_INDEX_VALUE(NAME) \
-  class NAME : public RAJA::IndexValue<NAME>{ \
+#define RAJA_INDEX_VALUE(TYPE, NAME) \
+  class TYPE : public RAJA::IndexValue<TYPE>{ \
   public: \
-    inline explicit NAME(RAJA::Index_type v) : RAJA::IndexValue<NAME>::IndexValue(v) {} \
-    static inline std::string getName(void){return #NAME;} \
+    inline explicit TYPE(RAJA::Index_type v) : RAJA::IndexValue<TYPE>::IndexValue(v) {} \
+    static inline std::string getName(void){return NAME;} \
   };
 
 
