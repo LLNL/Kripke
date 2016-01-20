@@ -155,7 +155,7 @@ namespace RAJA {
 
 """
 
-ndims_list = range(1,4+1)
+ndims_list = range(1,5+1)
 
 # Dump all declarations (with documentation, etc)
 writeEnumDecl(ndims_list)

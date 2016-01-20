@@ -85,6 +85,28 @@ struct View4d {
   }
 };
 
+template<typename DataType, typename Layout>
+struct View5d {
+  typedef typename Layout::Permutation Permutation;
+  typedef typename Layout::IndexI IndexI;
+  typedef typename Layout::IndexJ IndexJ;
+  typedef typename Layout::IndexK IndexK;
+  typedef typename Layout::IndexL IndexL;
+  typedef typename Layout::IndexM IndexM;
+
+  Layout const layout;
+  DataType *data;
+
+  inline View5d(DataType *data_ptr, Index_type ni, Index_type nj, Index_type nk, Index_type nl, Index_type nm):
+    layout(ni, nj, nk, nl, nm),
+    data(data_ptr)
+  {}
+
+  inline DataType &operator()(IndexI i, IndexJ j, IndexK k, IndexL l, IndexM m) const {
+    return data[convertIndex<Index_type>(layout(i, j, k, l, m))];
+  }
+};
+
 
 
 } // namespace RAJA
