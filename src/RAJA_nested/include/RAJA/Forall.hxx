@@ -15,7 +15,9 @@
 #define RAJA_LAMBDA [=]
 //#define RAJA_LAMBDA [=] __device__
 
-#ifdef _OPENMP
+//#ifdef _OPENMP
+
+#if 1
 
 typedef RAJA::simd_exec seq_pol;
 typedef RAJA::omp_parallel_for_exec omp_pol;

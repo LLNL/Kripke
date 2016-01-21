@@ -42,7 +42,14 @@ template<typename T>
 struct LPlusTimesPolicy{}; // nm, d, g, z
 
 template<>
-struct LPlusTimesPolicy<NEST_DGZ_T> : RAJA::Forall4_Policy<seq_pol, seq_pol, omp_nowait, seq_pol, RAJA::Forall4_Permute<RAJA::PERM_IJKL>>
+struct LPlusTimesPolicy<NEST_DGZ_T> :// RAJA::Forall4_Policy<seq_pol, seq_pol, omp_nowait, seq_pol, RAJA::Forall4_Permute<RAJA::PERM_IJKL>>
+                                 RAJA::Forall4_Policy<seq_pol, seq_pol, omp_nowait, seq_pol,
+                                        RAJA::Forall4_OMP_Parallel<
+                                          RAJA::Forall4_Tile<RAJA::tile_none, RAJA::tile_none, RAJA::tile_none, RAJA::tile_fixed<512>,
+                                           RAJA::Forall4_Permute<RAJA::PERM_IJKL>
+                                      >
+                                    >
+                                  >
 {};
 
 template<>

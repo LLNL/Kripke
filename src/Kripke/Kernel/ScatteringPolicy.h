@@ -42,7 +42,11 @@ template<typename T>
 struct ScatteringPolicy{}; // nm, g, gp, mat
 
 template<>
-struct ScatteringPolicy<NEST_DGZ_T> : RAJA::Forall4_Policy<seq_pol, seq_pol, omp_nowait, seq_pol, RAJA::Forall4_Permute<RAJA::PERM_IJKL>>
+struct ScatteringPolicy<NEST_DGZ_T> : RAJA::Forall4_Policy<seq_pol, seq_pol, omp_nowait, seq_pol, 
+                                        RAJA::Forall4_OMP_Parallel<
+                                          RAJA::Forall4_Permute<RAJA::PERM_IJKL>
+                                        >
+                                      >
 {};
 
 template<>
