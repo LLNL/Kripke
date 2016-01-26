@@ -126,8 +126,8 @@
 
 //#define CU_TIMING
 
-#define FluxPlaneDim 16
-#define FluxGroupDim 4
+#define FluxPlaneDim 8 
+#define FluxGroupDim 16
 #define NumSMs 15
   
 #define MAX ((a<b)?b:a)
@@ -339,7 +339,16 @@ int cuda_scattering_ZGD2 ( Subdomain *sdom, double *d_inflated_material, int num
 
 
 int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_psi, double *d_ell,
-                    int num_zones, int num_groups, int num_local_directions, int num_local_groups, int nidx, int group0){
+                    int num_zones, int num_groups, int num_local_directions, 
+		    int num_local_groups, int nidx, int group0){
+
+/*
+ * This is just L * 'a subdomain worth of' Psi. 
+ *
+ *
+ *
+ *
+ */
 
   cudaCheckError();
   int dim_y = 4;  
@@ -351,7 +360,8 @@ int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_psi, double *d_ell,
   if ( ! d_psi ) {
     // d_psi gets created in sweep - so the first time this is called d_psi doesn't exist - fine just do it the old way
 
-    LTimes_ZGD<<<num_zones,threadsPerBlock,nidx*dim_y*sizeof(double)>>>(d_phi,h_psi,d_ell,num_zones,num_groups,num_local_directions,num_local_groups,nidx,group0);
+    LTimes_ZGD<<<num_zones,threadsPerBlock,nidx*dim_y*sizeof(double)>>>
+      (d_phi,h_psi,d_ell,num_zones,num_groups,num_local_directions,num_local_groups,nidx,group0);
     
     cudaCheckError();
     
@@ -394,41 +404,39 @@ int cuda_LTimes_ZGD(double *d_phi, double *h_psi, double *d_psi, double *d_ell,
       cudaMalloc ((void**)&d_Aarray, 3*num_zones*sizeof(double*) ); 
       d_Barray = d_Aarray + num_zones;
       d_Carray = d_Barray + num_zones;
-    
-      if ( num_zones != ref_num_zones ) {
-	printf ("incorrect number of zones \n");
-	abort();
-      }
-    
-      for ( int izone=0; izone<num_zones; izone++ ) {
-	h_Aarray[izone] = d_ell;
-	h_Barray[izone] = d_psi+izone*num_local_groups*num_local_directions;
-	h_Carray[izone] = d_phi+izone*num_groups*nidx+group0*nidx;
-      }
-      
-      cudaMemcpy(d_Aarray, h_Aarray, 3*num_zones*sizeof(double*), cudaMemcpyHostToDevice);
-
-      cudaError_t cuerr;
-      for ( int i=0; i<8; i++ ) {
-	cuerr = cudaStreamCreate ( &(ltimesStream[i]) );
-	if ( cuerr ) abort();
-      }
     }
 
-    //double runtime = -1.0 * omp_get_wtime();
-    
+    if ( num_zones != ref_num_zones ) {
+      printf ("incorrect number of zones \n");
+      abort();
+    }
+
+    // fix 12/26/16 - update the input lists every time
+    // relative diff in results is now 1e-12.  as good as ever.
+
+    for ( int izone=0; izone<num_zones; izone++ ) {
+      h_Aarray[izone] = d_ell;
+      h_Barray[izone] = d_psi+izone*num_local_groups*num_local_directions;
+      h_Carray[izone] = d_phi+izone*num_groups*nidx+group0*nidx;
+    }
+      
+    cudaMemcpy(d_Aarray, h_Aarray, 3*num_zones*sizeof(double*), cudaMemcpyHostToDevice);
+
+    cudaError_t cuerr;
+    for ( int i=0; i<8; i++ ) {
+      cuerr = cudaStreamCreate ( &(ltimesStream[i]) );
+      if ( cuerr ) abort();
+    }
+
     cublasSetStream(kripke_cbhandle, ltimesStream[ltimesstream]);
     ltimesstream++;
     ltimesstream = ltimesstream%8;
-
-    //printf ("LTimes cublasDgemmBatched m = %d, n = %d, k = %d, zones = %d \n", nidx, num_local_groups, num_local_directions, num_zones);
 
     if ( 1 ) {
       custat = cublasDgemmBatched ( kripke_cbhandle, CUBLAS_OP_N, CUBLAS_OP_N, nidx, num_local_groups, 
 				    num_local_directions, &alpha, (const double **) d_Aarray, nidx, 
 				    (const double **) d_Barray, num_local_directions, &beta, 
 				    d_Carray, nidx, num_zones );
-      //cudaDeviceSynchronize();
       if ( custat ) {
 	printf ("custat = %d \n", custat);
       }
