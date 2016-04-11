@@ -109,10 +109,8 @@ void Kernel::LTimes(Grid_Data *domain) {
  
   View2d<double, Layout2d<PERM_IJ, IMoment, IMoment> > bar(p, n,n);
    
-  //for(int a = 0;a < 10;++ a)  
   forall3<TestPolicy3, int, IMoment, IMoment>(
     RAJA::RangeSegment(0,10),
-  //forall2<TestPolicy, IMoment, IMoment>(
     RAJA::RangeSegment(0,n),
     RAJA::RangeSegment(0,n),
     [=]  RAJA_DEVICE  (int iter, IMoment i, IMoment j){
