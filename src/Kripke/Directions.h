@@ -35,7 +35,7 @@
 
 #include <vector>
 
-class Grid_Data;
+struct Grid_Data;
 struct Input_Variables;
 
 /**
