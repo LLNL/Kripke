@@ -69,6 +69,7 @@ struct Grid_Data;
  */
 #define KRIPKE_SWEEP_EXTRA_RECV 0
 
+#include<RAJA/RAJA.hpp>
 
 // In Kripke/Sweep_Solver.cpp
 int SweepSolver(Grid_Data *grid_data, bool block_jacobi);

@@ -84,8 +84,8 @@ namespace {
 
 
 Subdomain::Subdomain() :
-  idx_dir_set(0),
   idx_group_set(0),
+  idx_dir_set(0),
   idx_zone_set(0),
   num_groups(0),
   num_directions(0),
@@ -269,8 +269,8 @@ void Subdomain::randomizeData(void){
   rhs->randomizeData();
   sigt->randomizeData();
 
-  for(int d = 0;d < 3;++ d){
-    for(int i = 0;i < deltas[d].size();++ i){
+  for(size_t d = 0;d < 3;++ d){
+    for(size_t i = 0;i < deltas[d].size();++ i){
       deltas[d][i] = drand48();
     }
   }
@@ -458,7 +458,6 @@ namespace {
  * This assumes that the quadrature set is defined.
  */
 void Subdomain::computeLLPlus(int legendre_order){
-  int dir0 = direction0;
   double SQRT4PI = std::sqrt(4*M_PI);
   for(int n=0, nm=0; n < legendre_order+1; n++){
     for(int m=-n; m<=n; m++){

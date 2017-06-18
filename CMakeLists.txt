@@ -2,9 +2,18 @@ cmake_minimum_required(VERSION 3.1)
 
 project(KRIPKE LANGUAGES CXX)
 
-set(ENABLE_MPI "On")
+
+
+set(RAJA_ENABLE_TESTS Off)
+set(RAJA_ENABLE_EXAMPLES Off)
+set(RAJA_ENABLE_DOCUMENTATION Off)
+add_subdirectory(tpl/raja EXCLUDE_FROM_ALL)
+
+get_property(RAJA_INCLUDE_DIRS DIRECTORY tpl/raja PROPERTY INCLUDE_DIRECTORIES)
+include_directories(${RAJA_INCLUDE_DIRS})
 
 include(blt/SetupBLT.cmake)
+
 
 include_directories(./src)
 
@@ -28,13 +37,15 @@ blt_add_library(
               "src/Kripke/Sweep_Solver.cpp"
               "src/Kripke/Test/TestKernels.cpp"
               "src/Kripke/Timing.cpp"
-  DEPENDS_ON  MPI
+  DEPENDS_ON  MPI 
 )
+
+add_dependencies(kripke RAJA)
 
 blt_add_executable( 
   NAME        kripke.exe
   SOURCES     "src/kripke.cpp"
-  DEPENDS_ON  kripke MPI
+  DEPENDS_ON  kripke MPI 
 )
 
 

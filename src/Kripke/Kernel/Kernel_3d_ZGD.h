@@ -37,6 +37,8 @@
 
 class Kernel_3d_ZGD : public Kernel {
   public:
+    virtual ~Kernel_3d_ZGD() = default;
+
     virtual Nesting_Order nestingPsi(void) const;
     virtual Nesting_Order nestingPhi(void) const;
     virtual Nesting_Order nestingSigt(void) const;

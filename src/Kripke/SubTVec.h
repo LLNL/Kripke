@@ -149,7 +149,7 @@ struct SubTVec {
 
   inline double sum(void) const {
     double s = 0.0;
-    for(size_t i = 0;i < elements;++ i){
+    for(int i = 0;i < elements;++ i){
       s+= data_linear[i];
     }
     return s;

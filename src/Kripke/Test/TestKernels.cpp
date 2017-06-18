@@ -90,7 +90,7 @@ struct runSweep {
 
   void operator ()(Grid_Data *grid_data) const {
     std::vector<int> sdom_list(grid_data->subdomains.size());
-    for(int i = 0;i < grid_data->subdomains.size();++ i){
+    for(size_t i = 0;i < grid_data->subdomains.size();++ i){
       sdom_list[i] = i;
     }
     SweepSubdomains(sdom_list, grid_data, false);

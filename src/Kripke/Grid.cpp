@@ -168,7 +168,7 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   // and get each materials volume
   long long vec_size[4] = {0,0,0,0};
   double vec_volume[3] = {0.0, 0.0, 0.0};
-  for(int sdom_id = 0;sdom_id < subdomains.size();++sdom_id){
+  for(size_t sdom_id = 0;sdom_id < subdomains.size();++sdom_id){
     Subdomain &sdom = subdomains[sdom_id];
     vec_size[0] += sdom.psi->elements;
     vec_size[1] += sdom.psi->elements;
@@ -215,18 +215,18 @@ Grid_Data::~Grid_Data(){
  * Randomizes all variables and matrices for testing suite.
  */
 void Grid_Data::randomizeData(void){
-  for(int i = 0;i < sigma_tot.size();++i){
+  for(size_t i = 0;i < sigma_tot.size();++i){
     sigma_tot[i] = drand48();
   }
 
-  for(int i = 0;i < directions.size();++i){
+  for(size_t i = 0;i < directions.size();++i){
     directions[i].xcos = drand48();
     directions[i].ycos = drand48();
     directions[i].zcos = drand48();
   }
 
 
-  for(int s = 0;s < subdomains.size();++ s){
+  for(size_t s = 0;s < subdomains.size();++ s){
     subdomains[s].randomizeData();
   }
 
@@ -250,7 +250,7 @@ void Grid_Data::randomizeData(void){
 double Grid_Data::particleEdit(void){
   // sum up particles for psi and rhs
   double part = 0.0;
-  for(int sdom_id = 0;sdom_id < subdomains.size();++ sdom_id){
+  for(size_t sdom_id = 0;sdom_id < subdomains.size();++ sdom_id){
     Subdomain &sdom = subdomains[sdom_id];
 
     int num_zones = sdom.num_zones;
@@ -286,7 +286,7 @@ void Grid_Data::copy(Grid_Data const &b){
   directions = b.directions;
 
   subdomains.resize(b.subdomains.size());
-  for(int s = 0;s < subdomains.size();++ s){
+  for(size_t s = 0;s < subdomains.size();++ s){
     subdomains[s].copy(b.subdomains[s]);
   }
 
@@ -295,7 +295,7 @@ void Grid_Data::copy(Grid_Data const &b){
     phi_out[zs]->copy(*b.phi_out[zs]);
   }
 
-  for(int ds = 0;ds < ell.size();++ ds){
+  for(size_t ds = 0;ds < ell.size();++ ds){
     ell[ds]->copy(*b.ell[ds]);
     ell_plus[ds]->copy(*b.ell_plus[ds]);
   }
@@ -310,7 +310,7 @@ void Grid_Data::copy(Grid_Data const &b){
 bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   bool is_diff = false;
 
-  for(int i = 0;i < directions.size();++i){
+  for(size_t i = 0;i < directions.size();++i){
     std::stringstream dirname;
     dirname << "directions[" << i << "]";
 
@@ -324,7 +324,7 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
         directions[i].zcos, b.directions[i].zcos, tol, verbose);
   }
 
-  for(int s = 0;s < subdomains.size();++ s){
+  for(size_t s = 0;s < subdomains.size();++ s){
     is_diff |= subdomains[s].compare(
         b.subdomains[s], tol, verbose);
 
@@ -336,7 +336,7 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
     is_diff |= phi_out[zs]->compare("phi_out", *b.phi_out[zs], tol, verbose);
   }
 
-  for(int ds = 0;ds < ell.size();++ ds){
+  for(size_t ds = 0;ds < ell.size();++ ds){
     is_diff |= ell[ds]->compare("ell", *b.ell[ds], tol, verbose);
     is_diff |= ell_plus[ds]->compare("ell_plus", *b.ell_plus[ds], tol, verbose);
   }

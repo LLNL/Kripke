@@ -244,7 +244,6 @@ void Kernel_3d_ZDG::source(Grid_Data *grid_data){
     Subdomain &sdom = grid_data->subdomains[sdom_id];
     int    const * KRESTRICT zones_to_mixed = &sdom.zones_to_mixed[0];
     int    const * KRESTRICT num_mixed = &sdom.num_mixed[0];
-    int    const * KRESTRICT mixed_to_zones = &sdom.mixed_to_zones[0];
     int    const * KRESTRICT mixed_material = &sdom.mixed_material[0];
     double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
     double       * KRESTRICT phi_out = grid_data->phi_out[zs]->ptr();
@@ -286,13 +285,11 @@ void Kernel_3d_ZDG::source(Grid_Data *grid_data){
 void Kernel_3d_ZDG::sweep(Subdomain *sdom) {
   int num_directions = sdom->num_directions;
   int num_groups = sdom->num_groups;
-  int num_zones = sdom->num_zones;
 
   Directions *direction = sdom->directions;
 
   int local_imax = sdom->nzones[0];
   int local_jmax = sdom->nzones[1];
-  int local_kmax = sdom->nzones[2];
 
   double const * KRESTRICT dx = &sdom->deltas[0][0];
   double const * KRESTRICT dy = &sdom->deltas[1][0];
@@ -307,11 +304,6 @@ void Kernel_3d_ZDG::sweep(Subdomain *sdom) {
   double * KRESTRICT psi_bo = sdom->plane_data[2]->ptr();
   
   int num_gd = num_groups * num_directions;
-
-  // Upwind/Downwind face flux data
-  SubTVec &i_plane = *sdom->plane_data[0];
-  SubTVec &j_plane = *sdom->plane_data[1];
-  SubTVec &k_plane = *sdom->plane_data[2];
 
   // All directions have same id,jd,kd, since these are all one Direction Set
   // So pull that information out now

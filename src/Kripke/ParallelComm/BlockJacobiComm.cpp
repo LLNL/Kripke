@@ -74,7 +74,7 @@ void BlockJacobiComm::addSubdomain(int sdom_id, Subdomain &sdom){
 bool BlockJacobiComm::workRemaining(void){
   if(!posted_sends){
     // post sends for all queued subdomains
-    for(int i = 0;i < queue_subdomains.size();++ i){
+    for(size_t i = 0;i < queue_subdomains.size();++ i){
       Subdomain *sdom = queue_subdomains[i];
 
       // Send new downwind info for sweep

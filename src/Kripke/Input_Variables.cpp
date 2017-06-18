@@ -38,7 +38,6 @@
 * Setup the default input choices
 */
 Input_Variables::Input_Variables() : 
-  run_name("kripke"),
   nx(16), ny(16), nz(16),
   num_directions(96),
   num_groups(32),
@@ -55,6 +54,7 @@ Input_Variables::Input_Variables() :
   
   niter(10),
   parallel_method(PMETHOD_SWEEP),
+  run_name("kripke"),
   sweep_trace(false)
 {
   num_zonesets_dim[0] = 1; 

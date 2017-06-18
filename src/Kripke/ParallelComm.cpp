@@ -69,7 +69,7 @@ void ParallelComm::computeRankSdom(int tag, int &mpi_rank, int &sdom_id){
 int ParallelComm::findSubdomain(int sdom_id){
 
   // find subdomain in queue
-  int index;
+  size_t index;
   for(index = 0;index < queue_sdom_ids.size();++ index){
     if(queue_sdom_ids[index] == sdom_id){
       break;
@@ -158,7 +158,7 @@ void ParallelComm::postSends(Subdomain *sdom, double *src_buffers[3]){
     // If it's an on-rank communication (to another subdomain)
     if(sdom->downwind[dim].mpi_rank == mpi_rank){
       // find the local subdomain in the queue, and decrement the counter
-      for(int i = 0;i < queue_sdom_ids.size();++ i){
+      for(size_t i = 0;i < queue_sdom_ids.size();++ i){
         if(queue_sdom_ids[i] == sdom->downwind[dim].subdomain_id){
           queue_depends[i] --;
           break;
@@ -252,7 +252,7 @@ void ParallelComm::testRecieves(void){
       num_requests --;
 
       // decrement the dependency count for that subdomain
-      for(int i = 0;i < queue_sdom_ids.size();++ i){
+      for(size_t i = 0;i < queue_sdom_ids.size();++ i){
         if(queue_sdom_ids[i] == sdom_id){
           queue_depends[i] --;
           break;
@@ -269,7 +269,7 @@ void ParallelComm::testRecieves(void){
 std::vector<int> ParallelComm::getReadyList(void){
   // build up a list of ready subdomains
   std::vector<int> ready;
-  for(int i = 0;i < queue_depends.size();++ i){
+  for(size_t i = 0;i < queue_depends.size();++ i){
     if(queue_depends[i] == 0){
       ready.push_back(queue_sdom_ids[i]);
     }

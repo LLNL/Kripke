@@ -376,10 +376,10 @@ int main(int argc, char **argv) {
   /*
    * Display Options
    */
-  int num_threads=1;
   if (myid == 0) {
     printf("Number of MPI tasks:   %d\n", num_tasks);
 #ifdef KRIPKE_USE_OPENMP
+    int num_threads=1;
 #pragma omp parallel
     {
       num_threads = omp_get_num_threads();
