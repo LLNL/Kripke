@@ -191,10 +191,18 @@ Grid_Data::Grid_Data(Input_Variables *input_vars)
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   if(mpi_rank == 0){
-    printf("Unknown counts: psi=%ld, rhs=%ld, phi=%ld, phi_out=%ld\n",
-      (long)global_size[0], (long)global_size[1], (long)global_size[2], (long)global_size[3]);
-    printf("Region volumes: Reg1=%e, Reg2=%e, Reg3=%e\n",
-        global_volume[0], global_volume[1], global_volume[2]);
+    printf("\n");
+    printf("Unknown counts:\n");
+    printf("  psi:                   %ld\n", (long)global_size[0]);
+    printf("  rhs                    %ld\n", (long)global_size[1]);
+    printf("  phi                    %ld\n", (long)global_size[2]);
+    printf("  phi_out:               %ld\n", (long)global_size[3]);
+
+    printf("\n");
+    printf("Region volumes:\n");
+    printf("  Reg1 (source)          %e\n", global_volume[0]);
+    printf("  Reg2                   %e\n", global_volume[1]);
+    printf("  Reg3                   %e\n", global_volume[2]);
   }
 }
 

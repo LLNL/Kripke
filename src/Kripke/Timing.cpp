@@ -172,6 +172,14 @@ void Timing::print(void) const {
   }
 #endif
   printf("\n");
+  printf("  ----------------  ------------  ------------");
+#ifdef KRIPKE_USE_PAPI
+  int num_papi = papi_names.size();
+  for(int i = 0;i < num_papi;++i){
+    printf("  ----------------");
+  }
+#endif
+  printf("\n");
 
   // Dislpay timer results
   for(size_t i = 0;i < names.size();++ i){

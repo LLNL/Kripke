@@ -62,7 +62,8 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
     grid_data->trace_file = fopen(fname, "wb");
   }
 
-
+  printf("\n");
+  printf("Running Steady State Solver:\n");
 
   BLOCK_TIMER(grid_data->timing, Solve);
 
@@ -134,7 +135,7 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
 
     double part = grid_data->particleEdit();
     if(mpi_rank==0){
-      printf("iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
+      printf("  iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
     }
     part_last = part;
   }
@@ -142,6 +143,8 @@ int SweepSolver (Grid_Data *grid_data, bool block_jacobi)
   if(grid_data->trace_file){
     fclose(grid_data->trace_file);
   }
+
+  printf("  Solver terminated\n");
 
   return(0);
 }

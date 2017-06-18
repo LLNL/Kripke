@@ -433,8 +433,8 @@ int main(int argc, char **argv) {
     
     printf("\n");
     printf("MPI Decomposition Options:\n");
-    printf("  Total MPI ranks:       %d\n", num_tasks);
-    printf("  Spatial decomp:        %d x %d x %d MPI ranks\n", vars.npx, vars.npy, vars.npz);
+    printf("  Total MPI tasks:       %d\n", num_tasks);
+    printf("  Spatial decomp:        %d x %d x %d MPI tasks\n", vars.npx, vars.npy, vars.npz);
     printf("  Block solve method:    ");
     if(vars.parallel_method == PMETHOD_SWEEP){
       printf("Sweep\n");
@@ -448,7 +448,7 @@ int main(int argc, char **argv) {
     printf("Per-Task Options:\n"); 
     printf("  DirSets/Directions:    %d sets, %d directions/set\n", vars.num_dirsets, vars.num_directions/vars.num_dirsets);
     printf("  GroupSet/Groups:       %d sets, %d groups/set\n", vars.num_groupsets, vars.num_groups/vars.num_groupsets);
-    printf("  Zone Sets:             %d,%d,%d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
+    printf("  Zone Sets:             %d x %d x %d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
    printf("  Loop Nesting Order     %s\n", nestingString(vars.nesting).c_str());        
 #ifdef KRIPKE_USE_OPENMP
     int num_threads=1;
@@ -463,7 +463,6 @@ int main(int argc, char **argv) {
 #endif
 
     
-    printf("\n");
     
   }
   
@@ -492,6 +491,7 @@ int main(int argc, char **argv) {
     int myid;
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
     if(myid == 0){
+      printf("\n");
       grid_data->timing.print();
       printf("\n\n");
     }
