@@ -29,7 +29,7 @@
  * Commercialization of this product is prohibited without notifying the
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
-
+  
 #include<Kripke.h>
 #include<Kripke/Input_Variables.h>
 #include<Kripke/Grid.h>
@@ -217,19 +217,33 @@ int main(int argc, char **argv) {
   if (myid == 0) {
     /* Print out a banner message along with a version number. */
     printf("\n");
-    printf("----------------------------------------------------------------------\n");
-    printf("------------------------ KRIPKE VERSION 1.1 --------------------------\n");
-    printf("----------------------------------------------------------------------\n");
+    printf("   _  __       _         _\n");                   
+    printf("  | |/ /      (_)       | |\n");                  
+    printf("  | ' /  _ __  _  _ __  | | __ ___\n");           
+    printf("  |  <  | '__|| || '_ \\ | |/ // _ \\ \n");     
+    printf("  | . \\ | |   | || |_) ||   <|  __/\n");     
+    printf("  |_|\\_\\|_|   |_|| .__/ |_|\\_\\\\___|\n");          
+    printf("                 | |\n");                         
+    printf("                 |_|        Version %s\n", KRIPKE_VERSION);        
+    printf("\n");
+    printf("\n");
     printf("This work was produced at the Lawrence Livermore National Laboratory\n");
     printf("(LLNL) under contract no. DE-AC-52-07NA27344 (Contract 44) between the\n");
     printf("U.S. Department of Energy (DOE) and Lawrence Livermore National\n");
     printf("Security, LLC (LLNS) for the operation of LLNL. The rights of the\n");
     printf("Federal Government are reserved under Contract 44.\n");
     printf("\n");
-    printf("Main Contact: Adam J. Kunen <kunen1@llnl.gov>\n");
-    printf("----------------------------------------------------------------------\n");
-   
-   
+    printf("Author: Adam J. Kunen <kunen1@llnl.gov>\n");
+    printf("\n"); 
+
+    // Display information about how we were built
+    printf("Compilation Options:\n");
+    printf("  Build type:             %s\n", KRIPKE_BUILD_TYPE);
+    printf("  Compiler:               %s\n", KRIPKE_CXX_COMPILER);
+    printf("  Compiler Flags:         \"%s\"\n", KRIPKE_CXX_FLAGS);
+    printf("  Linker Flags:           \"%s\"\n", KRIPKE_LINK_FLAGS);
+
+
     /* Print out some information about how OpenMP threads are being mapped
      * to CPU cores.
      */
@@ -377,19 +391,6 @@ int main(int argc, char **argv) {
    * Display Options
    */
   if (myid == 0) {
-    printf("Number of MPI tasks:   %d\n", num_tasks);
-#ifdef KRIPKE_USE_OPENMP
-    int num_threads=1;
-#pragma omp parallel
-    {
-      num_threads = omp_get_num_threads();
-      if(omp_get_thread_num() == 0){
-          printf("OpenMP threads/task:   %d\n", num_threads);
-          printf("OpenMP total threads:  %d\n", num_threads*num_tasks);
-        }
-    }
-#endif
-
 #ifdef KRIPKE_USE_PAPI
     printf("PAPI Counters:         ");
     if(papi_names.size() > 0){
@@ -402,33 +403,67 @@ int main(int argc, char **argv) {
     }
     printf("\n");
 #endif
-    printf("Processors:            %d x %d x %d\n", vars.npx, vars.npy, vars.npz);
-    printf("Zones:                 %d x %d x %d\n", vars.nx, vars.ny, vars.nz);
-    printf("Legendre Order:        %d\n", vars.legendre_order);
-    printf("Total X-Sec:           sigt=[%lf, %lf, %lf]\n", vars.sigt[0], vars.sigt[1], vars.sigt[2]);
-    printf("Scattering X-Sec:      sigs=[%lf, %lf, %lf]\n", vars.sigs[0], vars.sigs[1], vars.sigs[2]);
-    printf("Quadrature Set:        ");
+    
+    
+    printf("\n");
+    printf("Problem Size:\n");
+    printf("  Zones:                 %d x %d x %d\n", vars.nx, vars.ny, vars.nz);
+    printf("  Groups:                %d\n", vars.num_groups);
+    printf("  Legendre Order:        %d\n", vars.legendre_order);
+    printf("  Quadrature Set:        ");
     if(vars.quad_num_polar == 0){
       printf("Dummy S2 with %d points\n", vars.num_directions);
     }
     else {
       printf("Gauss-Legendre, %d polar, %d azimuthal (%d points)\n", vars.quad_num_polar, vars.quad_num_azimuthal, vars.num_directions);
     }
-    printf("Parallel method:       ");
+   
+
+    printf("\n");
+    printf("Physical Properties:\n");
+    printf("  Total X-Sec:           sigt=[%lf, %lf, %lf]\n", vars.sigt[0], vars.sigt[1], vars.sigt[2]);
+    printf("  Scattering X-Sec:      sigs=[%lf, %lf, %lf]\n", vars.sigs[0], vars.sigs[1], vars.sigs[2]);
+
+
+    printf("\n");
+    printf("Solver Options:\n");
+    printf("  Number iterations:     %d\n", vars.niter);
+
+    
+    
+    printf("\n");
+    printf("MPI Decomposition Options:\n");
+    printf("  Total MPI ranks:       %d\n", num_tasks);
+    printf("  Spatial decomp:        %d x %d x %d MPI ranks\n", vars.npx, vars.npy, vars.npz);
+    printf("  Block solve method:    ");
     if(vars.parallel_method == PMETHOD_SWEEP){
       printf("Sweep\n");
     }
     else if(vars.parallel_method == PMETHOD_BJ){
       printf("Block Jacobi\n");
     }
-    printf("Loop Nesting Order     %s\n", nestingString(vars.nesting).c_str());        
-    printf("Number iterations:     %d\n", vars.niter);
+
+
+    printf("\n");
+    printf("Per-Task Options:\n"); 
+    printf("  DirSets/Directions:    %d sets, %d directions/set\n", vars.num_dirsets, vars.num_directions/vars.num_dirsets);
+    printf("  GroupSet/Groups:       %d sets, %d groups/set\n", vars.num_groupsets, vars.num_groups/vars.num_groupsets);
+    printf("  Zone Sets:             %d,%d,%d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
+   printf("  Loop Nesting Order     %s\n", nestingString(vars.nesting).c_str());        
+#ifdef KRIPKE_USE_OPENMP
+    int num_threads=1;
+#pragma omp parallel
+    {
+      num_threads = omp_get_num_threads();
+      if(omp_get_thread_num() == 0){
+          printf("OpenMP threads/task:     %d\n", num_threads);
+          printf("OpenMP total threads:    %d\n", num_threads*num_tasks);
+        }
+    }
+#endif
+
     
-    printf("GroupSet/Groups:       %d sets, %d groups/set\n", vars.num_groupsets, vars.num_groups/vars.num_groupsets);
-    printf("DirSets/Directions:    %d sets, %d directions/set\n", vars.num_dirsets, vars.num_directions/vars.num_dirsets);
-
-    printf("Zone Sets:             %d,%d,%d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
-
+    printf("\n");
     
   }
   

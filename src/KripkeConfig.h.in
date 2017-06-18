@@ -1,0 +1,15 @@
+#ifndef KRIPKE_CONFIG_H__
+#define KRIPKE_CONFIG_H__
+
+#cmakedefine KRIPKE_VERSION "@KRIPKE_VERSION@"
+
+#cmakedefine KRIPKE_BUILD_TYPE "@KRIPKE_BUILD_TYPE@"
+
+#cmakedefine KRIPKE_CXX_COMPILER "@KRIPKE_CXX_COMPILER@"
+#cmakedefine KRIPKE_CXX_FLAGS "@KRIPKE_CXX_FLAGS@"
+#cmakedefine KRIPKE_LINK_FLAGS "@KRIPKE_LINK_FLAGS@"
+
+#cmakedefine KRIPKE_USE_MPI
+#cmakedefine KRIPKE_USE_OPENMP
+
+#endif

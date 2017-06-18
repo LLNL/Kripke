@@ -33,6 +33,8 @@
 #ifndef KRIPKE_H__
 #define KRIPKE_H__
 
+#include<KripkeConfig.h>
+
 #include<string>
 #include<vector>
 #include<stdio.h>
