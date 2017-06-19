@@ -54,6 +54,7 @@
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/memory.h>
 #endif
 
+#include<Kripke/DataStore.h>
 
 void usage(void){
   int myid;

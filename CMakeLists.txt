@@ -59,7 +59,8 @@ include_directories(./src ${PROJECT_BINARY_DIR}/include)
 
 blt_add_library(
   NAME        kripke
-  SOURCES     "src/Kripke/Directions.cpp"
+  SOURCES     "src/Kripke/DataStore.cpp"
+              "src/Kripke/Directions.cpp"
               "src/Kripke/Grid.cpp"
               "src/Kripke/Input_Variables.cpp"
               "src/Kripke/Kernel/Kernel_3d_DGZ.cpp"
