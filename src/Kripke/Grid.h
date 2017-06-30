@@ -41,7 +41,7 @@
 #include <vector>
 
 // Foreward Decl
-struct Input_Variables;
+struct InputVariables;
 struct Grid_Data;
 struct SubTVec;
 
@@ -51,7 +51,7 @@ struct SubTVec;
  */
 struct Grid_Data {
 public:
-  explicit Grid_Data(Input_Variables *input_vars);
+  explicit Grid_Data(InputVariables *input_vars);
   ~Grid_Data();
 
   void randomizeData(void);

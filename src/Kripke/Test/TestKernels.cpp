@@ -34,7 +34,7 @@
 
 #include <Kripke.h>
 #include <Kripke/Grid.h>
-#include <Kripke/Input_Variables.h>
+#include <Kripke/InputVariables.h>
 
 /**
  * Functional object to run the LTimes kernel.
@@ -102,7 +102,7 @@ struct runSweep {
  * Tests a specific kernel (using one of the above runXXX functional objects).
  */
 template<typename KernelRunner>
-void testKernel(Input_Variables &input_variables){
+void testKernel(InputVariables &input_variables){
   int myid;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 
@@ -153,7 +153,7 @@ void testKernel(Input_Variables &input_variables){
 /**
  * Tests all kernels given the specified input.
  */
-void testKernels(Input_Variables &input_variables){
+void testKernels(InputVariables &input_variables){
   // Run LTimes
   testKernel<runLTimes>(input_variables);
 

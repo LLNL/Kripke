@@ -32,7 +32,7 @@
 
 #include <Kripke/Directions.h>
 #include <Kripke/Grid.h>
-#include <Kripke/Input_Variables.h>
+#include <Kripke/InputVariables.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -86,7 +86,7 @@ namespace {
  * Initializes the quadrature set information for a Grid_Data object.
  * This guarantees that each <GS,DS> pair have a single originating octant.
  */
-void InitDirections(Grid_Data *grid_data, Input_Variables *input_vars)
+void InitDirections(Grid_Data *grid_data, InputVariables *input_vars)
 {
   std::vector<Directions> &directions = grid_data->directions;
 

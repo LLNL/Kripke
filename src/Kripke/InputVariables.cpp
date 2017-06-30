@@ -30,14 +30,14 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include<Kripke/Input_Variables.h>
+#include<Kripke/InputVariables.h>
 
 #include<mpi.h>
 
 /**
 * Setup the default input choices
 */
-Input_Variables::Input_Variables() : 
+InputVariables::InputVariables() : 
   nx(16), ny(16), nz(16),
   num_directions(96),
   num_groups(32),
@@ -73,7 +73,7 @@ Input_Variables::Input_Variables() :
 /**
  *  Checks validity of inputs, returns 'true' on error.
  */
-bool Input_Variables::checkValues(void) const{
+bool InputVariables::checkValues(void) const{
   // make sure any output only goes to root
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);

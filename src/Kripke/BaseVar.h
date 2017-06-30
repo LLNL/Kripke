@@ -30,11 +30,20 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_TOOLS_TEST_KERNELS_H__
-#define KRIPKE_TOOLS_TEST_KERNELS_H__
+#ifndef KRIPKE_BASE_VAR_H__
+#define KRIPKE_BASE_VAR_H__
 
-struct InputVariables;
+namespace Kripke {
 
-void testKernels(InputVariables &input_variables);
+/**
+ * Variable base class for DataStore class
+ */
+class BaseVar {
+  public:
+    virtual ~BaseVar() = default;
+};
+
+
+}  // namespace
 
 #endif

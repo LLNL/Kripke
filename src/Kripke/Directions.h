@@ -36,7 +36,7 @@
 #include <vector>
 
 struct Grid_Data;
-struct Input_Variables;
+struct InputVariables;
 
 /**
  * Contains information needed for one quadrature set direction.
@@ -56,6 +56,6 @@ struct Directions{
 };
 
 
-void InitDirections(Grid_Data *grid_data, Input_Variables *input_vars);
+void InitDirections(Grid_Data *grid_data, InputVariables *input_vars);
 
 #endif

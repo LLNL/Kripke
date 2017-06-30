@@ -36,7 +36,7 @@
 #include<algorithm>
 
 // foreward decl
-struct Input_Variables;
+struct InputVariables;
 
 /**
   Describes a neighboring Subdomain using both mpi-rank and subdomin id
@@ -54,7 +54,7 @@ struct Neighbor{
  */
 class Layout {
   public:
-    explicit Layout(Input_Variables *input_vars);
+    explicit Layout(InputVariables *input_vars);
     virtual ~Layout();
 
     virtual int setIdToSubdomainId(int gs, int ds, int zs) const;
@@ -78,7 +78,7 @@ class Layout {
 
 class BlockLayout : public Layout {
   public:
-    explicit BlockLayout(Input_Variables *input_vars);
+    explicit BlockLayout(InputVariables *input_vars);
     virtual ~BlockLayout();
 
     virtual Neighbor getNeighbor(int our_sdom_id, int dim, int dir) const;
@@ -87,7 +87,7 @@ class BlockLayout : public Layout {
 
 class ScatterLayout : public Layout {
   public:
-    explicit ScatterLayout(Input_Variables *input_vars);
+    explicit ScatterLayout(InputVariables *input_vars);
     virtual ~ScatterLayout();
 
     virtual Neighbor getNeighbor(int our_sdom_id, int dim, int dir) const;
@@ -96,6 +96,6 @@ class ScatterLayout : public Layout {
 
 
 // Factory to create layout object
-Layout *createLayout(Input_Variables *input_vars);
+Layout *createLayout(InputVariables *input_vars);
 
 #endif

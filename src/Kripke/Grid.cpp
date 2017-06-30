@@ -32,7 +32,7 @@
 
 #include <Kripke/Grid.h>
 
-#include <Kripke/Input_Variables.h>
+#include <Kripke/InputVariables.h>
 #include <Kripke/Layout.h>
 #include <Kripke/SubTVec.h>
 #include <cmath>
@@ -48,7 +48,7 @@
 /**
  * Grid_Data constructor
 */
-Grid_Data::Grid_Data(Input_Variables *input_vars)
+Grid_Data::Grid_Data(InputVariables *input_vars)
 {
   sweep_trace = input_vars->sweep_trace;
   trace_file = NULL;

@@ -32,7 +32,7 @@
 
 #include<Kripke/Layout.h>
 
-#include<Kripke/Input_Variables.h>
+#include<Kripke/InputVariables.h>
 #include<mpi.h>
 
 namespace {
@@ -68,7 +68,7 @@ namespace {
   }
 }
 
-Layout::Layout(Input_Variables *input_vars){
+Layout::Layout(InputVariables *input_vars){
   num_group_sets = input_vars->num_groupsets;
   num_direction_sets = input_vars->num_dirsets;
   num_zone_sets = 1;
@@ -176,7 +176,7 @@ int Layout::getNumZones(int sdom_id, int dim) const{
 
 
 
-BlockLayout::BlockLayout(Input_Variables *input_vars) :
+BlockLayout::BlockLayout(InputVariables *input_vars) :
   Layout(input_vars)
 {
 
@@ -265,7 +265,7 @@ std::pair<double, double> BlockLayout::getSpatialExtents(int sdom_id, int dim) c
 
 
 
-ScatterLayout::ScatterLayout(Input_Variables *input_vars) :
+ScatterLayout::ScatterLayout(InputVariables *input_vars) :
   Layout(input_vars)
 {
 
@@ -359,7 +359,7 @@ std::pair<double, double> ScatterLayout::getSpatialExtents(int sdom_id, int dim)
 /**
   Factory to create Layout object based on user defined inputs
 */
-Layout *createLayout(Input_Variables *input_vars){
+Layout *createLayout(InputVariables *input_vars){
   switch(input_vars->layout_pattern){
     case 0:
       return new BlockLayout(input_vars);

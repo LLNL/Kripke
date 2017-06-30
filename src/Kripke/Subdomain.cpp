@@ -32,7 +32,7 @@
 
 #include <Kripke/Grid.h>
 #include <Kripke/SubTVec.h>
-#include <Kripke/Input_Variables.h>
+#include <Kripke/InputVariables.h>
 
 #include <cmath>
 #include <sstream>
@@ -120,7 +120,7 @@ Subdomain::~Subdomain(){
 /**
   Setup subdomain and allocate data
 */
-void Subdomain::setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, int zs,
+void Subdomain::setup(int sdom_id, InputVariables *input_vars, int gs, int ds, int zs,
     std::vector<Directions> &direction_list, Kernel *kernel, Layout *layout)
 {
   // set the set indices

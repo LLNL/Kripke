@@ -39,8 +39,8 @@
  * This structure defines the input parameters to setup a problem.
  */
 
-struct Input_Variables {
-  Input_Variables();
+struct InputVariables {
+  InputVariables();
   
   bool checkValues(void) const;
   

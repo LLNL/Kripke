@@ -2,14 +2,15 @@
 #include<Kripke.h>
 #include<Kripke/DataStore.h>
 
+using namespace Kripke;
 
 DataStore::DataStore(){}
 
 DataStore::~DataStore(){
 
   
-  while(vars.size()){
-    auto it = vars.begin();
+  while(m_vars.size()){
+    auto it = m_vars.begin();
     deleteVariable(it->first);
   }
 
@@ -18,17 +19,17 @@ DataStore::~DataStore(){
 void DataStore::addVariable(std::string const &name,
   BaseVar *var)
 {
-  if(vars.find(name) != vars.end()){
+  if(m_vars.find(name) != m_vars.end()){
     throw std::domain_error("Variable '" + name + "' already exists");
   }
 
-  vars[name] = var;
+  m_vars[name] = var;
 }
 
 
 void DataStore::deleteVariable(std::string const &name){
-  auto it = vars.find(name);
-  if(it == vars.end()){
+  auto it = m_vars.find(name);
+  if(it == m_vars.end()){
     throw std::domain_error("Variable '" + name + "' does not exist");
   }
 
@@ -36,7 +37,7 @@ void DataStore::deleteVariable(std::string const &name){
   delete it->second;
 
   // remove from map
-  vars.erase(it);
+  m_vars.erase(it);
 }
 
 

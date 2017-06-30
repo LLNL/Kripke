@@ -31,7 +31,9 @@
  */
   
 #include<Kripke.h>
-#include<Kripke/Input_Variables.h>
+#include<Kripke/DataStore.h>
+#include<Kripke/Initialize.h>
+#include<Kripke/InputVariables.h>
 #include<Kripke/Grid.h>
 #include<Kripke/Test/TestKernels.h>
 #include<stdio.h>
@@ -61,7 +63,7 @@ void usage(void){
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   if(myid == 0){
     // Get a new object with defaulted values
-    Input_Variables def;
+    InputVariables def;
     
     // Display command line
     printf("Usage:  [srun ...] kripke [options...]\n\n");
@@ -265,7 +267,7 @@ int main(int argc, char **argv) {
   /*
    * Default input parameters
    */
-  Input_Variables vars;
+  InputVariables vars;
   std::vector<std::string> papi_names;
   bool test = false;
   
@@ -475,6 +477,9 @@ int main(int argc, char **argv) {
   else{
     // Allocate problem 
     Grid_Data *grid_data = new Grid_Data(&vars);
+
+    Kripke::DataStore data_store;
+    Kripke::initializeDataStore(data_store, vars);
 
     grid_data->timing.setPapiEvents(papi_names);
 

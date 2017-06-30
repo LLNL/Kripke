@@ -39,7 +39,7 @@
 // Foreward Decl
 struct Directions;
 struct SubTVec;
-struct Input_Variables;
+struct InputVariables;
 class Kernel;
 
 /**
@@ -63,7 +63,7 @@ struct Subdomain {
   Subdomain();
   ~Subdomain();
 
-  void setup(int sdom_id, Input_Variables *input_vars, int gs, int ds, int zs,
+  void setup(int sdom_id, InputVariables *input_vars, int gs, int ds, int zs,
     std::vector<Directions> &direction_list, Kernel *kernel, Layout *layout);
 
   void setVars(SubTVec *ell_ptr, SubTVec *ell_plus_ptr,

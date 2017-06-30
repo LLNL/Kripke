@@ -30,58 +30,72 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_DATASTORE_H__
-#define KRIPKE_DATASTORE_H__
+#ifndef KRIPKE_PARTITION_SPACE_H__
+#define KRIPKE_PARTITION_SPACE_H__
 
 #include <Kripke.h>
-#include <Kripke/BaseVar.h>
-#include <map>
-#include <stdexcept>
+#include <Kripke/Comm.h>
+#include <Kripke/DataStore.h>
 
 namespace Kripke {
 
+enum SPACE {
+  SPACE_P = 0,
+  SPACE_Q,
+  SPACE_RX,
+  SPACE_RY,
+  SPACE_RZ,
+  SPACE_R,
+  SPACE_ALL,
+  NUM_SPACES
+};
+
 /**
- * Container to store variables by name
+ *  Defines a decomposition of the phase space by subdomains.
  */
-class DataStore {
+class PartitionSpace : public Kripke::BaseVar {
   public:
-    DataStore();
-    ~DataStore();
-    DataStore(DataStore const &) = delete;
-    DataStore &operator=(DataStore const &) = delete;
+    PartitionSpace(Kripke::Comm &base_comm, 
+      size_t P, size_t Q, size_t Rx, size_t Ry, size_t Rz);
 
-    void addVariable(std::string const &name, Kripke::BaseVar *);
+    virtual ~PartitionSpace() = default;
 
-    void deleteVariable(std::string const &name);
+    void setup_createSubdomains(
+        size_t SP, size_t SQ, size_t Sx, size_t Sy, size_t Sz);
 
-    template<typename T>
-    RAJA_INLINE
-    T &getVariable(std::string const &name){
+    size_t getNumSubdomains(Kripke::SPACE space = SPACE_ALL) const;
+    size_t getGlobalNumSubdomains(Kripke::SPACE space = SPACE_ALL) const;
 
-      // Perform lookup by name
-      auto it = m_vars.find(name);
-      if(it == m_vars.end()){
-        throw std::domain_error("Cannot find '" + name + "' in DataStore");
-      }
-
-      // Cast from BaseVar* and check for correctness
-      T *var_ptr = dynamic_cast<T*>(it->second);
-      KRIPKE_ASSERT(var_ptr != nullptr, "Error casting '%s'", name.c_str());
-
-      return *var_ptr;
+    Kripke::Comm const &getComm(SPACE space) const {
+      return m_comm_space[space];
     }
     
-    template<typename T>
-    RAJA_INLINE
-    T const &getVariable(std::string const &name) const{
-      return const_cast<DataStore *>(this)-> template getVariable<T>(name);
-    }
+    size_t subdomainToSpace(Kripke::SPACE space, SdomId sdom_id) const;
+    SdomId spaceToSubdomain(Kripke::SPACE space, size_t sdom_space) const;
+
+    void print() const;
 
   private:
-    std::map<std::string, Kripke::BaseVar *> m_vars;
+    Kripke::Comm m_comm_all;
+
+    // Parallel decomposition of comm_all
+    Kripke::Comm m_comm_space[NUM_SPACES];
+    
+    // Decomposition of ranks into subdomains
+    std::array<long, NUM_SPACES> m_local_num_sdom;
+    std::array<long, NUM_SPACES> m_global_num_sdom;
+    std::array<long, NUM_SPACES> m_global_sdom_lower;
+
+    RAJA::Layout<5> m_proc_layout;
+    RAJA::Layout<3> m_proc_xyz_layout;
+    RAJA::Layout<5> m_local_sdom_layout;
+    RAJA::Layout<3> m_local_sdom_xyz_layout;
+    RAJA::Layout<5> m_global_sdom_layout;
 
 };
 
-}
+
+
+} // namespace
 
 #endif

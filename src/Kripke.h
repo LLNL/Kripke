@@ -35,6 +35,8 @@
 
 #include<KripkeConfig.h>
 
+#include<RAJA/RAJA.hpp>
+
 #include<string>
 #include<vector>
 #include<stdio.h>
@@ -52,6 +54,31 @@
 struct Grid_Data;
 
 #define KRESTRICT __restrict__
+
+#define KRIPKE_ABORT(...) \
+  printf(__VA_ARGS__);
+
+#define KRIPKE_ASSERT(EXPR, ...) \
+  if(!(EXPR)){\
+    KRIPKE_ABORT("Assertion Failed:" __VA_ARGS__); \
+  }
+   
+
+namespace Kripke {
+
+  /**
+   * Index used to specify a local subdomain
+   */
+  RAJA_INDEX_VALUE(SdomId, "SdomId");
+
+
+  /**
+   * Index used to specify a global subdomain
+   */
+  RAJA_INDEX_VALUE(GlobalSdomId, "GlobalSdomId");
+
+
+}
 
 
 /**
@@ -71,7 +98,6 @@ struct Grid_Data;
  */
 #define KRIPKE_SWEEP_EXTRA_RECV 0
 
-#include<RAJA/RAJA.hpp>
 
 // In Kripke/Sweep_Solver.cpp
 int SweepSolver(Grid_Data *grid_data, bool block_jacobi);
