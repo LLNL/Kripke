@@ -30,27 +30,23 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_KERNEL_3D_ZDG_H__
-#define KRIPKE_KERNEL_3D_ZDG_H__
+#ifndef KRIPKE_SWEEPSOLVER_H__
+#define KRIPKE_SWEEPSOLVER_H__
 
-#include<Kripke/Kernel.h>
 
-class Kernel_3d_ZDG : public Kernel {
-  public:
-    virtual ~Kernel_3d_ZDG() = default;
+#include <Kripke/DataStore.h>
+#include <Kripke/Grid.h>
 
-    virtual Nesting_Order nestingPsi(void) const;
-    virtual Nesting_Order nestingPhi(void) const;
-    virtual Nesting_Order nestingSigt(void) const;
-    virtual Nesting_Order nestingEll(void) const;
-    virtual Nesting_Order nestingEllPlus(void) const;
-    virtual Nesting_Order nestingSigs(void) const;
+namespace Kripke {
 
-    virtual void LTimes(Grid_Data *grid_data);
-    virtual void LPlusTimes(Grid_Data *grid_data);
-    virtual void scattering(Grid_Data *grid_data);
-    virtual void source(Grid_Data *grid_data);
-    virtual void sweep(Subdomain *ga_set);
-};
+  class DataStore;
+
+  void SweepSolver (Kripke::DataStore &data_store,
+      std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi);
+
+
+
+} // namespace
 
 #endif
+
