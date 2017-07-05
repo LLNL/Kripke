@@ -244,38 +244,6 @@ void Grid_Data::randomizeData(void){
 }
 
 
-/**
- * Returns the integral of psi.. to look at convergence
- */
-double Grid_Data::particleEdit(void){
-  // sum up particles for psi and rhs
-  double part = 0.0;
-  for(size_t sdom_id = 0;sdom_id < subdomains.size();++ sdom_id){
-    Subdomain &sdom = subdomains[sdom_id];
-
-    int num_zones = sdom.num_zones;
-    int num_directions = sdom.num_directions;
-    int num_groups= sdom.num_groups;
-    Directions *dirs = sdom.directions;
-
-    for(int z = 0;z < num_zones;++ z){
-      double vol = sdom.volume[z];
-      for(int d = 0;d < num_directions;++ d){
-        double w = dirs[d].w;
-        for(int g = 0;g < num_groups;++ g){
-          part += w * (*sdom.psi)(g,d,z) * vol;
-        }
-      }
-    }
-  }
-
-  // reduce
-  double part_global;
-  MPI_Reduce(&part, &part_global, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-
-  return part_global;
-}
-
 
 /**
  * Copies all variables and matrices for testing suite.

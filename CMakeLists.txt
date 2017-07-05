@@ -67,6 +67,7 @@ blt_add_library(
               "src/Kripke/InputVariables.cpp"
               "src/Kripke/Kernel/LPlusTimes.cpp"
               "src/Kripke/Kernel/LTimes.cpp"
+              "src/Kripke/Kernel/Population.cpp"
               "src/Kripke/Kernel/Scattering.cpp"
               "src/Kripke/Kernel/Source.cpp"
               "src/Kripke/Kernel/SweepSubdomain.cpp"

@@ -30,36 +30,45 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_KERNEL_H__
-#define KRIPKE_KERNEL_H__
+#include<Kripke/Kernel.h>
+#include<Kripke/Grid.h>
+#include<Kripke/SubTVec.h>
+#include<Kripke/Timing.h>
 
-#include <Kripke.h>
-#include <Kripke/DataStore.h>
+/**
+ * Returns the integral of Psi over all phase-space, to look at convergence
+ */
+double Kripke::Kernel::population(Kripke::DataStore &data_store)
+{
+  KRIPKE_TIMER(data_store, Population);
 
-namespace Kripke {
+  Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
 
-  namespace Kernel {
+  // sum up particles for psi and rhs
+  double part = 0.0;
+  for(size_t sdom_id = 0;sdom_id < grid_data->subdomains.size();++ sdom_id){
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
 
+    int num_zones = sdom.num_zones;
+    int num_directions = sdom.num_directions;
+    int num_groups= sdom.num_groups;
+    Directions *dirs = sdom.directions;
 
-    void LPlusTimes(Kripke::DataStore &data_store);
-
-
-    void LTimes(Kripke::DataStore &data_store);
-
-
-    double population(Kripke::DataStore &data_store);
-
-
-    void scattering(Kripke::DataStore &data_store);
-
-
-    void source(Kripke::DataStore &data_store);
-
-
-    void sweepSubdomain(Kripke::DataStore &data_store, Kripke::SdomId sdom_id);
-
-
+    for(int z = 0;z < num_zones;++ z){
+      double vol = sdom.volume[z];
+      for(int d = 0;d < num_directions;++ d){
+        double w = dirs[d].w;
+        for(int g = 0;g < num_groups;++ g){
+          part += w * (*sdom.psi)(g,d,z) * vol;
+        }
+      }
+    }
   }
+
+  // reduce
+  double part_global;
+  MPI_Reduce(&part, &part_global, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+  return part_global;
 }
 
-#endif

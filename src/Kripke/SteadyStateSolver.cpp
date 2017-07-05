@@ -101,7 +101,7 @@ int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, Grid_Data *grid_da
     /*
      * Population edit and convergence test
      */
-    double part = grid_data->particleEdit();
+    double part = Kripke::Kernel::population(data_store);
     if(comm.rank() == 0){
       printf("  iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
     }

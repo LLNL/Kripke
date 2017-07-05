@@ -53,9 +53,8 @@ namespace Kripke {
 
       RAJA_INLINE
       void start(std::string const &my_name) {
-        if(started){
-          timer.stop(my_name.c_str());
-        }
+        timer.stop(my_name.c_str());
+        timer.reset();
         timer.start(my_name.c_str());
         started = true;
         ++ count;
@@ -116,8 +115,8 @@ namespace Kripke {
     }
 
     private:
-        Timing &timer;
-        std::string name;
+      Timing &timer;
+      std::string name;
   };
 
 }
