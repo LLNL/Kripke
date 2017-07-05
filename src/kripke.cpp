@@ -31,10 +31,12 @@
  */
   
 #include<Kripke.h>
+#include<Kripke/Comm.h>
 #include<Kripke/DataStore.h>
+#include<Kripke/Grid.h>
 #include<Kripke/Initialize.h>
 #include<Kripke/InputVariables.h>
-#include<Kripke/Grid.h>
+#include<Kripke/SteadyStateSolver.h>
 #include<Kripke/Test/TestKernels.h>
 #include<stdio.h>
 #include<string.h>
@@ -146,14 +148,10 @@ void usage(void){
     printf("\n");
     printf("Output and Testing Options:\n");
     printf("---------------------------\n");
-    
-#ifdef KRIPKE_USE_PAPI
-    printf("  --papi <PAPI_X_X,...>  Track PAPI hardware counters for each timer\n\n");
-#endif
+
 #ifdef KRIPKE_USE_SILO
     printf("  --silo <BASENAME>      Create SILO output files\n\n");
 #endif
-    printf("  --trace                Turn on sweep trace output\n\n");
     printf("  --test                 Run Kernel Test instead of solver\n\n");
     printf("\n");
   }
@@ -268,7 +266,6 @@ int main(int argc, char **argv) {
    * Default input parameters
    */
   InputVariables vars;
-  std::vector<std::string> papi_names;
   bool test = false;
   
   /*
@@ -371,14 +368,6 @@ int main(int argc, char **argv) {
     else if(opt == "--test"){
       test = true;
     }
-#ifdef KRIPKE_USE_PAPI
-    else if(opt == "--papi"){
-      papi_names = split(cmd.pop(), ',');
-    }
-#endif
-    else if(opt == "--trace"){
-      vars.sweep_trace = true;
-    }
     else{
       printf("Unknwon options %s\n", opt.c_str());
       usage();
@@ -394,20 +383,7 @@ int main(int argc, char **argv) {
    * Display Options
    */
   if (myid == 0) {
-#ifdef KRIPKE_USE_PAPI
-    printf("PAPI Counters:         ");
-    if(papi_names.size() > 0){
-      for(int i = 0;i < papi_names.size();++ i){
-        printf("%s ", papi_names[i].c_str());
-      }
-    }
-    else{
-      printf("<none>");
-    }
-    printf("\n");
-#endif
-    
-    
+
     printf("\n");
     printf("Problem Size:\n");
     printf("  Zones:                 %d x %d x %d\n", vars.nx, vars.ny, vars.nz);
@@ -481,10 +457,8 @@ int main(int argc, char **argv) {
     Kripke::DataStore data_store;
     Kripke::initializeDataStore(data_store, vars);
 
-    grid_data->timing.setPapiEvents(papi_names);
-
     // Run the solver
-    SweepSolver(grid_data, vars.parallel_method == PMETHOD_BJ);
+    Kripke::SteadyStateSolver(data_store, grid_data, vars.parallel_method == PMETHOD_BJ);
 
 #ifdef KRIPKE_USE_SILO
     // Output silo data
@@ -494,13 +468,8 @@ int main(int argc, char **argv) {
 #endif
 
     // Print Timing Info
-    int myid;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-    if(myid == 0){
-      printf("\n");
-      grid_data->timing.print();
-      printf("\n\n");
-    }
+    Kripke::Comm const &comm = data_store.getVariable<Kripke::Comm>("comm");
+    data_store.getVariable<Kripke::Timing>("timing").print();
 
     // Cleanup 
     delete grid_data;

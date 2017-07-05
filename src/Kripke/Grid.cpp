@@ -50,10 +50,6 @@
 */
 Grid_Data::Grid_Data(InputVariables *input_vars)
 {
-  sweep_trace = input_vars->sweep_trace;
-  trace_file = NULL;
-  trace_offset = 0.0;
-
   // Create object to describe processor and subdomain layout in space
   // and their adjacencies
   Layout *layout = createLayout(input_vars);

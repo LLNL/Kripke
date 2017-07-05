@@ -66,7 +66,15 @@ namespace Kripke {
         return m_global_size;
       }
 
+      /**
+       * Returns the dimensionality of this Set.
+       */
       virtual size_t getNumDimensions() const;
+
+      /**
+       * Returns the size of this Set along the specified dimension
+       */
+      virtual size_t dimSize(size_t dim, Kripke::SdomId sdom_id) const;
 
     protected:
       std::vector<size_t> m_chunk_to_size;
@@ -112,16 +120,30 @@ namespace Kripke {
             "Must provide same number of sets as dimensionality of ProductSet");
 
         setup_initChunks(pspace, space);
+        setup_setSpannedSets({{(&spanned_sets)...}});
 
       }
 
       virtual ~ProductSet() = default;
 
       virtual size_t getNumDimensions() const{
-        return NUM_SETS;
+        return s_num_sets;
       }
 
     private:
+
+      /**
+       * Helper function to expand variadic arguments to the constructor.
+       */
+      void setup_setSpannedSets(
+          std::array<Kripke::BaseVar const *, NUM_SETS> const &spanned_sets){
+        m_spanned_sets = spanned_sets;
+      }
+
+      static const size_t s_num_sets = NUM_SETS;
+
+      std::array<Kripke::BaseVar const *, NUM_SETS> m_spanned_sets;
+
 
   };
 

@@ -79,7 +79,8 @@ blt_add_library(
               "src/Kripke/PartitionSpace.cpp"
               "src/Kripke/Set.cpp"
               "src/Kripke/Subdomain.cpp"
-              "src/Kripke/Sweep_Solver.cpp"
+              "src/Kripke/SteadyStateSolver.cpp"
+              "src/Kripke/SweepSolver.cpp"
               "src/Kripke/Test/TestKernels.cpp"
               "src/Kripke/Timing.cpp"
   DEPENDS_ON  MPI 

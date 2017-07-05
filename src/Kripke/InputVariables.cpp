@@ -54,8 +54,7 @@ InputVariables::InputVariables() :
   
   niter(10),
   parallel_method(PMETHOD_SWEEP),
-  run_name("kripke"),
-  sweep_trace(false)
+  run_name("kripke")
 {
   num_zonesets_dim[0] = 1; 
   num_zonesets_dim[1] = 1;

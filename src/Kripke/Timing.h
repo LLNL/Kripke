@@ -33,90 +33,97 @@
 #ifndef KRIPKE_TIMING_H__
 #define KRIPKE_TIMING_H__
 
-#include<Kripke.h>
+#include <Kripke.h>
+#include <Kripke/DataStore.h>
+
+#include <RAJA/util/Timer.hpp>
+
 #include <string>
-#include <vector>
 #include <map>
-#include <stdio.h>
-#include <time.h>
-#include <sys/time.h>
 
-#ifdef KRIPKE_USE_PAPI
-#include<papi.h>
-#endif
+namespace Kripke {
 
-inline double getTime(void){
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  return (double)tv.tv_sec + (double)tv.tv_usec/1000000.0;
+  class Timer {
+    public:
+      RAJA_INLINE
+      Timer() :
+        started(false),
+        count(0)
+      {}
+
+      RAJA_INLINE
+      void start(std::string const &my_name) {
+        if(started){
+          timer.stop(my_name.c_str());
+        }
+        timer.start(my_name.c_str());
+        started = true;
+        ++ count;
+      }
+
+      RAJA_INLINE
+      void stop(std::string const &my_name) {
+        if(started){
+          timer.stop(my_name.c_str());
+        }
+      }
+
+      RAJA_INLINE
+      size_t getCount() const {
+        return count;
+      }
+
+      RAJA_INLINE
+      double getElapsed() const {
+        return timer.elapsed();
+      }
+
+    private:
+      bool started;
+      size_t count;
+      RAJA::Timer timer;
+  };
+
+  class Timing : public Kripke::BaseVar {
+    public:
+      virtual ~Timing();
+
+      void start(std::string const &name);
+      void stop(std::string const &name);
+
+      void stopAll(void);
+
+      void print(void) const;
+      double getTotal(std::string const &name) const;
+
+    private:
+      using TimerMap = std::map<std::string, Timer>;
+      TimerMap timers;
+  };
+
+
+  // Aides timing a block of code, with automatic timer stopping
+  class BlockTimer {
+    public:
+    inline BlockTimer(Timing &timer_obj, std::string const &timer_name) :
+        timer(timer_obj),
+        name(timer_name)
+    {
+        timer.start(name);
+    }
+    inline ~BlockTimer(){
+      timer.stop(name);
+    }
+
+    private:
+        Timing &timer;
+        std::string name;
+  };
+
 }
 
-
-struct Timer {
-  Timer() :
-    started(false),
-    start_time(0.0),
-    total_time(0.0),
-    count(0)
-  {}
-
-  bool started;
-  double start_time;
-  double total_time;
-  size_t count;
-#ifdef KRIPKE_USE_PAPI
-  std::vector<long long> papi_start_values;
-  std::vector<size_t> papi_total;
-#endif
-};
-
-class Timing {
-  public:
-    ~Timing();
-
-    void start(std::string const &name);
-    void stop(std::string const &name);
-
-    void stopAll(void);
-    void clear(void);
-
-    void print(void) const;
-    double getTotal(std::string const &name) const;
-
-    void setPapiEvents(std::vector<std::string> names);
-
-  private:
-    typedef std::map<std::string, Timer> TimerMap;
-    TimerMap timers;
-#ifdef KRIPKE_USE_PAPI
-  std::vector<std::string> papi_names;
-  std::vector<int> papi_event;
-  int papi_set;
-#endif
-};
-
-
-#include<stdio.h>
-
-// Aides timing a block of code, with automatic timer stopping
-class BlockTimer {
-  public:
-  inline BlockTimer(Timing &timer_obj, std::string const &timer_name) :
-      timer(timer_obj),
-      name(timer_name)
-  {
-      timer.start(name);
-  }
-  inline ~BlockTimer(){
-    timer.stop(name);
-  }
-
-  private:
-      Timing &timer;
-      std::string name;
-};
-
-#define BLOCK_TIMER(TIMER, NAME) BlockTimer BLK_TIMER_##NAME(TIMER, #NAME);
+#define KRIPKE_TIMER(DS, NAME) \
+  Kripke::BlockTimer BLK_TIMER_##NAME(DS.getVariable<Kripke::Timing>("timing"), #NAME);
 
 
 #endif

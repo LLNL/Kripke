@@ -62,8 +62,6 @@ public:
   void writeSilo(std::string const &fname);
 #endif
 
-  Timing timing;
-
   int niter;
 
   double source_value;
@@ -98,9 +96,6 @@ public:
   std::vector<SubTVec *> phi;               // Moments of psi
   std::vector<SubTVec *> phi_out;           // Scattering source
 
-  bool sweep_trace;
-  FILE *trace_file;
-  double trace_offset;
 };
 
 #endif

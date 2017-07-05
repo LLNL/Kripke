@@ -157,8 +157,8 @@ SdomId PartitionSpace::spaceToSubdomain(
 
 void PartitionSpace::print() const{
   if(m_comm_all.rank() == 0){
-    printf("\n");
     printf("Decomposition Details:   Procs:      Subdomains (local/global):\n");
+    printf("-----------------------  ----------  --------------------------\n");
     printf("  Total:                 %-10d  %d / %d\n",
         (int)m_comm_all.size(),
         (int)getNumSubdomains(),

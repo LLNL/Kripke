@@ -31,10 +31,11 @@
  */
 
 #include <Kripke/Test/TestKernels.h>
-
+#if 0
 #include <Kripke.h>
 #include <Kripke/Grid.h>
 #include <Kripke/InputVariables.h>
+#include <Kripke/SweepSolver.h>
 
 /**
  * Functional object to run the LTimes kernel.
@@ -93,7 +94,7 @@ struct runSweep {
     for(size_t i = 0;i < grid_data->subdomains.size();++ i){
       sdom_list[i] = i;
     }
-    SweepSubdomains(sdom_list, grid_data, false);
+    Kripke::SweepSolver(sdom_list, grid_data, false);
   }
 };
 
@@ -149,11 +150,12 @@ void testKernel(InputVariables &input_variables){
   delete ref_data;
 }
 
-
+#endif
 /**
  * Tests all kernels given the specified input.
  */
 void testKernels(InputVariables &input_variables){
+#if 0
   // Run LTimes
   testKernel<runLTimes>(input_variables);
 
@@ -168,4 +170,5 @@ void testKernels(InputVariables &input_variables){
 
   // Run Sweep
   testKernel<runSweep>(input_variables);
+#endif
 }
