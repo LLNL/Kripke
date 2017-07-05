@@ -47,7 +47,7 @@
 */
 int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, Grid_Data *grid_data, bool block_jacobi)
 {
-  Kernel *kernel = grid_data->kernel;
+  KRIPKE_TIMER(data_store, Solve);
 
 
   Kripke::Comm const &comm = data_store.getVariable<Kripke::Comm>("comm");
@@ -57,40 +57,27 @@ int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, Grid_Data *grid_da
     printf("==================\n\n");
   }
 
-  KRIPKE_TIMER(data_store, Solve);
-
 
   // Loop over iterations
   double part_last = 0.0;
   for(int iter = 0;iter < grid_data->niter;++ iter){
+
 
     /*
      * Compute the RHS:  rhs = LPlus*S*L*psi + Q
      */
 
     // Discrete to Moments transformation (phi = L*psi)
-    {
-      KRIPKE_TIMER(data_store, LTimes);
-      kernel->LTimes(grid_data);
-    }
+    Kripke::Kernel::LTimes(data_store);
 
     // Compute Scattering Source Term (psi_out = S*phi)
-    {
-      KRIPKE_TIMER(data_store, Scattering);
-      kernel->scattering(grid_data);
-    }
+    Kripke::Kernel::scattering(data_store);
 
     // Compute External Source Term (psi_out = psi_out + Q)
-    {
-      KRIPKE_TIMER(data_store, Source);
-      kernel->source(grid_data);
-    }
+    Kripke::Kernel::source(data_store);
 
     // Moments to Discrete transformation (rhs = LPlus*psi_out)
-    {
-      KRIPKE_TIMER(data_store, LPlusTimes);
-      kernel->LPlusTimes(grid_data);
-    }
+    Kripke::Kernel::LPlusTimes(data_store);
 
 
 
@@ -99,8 +86,6 @@ int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, Grid_Data *grid_da
      * Sweep (psi = Hinv*rhs)
      */
     {
-      KRIPKE_TIMER(data_store, Sweep);
-
       // Create a list of all groups
       std::vector<int> sdom_list(grid_data->subdomains.size());
       for(size_t i = 0;i < grid_data->subdomains.size();++ i){
@@ -109,14 +94,21 @@ int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, Grid_Data *grid_da
 
       // Sweep everything
       Kripke::SweepSolver(data_store, sdom_list, grid_data, block_jacobi);
-
     }
 
+
+
+    /*
+     * Population edit and convergence test
+     */
     double part = grid_data->particleEdit();
     if(comm.rank() == 0){
       printf("  iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
     }
     part_last = part;
+
+
+
   }
 
   printf("  Solver terminated\n");

@@ -33,6 +33,7 @@
 #ifndef KRIPKE_GRID_DATA_H__
 #define KRIPKE_GRID_DATA_H__
 
+#include <Kripke/BaseVar.h>
 #include <Kripke/Directions.h>
 #include <Kripke/Kernel.h>
 #include <Kripke/Subdomain.h>
@@ -42,14 +43,13 @@
 
 // Foreward Decl
 struct InputVariables;
-struct Grid_Data;
 struct SubTVec;
 
 
 /**
  * Contains all grid parameters and variables.
  */
-struct Grid_Data {
+struct Grid_Data : public Kripke::BaseVar {
 public:
   explicit Grid_Data(InputVariables *input_vars);
   ~Grid_Data();
@@ -79,7 +79,6 @@ public:
   std::vector<int> moment_to_coeff;         // Map from harmonic moments to legendre coefficients
 
   std::vector<Directions> directions;       // Quadrature point data, for all directions
-  Kernel *kernel;                           // Layout-specific math kernels
 
   std::vector<Subdomain> subdomains;        // Group/Angle/Zone set data
   std::vector<int> zs_to_sdomid;            // map of zonesets to subdomains with ds=gs=0

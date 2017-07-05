@@ -456,6 +456,7 @@ int main(int argc, char **argv) {
 
     Kripke::DataStore data_store;
     Kripke::initializeDataStore(data_store, vars);
+    data_store.addVariable("grid_data", grid_data);
 
     // Run the solver
     Kripke::SteadyStateSolver(data_store, grid_data, vars.parallel_method == PMETHOD_BJ);
@@ -468,11 +469,8 @@ int main(int argc, char **argv) {
 #endif
 
     // Print Timing Info
-    Kripke::Comm const &comm = data_store.getVariable<Kripke::Comm>("comm");
     data_store.getVariable<Kripke::Timing>("timing").print();
 
-    // Cleanup 
-    delete grid_data;
   }
 
   // Gather post-point memory info

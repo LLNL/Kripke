@@ -34,36 +34,29 @@
 #define KRIPKE_KERNEL_H__
 
 #include <Kripke.h>
+#include <Kripke/DataStore.h>
 
-struct Grid_Data;
-struct SubTVec;
-struct Subdomain;
+namespace Kripke {
 
-/**
- * This is the Kernel base-class and interface definition.
- * This abstracts the storage of Psi, Phi, L, L+ from the rest of the code,
- * providing data-layout specific routines.
- */
-class Kernel {
-  public:
-    virtual ~Kernel() = default;
-    virtual Nesting_Order nestingPsi(void) const = 0;
-    virtual Nesting_Order nestingPhi(void) const = 0;
-    virtual Nesting_Order nestingSigt(void) const = 0;
-    virtual Nesting_Order nestingEll(void) const = 0;
-    virtual Nesting_Order nestingEllPlus(void) const = 0;
-    virtual Nesting_Order nestingSigs(void) const = 0;
-
-    // Computational Kernels
-    virtual void LTimes(Grid_Data *grid_data) = 0;
-    virtual void LPlusTimes(Grid_Data *grid_data) = 0;
-    virtual void scattering(Grid_Data *grid_data) = 0;
-    virtual void source(Grid_Data *grid_data) = 0;
-    virtual void sweep(Subdomain *ga_set) = 0;
-};
+  namespace Kernel {
 
 
-// Factory to create correct kernel object
-Kernel *createKernel(Nesting_Order, int num_dims);
+    void LPlusTimes(Kripke::DataStore &data_store);
+
+
+    void LTimes(Kripke::DataStore &data_store);
+
+
+    void scattering(Kripke::DataStore &data_store);
+
+
+    void source(Kripke::DataStore &data_store);
+
+
+    void sweepSubdomain(Kripke::DataStore &data_store, Kripke::SdomId sdom_id);
+
+
+  }
+}
 
 #endif

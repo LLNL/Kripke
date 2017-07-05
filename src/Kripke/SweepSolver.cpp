@@ -45,6 +45,8 @@
 */
 void Kripke::SweepSolver (Kripke::DataStore &data_store, std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi)
 {
+  KRIPKE_TIMER(data_store, SweepSolver);
+
   // Create a new sweep communicator object
   ParallelComm *comm = NULL;
   if(block_jacobi){
@@ -85,11 +87,10 @@ void Kripke::SweepSolver (Kripke::DataStore &data_store, std::vector<int> subdom
         }
       }
 
-      {
-        KRIPKE_TIMER(data_store, Sweep_Kernel);
-        // Perform subdomain sweep
-        grid_data->kernel->sweep(&sdom);
-      }
+
+      // Perform subdomain sweep
+      Kripke::Kernel::sweepSubdomain(data_store, Kripke::SdomId{sdom_id});
+
 
       // Mark as complete (and do any communication)
       comm->markComplete(sdom_id);

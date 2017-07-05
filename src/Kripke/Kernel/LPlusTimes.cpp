@@ -33,16 +33,50 @@
 #include<Kripke/Kernel.h>
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
+#include<Kripke/Timing.h>
 
-#include<Kripke/Kernel/Kernel_3d_DGZ.h>
+void Kripke::Kernel::LPlusTimes(Kripke::DataStore &data_store)
+{
+  KRIPKE_TIMER(data_store, LPlusTimes);
 
+  Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
 
-/**
- * Factory to create a kernel object for the specified nesting
- */
-Kernel *createKernel(Nesting_Order , int ){
+  // Outer parameters
+  int num_moments = grid_data->total_num_moments;
 
-  return new Kernel_3d_DGZ();
+  // Loop over Subdomains
+  int num_subdomains = grid_data->subdomains.size();
+  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
+    Subdomain &sdom = grid_data->subdomains[sdom_id];
 
+    // Get dimensioning
+    int num_zones = sdom.num_zones;
+    int num_local_groups = sdom.num_groups;
+    int num_groups = sdom.phi_out->groups;
+    int group0 = sdom.group0;
+    int num_local_directions = sdom.num_directions;
+    int num_groups_zones = num_local_groups*num_zones;
+    
+    // Zero RHS
+    sdom.rhs->clear(0.0);
+
+    // Get pointers
+    double const * KRESTRICT phi_out = sdom.phi_out->ptr() + group0*num_zones;
+    double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
+    double       * KRESTRICT rhs = sdom.rhs->ptr();
+
+    for (int d = 0; d < num_local_directions; d++) {      
+      double       * KRESTRICT rhs_d = rhs + d*num_groups_zones;
+      double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
+      
+      for(int nm = 0;nm < num_moments;++nm){
+        double const ell_plus_d_nm = ell_plus_d[nm];
+        double const * KRESTRICT phi_out_nm = phi_out + nm*num_groups*num_zones;
+
+        for(int gz = 0;gz < num_groups_zones; ++ gz){
+          rhs_d[gz] += ell_plus_d_nm * phi_out_nm[gz];
+        }
+      }
+    }
+  }
 }
-

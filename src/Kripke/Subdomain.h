@@ -40,7 +40,6 @@
 struct Directions;
 struct SubTVec;
 struct InputVariables;
-class Kernel;
 
 /**
  * Provides sweep index sets for a given octant.
@@ -64,7 +63,7 @@ struct Subdomain {
   ~Subdomain();
 
   void setup(int sdom_id, InputVariables *input_vars, int gs, int ds, int zs,
-    std::vector<Directions> &direction_list, Kernel *kernel, Layout *layout);
+    std::vector<Directions> &direction_list, Layout *layout);
 
   void setVars(SubTVec *ell_ptr, SubTVec *ell_plus_ptr,
     SubTVec *phi_ptr, SubTVec *phi_out_ptr);

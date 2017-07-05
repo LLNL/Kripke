@@ -54,9 +54,6 @@ Grid_Data::Grid_Data(InputVariables *input_vars)
   // and their adjacencies
   Layout *layout = createLayout(input_vars);
 
-  // create the kernel object based on nesting
-  kernel = createKernel(input_vars->nesting, 3);
-
   // Create quadrature set (for all directions)
   int total_num_directions = input_vars->num_directions;
   InitDirections(this, input_vars);
@@ -96,7 +93,7 @@ Grid_Data::Grid_Data(InputVariables *input_vars)
 
   // Setup scattering transfer matrix for 3 materials  
 
-  sigs = new SubTVec(kernel->nestingSigs(), total_num_groups*total_num_groups, legendre_order+1, 3);
+  sigs = new SubTVec(NEST_DGZ, total_num_groups*total_num_groups, legendre_order+1, 3);
 
   // Set to isotropic scattering given user inputs
   sigs->clear(0.0);
@@ -124,13 +121,13 @@ Grid_Data::Grid_Data(InputVariables *input_vars)
 
         // Setup the subdomain
         Subdomain &sdom = subdomains[sdom_id];
-        sdom.setup(sdom_id, input_vars, gs, ds, zs, directions, kernel, layout);
+        sdom.setup(sdom_id, input_vars, gs, ds, zs, directions, layout);
 
         // Create ell and ell_plus, if this is the first of this ds
         bool compute_ell = false;
         if(ell[ds] == NULL){
-          ell[ds] = new SubTVec(kernel->nestingEll(), total_num_moments, sdom.num_directions, 1);
-          ell_plus[ds] = new SubTVec(kernel->nestingEllPlus(), total_num_moments, sdom.num_directions, 1);
+          ell[ds] = new SubTVec(NEST_ZGD, total_num_moments, sdom.num_directions, 1);
+          ell_plus[ds] = new SubTVec(NEST_ZDG, total_num_moments, sdom.num_directions, 1);
 
           compute_ell = true;
         }
@@ -203,7 +200,6 @@ Grid_Data::Grid_Data(InputVariables *input_vars)
 }
 
 Grid_Data::~Grid_Data(){
-  delete kernel;
   for(int zs = 0;zs < num_zone_sets;++ zs){
     delete phi[zs];
     delete phi_out[zs];
