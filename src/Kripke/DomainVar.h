@@ -53,13 +53,21 @@ namespace Kripke {
         return m_subdomain_to_chunk.size();
       }
 
+      RAJA_INLINE
+      std::vector<Kripke::SdomId> const &getWorkList() const {
+        return m_work_list;
+      }
+
     protected:
 
       void setup_initChunks(Kripke::PartitionSpace &pspace,
           Kripke::SPACE space);
 
+      void setup_initChunks(Kripke::DomainVar const &clone_from);
+
       std::vector<size_t> m_subdomain_to_chunk;
       std::vector<size_t> m_chunk_to_subdomain;
+      std::vector<Kripke::SdomId> m_work_list;
   };
 
 }  // namespace

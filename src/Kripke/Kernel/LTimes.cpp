@@ -69,9 +69,9 @@ void Kripke::Kernel::LTimes(Kripke::DataStore &data_store)
     double       * KRESTRICT phi = sdom.phi->ptr();
     
     for(int nm = 0;nm < num_moments;++nm){
-      double const * KRESTRICT ell_nm = ell + nm*num_local_directions;      
+      double const * KRESTRICT ell_nm = ell + nm*num_local_directions;
       double       * KRESTRICT phi_nm = phi + nm*num_gz + group0*num_zones;
-      
+
       for (int d = 0; d < num_local_directions; d++) {
         double const * KRESTRICT psi_d = psi + d*num_locgz;
         double const             ell_nm_d = ell_nm[d];

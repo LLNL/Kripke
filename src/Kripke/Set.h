@@ -58,6 +58,15 @@ namespace Kripke {
         return m_chunk_to_size[chunk_id];
       }
 
+
+      /**
+       * Returns the range of a subdomain using a RAJA::RangeSegment
+       */
+      RAJA_INLINE
+      RAJA::RangeSegment range(Kripke::SdomId sdom_id) const {
+        return RAJA::RangeSegment(0, size(sdom_id));
+      }
+
       /**
        * Returns the global number of unique elements in this set.
        */
@@ -74,7 +83,7 @@ namespace Kripke {
       /**
        * Returns the size of this Set along the specified dimension
        */
-      virtual size_t dimSize(size_t dim, Kripke::SdomId sdom_id) const;
+      virtual size_t dimSize(Kripke::SdomId sdom_id, size_t dim) const;
 
     protected:
       std::vector<size_t> m_chunk_to_size;
@@ -130,19 +139,26 @@ namespace Kripke {
         return s_num_sets;
       }
 
+      /**
+       * Returns the size of this Set along the specified dimension
+       */
+      virtual size_t dimSize(Kripke::SdomId sdom_id, size_t dim) const{
+        return m_spanned_sets[dim]->size(sdom_id);
+      }
+
     private:
 
       /**
        * Helper function to expand variadic arguments to the constructor.
        */
       void setup_setSpannedSets(
-          std::array<Kripke::BaseVar const *, NUM_SETS> const &spanned_sets){
+          std::array<Kripke::Set const *, NUM_SETS> const &spanned_sets){
         m_spanned_sets = spanned_sets;
       }
 
       static const size_t s_num_sets = NUM_SETS;
 
-      std::array<Kripke::BaseVar const *, NUM_SETS> m_spanned_sets;
+      std::array<Kripke::Set const *, NUM_SETS> m_spanned_sets;
 
 
   };

@@ -46,7 +46,7 @@ enum SPACE {
   SPACE_RY,
   SPACE_RZ,
   SPACE_R,
-  SPACE_ALL,
+  SPACE_PQR,
   NUM_SPACES
 };
 
@@ -63,8 +63,8 @@ class PartitionSpace : public Kripke::BaseVar {
     void setup_createSubdomains(
         size_t SP, size_t SQ, size_t Sx, size_t Sy, size_t Sz);
 
-    size_t getNumSubdomains(Kripke::SPACE space = SPACE_ALL) const;
-    size_t getGlobalNumSubdomains(Kripke::SPACE space = SPACE_ALL) const;
+    size_t getNumSubdomains(Kripke::SPACE space = SPACE_PQR) const;
+    size_t getGlobalNumSubdomains(Kripke::SPACE space = SPACE_PQR) const;
 
     Kripke::Comm const &getComm(SPACE space) const {
       return m_comm_space[space];

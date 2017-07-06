@@ -30,41 +30,34 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
+#ifndef KRIPKE_VARTYPES_H__
+#define KRIPKE_VARTYPES_H__
 
-#include<Kripke/DomainVar.h>
+#include <Kripke.h>
+#include <Kripke/Set.h>
+#include <Kripke/Field.h>
 
-using namespace Kripke;
+namespace Kripke {
 
+  RAJA_INDEX_VALUE(Direction, "Direction");
+  RAJA_INDEX_VALUE(Group, "Group");
+  RAJA_INDEX_VALUE(GlobalGroup, "GlobalGroup");
+  RAJA_INDEX_VALUE(Material, "Material");
+  RAJA_INDEX_VALUE(Moment, "Moment");
+  RAJA_INDEX_VALUE(Legendre, "Legendre");
+  RAJA_INDEX_VALUE(Zone, "Zone");
+  RAJA_INDEX_VALUE(ZoneI, "ZoneI");
+  RAJA_INDEX_VALUE(ZoneJ, "ZoneJ");
+  RAJA_INDEX_VALUE(ZoneK, "ZoneK");
 
-void DomainVar::setup_initChunks(Kripke::PartitionSpace &pspace,
-          Kripke::SPACE space)
-{
+  using Field_Flux = Kripke::Field<double, Direction, Group, Zone>;
+  using Field_Moments = Kripke::Field<double, Moment, Group, Zone>;
 
-  size_t num_subdomains = pspace.getNumSubdomains();
-  size_t num_chunks = pspace.getNumSubdomains(space);
+  using Field_Ell = Kripke::Field<double, Moment, Direction>;
 
-
-  // Map subdomains to chunks
-  m_subdomain_to_chunk.resize(num_subdomains);
-  for(SdomId sdom_id{0};sdom_id < (int)num_subdomains;++ sdom_id){
-    size_t chunk_id = pspace.subdomainToSpace(space, sdom_id);
-    m_subdomain_to_chunk[*sdom_id] = chunk_id;
-  }
-
-  // Map chunks to subdomains
-  m_chunk_to_subdomain.resize(num_chunks);
-  m_work_list.resize(num_chunks);
-  for(size_t chunk_id = 0;chunk_id < num_chunks;++ chunk_id){
-    SdomId sdom_id = pspace.spaceToSubdomain(space, chunk_id);
-    m_chunk_to_subdomain[chunk_id] = *sdom_id;
-    m_work_list[chunk_id] = sdom_id;
-  }
-
+  using Field_Speed  = Kripke::Field<double, Material, GlobalGroup>;
+  using Field_SigmaT = Kripke::Field<double, Material, GlobalGroup>;
+  using Field_SigmaS = Kripke::Field<double, Material, Legendre, GlobalGroup, GlobalGroup>;
 }
 
-
-void DomainVar::setup_initChunks(Kripke::DomainVar const &clone_from){
-  m_subdomain_to_chunk = clone_from.m_subdomain_to_chunk;
-  m_chunk_to_subdomain = clone_from.m_chunk_to_subdomain;
-  m_work_list = clone_from.m_work_list;
-}
+#endif

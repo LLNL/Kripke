@@ -65,16 +65,14 @@ void Kripke::Kernel::LPlusTimes(Kripke::DataStore &data_store)
     double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
     double       * KRESTRICT rhs = sdom.rhs->ptr();
 
-    for (int d = 0; d < num_local_directions; d++) {      
-      double       * KRESTRICT rhs_d = rhs + d*num_groups_zones;
-      double const * KRESTRICT ell_plus_d = ell_plus + d*num_moments;
-      
+    for (int d = 0; d < num_local_directions; d++) {
       for(int nm = 0;nm < num_moments;++nm){
-        double const ell_plus_d_nm = ell_plus_d[nm];
-        double const * KRESTRICT phi_out_nm = phi_out + nm*num_groups*num_zones;
-
         for(int gz = 0;gz < num_groups_zones; ++ gz){
-          rhs_d[gz] += ell_plus_d_nm * phi_out_nm[gz];
+
+          rhs[d*num_groups_zones + gz] +=
+              ell_plus[d*num_moments + nm] *
+              phi_out[nm*num_groups*num_zones + gz];
+
         }
       }
     }

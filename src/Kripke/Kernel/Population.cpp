@@ -31,6 +31,8 @@
  */
 
 #include<Kripke/Kernel.h>
+
+#include<Kripke/Comm.h>
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 #include<Kripke/Timing.h>
@@ -55,20 +57,20 @@ double Kripke::Kernel::population(Kripke::DataStore &data_store)
     Directions *dirs = sdom.directions;
 
     for(int z = 0;z < num_zones;++ z){
-      double vol = sdom.volume[z];
       for(int d = 0;d < num_directions;++ d){
-        double w = dirs[d].w;
         for(int g = 0;g < num_groups;++ g){
+
+          double w = dirs[d].w;
+          double vol = sdom.volume[z];
           part += w * (*sdom.psi)(g,d,z) * vol;
+
         }
       }
     }
   }
 
   // reduce
-  double part_global;
-  MPI_Reduce(&part, &part_global, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-
-  return part_global;
+  auto const &comm = data_store.getVariable<Kripke::Comm>("comm");
+  return comm.allReduceSumDouble(part);
 }
 

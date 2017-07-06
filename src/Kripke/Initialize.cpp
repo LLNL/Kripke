@@ -33,14 +33,16 @@
 #include <Kripke/Initialize.h>
 
 #include <Kripke/Comm.h>
+#include <Kripke/Field.h>
 #include <Kripke/PartitionSpace.h>
 #include <Kripke/Set.h>
 #include <Kripke/Timing.h>
+#include <Kripke/VarTypes.h>
 
 using namespace Kripke;
 
 
-void initializeDecomp(Kripke::DataStore &data_store,
+static void initializeDecomp(Kripke::DataStore &data_store,
     InputVariables const &input_vars)
 {
   // Create a "Comm World"
@@ -71,7 +73,7 @@ void initializeDecomp(Kripke::DataStore &data_store,
 
 
 
-void initializeEnergy(Kripke::DataStore &data_store,
+static void initializeEnergy(Kripke::DataStore &data_store,
     InputVariables const &input_vars)
 {
 
@@ -86,7 +88,7 @@ void initializeEnergy(Kripke::DataStore &data_store,
 
   RangeSet *grp_set = new RangeSet(pspace, SPACE_P, local_grps);
 
-  data_store.addVariable("Set/group", grp_set);
+  data_store.addVariable("Set/Group", grp_set);
 
 
 }
@@ -95,7 +97,7 @@ void initializeEnergy(Kripke::DataStore &data_store,
 
 
 
-void initializeDirections(Kripke::DataStore &data_store,
+static void initializeDirections(Kripke::DataStore &data_store,
     InputVariables const &input_vars)
 {
 
@@ -110,7 +112,7 @@ void initializeDirections(Kripke::DataStore &data_store,
 
   RangeSet *dir_set = new RangeSet(pspace, SPACE_Q, local_dirs);
 
-  data_store.addVariable("Set/direction", dir_set);
+  data_store.addVariable("Set/Direction", dir_set);
 
 
 }
@@ -120,7 +122,7 @@ void initializeDirections(Kripke::DataStore &data_store,
 
 
 
-void initializeSpace(Kripke::DataStore &data_store,
+static void initializeSpace(Kripke::DataStore &data_store,
     InputVariables const &input_vars)
 {
   PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");
@@ -180,11 +182,26 @@ void initializeSpace(Kripke::DataStore &data_store,
 
 
 
-void initializeData(Kripke::DataStore &data_store,
+static void initializeData(Kripke::DataStore &data_store,
     InputVariables const &input_vars)
 {
 
   PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");
+
+
+  // Create a set to span angular the flux
+  Set const &dir_set   = data_store.getVariable<Set>("Set/Direction");
+  Set const &group_set = data_store.getVariable<Set>("Set/Group");
+  Set const &zone_set  = data_store.getVariable<Set>("Set/Zone");
+  ProductSet<3> *flux_set = new ProductSet<3>(pspace, SPACE_PQR,
+      dir_set, group_set, zone_set);
+
+  data_store.addVariable("Set/Flux", flux_set);
+
+  // Create Solution and RHS fields
+  data_store.addVariable("psi", new Field_Flux(*flux_set));
+  data_store.addVariable("rhs", new Field_Flux(*flux_set));
+
 }
 
 

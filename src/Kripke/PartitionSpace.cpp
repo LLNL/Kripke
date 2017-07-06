@@ -24,7 +24,7 @@ PartitionSpace::PartitionSpace(Kripke::Comm &base_comm,
     (unsigned long)num_ranks);
 
   // Assign communicators for P,Q,R
-  m_comm_space[SPACE_ALL] = base_comm;
+  m_comm_space[SPACE_PQR] = base_comm;
   m_comm_space[SPACE_R] = base_comm;
 
   // Compute our rank in pqxyz space
@@ -60,7 +60,7 @@ void PartitionSpace::setup_createSubdomains(
   
   size_t num_sdom = SP * SQ * Sx * Sy * Sz;
 
-  m_local_num_sdom[SPACE_ALL] = num_sdom;
+  m_local_num_sdom[SPACE_PQR] = num_sdom;
   m_local_num_sdom[SPACE_P] = SP;
   m_local_num_sdom[SPACE_Q] = SQ;
   m_local_num_sdom[SPACE_RX] = Sx;
@@ -117,7 +117,7 @@ size_t PartitionSpace::subdomainToSpace(
 
   switch(space){
   // For the full space, it's just 1:1 with sdom's
-  case SPACE_ALL:  return *sdom_id;
+  case SPACE_PQR:  return *sdom_id;
 
   // For R, we need to map back from Rx, Ry, Rz
   case SPACE_R:    return m_local_sdom_xyz_layout(idx[SPACE_RX],
@@ -137,7 +137,7 @@ SdomId PartitionSpace::spaceToSubdomain(
   std::array<int, 5> idx{{0, 0, 0, 0, 0}};
   switch(space){
   // For the full space, it's 1:1 with sdom's
-  case SPACE_ALL: return SdomId(sdom_space);
+  case SPACE_PQR: return SdomId(sdom_space);
 
   // First, we need to compute Rx, Ry, and Rz
   case SPACE_R:   m_local_sdom_xyz_layout.toIndices(sdom_space,

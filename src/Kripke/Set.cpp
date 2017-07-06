@@ -57,7 +57,7 @@ size_t Set::getNumDimensions() const{
 
 
 
-size_t Set::dimSize(size_t dim, Kripke::SdomId sdom_id) const{
+size_t Set::dimSize(Kripke::SdomId sdom_id, size_t ) const{
   return size(sdom_id);
 }
 
