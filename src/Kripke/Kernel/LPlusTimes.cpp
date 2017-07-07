@@ -34,10 +34,13 @@
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 #include<Kripke/Timing.h>
+#include<Kripke/VarTypes.h>
 
 void Kripke::Kernel::LPlusTimes(Kripke::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, LPlusTimes);
+
+  auto &field_rhs = data_store.getVariable<Kripke::Field_Flux>("rhs");
 
   Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
 
@@ -46,8 +49,8 @@ void Kripke::Kernel::LPlusTimes(Kripke::DataStore &data_store)
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
-  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
+  for (Kripke::SdomId sdom_id{0}; sdom_id < num_subdomains; ++ sdom_id){
+    Subdomain &sdom = grid_data->subdomains[*sdom_id];
 
     // Get dimensioning
     int num_zones = sdom.num_zones;
@@ -56,14 +59,18 @@ void Kripke::Kernel::LPlusTimes(Kripke::DataStore &data_store)
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
     int num_groups_zones = num_local_groups*num_zones;
-    
-    // Zero RHS
-    sdom.rhs->clear(0.0);
 
     // Get pointers
     double const * KRESTRICT phi_out = sdom.phi_out->ptr() + group0*num_zones;
     double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
-    double       * KRESTRICT rhs = sdom.rhs->ptr();
+
+    double       * KRESTRICT rhs = field_rhs.getData(sdom_id);
+    size_t rhs_size = field_rhs.size(sdom_id);
+
+    // Zero rhs
+    for (size_t i = 0;i < rhs_size; ++ i){
+      rhs[i] = 0.0;
+    }
 
     for (int d = 0; d < num_local_directions; d++) {
       for(int nm = 0;nm < num_moments;++nm){

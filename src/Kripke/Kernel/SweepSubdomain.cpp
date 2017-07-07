@@ -51,6 +51,7 @@ void Kripke::Kernel::sweepSubdomain(Kripke::DataStore &data_store,
   KRIPKE_TIMER(data_store, SweepSubdomain);
 
   auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
+  auto &field_rhs = data_store.getVariable<Kripke::Field_Flux>("rhs");
 
   Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
   Subdomain *sdom = &(grid_data->subdomains[*sdom_id]);
@@ -71,7 +72,7 @@ void Kripke::Kernel::sweepSubdomain(Kripke::DataStore &data_store,
   
   double const * KRESTRICT sigt = sdom->sigt->ptr();
   double       * KRESTRICT psi = field_psi.getData(sdom_id);
-  double const * KRESTRICT rhs  = sdom->rhs->ptr();
+  double const * KRESTRICT rhs = field_rhs.getData(sdom_id);
 
   double * KRESTRICT psi_lf = sdom->plane_data[0]->ptr();
   double * KRESTRICT psi_fr = sdom->plane_data[1]->ptr();

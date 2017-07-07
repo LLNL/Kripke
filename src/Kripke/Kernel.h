@@ -40,7 +40,6 @@ namespace Kripke {
 
   namespace Kernel {
 
-
     void LPlusTimes(Kripke::DataStore &data_store);
 
 

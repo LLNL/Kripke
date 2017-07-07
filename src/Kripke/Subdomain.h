@@ -100,7 +100,6 @@ struct Subdomain {
   SubTVec *old_plane_data[3];
 
   // Variables
-  SubTVec *rhs;         // RHS, source term
   SubTVec *sigt;        // Zonal per-group cross-section
 
   // Pointers into directions and directionset data from Grid_Data
