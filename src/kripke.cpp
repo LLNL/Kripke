@@ -34,7 +34,7 @@
 #include<Kripke/Comm.h>
 #include<Kripke/DataStore.h>
 #include<Kripke/Grid.h>
-#include<Kripke/Initialize.h>
+#include<Kripke/Generate.h>
 #include<Kripke/InputVariables.h>
 #include<Kripke/SteadyStateSolver.h>
 #include<Kripke/Test/TestKernels.h>
@@ -457,7 +457,7 @@ int main(int argc, char **argv) {
     Grid_Data *grid_data = new Grid_Data(&vars);
 
     Kripke::DataStore data_store;
-    Kripke::initializeDataStore(data_store, vars);
+    Kripke::generateProblem(data_store, vars);
     data_store.addVariable("grid_data", grid_data);
 
     // Run the solver

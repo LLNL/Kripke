@@ -30,8 +30,8 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_INITIALIZE_H__
-#define KRIPKE_INITIALIZE_H__
+#ifndef KRIPKE_GENERATE_H__
+#define KRIPKE_GENERATE_H__
 
 #include <Kripke.h>
 #include <Kripke/DataStore.h>
@@ -40,9 +40,9 @@
 namespace Kripke {
 
   /**
-   * Takes an Input_Variables object and
+   * Takes an Input_Variables object and generates a problem in the DataStore
    */
-  void initializeDataStore(Kripke::DataStore &data_store,
+  void generateProblem(Kripke::DataStore &data_store,
       InputVariables const &input_variables);
   
 }

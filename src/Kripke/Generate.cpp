@@ -30,7 +30,7 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include <Kripke/Initialize.h>
+#include <Kripke/Generate.h>
 
 #include <Kripke/Comm.h>
 #include <Kripke/Field.h>
@@ -260,20 +260,20 @@ static void initializeData(Kripke::DataStore &data_store,
 
 
 
-void Kripke::initializeDataStore(Kripke::DataStore &data_store,
+void Kripke::generateProblem(Kripke::DataStore &data_store,
     InputVariables const &input_vars)
 {
 
   Comm default_comm;
 
   if(default_comm.rank() == 0){
-    printf("\nInitializing\n");
-    printf("============\n\n");
+    printf("\nGenerating\n");
+    printf("==========\n\n");
   }
 
   // Create and start a timing object
   data_store.addVariable("timing", new Kripke::Timing());
-  KRIPKE_TIMER(data_store, Initialize);
+  KRIPKE_TIMER(data_store, Generate);
 
 
   // Create parallel and subdomain decomposition
