@@ -30,10 +30,10 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include<Kripke/Layout.h>
+#include <Kripke/Layout.h>
 
-#include<Kripke/InputVariables.h>
-#include<mpi.h>
+#include <Kripke/InputVariables.h>
+#include <Kripke/Comm.h>
 
 namespace {
   /*
@@ -87,24 +87,12 @@ Layout::Layout(InputVariables *input_vars){
   num_procs[1] = input_vars->npy;
   num_procs[2] = input_vars->npz;
 
-  /* Set the requested processor grid size */
-  int R = num_procs[0] * num_procs[1] * num_procs[2];
 
   /* Check requested size is the same as MPI_COMM_WORLD */
-  int size;
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  if(R != size){
-    int myid;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-    if(myid == 0){
-      printf("ERROR: Incorrect number of MPI tasks. Need %d MPI tasks.", R);
-    }
-    MPI_Abort(MPI_COMM_WORLD, 1);
-  }
+  Kripke::Comm comm;
 
   /* Compute the local coordinates in the processor decomposition */
-  int mpi_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  int mpi_rank = comm.rank();
   rankToIndices(mpi_rank, our_rank, num_procs);
 }
 Layout::~Layout(){
@@ -366,7 +354,6 @@ Layout *createLayout(InputVariables *input_vars){
     case 1:
       return new ScatterLayout(input_vars);
   }
-  printf("Unknown Layout patter\n");
-  MPI_Abort(MPI_COMM_WORLD, 1);
-  return NULL;
+  KRIPKE_ABORT("Unknown Layout patter\n");
+  return nullptr;
 }

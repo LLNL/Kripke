@@ -154,6 +154,19 @@ namespace Kripke {
       void setup_setSpannedSets(
           std::array<Kripke::Set const *, NUM_SETS> const &spanned_sets){
         m_spanned_sets = spanned_sets;
+
+        size_t num_chunks = m_chunk_to_subdomain.size();
+        m_chunk_to_size.resize(num_chunks, 1);
+        m_chunk_to_lower.resize(num_chunks, 0);
+        m_global_size = 0;
+        for(size_t chunk_id = 0;chunk_id < num_chunks;++ chunk_id){
+          Kripke::SdomId sdom_id(m_chunk_to_subdomain[chunk_id]);
+          for(size_t set_id = 0;set_id < NUM_SETS;++ set_id){
+            m_chunk_to_size[chunk_id] *= spanned_sets[set_id]->size(sdom_id);
+          }
+
+          m_global_size += m_chunk_to_size[chunk_id];
+        }
       }
 
       static const size_t s_num_sets = NUM_SETS;

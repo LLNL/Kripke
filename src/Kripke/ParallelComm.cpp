@@ -32,6 +32,7 @@
 
 #include <Kripke/ParallelComm.h>
 
+#include <Kripke/Comm.h>
 #include <Kripke/Grid.h>
 #include <Kripke/Subdomain.h>
 #include <Kripke/SubTVec.h>
@@ -47,8 +48,9 @@ ParallelComm::~ParallelComm(){
 }
 
 int ParallelComm::computeTag(int mpi_rank, int sdom_id){
-  int mpi_size;
-  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+
+  Kripke::Comm comm;
+  int mpi_size = comm.size();
 
   int tag = mpi_rank + mpi_size*sdom_id;
 
@@ -56,8 +58,8 @@ int ParallelComm::computeTag(int mpi_rank, int sdom_id){
 }
 
 void ParallelComm::computeRankSdom(int tag, int &mpi_rank, int &sdom_id){
-  int mpi_size;
-  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+  Kripke::Comm comm;
+  int mpi_size = comm.size();
 
   mpi_rank = tag % mpi_size;
   sdom_id = tag / mpi_size;
@@ -76,8 +78,7 @@ int ParallelComm::findSubdomain(int sdom_id){
     }
   }
   if(index == queue_sdom_ids.size()){
-    printf("Cannot find subdomain id %d in work queue\n", sdom_id);
-    MPI_Abort(MPI_COMM_WORLD, 1);
+    KRIPKE_ABORT("Cannot find subdomain id %d in work queue\n", sdom_id);
   }
 
   return index;
@@ -104,9 +105,8 @@ Subdomain *ParallelComm::dequeueSubdomain(int sdom_id){
   All recieves use the plane_data[] arrays as recieve buffers.
 */
 void ParallelComm::postRecvs(int sdom_id, Subdomain &sdom){
-  int mpi_rank, mpi_size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+  Kripke::Comm comm;
+  int mpi_rank = comm.size();
 
   // go thru each dimensions upwind neighbors, and add the dependencies
   int num_depends = 0;
@@ -123,6 +123,10 @@ void ParallelComm::postRecvs(int sdom_id, Subdomain &sdom){
       continue;
     }
 
+#ifdef KRIPKE_USE_MPI
+
+    int mpi_size = comm.size();
+
     // Add request to pending list
     recv_requests.push_back(MPI_Request());
     recv_subdomains.push_back(sdom_id);
@@ -136,6 +140,10 @@ void ParallelComm::postRecvs(int sdom_id, Subdomain &sdom){
 
     // increment number of dependencies
     num_depends ++;
+#else
+    // No MPI, so this doesn't make sense
+    KRIPKE_ASSERT("All comms should be on-node without MPI");
+#endif
   }
 
   // add subdomain to queue
@@ -146,9 +154,9 @@ void ParallelComm::postRecvs(int sdom_id, Subdomain &sdom){
 
 void ParallelComm::postSends(Subdomain *sdom, double *src_buffers[3]){
   // post sends for downwind dependencies
-  int mpi_rank, mpi_size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+  Kripke::Comm comm;
+  int mpi_rank = comm.size();
+
   for(int dim = 0;dim < 3;++ dim){
     // If it's a boundary condition, skip it
     if(sdom->downwind[dim].mpi_rank < 0){
@@ -177,6 +185,10 @@ void ParallelComm::postSends(Subdomain *sdom, double *src_buffers[3]){
       continue;
     }
 
+#ifdef KRIPKE_USE_MPI
+
+    int mpi_size = comm.size();
+
     // At this point, we know that we have to send an MPI message
     // Add request to send queue
 #ifdef KRIPKE_SWEEP_ISEND
@@ -202,6 +214,10 @@ void ParallelComm::postSends(Subdomain *sdom, double *src_buffers[3]){
           tag, MPI_COMM_WORLD);
 #endif
 
+#else
+    // We cannot SEND anything without MPI, so fail
+    KRIPKE_ASSERT("Cannot send messages without MPI");
+#endif
 
   }
 }
@@ -209,12 +225,17 @@ void ParallelComm::postSends(Subdomain *sdom, double *src_buffers[3]){
 
 // Checks if there are any outstanding subdomains to complete
 bool ParallelComm::workRemaining(void){
+#ifdef KRIPKE_USE_MPI
   return (recv_requests.size() > 0 || queue_subdomains.size() > 0);
+#else
+  return (queue_subdomains.size() > 0);
+#endif
 }
 
 
 // Blocks until all sends have completed, and flushes the send queues
 void ParallelComm::waitAllSends(void){
+#ifdef KRIPKE_USE_MPI
   // Wait for all remaining sends to complete, then return false
   int num_sends = send_requests.size();
   if(num_sends > 0){
@@ -222,13 +243,14 @@ void ParallelComm::waitAllSends(void){
     MPI_Waitall(num_sends, &send_requests[0], &status[0]);
     send_requests.clear();
   }
+#endif
 }
 
 /**
   Checks for incomming messages, and does relevant bookkeeping.
 */
 void ParallelComm::testRecieves(void){
-
+#ifdef KRIPKE_USE_MPI
   // Check for any recv requests that have completed
   int num_requests = recv_requests.size();
   bool done = false;
@@ -263,6 +285,7 @@ void ParallelComm::testRecieves(void){
       done = true;
     }
   }
+#endif
 }
 
 

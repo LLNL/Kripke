@@ -50,6 +50,27 @@ namespace Kripke {
  */
 class Comm : public Kripke::BaseVar {
   public:
+
+
+#ifdef KRIPKE_USE_MPI
+    RAJA_INLINE
+    static void init(int *argc, char ***argv){
+      MPI_Init(argc, argv);
+    }
+#else
+    RAJA_INLINE
+    static void init(int *, char ***){
+    }
+#endif
+
+    RAJA_INLINE
+    static void finalize() {
+#ifdef KRIPKE_USE_MPI
+      MPI_Finalize();
+#endif
+    }
+
+
     RAJA_INLINE
     static Comm getSelf() {
 #ifdef KRIPKE_USE_MPI
@@ -107,12 +128,13 @@ class Comm : public Kripke::BaseVar {
     }
     
     RAJA_INLINE
-    Comm split(int color, int key) const {
 #ifdef KRIPKE_USE_MPI
+    Comm split(int color, int key) const {
       MPI_Comm split_comm;
       MPI_Comm_split(m_comm, color, key, &split_comm);
       return Comm(split_comm);
 #else
+    Comm split(int , int ) const {
       return Comm();
 #endif
     }

@@ -40,7 +40,6 @@
 #include<Kripke/Test/TestKernels.h>
 #include<stdio.h>
 #include<string.h>
-#include<mpi.h>
 #include<algorithm>
 #include<string>
 #include<sstream>
@@ -61,9 +60,9 @@
 #include<Kripke/DataStore.h>
 
 void usage(void){
-  int myid;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  if(myid == 0){
+
+  Kripke::Comm comm;
+  if(comm.rank() == 0){
     // Get a new object with defaulted values
     InputVariables def;
     
@@ -155,7 +154,9 @@ void usage(void){
     printf("  --test                 Run Kernel Test instead of solver\n\n");
     printf("\n");
   }
-  MPI_Finalize();
+
+  Kripke::Comm::finalize();
+
   exit(1);
 }
 
@@ -209,11 +210,12 @@ int main(int argc, char **argv) {
   /*
    * Initialize MPI
    */
-  MPI_Init(&argc, &argv);
-  int myid;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  int num_tasks;
-  MPI_Comm_size(MPI_COMM_WORLD, &num_tasks);
+  Kripke::Comm::init(&argc, &argv);
+
+  Kripke::Comm comm;
+
+  int myid = comm.rank();
+  int num_tasks = comm.size();
 
   if (myid == 0) {
     /* Print out a banner message along with a version number. */
@@ -506,7 +508,7 @@ int main(int argc, char **argv) {
   }
   
   // Cleanup and exit
-  MPI_Finalize();
+  Kripke::Comm::finalize();
 
   return (0);
 }

@@ -370,8 +370,7 @@ namespace {
     int i, nn;
 
     if(std::abs(x) > 1.0){
-      printf("Bad input to ardra_PnmFcn: abs(x) > 1.0, x = %e\n", x);
-      MPI_Abort(MPI_COMM_WORLD, 1);
+      KRIPKE_ABORT("Bad input to ardra_PnmFcn: abs(x) > 1.0, x = %e\n", x);
     }
     else if((x > 1.0) && (x <= 1.0)){
       x = 1.0;

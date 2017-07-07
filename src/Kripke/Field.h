@@ -54,6 +54,7 @@ namespace Kripke {
       static constexpr size_t NumDims = sizeof...(IDX_TYPES);
 
       using LayoutType = RAJA::TypedLayout<RAJA::Index_type, IDX_TYPES...>;
+      //using LayoutType = RAJA::Layout<NumDims>;
       using ViewType = RAJA::View<ElementType, LayoutType>;
 
       using LayoutFunction = std::function<
@@ -79,6 +80,7 @@ namespace Kripke {
         size_t num_chunks = m_chunk_to_subdomain.size();
         m_chunk_to_size.resize(num_chunks);
         m_chunk_to_data.resize(num_chunks);
+        m_chunk_to_layout.resize(num_chunks);
         for(size_t chunk_id = 0;chunk_id < num_chunks;++ chunk_id){
 
           // Get the size of the subdomain from the set
@@ -95,7 +97,10 @@ namespace Kripke {
             sizes[dim] = spanned_set.dimSize(sdom_id, dim);
           }
           auto perm = layout_fcn(sdom_id);
-          m_chunk_to_layout[chunk_id] = RAJA::make_permuted_layout(sizes, perm);
+
+          RAJA::Layout<3, RAJA::Index_type> &layout =
+              m_chunk_to_layout[chunk_id];
+          layout = RAJA::make_permuted_layout<3,RAJA::Index_type>(sizes, perm);
         }
       }
 

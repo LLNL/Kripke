@@ -154,7 +154,8 @@ void testKernel(InputVariables &input_variables){
 /**
  * Tests all kernels given the specified input.
  */
-void testKernels(InputVariables &input_variables){
+//void testKernels(InputVariables &input_variables){
+void testKernels(InputVariables &){
 #if 0
   // Run LTimes
   testKernel<runLTimes>(input_variables);

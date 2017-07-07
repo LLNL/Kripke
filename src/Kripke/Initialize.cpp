@@ -183,7 +183,7 @@ static void initializeSpace(Kripke::DataStore &data_store,
 
 
 static void initializeData(Kripke::DataStore &data_store,
-    InputVariables const &input_vars)
+    InputVariables const &)
 {
 
   PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");

@@ -30,11 +30,10 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_COMM_H__
-#define KRIPKE_COMM_H__
+#ifndef KRIPKE_PARALLELCOMM_H__
+#define KRIPKE_PARALLELCOMM_H__
 
 #include<vector>
-#include<mpi.h>
 
 struct Grid_Data;
 struct Subdomain;
@@ -73,7 +72,9 @@ class ParallelComm {
     Grid_Data *grid_data;
 
     // These vectors contian the recieve requests
+#ifdef KRIPKE_USE_MPI
     std::vector<MPI_Request> recv_requests;
+#endif
     std::vector<int> recv_subdomains;
 
     // These vectors have the subdomains, and the remaining dependencies
@@ -82,7 +83,9 @@ class ParallelComm {
     std::vector<int> queue_depends;
 
     // These vectors have the remaining send requests that are incomplete
+#ifdef KRIPKE_USE_MPI
     std::vector<MPI_Request> send_requests;
+#endif
 };
 
 

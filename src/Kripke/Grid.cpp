@@ -32,12 +32,12 @@
 
 #include <Kripke/Grid.h>
 
+#include <Kripke/Comm.h>
 #include <Kripke/InputVariables.h>
 #include <Kripke/Layout.h>
 #include <Kripke/SubTVec.h>
 #include <cmath>
 #include <sstream>
-#include <mpi.h>
 
 #ifdef KRIPKE_USE_SILO
 #include <sys/stat.h>
@@ -175,14 +175,19 @@ Grid_Data::Grid_Data(InputVariables *input_vars)
     }
   }
 
+  Kripke::Comm comm;
+
   long long global_size[4];
-  MPI_Reduce(vec_size, global_size, 4, MPI_LONG_LONG_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  for(size_t i = 0;i < 4;++ i){
+    global_size[i] = comm.allReduceSumLong((long)vec_size[i]);
+  }
 
   double global_volume[3];
-  MPI_Reduce(vec_volume, global_volume, 3, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  for(size_t i = 0;i < 3;++ i){
+    global_volume[i] = comm.allReduceSumDouble((long)vec_volume[i]);
+  }
 
-  int mpi_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  int mpi_rank = comm.rank();
   if(mpi_rank == 0){
     printf("\n");
     printf("Unknown counts:\n");

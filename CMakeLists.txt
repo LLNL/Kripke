@@ -7,6 +7,7 @@ project(KRIPKE LANGUAGES CXX)
 # Configure RAJA
 #
 
+set(RAJA_ENABLE_OPENMP ${ENABLE_OPENMP})
 set(RAJA_ENABLE_TESTS Off)
 set(RAJA_ENABLE_EXAMPLES Off)
 set(RAJA_ENABLE_DOCUMENTATION Off)
@@ -82,7 +83,7 @@ blt_add_library(
               "src/Kripke/SweepSolver.cpp"
               "src/Kripke/Test/TestKernels.cpp"
               "src/Kripke/Timing.cpp"
-  DEPENDS_ON  MPI 
+  DEPENDS_ON   
 )
 
 add_dependencies(kripke RAJA)
@@ -90,7 +91,7 @@ add_dependencies(kripke RAJA)
 blt_add_executable( 
   NAME        kripke.exe
   SOURCES     "src/kripke.cpp"
-  DEPENDS_ON  kripke MPI 
+  DEPENDS_ON  kripke
 )
 
 
