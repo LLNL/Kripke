@@ -34,10 +34,13 @@
 #include<Kripke/Grid.h>
 #include<Kripke/SubTVec.h>
 #include<Kripke/Timing.h>
+#include<Kripke/VarTypes.h>
 
 void Kripke::Kernel::LTimes(Kripke::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, LTimes);
+
+  auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
 
   Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
 
@@ -51,8 +54,8 @@ void Kripke::Kernel::LTimes(Kripke::DataStore &data_store)
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
-  for (int sdom_id = 0; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
+  for (Kripke::SdomId sdom_id{0}; sdom_id < num_subdomains; ++ sdom_id){
+    Subdomain &sdom = grid_data->subdomains[*sdom_id];
 
     // Get dimensioning
     int num_zones = sdom.num_zones;
@@ -65,7 +68,7 @@ void Kripke::Kernel::LTimes(Kripke::DataStore &data_store)
     
     // Get pointers
     double const * KRESTRICT ell = sdom.ell->ptr();
-    double const * KRESTRICT psi = sdom.psi->ptr();
+    double const * KRESTRICT psi = field_psi.getData(sdom_id);
     double       * KRESTRICT phi = sdom.phi->ptr();
     
     for(int nm = 0;nm < num_moments;++nm){

@@ -115,6 +115,12 @@ static void initializeDirections(Kripke::DataStore &data_store,
   data_store.addVariable("Set/Direction", dir_set);
 
 
+  size_t legendre_order = input_vars.legendre_order;
+  size_t num_moments = (legendre_order+1)*(legendre_order+1);
+  GlobalRangeSet *moment_set = new GlobalRangeSet(pspace, num_moments);
+
+  data_store.addVariable("Set/Moment", moment_set);
+
 }
 
 
@@ -201,6 +207,52 @@ static void initializeData(Kripke::DataStore &data_store,
   // Create Solution and RHS fields
   data_store.addVariable("psi", new Field_Flux(*flux_set));
   data_store.addVariable("rhs", new Field_Flux(*flux_set));
+
+
+
+
+  // Create a set to span moments of the angular flux
+  Set const &moment_set   = data_store.getVariable<Set>("Set/Moment");
+  ProductSet<3> *fluxmoment_set = new ProductSet<3>(pspace, SPACE_PR,
+        moment_set, group_set, zone_set);
+
+  data_store.addVariable("Set/FluxMoment", fluxmoment_set);
+
+
+  // Create flux moment and source moment fields
+  data_store.addVariable("phi",     new Field_Flux(*fluxmoment_set));
+  data_store.addVariable("phi_out", new Field_Flux(*fluxmoment_set));
+
+
+
+  Comm default_comm;
+  if(default_comm.rank() == 0){
+
+    unsigned long flux_size = flux_set->globalSize();
+    unsigned long moment_size = fluxmoment_set->globalSize();
+    unsigned long total_size = (2*moment_size + 2*flux_size);
+
+    printf("\n");
+    printf("  Variable     Num Elements      Megabytes\n");
+    printf("  --------     ------------      ---------\n");
+    printf("  psi          %12lu   %12.3lf\n",
+        flux_size,
+        (double)flux_size*8.0/1024.0/1024.0);
+    printf("  rhs          %12lu   %12.3lf\n",
+        flux_size,
+        (double)flux_size*8.0/1024.0/1024.0);
+
+    printf("  phi          %12lu   %12.3lf\n",
+        moment_size,
+        (double)moment_size*8.0/1024.0/1024.0);
+    printf("  phi_out      %12lu   %12.3lf\n",
+        moment_size,
+        (double)moment_size*8.0/1024.0/1024.0);
+
+    printf("  TOTAL        %12lu   %12.3lf\n",
+        total_size,
+        (double)total_size*8.0/1024.0/1024.0);
+  }
 
 }
 

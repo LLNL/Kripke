@@ -30,10 +30,11 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include<Kripke/Kernel.h>
-#include<Kripke/Grid.h>
-#include<Kripke/SubTVec.h>
-#include<Kripke/Timing.h>
+#include <Kripke/Kernel.h>
+#include <Kripke/Grid.h>
+#include <Kripke/SubTVec.h>
+#include <Kripke/Timing.h>
+#include <Kripke/VarTypes.h>
 
 
 // Macros for offsets with fluxes on cell faces 
@@ -48,6 +49,8 @@ void Kripke::Kernel::sweepSubdomain(Kripke::DataStore &data_store,
 {
 
   KRIPKE_TIMER(data_store, SweepSubdomain);
+
+  auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
 
   Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
   Subdomain *sdom = &(grid_data->subdomains[*sdom_id]);
@@ -67,7 +70,7 @@ void Kripke::Kernel::sweepSubdomain(Kripke::DataStore &data_store,
   double const * KRESTRICT dz = &sdom->deltas[2][0];
   
   double const * KRESTRICT sigt = sdom->sigt->ptr();
-  double       * KRESTRICT psi  = sdom->psi->ptr();
+  double       * KRESTRICT psi = field_psi.getData(sdom_id);
   double const * KRESTRICT rhs  = sdom->rhs->ptr();
 
   double * KRESTRICT psi_lf = sdom->plane_data[0]->ptr();

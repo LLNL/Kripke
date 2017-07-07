@@ -13,6 +13,7 @@ PartitionSpace::PartitionSpace(Kripke::Comm &base_comm,
   m_proc_layout(P, Q, Rx, Ry, Rz),
   m_proc_xyz_layout(Rx, Ry, Rz),
   m_local_sdom_layout(0,0,0,0,0),
+  m_local_sdom_pxyz_layout(0, 0,0,0),
   m_local_sdom_xyz_layout(0,0,0),
   m_global_sdom_layout(0,0,0,0,0)
 {
@@ -52,6 +53,13 @@ PartitionSpace::PartitionSpace(Kripke::Comm &base_comm,
   
   // Split our R communicator
   m_comm_space[SPACE_R] = base_comm.split(color_r, rank_r);
+
+  // Project out the PR color and rank
+  int rank_pr = m_proc_layout(rank[0], 0, rank[2], rank[3], rank[4]);
+  int color_pr = m_proc_layout(0, rank[1], 0, 0, 0);
+
+  // Split our PR communicator
+  m_comm_space[SPACE_PR] = base_comm.split(color_pr, rank_pr);
 }
 
 
@@ -67,12 +75,16 @@ void PartitionSpace::setup_createSubdomains(
   m_local_num_sdom[SPACE_RY] = Sy;
   m_local_num_sdom[SPACE_RZ] = Sz;
   m_local_num_sdom[SPACE_R] = Sx * Sy * Sz;
+  m_local_num_sdom[SPACE_PR] = SP * Sx * Sy * Sz;
 
   // Generate a local layout of subdomains
   m_local_sdom_layout = RAJA::Layout<5>(SP, SQ, Sx, Sy, Sz);
 
   // Create a local mapping from SR <==> (Sx, Sy, Sz)
   m_local_sdom_xyz_layout = RAJA::Layout<3>(Sx, Sy, Sz);
+
+  // Create a local mapping from SPR <==> (SP, Sx, Sy, Sz)
+  m_local_sdom_pxyz_layout = RAJA::Layout<4>(SP, Sx, Sy, Sz);
 
   // Compute global subdomain layout (and our local lower indices)
   for(size_t space = 0;space < NUM_SPACES;++ space){
@@ -124,6 +136,10 @@ size_t PartitionSpace::subdomainToSpace(
                                                   idx[SPACE_RY],
                                                   idx[SPACE_RZ]);
 
+  // For PR, we need to project out Q
+  case SPACE_PR:   return m_local_sdom_layout(
+                             idx[0], 0, idx[2], idx[3], idx[4]);
+
   // For all other spaces, we just return their already computed index
   default:         return idx[space];
   }
@@ -146,6 +162,15 @@ SdomId PartitionSpace::spaceToSubdomain(
                                                     idx[SPACE_RZ]);
                   break;
 
+  // Need to compute P, Rx, Ry, Rz
+  case SPACE_PR: m_local_sdom_pxyz_layout.toIndices(sdom_space,
+                                                    idx[SPACE_P],
+                                                    idx[SPACE_RX],
+                                                    idx[SPACE_RY],
+                                                    idx[SPACE_RZ]);
+                  break;
+
+
   // For basis spaces, just assign the index
   default:        idx[space] = sdom_space;
   }
@@ -157,9 +182,9 @@ SdomId PartitionSpace::spaceToSubdomain(
 
 void PartitionSpace::print() const{
   if(m_comm_all.rank() == 0){
-    printf("Decomposition Details:   Procs:      Subdomains (local/global):\n");
-    printf("-----------------------  ----------  --------------------------\n");
-    printf("  Total:                 %-10d  %d / %d\n",
+    printf("  Decomposition Space:   Procs:      Subdomains (local/global):\n");
+    printf("  ---------------------  ----------  --------------------------\n");
+    printf("  (PQR) Total:           %-10d  %d / %d\n",
         (int)m_comm_all.size(),
         (int)getNumSubdomains(),
         (int)(m_global_num_sdom[SPACE_P] *
@@ -179,7 +204,7 @@ void PartitionSpace::print() const{
         (int)m_comm_space[SPACE_R].size(),
         (int)m_local_num_sdom[SPACE_R],
         (int)m_global_num_sdom[SPACE_R]);
-    printf("  Space in XYZ:          %dx%dx%d       %dx%dx%d / %dx%dx%d\n",
+    printf("  (Rx,Ry,Rz) R in XYZ:   %dx%dx%d       %dx%dx%d / %dx%dx%d\n",
         (int)m_comm_space[SPACE_RX].size(),
         (int)m_comm_space[SPACE_RY].size(),
         (int)m_comm_space[SPACE_RZ].size(),

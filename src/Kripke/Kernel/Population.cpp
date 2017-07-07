@@ -30,12 +30,13 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include<Kripke/Kernel.h>
+#include <Kripke/Kernel.h>
 
-#include<Kripke/Comm.h>
-#include<Kripke/Grid.h>
-#include<Kripke/SubTVec.h>
-#include<Kripke/Timing.h>
+#include <Kripke/Comm.h>
+#include <Kripke/Grid.h>
+#include <Kripke/SubTVec.h>
+#include <Kripke/Timing.h>
+#include <Kripke/VarTypes.h>
 
 /**
  * Returns the integral of Psi over all phase-space, to look at convergence
@@ -44,25 +45,31 @@ double Kripke::Kernel::population(Kripke::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, Population);
 
+  auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
+
   Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
 
   // sum up particles for psi and rhs
   double part = 0.0;
-  for(size_t sdom_id = 0;sdom_id < grid_data->subdomains.size();++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
+  int num_subdomains = grid_data->subdomains.size();
+  for (Kripke::SdomId sdom_id{0}; sdom_id < num_subdomains; ++ sdom_id){
+    Subdomain &sdom = grid_data->subdomains[*sdom_id];
 
     int num_zones = sdom.num_zones;
     int num_directions = sdom.num_directions;
     int num_groups= sdom.num_groups;
     Directions *dirs = sdom.directions;
 
+    double const * KRESTRICT psi = field_psi.getData(sdom_id);
+
+    int offset = 0;
     for(int z = 0;z < num_zones;++ z){
       for(int d = 0;d < num_directions;++ d){
-        for(int g = 0;g < num_groups;++ g){
+        for(int g = 0;g < num_groups;++ g, ++ offset){
 
           double w = dirs[d].w;
           double vol = sdom.volume[z];
-          part += w * (*sdom.psi)(g,d,z) * vol;
+          part += w * psi[offset] * vol;
 
         }
       }

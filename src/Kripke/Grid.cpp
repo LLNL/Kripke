@@ -161,11 +161,11 @@ Grid_Data::Grid_Data(InputVariables *input_vars)
   // and get each materials volume
   long long vec_size[4] = {0,0,0,0};
   double vec_volume[3] = {0.0, 0.0, 0.0};
-  for(size_t sdom_id = 0;sdom_id < subdomains.size();++sdom_id){
-    Subdomain &sdom = subdomains[sdom_id];
-    vec_size[0] += sdom.psi->elements;
-    vec_size[1] += sdom.psi->elements;
-  }
+//  for(size_t sdom_id = 0;sdom_id < subdomains.size();++sdom_id){
+//    Subdomain &sdom = subdomains[sdom_id];
+//    //vec_size[0] += sdom.psi->elements;
+//    //vec_size[1] += sdom.psi->elements;
+//  }
   for(int zs = 0;zs < num_zone_sets;++ zs){
     vec_size[2] += phi[zs]->elements;
     vec_size[3] += phi_out[zs]->elements;

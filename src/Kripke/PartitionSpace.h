@@ -46,6 +46,7 @@ enum SPACE {
   SPACE_RY,
   SPACE_RZ,
   SPACE_R,
+  SPACE_PR,
   SPACE_PQR,
   NUM_SPACES
 };
@@ -89,6 +90,7 @@ class PartitionSpace : public Kripke::BaseVar {
     RAJA::Layout<5> m_proc_layout;
     RAJA::Layout<3> m_proc_xyz_layout;
     RAJA::Layout<5> m_local_sdom_layout;
+    RAJA::Layout<4> m_local_sdom_pxyz_layout;
     RAJA::Layout<3> m_local_sdom_xyz_layout;
     RAJA::Layout<5> m_global_sdom_layout;
 

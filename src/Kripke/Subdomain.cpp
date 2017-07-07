@@ -92,7 +92,6 @@ Subdomain::Subdomain() :
   num_zones(0),
   group0(0),
   direction0(0),
-  psi(NULL),
   rhs(NULL),
   sigt(NULL),
   directions(NULL),
@@ -107,7 +106,6 @@ Subdomain::Subdomain() :
   }
 }
 Subdomain::~Subdomain(){
-  delete psi;
   delete rhs;
   delete sigt;
   for(int dim = 0;dim < 3;++ dim){
@@ -162,8 +160,6 @@ void Subdomain::setup(int sdom_id, InputVariables *input_vars, int gs, int ds, i
   old_plane_data[2] = new SubTVec(NEST_DGZ, num_groups, num_directions, nzones[0] * nzones[1]);
 
   // allocate the storage for solution and source terms
-  psi = new SubTVec(NEST_DGZ, num_groups, num_directions, num_zones);
-  psi->clear(0.0);
   rhs = new SubTVec(NEST_DGZ, num_groups, num_directions, num_zones);
   sigt = new SubTVec(NEST_DGZ, num_groups, 1, num_zones);
   sigt->clear(0.0);
@@ -265,7 +261,6 @@ void Subdomain::setVars(SubTVec *ell_ptr, SubTVec *ell_plus_ptr,
  * Randomizes data for a set.
  */
 void Subdomain::randomizeData(void){
-  psi->randomizeData();
   rhs->randomizeData();
   sigt->randomizeData();
 
@@ -280,7 +275,6 @@ void Subdomain::randomizeData(void){
  * Copies two sets, allowing for different nestings.
  */
 void Subdomain::copy(Subdomain const &b){
-  psi->copy(*b.psi);
   rhs->copy(*b.rhs);
   sigt->copy(*b.sigt);
 
@@ -298,7 +292,6 @@ bool Subdomain::compare(Subdomain const &b, double tol, bool verbose){
   std::string name = namess.str();
 
   bool is_diff = false;
-  is_diff |= psi->compare(name+".psi", *b.psi, tol, verbose);
   is_diff |= rhs->compare(name+".rhs", *b.rhs, tol, verbose);
   is_diff |= sigt->compare(name+".sigt", *b.sigt, tol, verbose);
 
