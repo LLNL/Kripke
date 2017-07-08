@@ -98,9 +98,9 @@ namespace Kripke {
           }
           auto perm = layout_fcn(sdom_id);
 
-          RAJA::Layout<3, RAJA::Index_type> &layout =
+          RAJA::Layout<NumDims, RAJA::Index_type> &layout =
               m_chunk_to_layout[chunk_id];
-          layout = RAJA::make_permuted_layout<3,RAJA::Index_type>(sizes, perm);
+          layout = RAJA::make_permuted_layout<NumDims,RAJA::Index_type>(sizes, perm);
         }
       }
 

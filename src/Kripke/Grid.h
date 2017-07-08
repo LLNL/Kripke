@@ -88,11 +88,6 @@ public:
   // Per directionset ell and ell_plus matrices (Subdomain point into these arrays)
   std::vector<SubTVec *> ell;               // L matrix in nm_offset coordinates
   std::vector<SubTVec *> ell_plus;          // L+ matrix in nm_offset coordinates
-
-  // Per zoneset phi and phi_out (Subdomains point into these arrays)
-  std::vector<SubTVec *> phi;               // Moments of psi
-  std::vector<SubTVec *> phi_out;           // Scattering source
-
 };
 
 #endif

@@ -67,6 +67,16 @@ namespace Kripke {
         return RAJA::RangeSegment(0, size(sdom_id));
       }
 
+
+      /**
+       * Returns the first global index for this subdomain.
+       */
+      RAJA_INLINE
+      size_t lower(Kripke::SdomId sdom_id) const {
+        size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
+        return m_chunk_to_lower[chunk_id];
+      }
+
       /**
        * Returns the global number of unique elements in this set.
        */

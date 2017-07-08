@@ -107,8 +107,6 @@ Grid_Data::Grid_Data(InputVariables *input_vars)
   // just allocate pointer vectors, we will allocate them below
   ell.resize(num_direction_sets, NULL);
   ell_plus.resize(num_direction_sets, NULL);
-  phi.resize(num_zone_sets, NULL);
-  phi_out.resize(num_zone_sets, NULL);
 
   // Initialize Subdomains
   zs_to_sdomid.resize(num_zone_sets);
@@ -132,19 +130,13 @@ Grid_Data::Grid_Data(InputVariables *input_vars)
           compute_ell = true;
         }
 
-        // Create phi and phi_out, if this is the first of this zs
-        if(phi[zs] == NULL){
-          phi[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
-          phi_out[zs] = new SubTVec(nest, total_num_groups, total_num_moments, sdom.num_zones);
-        }
-
         // setup zs to sdom mapping
         if(gs == 0 && ds == 0){
           zs_to_sdomid[zs] = sdom_id;
         }
 
         // Set the variables for this subdomain
-        sdom.setVars(ell[ds], ell_plus[ds], phi[zs], phi_out[zs]);
+        sdom.setVars(ell[ds], ell_plus[ds], nullptr, nullptr);
 
         if(compute_ell){
           // Compute the L and L+ matrices
@@ -159,16 +151,8 @@ Grid_Data::Grid_Data(InputVariables *input_vars)
 
   // Now compute number of elements allocated globally,
   // and get each materials volume
-  long long vec_size[4] = {0,0,0,0};
   double vec_volume[3] = {0.0, 0.0, 0.0};
-//  for(size_t sdom_id = 0;sdom_id < subdomains.size();++sdom_id){
-//    Subdomain &sdom = subdomains[sdom_id];
-//    //vec_size[0] += sdom.psi->elements;
-//    //vec_size[1] += sdom.psi->elements;
-//  }
   for(int zs = 0;zs < num_zone_sets;++ zs){
-    vec_size[2] += phi[zs]->elements;
-    vec_size[3] += phi_out[zs]->elements;
     int sdom_id = zs_to_sdomid[zs];
     for(int mat = 0;mat < 3;++ mat){
       vec_volume[mat] += subdomains[sdom_id].reg_volume[mat];
@@ -176,11 +160,6 @@ Grid_Data::Grid_Data(InputVariables *input_vars)
   }
 
   Kripke::Comm comm;
-
-  long long global_size[4];
-  for(size_t i = 0;i < 4;++ i){
-    global_size[i] = comm.allReduceSumLong((long)vec_size[i]);
-  }
 
   double global_volume[3];
   for(size_t i = 0;i < 3;++ i){
@@ -190,13 +169,6 @@ Grid_Data::Grid_Data(InputVariables *input_vars)
   int mpi_rank = comm.rank();
   if(mpi_rank == 0){
     printf("\n");
-    printf("Unknown counts:\n");
-    printf("  psi:                   %ld\n", (long)global_size[0]);
-    printf("  rhs                    %ld\n", (long)global_size[1]);
-    printf("  phi                    %ld\n", (long)global_size[2]);
-    printf("  phi_out:               %ld\n", (long)global_size[3]);
-
-    printf("\n");
     printf("Region volumes:\n");
     printf("  Reg1 (source)          %e\n", global_volume[0]);
     printf("  Reg2                   %e\n", global_volume[1]);
@@ -205,10 +177,6 @@ Grid_Data::Grid_Data(InputVariables *input_vars)
 }
 
 Grid_Data::~Grid_Data(){
-  for(int zs = 0;zs < num_zone_sets;++ zs){
-    delete phi[zs];
-    delete phi_out[zs];
-  }
   for(int ds = 0;ds < num_direction_sets;++ ds){
     delete ell[ds];
     delete ell_plus[ds];
@@ -235,11 +203,6 @@ void Grid_Data::randomizeData(void){
     subdomains[s].randomizeData();
   }
 
-  for(int zs = 0;zs < num_zone_sets;++ zs){
-    phi[zs]->randomizeData();
-    phi_out[zs]->randomizeData();
-  }
-
   for(int ds = 0;ds < num_direction_sets;++ ds){
     ell[ds]->randomizeData();
     ell_plus[ds]->randomizeData();
@@ -261,11 +224,6 @@ void Grid_Data::copy(Grid_Data const &b){
   subdomains.resize(b.subdomains.size());
   for(size_t s = 0;s < subdomains.size();++ s){
     subdomains[s].copy(b.subdomains[s]);
-  }
-
-  for(int zs = 0;zs < num_zone_sets;++ zs){
-    phi[zs]->copy(*b.phi[zs]);
-    phi_out[zs]->copy(*b.phi_out[zs]);
   }
 
   for(size_t ds = 0;ds < ell.size();++ ds){
@@ -304,11 +262,6 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   }
   is_diff |= compareVector("sigma_tot", sigma_tot, b.sigma_tot, tol, verbose);
 
-  for(int zs = 0;zs < num_zone_sets;++ zs){
-    is_diff |= phi[zs]->compare("phi", *b.phi[zs], tol, verbose);
-    is_diff |= phi_out[zs]->compare("phi_out", *b.phi_out[zs], tol, verbose);
-  }
-
   for(size_t ds = 0;ds < ell.size();++ ds){
     is_diff |= ell[ds]->compare("ell", *b.ell[ds], tol, verbose);
     is_diff |= ell_plus[ds]->compare("ell_plus", *b.ell_plus[ds], tol, verbose);
@@ -319,202 +272,5 @@ bool Grid_Data::compare(Grid_Data const &b, double tol, bool verbose){
   return is_diff;
 }
 
-
-#ifdef KRIPKE_USE_SILO
-
-enum MultivarType {
-  MULTI_MESH,
-  MULTI_MAT,
-  MULTI_VAR
-};
-
-namespace {
-  /**
-    Writes a multimesh or multivar to the root file.
-  */
-
-  void siloWriteMulti(DBfile *root, MultivarType mv_type,
-    std::string const &fname_base, std::string const &var_name,
-    std::vector<int> sdom_id_list, int var_type = 0)
-  {
-    int mpi_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-    int num_sdom = sdom_id_list.size();
-
-    // setup names and types
-    std::vector<int> var_types(mpi_size*num_sdom, var_type);
-    std::vector<char *> var_names(mpi_size*num_sdom);
-    int var_idx = 0;
-    for(int rank = 0;rank < mpi_size;++ rank){
-      for(int idx = 0;idx < num_sdom;++ idx){
-        int sdom_id = sdom_id_list[idx];
-        std::stringstream name;
-        name << fname_base << "/rank_" << rank << ".silo:/sdom" << sdom_id << "/" << var_name;
-        var_names[var_idx] = strdup(name.str().c_str());
-        var_idx ++;
-      }
-    }
-
-    if(mv_type == MULTI_MESH){
-      DBPutMultimesh(root, var_name.c_str(), mpi_size*num_sdom,
-          &var_names[0], &var_types[0], NULL);
-    }
-    else if(mv_type == MULTI_MAT){
-      DBPutMultimat(root, var_name.c_str(), mpi_size*num_sdom,
-          &var_names[0],  NULL);
-    }
-    else{
-      DBPutMultivar(root, var_name.c_str(), mpi_size*num_sdom,
-          &var_names[0],  &var_types[0] , NULL);
-    }
-
-    // cleanup
-    for(int i = 0;i < mpi_size*num_sdom; ++i){
-      free(var_names[i]);
-    }
-  }
-
-  void siloWriteRectMesh(DBfile *silo_file,
-    std::string const &mesh_name,
-    int const *nzones,
-    double const *zeros,
-    double const *deltas_x,
-    double const *deltas_y,
-    double const *deltas_z)
-  {
-    static char const *coordnames[3] = {"X", "Y", "Z"};
-    double const *deltas[3] = {deltas_x, deltas_y, deltas_z};
-    double *coords[3];
-    for(int dim = 0;dim < 3;++ dim){
-      coords[dim] = new double[nzones[dim]];
-      coords[dim][0] = zeros[dim];
-      for(int z = 0;z < nzones[dim];++ z){
-        coords[dim][1+z] = coords[dim][z] + deltas[dim][z];
-      }
-    }
-    int nnodes[3] = {
-      nzones[0]+1,
-      nzones[1]+1,
-      nzones[2]+1
-    };
-
-    DBPutQuadmesh(silo_file, mesh_name.c_str(), const_cast<char**>(coordnames), coords, nnodes, 3, DB_DOUBLE,
-        DB_COLLINEAR, NULL);
-
-    // cleanup
-    delete[] coords[0];
-    delete[] coords[1];
-    delete[] coords[2];
-  }
-
-
-} //namespace
-
-
-void Grid_Data::writeSilo(std::string const &fname_base){
-
-  // Recompute Phi... so we can write out phi0
-  kernel->LTimes(this);
-
-  int mpi_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-
-  if(mpi_rank == 0){
-    // Create a root file
-    std::string fname_root = fname_base + ".silo";
-    DBfile *root = DBCreate(fname_root.c_str(),
-        DB_CLOBBER, DB_LOCAL, NULL, DB_HDF5);
-
-    // Write out multimesh and multivars
-    siloWriteMulti(root, MULTI_MESH, fname_base, "mesh", zs_to_sdomid, DB_QUAD_RECT);
-    siloWriteMulti(root, MULTI_MAT, fname_base, "material", zs_to_sdomid);
-    siloWriteMulti(root, MULTI_VAR, fname_base, "phi0", zs_to_sdomid, DB_QUADVAR);
-
-    // Close root file
-    DBClose(root);
-
-    // Create a subdirectory to hold processor info
-    mkdir(fname_base.c_str(), 0750);
-  }
-
-  // Sync up, so everyone sees the subdirectory
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  // Create our processor file
-  std::stringstream ss_proc;
-  ss_proc << fname_base << "/rank_" << mpi_rank << ".silo";
-  DBfile *proc = DBCreate(ss_proc.str().c_str(),
-      DB_CLOBBER, DB_LOCAL, NULL, DB_HDF5);
-
-  // Write out data for each subdomain
-  int num_zone_sets = zs_to_sdomid.size();
-  for(int sdom_idx = 0;sdom_idx < num_zone_sets;++ sdom_idx){
-    int sdom_id = zs_to_sdomid[sdom_idx];
-    Subdomain &sdom = subdomains[sdom_id];
-
-    // Create a directory for the subdomain
-    std::stringstream dirname;
-    dirname << "/sdom" << sdom_id;
-    DBMkDir(proc, dirname.str().c_str());
-
-    // Set working directory
-    DBSetDir(proc, dirname.str().c_str());
-
-    // Write the mesh
-    siloWriteRectMesh(proc, "mesh", sdom.nzones, sdom.zeros,
-      &sdom.deltas[0][1], &sdom.deltas[1][1], &sdom.deltas[2][1]);
-
-
-    // Write the material
-    {
-      int num_zones = sdom.num_zones;
-      int num_mixed = sdom.mixed_material.size();
-      int matnos[3] = {1, 2, 3};
-      std::vector<int> matlist(num_zones, 0);
-      std::vector<int> mix_next(num_mixed, 0);
-      std::vector<int> mix_mat(num_mixed, 0);
-
-      // setup matlist and mix_next arrays
-      int last_z = -1;
-      for(int m = 0;m < num_mixed;++ m){
-        mix_mat[m] = sdom.mixed_material[m] + 1;
-        int z = sdom.mixed_to_zones[m];
-        if(matlist[z] == 0){
-            matlist[z] = -(1+m);
-        }
-        // if we are still on the same zone, make sure the last mix points
-        // here
-        if(z == last_z){
-          mix_next[m-1] = m+1;
-        }
-        last_z = z;
-      }
-
-      DBPutMaterial(proc, "material", "mesh", 3, matnos,
-          &matlist[0], sdom.nzones, 3,
-          &mix_next[0], &mix_mat[0], &sdom.mixed_to_zones[0], &sdom.mixed_fraction[0], num_mixed,
-          DB_DOUBLE, NULL);
-    }
-
-    // Write phi0
-    {
-
-      int num_zones = sdom.num_zones;
-      std::vector<double> phi0(num_zones);
-
-      // extract phi0 from phi for the 0th group
-      for(int z = 0;z < num_zones;++ z){
-        phi0[z] = (*sdom.phi)(0,0,z);
-      }
-
-      DBPutQuadvar1(proc, "phi0", "mesh", &phi0[0],
-          sdom.nzones, 3, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
-    }
-  }
-
-  // Close processor file
-  DBClose(proc);
-}
-#endif
 
 

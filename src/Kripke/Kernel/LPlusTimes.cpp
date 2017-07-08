@@ -40,7 +40,10 @@ void Kripke::Kernel::LPlusTimes(Kripke::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, LPlusTimes);
 
+  auto &set_group = data_store.getVariable<Kripke::Set>("Set/Group");
+
   auto &field_rhs = data_store.getVariable<Kripke::Field_Flux>("rhs");
+  auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
 
   Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
 
@@ -55,13 +58,12 @@ void Kripke::Kernel::LPlusTimes(Kripke::DataStore &data_store)
     // Get dimensioning
     int num_zones = sdom.num_zones;
     int num_local_groups = sdom.num_groups;
-    int num_groups = sdom.phi_out->groups;
-    int group0 = sdom.group0;
+    int num_groups = set_group.size(sdom_id);
     int num_local_directions = sdom.num_directions;
     int num_groups_zones = num_local_groups*num_zones;
 
     // Get pointers
-    double const * KRESTRICT phi_out = sdom.phi_out->ptr() + group0*num_zones;
+    double const * KRESTRICT phi_out = field_phi_out.getData(sdom_id);
     double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
 
     double       * KRESTRICT rhs = field_rhs.getData(sdom_id);

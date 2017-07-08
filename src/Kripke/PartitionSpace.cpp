@@ -76,6 +76,7 @@ void PartitionSpace::setup_createSubdomains(
   m_local_num_sdom[SPACE_RZ] = Sz;
   m_local_num_sdom[SPACE_R] = Sx * Sy * Sz;
   m_local_num_sdom[SPACE_PR] = SP * Sx * Sy * Sz;
+  m_local_num_sdom[SPACE_NULL] = 1;
 
   // Generate a local layout of subdomains
   m_local_sdom_layout = RAJA::Layout<5>(SP, SQ, Sx, Sy, Sz);
@@ -128,6 +129,10 @@ size_t PartitionSpace::subdomainToSpace(
       idx[0], idx[1], idx[2], idx[3], idx[4]);
 
   switch(space){
+
+  // Null space is always zero'th sdom
+  case SPACE_NULL: return 0;
+
   // For the full space, it's just 1:1 with sdom's
   case SPACE_PQR:  return *sdom_id;
 
@@ -152,6 +157,10 @@ SdomId PartitionSpace::spaceToSubdomain(
   // build up indices in the P, Q, Rx, Ry, Rz space
   std::array<int, 5> idx{{0, 0, 0, 0, 0}};
   switch(space){
+
+  // Null space is always zero'th sdom
+  case SPACE_NULL: return SdomId{0};
+
   // For the full space, it's 1:1 with sdom's
   case SPACE_PQR: return SdomId(sdom_space);
 
@@ -173,6 +182,7 @@ SdomId PartitionSpace::spaceToSubdomain(
 
   // For basis spaces, just assign the index
   default:        idx[space] = sdom_space;
+                  break;
   }
 
   // convert those indices to a subdomain

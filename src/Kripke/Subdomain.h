@@ -106,8 +106,6 @@ struct Subdomain {
   Directions *directions;
   SubTVec *ell;
   SubTVec *ell_plus;
-  SubTVec *phi;
-  SubTVec *phi_out;
 
   // Materials on the mesh, used for scattering lookup
   double reg_volume[3];               // volume of each material region

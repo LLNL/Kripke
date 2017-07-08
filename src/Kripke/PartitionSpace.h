@@ -48,6 +48,7 @@ enum SPACE {
   SPACE_R,
   SPACE_PR,
   SPACE_PQR,
+  SPACE_NULL,
   NUM_SPACES
 };
 

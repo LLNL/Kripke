@@ -30,27 +30,25 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include<Kripke/Kernel.h>
-#include<Kripke/Grid.h>
-#include<Kripke/SubTVec.h>
-#include<Kripke/Timing.h>
-#include<Kripke/VarTypes.h>
+#include <Kripke/Kernel.h>
+#include <Kripke/Grid.h>
+#include <Kripke/SubTVec.h>
+#include <Kripke/Timing.h>
+#include <Kripke/VarTypes.h>
 
 void Kripke::Kernel::LTimes(Kripke::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, LTimes);
 
+  auto &set_group = data_store.getVariable<Kripke::Set>("Set/Group");
+
   auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
+  auto &field_phi = data_store.getVariable<Kripke::Field_Moments>("phi");
 
   Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
 
   // Outer parameters
   int num_moments = grid_data->total_num_moments;
-
-  // Zero Phi
-  for(int ds = 0;ds < grid_data->num_zone_sets;++ ds){
-    grid_data->phi[ds]->clear(0.0);
-  }
 
   // Loop over Subdomains
   int num_subdomains = grid_data->subdomains.size();
@@ -59,7 +57,7 @@ void Kripke::Kernel::LTimes(Kripke::DataStore &data_store)
 
     // Get dimensioning
     int num_zones = sdom.num_zones;
-    int num_groups = sdom.phi->groups;
+    int num_groups = set_group.size(sdom_id);
     int num_local_groups = sdom.num_groups;
     int group0 = sdom.group0;
     int num_local_directions = sdom.num_directions;
@@ -69,11 +67,17 @@ void Kripke::Kernel::LTimes(Kripke::DataStore &data_store)
     // Get pointers
     double const * KRESTRICT ell = sdom.ell->ptr();
     double const * KRESTRICT psi = field_psi.getData(sdom_id);
-    double       * KRESTRICT phi = sdom.phi->ptr();
+    double       * KRESTRICT phi = field_phi.getData(sdom_id);
+
+    // Zero Phi
+    size_t phi_size = field_phi.size(sdom_id);
+    for(size_t i = 0;i < phi_size;++ i){
+      phi[i] = 0.0;
+    }
     
     for(int nm = 0;nm < num_moments;++nm){
       double const * KRESTRICT ell_nm = ell + nm*num_local_directions;
-      double       * KRESTRICT phi_nm = phi + nm*num_gz + group0*num_zones;
+      double       * KRESTRICT phi_nm = phi + nm*num_gz + num_zones;
 
       for (int d = 0; d < num_local_directions; d++) {
         double const * KRESTRICT psi_d = psi + d*num_locgz;

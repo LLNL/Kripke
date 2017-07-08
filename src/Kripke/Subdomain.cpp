@@ -95,9 +95,7 @@ Subdomain::Subdomain() :
   sigt(NULL),
   directions(NULL),
   ell(NULL),
-  ell_plus(NULL),
-  phi(NULL),
-  phi_out(NULL)
+  ell_plus(NULL)
 {
   for(int dim = 0;dim < 3;++ dim){
     plane_data[dim] = NULL;
@@ -245,12 +243,10 @@ void Subdomain::setup(int sdom_id, InputVariables *input_vars, int gs, int ds, i
 }
 
 void Subdomain::setVars(SubTVec *ell_ptr, SubTVec *ell_plus_ptr,
-    SubTVec *phi_ptr, SubTVec *phi_out_ptr){
+    SubTVec *, SubTVec *){
 
   ell = ell_ptr;
   ell_plus = ell_plus_ptr;
-  phi = phi_ptr;
-  phi_out = phi_out_ptr;
 }
 
 

@@ -87,8 +87,10 @@ static void initializeEnergy(Kripke::DataStore &data_store,
                                  ngrp_per_sdom);
 
   RangeSet *grp_set = new RangeSet(pspace, SPACE_P, local_grps);
-
   data_store.addVariable("Set/Group", grp_set);
+
+  GlobalRangeSet *global_grp_set = new GlobalRangeSet(*grp_set);
+  data_store.addVariable("Set/GlobalGroup", global_grp_set);
 
 
 }
@@ -117,9 +119,12 @@ static void initializeDirections(Kripke::DataStore &data_store,
 
   size_t legendre_order = input_vars.legendre_order;
   size_t num_moments = (legendre_order+1)*(legendre_order+1);
-  GlobalRangeSet *moment_set = new GlobalRangeSet(pspace, num_moments);
 
+  GlobalRangeSet *moment_set = new GlobalRangeSet(pspace, num_moments);
   data_store.addVariable("Set/Moment", moment_set);
+
+  GlobalRangeSet *legendre_set = new GlobalRangeSet(pspace, legendre_order+1);
+  data_store.addVariable("Set/Legendre", legendre_set);
 
 }
 
@@ -181,6 +186,12 @@ static void initializeSpace(Kripke::DataStore &data_store,
       *zonex_set, *zoney_set, *zonez_set);
 
   data_store.addVariable("Set/Zone", zone_set);
+
+
+
+  // Create a set of the number of materials
+  GlobalRangeSet *material_set = new GlobalRangeSet(pspace, 3);
+  data_store.addVariable("Set/Material", material_set);
 }
 
 
@@ -189,7 +200,7 @@ static void initializeSpace(Kripke::DataStore &data_store,
 
 
 static void initializeData(Kripke::DataStore &data_store,
-    InputVariables const &)
+    InputVariables const &input_vars)
 {
 
   PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");
@@ -225,12 +236,50 @@ static void initializeData(Kripke::DataStore &data_store,
 
 
 
+
+  // Create a set to span scattering transfer matrix
+  Set const &material_set   = data_store.getVariable<Set>("Set/Material");
+  Set const &legendre_set   = data_store.getVariable<Set>("Set/Legendre");
+  Set const &global_group_set = data_store.getVariable<Set>("Set/GlobalGroup");
+  ProductSet<4> *sigs_set = new ProductSet<4>(pspace, SPACE_NULL,
+      material_set, legendre_set, global_group_set, global_group_set);
+
+  data_store.addVariable("Set/SigmaS", sigs_set);
+
+
+  // Create storage for the scattering transfer matrix
+  data_store.addVariable("data/sigs", new Field_SigmaS(*sigs_set));
+  auto &field_sigs = data_store.getVariable<Field_SigmaS>("data/sigs");
+
+  // Assign basic diagonal data to matrix
+  for(auto sdom_id : field_sigs.getWorkList()){
+
+    // Zero out entire matrix
+    auto sigs_ptr = field_sigs.getData(sdom_id);
+    size_t sigs_size = field_sigs.size(sdom_id);
+    for(size_t i = 0;i < sigs_size;++ i){
+      sigs_ptr[i] = 0.0;
+    }
+
+    // Assign diagonal to the user input for each material
+    // Assume each group has same behavior
+    auto sigs = field_sigs.getView(sdom_id);
+    int global_num_groups = global_group_set.size(sdom_id);
+    Legendre n{0};
+    for(Material mat{0};mat < 3;++ mat){
+      for(GlobalGroup g{0};g < global_num_groups;++ g){
+        sigs(mat, n, g, g) = input_vars.sigs[*mat];
+      }
+    }
+  }
+
   Comm default_comm;
   if(default_comm.rank() == 0){
 
     unsigned long flux_size = flux_set->globalSize();
     unsigned long moment_size = fluxmoment_set->globalSize();
-    unsigned long total_size = (2*moment_size + 2*flux_size);
+    unsigned long sigs_size = sigs_set->globalSize();
+    unsigned long total_size = (2*moment_size + 2*flux_size + sigs_size);
 
     printf("\n");
     printf("  Variable     Num Elements      Megabytes\n");
@@ -238,6 +287,7 @@ static void initializeData(Kripke::DataStore &data_store,
     printf("  psi          %12lu   %12.3lf\n",
         flux_size,
         (double)flux_size*8.0/1024.0/1024.0);
+
     printf("  rhs          %12lu   %12.3lf\n",
         flux_size,
         (double)flux_size*8.0/1024.0/1024.0);
@@ -245,9 +295,14 @@ static void initializeData(Kripke::DataStore &data_store,
     printf("  phi          %12lu   %12.3lf\n",
         moment_size,
         (double)moment_size*8.0/1024.0/1024.0);
+
     printf("  phi_out      %12lu   %12.3lf\n",
         moment_size,
         (double)moment_size*8.0/1024.0/1024.0);
+
+    printf("  sigs         %12lu   %12.3lf\n",
+        sigs_size,
+        (double)sigs_size*8.0/1024.0/1024.0);
 
     printf("  TOTAL        %12lu   %12.3lf\n",
         total_size,

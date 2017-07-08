@@ -30,10 +30,11 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include<Kripke/Kernel.h>
-#include<Kripke/Grid.h>
-#include<Kripke/SubTVec.h>
-#include<Kripke/Timing.h>
+#include <Kripke/Kernel.h>
+#include <Kripke/Grid.h>
+#include <Kripke/SubTVec.h>
+#include <Kripke/Timing.h>
+#include <Kripke/VarTypes.h>
 
 /**
  * Add an isotropic source, with flux of 1, to every zone with Region 1
@@ -45,36 +46,35 @@ void Kripke::Kernel::source(Kripke::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, Source);
 
+  auto &set_group = data_store.getVariable<Kripke::Set>("Set/Group");
+
+  auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
+
   Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
 
   // Loop over zoneset subdomains
-  for(int zs = 0;zs < grid_data->num_zone_sets;++ zs){
-    // get the phi and phi out references
-    SubTVec &phi_out = *grid_data->phi_out[zs];
+  for(auto sdom_id : field_phi_out.getWorkList()){
 
     // get material mix information
-    int sdom_id = grid_data->zs_to_sdomid[zs];
-    Subdomain &sdom = grid_data->subdomains[sdom_id];
+    Subdomain &sdom = grid_data->subdomains[*sdom_id];
     int    const * KRESTRICT mixed_to_zones = &sdom.mixed_to_zones[0];
     int    const * KRESTRICT mixed_material = &sdom.mixed_material[0];
     double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
-    double       * KRESTRICT phi_out_nm0 = phi_out.ptr();
+    double       * KRESTRICT phi_out = field_phi_out.getData(sdom_id);
 
     // grab dimensions
     int num_mixed = sdom.mixed_to_zones.size();
     int num_zones = sdom.num_zones;
-    int num_groups = phi_out.groups;
+    int num_groups = set_group.size(sdom_id);
 
     for(int g = 0;g < num_groups;++ g){
-      double       * KRESTRICT phi_out_nm0_g = phi_out_nm0 + g*num_zones;
-      
       for(int mix = 0;mix < num_mixed;++ mix){
         int zone = mixed_to_zones[mix];
         int material = mixed_material[mix];
         double fraction = mixed_fraction[mix];
 
         if(material == 0){
-          phi_out_nm0_g[zone] += 1.0 * fraction;
+          phi_out[g*num_zones+zone] += 1.0 * fraction;
         }
       }
     }
