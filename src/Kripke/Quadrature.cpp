@@ -30,15 +30,17 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include <Kripke/Directions.h>
+#include <Kripke/Quadrature.h>
 
-#include <Kripke/Grid.h>
 #include <Kripke/InputVariables.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
 #include <algorithm>
+
+
+using namespace Kripke;
 
 namespace {
   /*
@@ -78,7 +80,7 @@ namespace {
   }
 
 
-  bool dirSortFcn(Directions const &a, Directions const &b){
+  bool dirSortFcn(QuadraturePoint const &a, QuadraturePoint const &b){
     return b.octant < a.octant;
   }
 }
@@ -87,20 +89,21 @@ namespace {
  * Initializes the quadrature set information for a Grid_Data object.
  * This guarantees that each <GS,DS> pair have a single originating octant.
  */
-void InitDirections(Grid_Data *grid_data, InputVariables *input_vars)
+std::vector<Kripke::QuadraturePoint>
+Kripke::createQuadratureSet(InputVariables const &input_vars)
 {
-  std::vector<Directions> &directions = grid_data->directions;
+  std::vector<QuadraturePoint> directions;
 
   // Get set description from user
-  int num_directions_per_octant = input_vars->num_directions/8;
-  int num_directions = input_vars->num_directions;
+  int num_directions_per_octant = input_vars.num_directions/8;
+  int num_directions = input_vars.num_directions;
 
   // allocate storage
   directions.resize(num_directions);
 
   // Are we running a REAL quadrature set?
-  int num_polar = input_vars->quad_num_polar;
-  int num_azimuth = input_vars->quad_num_azimuthal;
+  int num_polar = input_vars.quad_num_polar;
+  int num_azimuth = input_vars.quad_num_azimuthal;
 
   std::vector<double> polar_cos;
   std::vector<double> polar_weight;
@@ -201,6 +204,8 @@ void InitDirections(Grid_Data *grid_data, InputVariables *input_vars)
       }
     }
   }
+
+  return directions;
 }
 
 

@@ -58,7 +58,7 @@ double Kripke::Kernel::population(Kripke::DataStore &data_store)
     int num_zones = sdom.num_zones;
     int num_directions = sdom.num_directions;
     int num_groups= sdom.num_groups;
-    Directions *dirs = sdom.directions;
+    Kripke::QuadraturePoint *dirs = sdom.directions;
 
     double const * KRESTRICT psi = field_psi.getData(sdom_id);
 

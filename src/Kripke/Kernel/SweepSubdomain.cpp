@@ -60,7 +60,7 @@ void Kripke::Kernel::sweepSubdomain(Kripke::DataStore &data_store,
   int num_groups = sdom->num_groups;
   int num_zones = sdom->num_zones;
 
-  Directions *direction = sdom->directions;
+  Kripke::QuadraturePoint *direction = sdom->directions;
 
   int local_imax = sdom->nzones[0];
   int local_jmax = sdom->nzones[1];

@@ -30,18 +30,19 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_DIRECTIONS_H__
-#define KRIPKE_DIRECTIONS_H__
+#ifndef KRIPKE_QUADRATURE_H__
+#define KRIPKE_QUADRATURE_H__
 
 #include <vector>
 
-struct Grid_Data;
 struct InputVariables;
+
+namespace Kripke {
 
 /**
  * Contains information needed for one quadrature set direction.
  */
-struct Directions{
+struct QuadraturePoint {
   double xcos;              /* Absolute value of the x-direction cosine. */
   double ycos;              /* Absolute value of the y-direction cosine. */
   double zcos;              /* Absolute value of the z-direction cosine. */
@@ -56,6 +57,8 @@ struct Directions{
 };
 
 
-void InitDirections(Grid_Data *grid_data, InputVariables *input_vars);
+std::vector<QuadraturePoint> createQuadratureSet(InputVariables const &input_vars);
 
+
+}
 #endif

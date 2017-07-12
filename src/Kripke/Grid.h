@@ -34,7 +34,7 @@
 #define KRIPKE_GRID_DATA_H__
 
 #include <Kripke/BaseVar.h>
-#include <Kripke/Directions.h>
+#include <Kripke/Quadrature.h>
 #include <Kripke/Kernel.h>
 #include <Kripke/Subdomain.h>
 #include <Kripke/Timing.h>
@@ -76,7 +76,7 @@ public:
 
   std::vector<int> moment_to_coeff;         // Map from harmonic moments to legendre coefficients
 
-  std::vector<Directions> directions;       // Quadrature point data, for all directions
+  std::vector<Kripke::QuadraturePoint> directions;  // Quadrature point data, for all directions
 
   std::vector<Subdomain> subdomains;        // Group/Angle/Zone set data
   std::vector<int> zs_to_sdomid;            // map of zonesets to subdomains with ds=gs=0

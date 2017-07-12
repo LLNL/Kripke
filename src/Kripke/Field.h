@@ -78,8 +78,8 @@ namespace Kripke {
 
         // allocate all of our chunks, and create layouts for each one
         size_t num_chunks = m_chunk_to_subdomain.size();
-        m_chunk_to_size.resize(num_chunks);
-        m_chunk_to_data.resize(num_chunks);
+        m_chunk_to_size.resize(num_chunks, 0);
+        m_chunk_to_data.resize(num_chunks, nullptr);
         m_chunk_to_layout.resize(num_chunks);
         for(size_t chunk_id = 0;chunk_id < num_chunks;++ chunk_id){
 
@@ -134,11 +134,31 @@ namespace Kripke {
       RAJA_INLINE
       ElementPtr getData(Kripke::SdomId sdom_id) const {
 
+        KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
+            "sdom_id(%d) >= num_subdomains(%d)",
+            (int)*sdom_id,
+            (int)(int)m_subdomain_to_chunk.size());
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
         return  m_chunk_to_data[chunk_id];
       }
 
+
+      RAJA_INLINE
+      void dump() const {
+        printf("Field<>:\n");
+        printf("  m_set: %p\n", m_set);
+
+        printf("  m_chunk_to_size: ");
+        for(auto x : m_chunk_to_size){printf("%lu ", (unsigned long)x);}
+        printf("\n");
+
+        printf("  m_chunk_to_data: ");
+        for(auto x : m_chunk_to_data){printf("%p ", x);}
+        printf("\n");
+
+        DomainVar::dump();
+      }
 
     protected:
       Kripke::Set const *m_set;

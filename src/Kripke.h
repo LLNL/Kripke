@@ -33,15 +33,16 @@
 #ifndef KRIPKE_H__
 #define KRIPKE_H__
 
-#include<KripkeConfig.h>
+#include <KripkeConfig.h>
 
-#include<RAJA/RAJA.hpp>
+#include <RAJA/RAJA.hpp>
 
-#include<string>
-#include<vector>
-#include<stdio.h>
-#include<cmath>
-#include<strings.h>
+#include <string>
+#include <vector>
+#include <stdio.h>
+#include <cmath>
+#include <strings.h>
+#include <stdlib.h>
 
 // Make sure that there's openmp support, otherwise error out
 #if KRIPKE_USE_OPENMP
@@ -55,8 +56,16 @@ struct Grid_Data;
 
 #define KRESTRICT __restrict__
 
+#ifdef KRIPKE_USE_MPI
 #define KRIPKE_ABORT(...) \
-  printf(__VA_ARGS__);
+  printf(__VA_ARGS__); \
+  MPI_Abort(MPI_COMM_WORLD);
+#else
+#define KRIPKE_ABORT(...) \
+  printf(__VA_ARGS__); \
+  exit(1);
+#endif
+
 
 #define KRIPKE_ASSERT(EXPR, ...) \
   if(!(EXPR)){\

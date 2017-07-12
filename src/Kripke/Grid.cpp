@@ -56,7 +56,7 @@ Grid_Data::Grid_Data(InputVariables *input_vars)
 
   // Create quadrature set (for all directions)
   int total_num_directions = input_vars->num_directions;
-  InitDirections(this, input_vars);
+  directions = Kripke::createQuadratureSet(*input_vars);
 
   num_direction_sets = input_vars->num_dirsets;
   num_directions_per_set = total_num_directions/num_direction_sets;

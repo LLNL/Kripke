@@ -34,6 +34,7 @@ void DataStore::deleteVariable(std::string const &name){
   }
 
   // destroy object
+  printf("Deleting %s\n", name.c_str());
   delete it->second;
 
   // remove from map

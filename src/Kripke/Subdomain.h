@@ -37,9 +37,12 @@
 #include <Kripke/Layout.h>
 
 // Foreward Decl
-struct Directions;
 struct SubTVec;
 struct InputVariables;
+
+namespace Kripke {
+  struct QuadraturePoint;
+}
 
 /**
  * Provides sweep index sets for a given octant.
@@ -63,7 +66,7 @@ struct Subdomain {
   ~Subdomain();
 
   void setup(int sdom_id, InputVariables *input_vars, int gs, int ds, int zs,
-    std::vector<Directions> &direction_list, Layout *layout);
+    std::vector<Kripke::QuadraturePoint> &direction_list, Layout *layout);
 
   void setVars(SubTVec *ell_ptr, SubTVec *ell_plus_ptr,
     SubTVec *phi_ptr, SubTVec *phi_out_ptr);
@@ -103,7 +106,7 @@ struct Subdomain {
   SubTVec *sigt;        // Zonal per-group cross-section
 
   // Pointers into directions and directionset data from Grid_Data
-  Directions *directions;
+  Kripke::QuadraturePoint *directions;
   SubTVec *ell;
   SubTVec *ell_plus;
 

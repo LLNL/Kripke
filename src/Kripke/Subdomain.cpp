@@ -115,7 +115,7 @@ Subdomain::~Subdomain(){
   Setup subdomain and allocate data
 */
 void Subdomain::setup(int sdom_id, InputVariables *input_vars, int gs, int ds, int zs,
-    std::vector<Directions> &direction_list, Layout *layout)
+    std::vector<Kripke::QuadraturePoint> &direction_list, Layout *layout)
 {
   // set the set indices
   idx_group_set = gs;

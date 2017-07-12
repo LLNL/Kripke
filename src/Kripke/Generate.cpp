@@ -126,6 +126,18 @@ static void initializeDirections(Kripke::DataStore &data_store,
   GlobalRangeSet *legendre_set = new GlobalRangeSet(pspace, legendre_order+1);
   data_store.addVariable("Set/Legendre", legendre_set);
 
+
+
+  // Create a set to describe the L and L+ matrices
+  ProductSet<2> *ell_set = new ProductSet<2>(pspace, SPACE_R,
+      *dir_set, *moment_set);
+
+  data_store.addVariable("Set/Ell", ell_set);
+
+
+  // Allocate and initialize the L and L+ matrices
+
+
 }
 
 
@@ -231,8 +243,8 @@ static void initializeData(Kripke::DataStore &data_store,
 
 
   // Create flux moment and source moment fields
-  data_store.addVariable("phi",     new Field_Flux(*fluxmoment_set));
-  data_store.addVariable("phi_out", new Field_Flux(*fluxmoment_set));
+  data_store.addVariable("phi",     new Field_Moments(*fluxmoment_set));
+  data_store.addVariable("phi_out", new Field_Moments(*fluxmoment_set));
 
 
 

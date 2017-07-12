@@ -58,6 +58,24 @@ namespace Kripke {
         return m_work_list;
       }
 
+
+      RAJA_INLINE
+      void dump() const {
+        printf("DomainVar:\n");
+
+        printf("  m_subdomain_to_chunk: ");
+        for(auto x : m_subdomain_to_chunk){printf("%lu ", (unsigned long)x);}
+        printf("\n");
+
+        printf("  m_chunk_to_subdomain: ");
+        for(auto x : m_chunk_to_subdomain){printf("%lu ", (unsigned long)x);}
+        printf("\n");
+
+        printf("  m_work_list: ");
+        for(auto x : m_work_list){printf("%d ", (int)*x);}
+        printf("\n");
+      }
+
     protected:
 
       void setup_initChunks(Kripke::PartitionSpace &pspace,

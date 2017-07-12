@@ -40,51 +40,51 @@ void Kripke::Kernel::LTimes(Kripke::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, LTimes);
 
-  auto &set_group = data_store.getVariable<Kripke::Set>("Set/Group");
+  Set const &group_set  = data_store.getVariable<Kripke::Set>("Set/Group");
+  Set const &dir_set    = data_store.getVariable<Set>("Set/Direction");
+  Set const &zone_set   = data_store.getVariable<Set>("Set/Zone");
+  Set const &moment_set = data_store.getVariable<Set>("Set/Moment");
 
   auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
   auto &field_phi = data_store.getVariable<Kripke::Field_Moments>("phi");
 
   Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
 
-  // Outer parameters
-  int num_moments = grid_data->total_num_moments;
-
-  // Loop over Subdomains
-  int num_subdomains = grid_data->subdomains.size();
-  for (Kripke::SdomId sdom_id{0}; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[*sdom_id];
-
-    // Get dimensioning
-    int num_zones = sdom.num_zones;
-    int num_groups = set_group.size(sdom_id);
-    int num_local_groups = sdom.num_groups;
-    int group0 = sdom.group0;
-    int num_local_directions = sdom.num_directions;
-    int num_gz = num_groups*num_zones;
-    int num_locgz = num_local_groups*num_zones;
-    
-    // Get pointers
-    double const * KRESTRICT ell = sdom.ell->ptr();
-    double const * KRESTRICT psi = field_psi.getData(sdom_id);
-    double       * KRESTRICT phi = field_phi.getData(sdom_id);
-
+  for (Kripke::SdomId sdom_id : field_phi.getWorkList()){
     // Zero Phi
+    double       * KRESTRICT phi = field_phi.getData(sdom_id);
     size_t phi_size = field_phi.size(sdom_id);
     for(size_t i = 0;i < phi_size;++ i){
       phi[i] = 0.0;
     }
-    
-    for(int nm = 0;nm < num_moments;++nm){
-      double const * KRESTRICT ell_nm = ell + nm*num_local_directions;
-      double       * KRESTRICT phi_nm = phi + nm*num_gz + num_zones;
+  }
 
-      for (int d = 0; d < num_local_directions; d++) {
-        double const * KRESTRICT psi_d = psi + d*num_locgz;
-        double const             ell_nm_d = ell_nm[d];
+  // Loop over Subdomains
+  for (Kripke::SdomId sdom_id : field_psi.getWorkList()){
+    Subdomain &sdom = grid_data->subdomains[*sdom_id];
 
-        for(int gz = 0;gz < num_locgz; ++ gz){
-          phi_nm[gz] += ell_nm_d * psi_d[gz];
+    // Get dimensioning
+    int num_zones = zone_set.size(sdom_id);
+    int num_groups = group_set.size(sdom_id);
+    int num_moments = moment_set.size(sdom_id);
+    int num_local_directions = dir_set.size(sdom_id);
+
+
+    // Get pointers
+    double const * KRESTRICT ell = sdom.ell->ptr();
+    auto psi = field_psi.getView(sdom_id);
+    auto phi = field_phi.getView(sdom_id);
+
+    for(Moment nm{0};nm < num_moments;++nm){
+      double const * KRESTRICT ell_nm = ell + (*nm)*num_local_directions;
+
+      for (Direction d{0}; d < num_local_directions; d++) {
+        double const             ell_nm_d = ell_nm[*d];
+
+        for(Group g{0};g < num_groups;++ g){
+          for(Zone z{0};z < num_zones;++ z){
+            phi(nm,g,z) += ell_nm_d * psi(d, g, z);
+          }
         }
       }     
     }

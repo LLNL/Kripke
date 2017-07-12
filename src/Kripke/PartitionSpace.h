@@ -36,6 +36,7 @@
 #include <Kripke.h>
 #include <Kripke/Comm.h>
 #include <Kripke/DataStore.h>
+#include <array>
 
 namespace Kripke {
 
@@ -88,11 +89,11 @@ class PartitionSpace : public Kripke::BaseVar {
     std::array<long, NUM_SPACES> m_global_num_sdom;
     std::array<long, NUM_SPACES> m_global_sdom_lower;
 
+
+    std::array<RAJA::Layout<5>, NUM_SPACES> m_local_sdom_space_layout;
+
     RAJA::Layout<5> m_proc_layout;
     RAJA::Layout<3> m_proc_xyz_layout;
-    RAJA::Layout<5> m_local_sdom_layout;
-    RAJA::Layout<4> m_local_sdom_pxyz_layout;
-    RAJA::Layout<3> m_local_sdom_xyz_layout;
     RAJA::Layout<5> m_global_sdom_layout;
 
 };
