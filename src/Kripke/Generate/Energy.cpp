@@ -30,46 +30,40 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include <Kripke/Grid.h>
-#include <Kripke/SubTVec.h>
-#include <Kripke/InputVariables.h>
+#include <Kripke/Generate.h>
 
-Subdomain::Subdomain()
+#include <Kripke/Comm.h>
+#include <Kripke/Field.h>
+#include <Kripke/Kernel.h>
+#include <Kripke/Quadrature.h>
+#include <Kripke/PartitionSpace.h>
+#include <Kripke/Set.h>
+#include <Kripke/Timing.h>
+#include <Kripke/VarTypes.h>
+
+using namespace Kripke;
+
+
+void Kripke::Generate::generateEnergy(Kripke::DataStore &data_store,
+    InputVariables const &input_vars)
 {
 
-}
-Subdomain::~Subdomain(){
+  PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");
 
-}
+  // Create sets for energy discretization
+  size_t ngrp_per_sdom = input_vars.num_groups /
+                         pspace.getGlobalNumSubdomains(SPACE_P);
 
+  std::vector<size_t> local_grps(pspace.getNumSubdomains(SPACE_P),
+                                 ngrp_per_sdom);
 
-/**
-  Setup subdomain and allocate data
-*/
-void Subdomain::setup(int sdom_id, InputVariables *input_vars, int , int ds, int ,
-    std::vector<Kripke::QuadraturePoint> &direction_list, Layout *layout)
-{
+  RangeSet *grp_set = new RangeSet(pspace, SPACE_P, local_grps);
+  data_store.addVariable("Set/Group", grp_set);
 
-  int num_directions = input_vars->num_directions / input_vars->num_dirsets;
-  int direction0 = ds * num_directions;
-
-
-  // Setup neighbor data
-  int dirs[3] = {
-      direction_list[direction0].id,
-      direction_list[direction0].jd,
-      direction_list[direction0].kd};
-
-  for(int dim = 0;dim < 3;++ dim){
-    downwind[dim] = layout->getNeighbor(sdom_id, dim, dirs[dim]);
-    upwind[dim] = layout->getNeighbor(sdom_id, dim, -1 * dirs[dim]);
-  }
+  GlobalRangeSet *global_grp_set = new GlobalRangeSet(pspace, *grp_set);
+  data_store.addVariable("Set/GlobalGroup", global_grp_set);
 
 
 }
-
-
-
-
 
 

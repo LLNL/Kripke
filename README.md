@@ -214,10 +214,6 @@ Command line option help can also be viewed by running "./kripke --help"
 
     Run Kernel Test instead of solve
 
-*   **``--silo <siloname>``**
-
-    Write SILO output (requires building with LLNL's Silo library)
-
 *   **``--papi <PAPI_XXX_XXX,...>``**
 
     Track PAPI hardware counters for each timer. (requires building with PAPI library)

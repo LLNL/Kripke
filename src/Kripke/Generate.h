@@ -45,6 +45,27 @@ namespace Kripke {
   void generateProblem(Kripke::DataStore &data_store,
       InputVariables const &input_variables);
   
+
+  namespace Generate {
+
+
+    void generateDecomp(Kripke::DataStore &data_store,
+        InputVariables const &input_variables);
+
+    void generateEnergy(Kripke::DataStore &data_store,
+          InputVariables const &input_variables);
+
+    void generateQuadrature(Kripke::DataStore &data_store,
+          InputVariables const &input_variables);
+
+    void generateSpace(Kripke::DataStore &data_store,
+          InputVariables const &input_variables);
+
+    void generateData(Kripke::DataStore &data_store,
+          InputVariables const &input_variables);
+
+  }
+
 }
 
 #endif

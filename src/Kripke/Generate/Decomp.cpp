@@ -30,46 +30,48 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include <Kripke/Grid.h>
-#include <Kripke/SubTVec.h>
-#include <Kripke/InputVariables.h>
+#include <Kripke/Generate.h>
 
-Subdomain::Subdomain()
+#include <Kripke/Comm.h>
+#include <Kripke/Field.h>
+#include <Kripke/Kernel.h>
+#include <Kripke/Quadrature.h>
+#include <Kripke/PartitionSpace.h>
+#include <Kripke/Set.h>
+#include <Kripke/Timing.h>
+#include <Kripke/VarTypes.h>
+
+using namespace Kripke;
+
+
+void Kripke::Generate::generateDecomp(Kripke::DataStore &data_store,
+    InputVariables const &input_vars)
 {
+  // Create a "Comm World"
+  auto &comm = data_store.newVariable<Comm>("comm");
+
+  // Create our partitioning over MPI
+  auto &pspace = data_store.newVariable<PartitionSpace>("pspace",
+      comm,
+      1,
+      1,
+      input_vars.npx,
+      input_vars.npy,
+      input_vars.npz);
+
+  // Create our local partition over subdomains
+  pspace.setup_createSubdomains(
+      input_vars.num_groupsets,
+      input_vars.num_dirsets,
+      input_vars.num_zonesets_dim[0],
+      input_vars.num_zonesets_dim[1],
+      input_vars.num_zonesets_dim[2]);
+
+  // Create utility Sets and Fields that describe our global subdomain layout
+  pspace.createSubdomainData(data_store);
+
+  pspace.print();
 
 }
-Subdomain::~Subdomain(){
-
-}
-
-
-/**
-  Setup subdomain and allocate data
-*/
-void Subdomain::setup(int sdom_id, InputVariables *input_vars, int , int ds, int ,
-    std::vector<Kripke::QuadraturePoint> &direction_list, Layout *layout)
-{
-
-  int num_directions = input_vars->num_directions / input_vars->num_dirsets;
-  int direction0 = ds * num_directions;
-
-
-  // Setup neighbor data
-  int dirs[3] = {
-      direction_list[direction0].id,
-      direction_list[direction0].jd,
-      direction_list[direction0].kd};
-
-  for(int dim = 0;dim < 3;++ dim){
-    downwind[dim] = layout->getNeighbor(sdom_id, dim, dirs[dim]);
-    upwind[dim] = layout->getNeighbor(sdom_id, dim, -1 * dirs[dim]);
-  }
-
-
-}
-
-
-
-
 
 
