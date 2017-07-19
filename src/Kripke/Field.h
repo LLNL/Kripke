@@ -42,36 +42,21 @@
 namespace Kripke {
 
   /**
-   * Base class for defining an ordered set used for dimensioning Fields
+   * Base class for Field which provides storage allocation
    */
-  template<typename ELEMENT, typename ... IDX_TYPES>
-  class Field : public Kripke::DomainVar {
+  template<typename ELEMENT>
+  class FieldStorage : public Kripke::DomainVar {
     public:
-
       using ElementType = ELEMENT;
       using ElementPtr = ELEMENT*;
 
-      static constexpr size_t NumDims = sizeof...(IDX_TYPES);
+      using Layout1dType = RAJA::TypedLayout<RAJA::Index_type, RAJA::Index_type>;
+      using View1dType = RAJA::View<ElementType, Layout1dType>;
 
-      using LayoutType = RAJA::TypedLayout<RAJA::Index_type, IDX_TYPES...>;
-      //using LayoutType = RAJA::Layout<NumDims>;
-      using ViewType = RAJA::View<ElementType, LayoutType>;
 
-      using LayoutFunction = std::function<
-                              std::array<size_t, NumDims>(Kripke::SdomId)
-                             >;
-
-      static std::array<size_t, NumDims> defaultLayout(Kripke::SdomId) {
-        return VarOps::make_index_sequence<NumDims>::value;
-      }
-
-      Field(Kripke::Set const &spanned_set,
-            LayoutFunction layout_fcn = defaultLayout) :
+      explicit FieldStorage(Kripke::Set const &spanned_set) :
         m_set(&spanned_set)
       {
-
-        KRIPKE_ASSERT(NumDims == spanned_set.getNumDimensions(),
-            "Number of dimensions must match between Field and Set");
 
         // initialize our decomposition to match that of the specified set
         setup_initChunks(spanned_set);
@@ -80,7 +65,7 @@ namespace Kripke {
         size_t num_chunks = m_chunk_to_subdomain.size();
         m_chunk_to_size.resize(num_chunks, 0);
         m_chunk_to_data.resize(num_chunks, nullptr);
-        m_chunk_to_layout.resize(num_chunks);
+
         for(size_t chunk_id = 0;chunk_id < num_chunks;++ chunk_id){
 
           // Get the size of the subdomain from the set
@@ -89,27 +74,14 @@ namespace Kripke {
 
           m_chunk_to_size[chunk_id] = sdom_size;
           m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
-
-          // Create a layout using dim sizes from the Set, and permutation
-          // defined by the layout function
-          std::array<int, NumDims> sizes;
-          for(size_t dim = 0;dim < NumDims;++ dim){
-            sizes[dim] = spanned_set.dimSize(sdom_id, dim);
-          }
-          auto perm = layout_fcn(sdom_id);
-
-          RAJA::Layout<NumDims, RAJA::Index_type> &layout =
-              m_chunk_to_layout[chunk_id];
-          layout = RAJA::make_permuted_layout<NumDims,RAJA::Index_type>(sizes, perm);
         }
       }
 
-      virtual ~Field(){
+      virtual ~FieldStorage(){
         for(auto i : m_chunk_to_data){
           delete[] i;
         }
       }
-
 
       /**
        * Returns the number of elements in this subdomain.
@@ -120,15 +92,16 @@ namespace Kripke {
         return m_chunk_to_size[chunk_id];
       }
 
+
       RAJA_INLINE
-      ViewType getView(Kripke::SdomId sdom_id) const {
+      View1dType getView1d(Kripke::SdomId sdom_id) const {
 
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
         ElementPtr ptr = m_chunk_to_data[chunk_id];
-        LayoutType layout = m_chunk_to_layout[chunk_id];
+        size_t sdom_size = m_chunk_to_size[chunk_id];
 
-        return ViewType(ptr, layout);
+        return View1dType(ptr, Layout1dType(sdom_size));
       }
 
       RAJA_INLINE
@@ -143,27 +116,104 @@ namespace Kripke {
         return  m_chunk_to_data[chunk_id];
       }
 
+    protected:
+      Kripke::Set const *m_set;
+      std::vector<size_t> m_chunk_to_size;
+      std::vector<ElementPtr> m_chunk_to_data;
+  };
+
+  /**
+   * Defines a multi-dimensional data field defined over a Set
+   */
+  template<typename ELEMENT, typename ... IDX_TYPES>
+  class Field : public Kripke::FieldStorage<ELEMENT> {
+    public:
+
+      using Parent = Kripke::FieldStorage<ELEMENT>;
+
+      using ElementType = ELEMENT;
+      using ElementPtr = ELEMENT*;
+
+      static constexpr size_t NumDims = sizeof...(IDX_TYPES);
+
+      using LayoutType = RAJA::TypedLayout<RAJA::Index_type, IDX_TYPES...>;
+      using ViewType = RAJA::View<ElementType, LayoutType>;
+
+
+      using LayoutFunction = std::function<
+                              std::array<size_t, NumDims>(Kripke::SdomId)
+                             >;
+
+      static std::array<size_t, NumDims> defaultLayout(Kripke::SdomId) {
+        return VarOps::make_index_sequence<NumDims>::value;
+      }
+
+      Field(Kripke::Set const &spanned_set,
+            LayoutFunction layout_fcn = defaultLayout) :
+        Parent(spanned_set)
+      {
+
+        KRIPKE_ASSERT(NumDims == spanned_set.getNumDimensions(),
+            "Number of dimensions must match between Field<%d> and Set<%d>\n",
+            (int)NumDims, (int)spanned_set.getNumDimensions());
+
+        // create layouts for each chunk
+        size_t num_chunks = Parent::m_chunk_to_subdomain.size();
+        m_chunk_to_layout.resize(num_chunks);
+        for(size_t chunk_id = 0;chunk_id < num_chunks;++ chunk_id){
+
+          // Create a layout using dim sizes from the Set, and permutation
+          // defined by the layout function
+          SdomId sdom_id(Parent::m_chunk_to_subdomain[chunk_id]);
+          std::array<int, NumDims> sizes;
+          for(size_t dim = 0;dim < NumDims;++ dim){
+            sizes[dim] = spanned_set.dimSize(sdom_id, dim);
+          }
+          auto perm = layout_fcn(sdom_id);
+
+          RAJA::Layout<NumDims, RAJA::Index_type> &layout =
+              m_chunk_to_layout[chunk_id];
+          layout = RAJA::make_permuted_layout<NumDims,RAJA::Index_type>(sizes, perm);
+        }
+      }
+
+      virtual ~Field(){
+
+      }
+
+
+
+
+      RAJA_INLINE
+      ViewType getView(Kripke::SdomId sdom_id) const {
+
+        size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
+
+        ElementPtr ptr = Parent::m_chunk_to_data[chunk_id];
+        LayoutType layout = m_chunk_to_layout[chunk_id];
+
+        return ViewType(ptr, layout);
+      }
+
+
 
       RAJA_INLINE
       void dump() const {
         printf("Field<>:\n");
-        printf("  m_set: %p\n", m_set);
+        printf("  m_set: %p\n", Parent::m_set);
 
         printf("  m_chunk_to_size: ");
-        for(auto x : m_chunk_to_size){printf("%lu ", (unsigned long)x);}
+        for(auto x : Parent::m_chunk_to_size){printf("%lu ", (unsigned long)x);}
         printf("\n");
 
         printf("  m_chunk_to_data: ");
-        for(auto x : m_chunk_to_data){printf("%p ", x);}
+        for(auto x : Parent::m_chunk_to_data){printf("%p ", x);}
         printf("\n");
 
         DomainVar::dump();
       }
 
     protected:
-      Kripke::Set const *m_set;
-      std::vector<size_t> m_chunk_to_size;
-      std::vector<ElementPtr> m_chunk_to_data;
       std::vector<LayoutType> m_chunk_to_layout;
   };
 

@@ -69,7 +69,7 @@ struct Grid_Data;
 
 #define KRIPKE_ASSERT(EXPR, ...) \
   if(!(EXPR)){\
-    KRIPKE_ABORT("Assertion Failed:" __VA_ARGS__); \
+    KRIPKE_ABORT("Assertion Failed: " __VA_ARGS__); \
   }
    
 
@@ -88,24 +88,6 @@ namespace Kripke {
 
 
 }
-
-
-/**
- * Un-comment ONE of the 3 MPI send methods below.
- * It decides how sweep messages are sent (intended to be Isend)
- */
-
-#define KRIPKE_SWEEP_ISEND
-//#define KRIPKE_SWEEP_SEND
-//#define KRIPKE_SWEEP_SSEND
-
-/**
- * Set to the number of extra "Testany"s that are executed during the sweep,
- * between each Sweep kernel.
- * This is intended to "help" MPI flush outgoing async messages.
- * (In an ideal world, this would be 0)
- */
-#define KRIPKE_SWEEP_EXTRA_RECV 0
 
 
 

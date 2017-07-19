@@ -67,12 +67,10 @@ struct InputVariables {
   ParallelMethod parallel_method;
   double sigt[3];               // total cross section for 3 materials
   double sigs[3];               // total scattering cross section for 3 materials
+  int num_material_subsamples;  // number of subsamples in each dimension for mesh painting
   
   // Output Options
   std::string run_name;         // Name to use when generating output files
-#ifdef KRIPKE_USE_SILO
-  std::string silo_basename;    // name prefix for silo output files
-#endif
 };
 
 #endif

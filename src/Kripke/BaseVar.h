@@ -40,6 +40,7 @@ namespace Kripke {
  */
 class BaseVar {
   public:
+    BaseVar() = default;
     virtual ~BaseVar() = default;
 };
 

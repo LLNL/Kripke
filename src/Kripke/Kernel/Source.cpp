@@ -46,36 +46,42 @@ void Kripke::Kernel::source(Kripke::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, Source);
 
-  auto &set_group = data_store.getVariable<Kripke::Set>("Set/Group");
+  auto &set_group   = data_store.getVariable<Kripke::Set>("Set/Group");
+  auto &set_mixelem = data_store.getVariable<Kripke::Set>("Set/MixElem");
 
   auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
 
-  Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
+  auto &field_mixed_to_zone     = data_store.getVariable<Field_MixElem2Zone>("mixelem_to_zone");
+  auto &field_mixed_to_material = data_store.getVariable<Field_MixElem2Material>("mixelem_to_material");
+  auto &field_mixed_to_fraction = data_store.getVariable<Field_MixElem2Double>("mixelem_to_fraction");
+
+  // Source term is isotropic
+  Moment nm{0};
 
   // Loop over zoneset subdomains
   for(auto sdom_id : field_phi_out.getWorkList()){
 
-    // get material mix information
-    Subdomain &sdom = grid_data->subdomains[*sdom_id];
-    int    const * KRESTRICT mixed_to_zones = &sdom.mixed_to_zones[0];
-    int    const * KRESTRICT mixed_material = &sdom.mixed_material[0];
-    double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
-    double       * KRESTRICT phi_out = field_phi_out.getData(sdom_id);
+    auto mixelem_to_zone     = field_mixed_to_zone.getView(sdom_id);
+    auto mixelem_to_material = field_mixed_to_material.getView(sdom_id);
+    auto mixelem_to_fraction = field_mixed_to_fraction.getView(sdom_id);
 
-    // grab dimensions
-    int num_mixed = sdom.mixed_to_zones.size();
-    int num_zones = sdom.num_zones;
+    auto phi_out = field_phi_out.getView(sdom_id);
+
+    int num_mixed  = set_mixelem.size(sdom_id);
     int num_groups = set_group.size(sdom_id);
 
-    for(int g = 0;g < num_groups;++ g){
-      for(int mix = 0;mix < num_mixed;++ mix){
-        int zone = mixed_to_zones[mix];
-        int material = mixed_material[mix];
-        double fraction = mixed_fraction[mix];
+    for(Group g{0};g < num_groups;++ g){
+      for(MixElem mix{0};mix < num_mixed;++ mix){
+
+        Material material = mixelem_to_material(mix);
 
         if(material == 0){
-          phi_out[g*num_zones+zone] += 1.0 * fraction;
+          Zone z = mixelem_to_zone(mix);
+          double fraction = mixelem_to_fraction(mix);
+
+          phi_out(nm, g, z) += 1.0 * fraction;
         }
+
       }
     }
   }

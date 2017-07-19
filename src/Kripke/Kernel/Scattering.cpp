@@ -48,23 +48,23 @@ void Kripke::Kernel::scattering(Kripke::DataStore &data_store)
 
   auto &pspace = data_store.getVariable<Kripke::PartitionSpace>("pspace");
 
-  auto &set_group = data_store.getVariable<Kripke::Set>("Set/Group");
+  auto &set_group  = data_store.getVariable<Kripke::Set>("Set/Group");
+  auto &set_moment = data_store.getVariable<Kripke::Set>("Set/Moment");
+  auto &set_zone   = data_store.getVariable<Kripke::Set>("Set/Zone");
 
-  auto &field_phi =     data_store.getVariable<Kripke::Field_Moments>("phi");
+  auto &field_phi     = data_store.getVariable<Kripke::Field_Moments>("phi");
   auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
-  auto &field_sigs =    data_store.getVariable<Field_SigmaS>("data/sigs");
+  auto &field_sigs    = data_store.getVariable<Field_SigmaS>("data/sigs");
 
-  Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
+  auto &field_zone_to_mixelem     = data_store.getVariable<Field_Zone2MixElem>("zone_to_mixelem");
+  auto &field_zone_to_num_mixelem = data_store.getVariable<Field_Zone2Int>("zone_to_num_mixelem");
+  auto &field_mixed_to_material = data_store.getVariable<Field_MixElem2Material>("mixelem_to_material");
+  auto &field_mixed_to_fraction = data_store.getVariable<Field_MixElem2Double>("mixelem_to_fraction");
 
+  auto &field_moment_to_legendre = data_store.getVariable<Field_Moment2Legendre>("moment_to_legendre");
 
   // Zero out source term
-  for(auto sdom_id : field_phi_out.getWorkList()){
-    auto phi_out_ptr = field_phi_out.getData(sdom_id);
-    size_t phi_out_size = field_phi_out.size(sdom_id);
-    for(size_t i = 0;i < phi_out_size;++ i){
-      phi_out_ptr[i] = 0;
-    }
-  }
+  kConst(field_phi_out, 0.0);
 
   // Loop over subdomains and compute scattering source
   for(auto sdom_src : field_phi.getWorkList()){
@@ -83,24 +83,23 @@ void Kripke::Kernel::scattering(Kripke::DataStore &data_store)
 
 
       // get material mix information
-      Subdomain &sdom = grid_data->subdomains[*sdom_src];
-      int    const * KRESTRICT zones_to_mixed = &sdom.zones_to_mixed[0];
-      int    const * KRESTRICT num_mixed = &sdom.num_mixed[0];
-      int    const * KRESTRICT mixed_material = &sdom.mixed_material[0];
-      double const * KRESTRICT mixed_fraction = &sdom.mixed_fraction[0];
-      int    const * KRESTRICT moment_to_coeff = &grid_data->moment_to_coeff[0];
-
+      auto moment_to_legendre = field_moment_to_legendre.getView(sdom_src);
 
       auto phi = field_phi.getView(sdom_src);
       auto phi_out = field_phi_out.getView(sdom_dst);
       auto sigs = field_sigs.getView(sdom_src);
 
 
+      auto zone_to_mixelem     = field_zone_to_mixelem.getView(sdom_src);
+      auto zone_to_num_mixelem = field_zone_to_num_mixelem.getView(sdom_src);
+      auto mixelem_to_material = field_mixed_to_material.getView(sdom_src);
+      auto mixelem_to_fraction = field_mixed_to_fraction.getView(sdom_src);
+
       // grab dimensions
-      int num_zones = sdom.num_zones;
+      int num_zones =      set_zone.size(sdom_src);
       int num_groups_src = set_group.size(sdom_src);
       int num_groups_dst = set_group.size(sdom_dst);
-      int num_moments = grid_data->total_num_moments;
+      int num_moments =    set_moment.size(sdom_dst);
 
       for(Moment nm{0};nm < num_moments;++ nm){
         for(Group g{0};g < num_groups_dst;++ g){ // dst group
@@ -108,17 +107,17 @@ void Kripke::Kernel::scattering(Kripke::DataStore &data_store)
             for(Zone z{0};z < num_zones;++ z){
 
               // map nm to n
-              Legendre n(moment_to_coeff[*nm]);
+              Legendre n = moment_to_legendre(nm);
 
               GlobalGroup global_g{*g+glower_dst};
               GlobalGroup global_gp{*gp+glower_src};
 
-              int mix_start = zones_to_mixed[*z];
-              int mix_stop = mix_start + num_mixed[*z];
+              MixElem mix_start = zone_to_mixelem(z);
+              MixElem mix_stop = mix_start + zone_to_num_mixelem(z);
 
-              for(int mix = mix_start;mix < mix_stop;++ mix){
-                Material mat{mixed_material[mix]};
-                double fraction = mixed_fraction[mix];
+              for(MixElem mix = mix_start;mix < mix_stop;++ mix){
+                Material mat = mixelem_to_material(mix);
+                double fraction = mixelem_to_fraction(mix);
 
                 phi_out(nm, g, z) +=
                     sigs(mat, n, global_g, global_gp)

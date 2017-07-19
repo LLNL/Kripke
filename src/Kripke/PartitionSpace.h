@@ -66,6 +66,8 @@ class PartitionSpace : public Kripke::BaseVar {
     void setup_createSubdomains(
         size_t SP, size_t SQ, size_t Sx, size_t Sy, size_t Sz);
 
+    void createSubdomainData(DataStore &data_store) const;
+
     size_t getNumSubdomains(Kripke::SPACE space = SPACE_PQR) const;
     size_t getGlobalNumSubdomains(Kripke::SPACE space = SPACE_PQR) const;
 
@@ -98,6 +100,14 @@ class PartitionSpace : public Kripke::BaseVar {
 
 };
 
+
+
+template<typename ELEMENT, typename ... IDX_TYPES>
+class Field;
+
+using Field_SdomId2GlobalSdomId = Kripke::Field<GlobalSdomId, SdomId>;
+using Field_GlobalSdomId2Rank = Kripke::Field<long, GlobalSdomId>;
+using Field_GlobalSdomId2SdomId = Kripke::Field<SdomId, GlobalSdomId>;
 
 
 } // namespace

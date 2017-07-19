@@ -147,10 +147,6 @@ void usage(void){
     printf("\n");
     printf("Output and Testing Options:\n");
     printf("---------------------------\n");
-
-#ifdef KRIPKE_USE_SILO
-    printf("  --silo <BASENAME>      Create SILO output files\n\n");
-#endif
     printf("  --test                 Run Kernel Test instead of solver\n\n");
     printf("\n");
   }
@@ -362,11 +358,6 @@ int main(int argc, char **argv) {
     else if(opt == "--nest"){
       vars.nesting = nestingFromString(cmd.pop());     
     }
-#ifdef KRIPKE_USE_SILO
-    else if(opt == "--silo"){
-      vars.silo_basename = cmd.pop();
-    }
-#endif
     else if(opt == "--test"){
       test = true;
     }
@@ -461,14 +452,7 @@ int main(int argc, char **argv) {
     data_store.addVariable("grid_data", grid_data);
 
     // Run the solver
-    Kripke::SteadyStateSolver(data_store, grid_data, vars.parallel_method == PMETHOD_BJ);
-
-#ifdef KRIPKE_USE_SILO
-    // Output silo data
-    if(vars.silo_basename != ""){
-      grid_data->writeSilo(vars.silo_basename);
-    }
-#endif
+    Kripke::SteadyStateSolver(data_store, grid_data, vars.niter, vars.parallel_method == PMETHOD_BJ);
 
     // Print Timing Info
     data_store.getVariable<Kripke::Timing>("timing").print();

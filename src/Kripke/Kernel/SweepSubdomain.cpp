@@ -37,107 +37,77 @@
 #include <Kripke/VarTypes.h>
 
 
-// Macros for offsets with fluxes on cell faces 
-#define I_PLANE_INDEX(j, k) ((k)*(local_jmax) + (j))
-#define J_PLANE_INDEX(i, k) ((k)*(local_imax) + (i))
-#define K_PLANE_INDEX(i, j) ((j)*(local_imax) + (i))
-#define Zonal_INDEX(i, j, k) ((i) + (local_imax)*(j) \
-  + (local_imax)*(local_jmax)*(k))
-
 void Kripke::Kernel::sweepSubdomain(Kripke::DataStore &data_store,
     Kripke::SdomId sdom_id)
 {
-
   KRIPKE_TIMER(data_store, SweepSubdomain);
 
-  auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
-  auto &field_rhs = data_store.getVariable<Kripke::Field_Flux>("rhs");
+  int num_directions = data_store.getVariable<Set>("Set/Direction").size(sdom_id);
+  int num_groups = data_store.getVariable<Set>("Set/Group").size(sdom_id);
+  int local_imax = data_store.getVariable<Set>("Set/ZoneI").size(sdom_id);
+  int local_jmax = data_store.getVariable<Set>("Set/ZoneJ").size(sdom_id);
+  int local_kmax = data_store.getVariable<Set>("Set/ZoneK").size(sdom_id);
 
-  Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
-  Subdomain *sdom = &(grid_data->subdomains[*sdom_id]);
+  auto xcos = data_store.getVariable<Field_Direction2Double>("quadrature/xcos").getView(sdom_id);
+  auto ycos = data_store.getVariable<Field_Direction2Double>("quadrature/ycos").getView(sdom_id);
+  auto zcos = data_store.getVariable<Field_Direction2Double>("quadrature/zcos").getView(sdom_id);
+  auto view_id = data_store.getVariable<Field_Direction2Int>("quadrature/id").getView(sdom_id);
+  auto view_jd = data_store.getVariable<Field_Direction2Int>("quadrature/jd").getView(sdom_id);
+  auto view_kd = data_store.getVariable<Field_Direction2Int>("quadrature/kd").getView(sdom_id);
 
-  int num_directions = sdom->num_directions;
-  int num_groups = sdom->num_groups;
-  int num_zones = sdom->num_zones;
-
-  Kripke::QuadraturePoint *direction = sdom->directions;
-
-  int local_imax = sdom->nzones[0];
-  int local_jmax = sdom->nzones[1];
-  int local_kmax = sdom->nzones[2];
-
-  double const * KRESTRICT dx = &sdom->deltas[0][0];
-  double const * KRESTRICT dy = &sdom->deltas[1][0];
-  double const * KRESTRICT dz = &sdom->deltas[2][0];
+  auto dx = data_store.getVariable<Field_ZoneI2Double>("dx").getView(sdom_id);
+  auto dy = data_store.getVariable<Field_ZoneJ2Double>("dy").getView(sdom_id);
+  auto dz = data_store.getVariable<Field_ZoneK2Double>("dz").getView(sdom_id);
   
-  double const * KRESTRICT sigt = sdom->sigt->ptr();
-  double       * KRESTRICT psi = field_psi.getData(sdom_id);
-  double const * KRESTRICT rhs = field_rhs.getData(sdom_id);
+  auto sigt = data_store.getVariable<Kripke::Field_SigmaTZonal>("sigt_zonal").getView(sdom_id);
+  auto psi = data_store.getVariable<Kripke::Field_Flux>("psi").getView(sdom_id);
+  auto rhs = data_store.getVariable<Kripke::Field_Flux>("rhs").getView(sdom_id);
 
-  double * KRESTRICT psi_lf = sdom->plane_data[0]->ptr();
-  double * KRESTRICT psi_fr = sdom->plane_data[1]->ptr();
-  double * KRESTRICT psi_bo = sdom->plane_data[2]->ptr();
-  
-  int num_gz = num_groups * num_zones;
-  int num_gz_i = local_jmax * local_kmax * num_groups;
-  int num_gz_j = local_imax * local_kmax * num_groups;
-  int num_gz_k = local_imax * local_jmax * num_groups;
-  int num_z_i = local_jmax * local_kmax;
-  int num_z_j = local_imax * local_kmax;
-  int num_z_k = local_imax * local_jmax;
+  auto psi_lf = data_store.getVariable<Field_IPlane>("i_plane").getView(sdom_id);
+  auto psi_fr = data_store.getVariable<Field_JPlane>("j_plane").getView(sdom_id);
+  auto psi_bo = data_store.getVariable<Field_KPlane>("k_plane").getView(sdom_id);
 
-  // All directions have same id,jd,kd, since these are all one Direction Set
-  // So pull that information out now
-  Grid_Sweep_Block const &extent = sdom->sweep_block;
+  // Assumption: all directions in this sdom have same mesh traversal
+  Direction d0{0};
+  int id = view_id(d0);
+  int jd = view_jd(d0);
+  int kd = view_kd(d0);
 
-  for (int d = 0; d < num_directions; ++d) {
-    double xcos = 2.0 * direction[d].xcos;
-    double ycos = 2.0 * direction[d].ycos;
-    double zcos = 2.0 * direction[d].zcos;
-    
-    double       * KRESTRICT psi_d  = psi  + d*num_gz;
-    double const * KRESTRICT rhs_d  = rhs  + d*num_gz;
+  ZoneI start_i((id>0) ? 0 : local_imax-1);
+  ZoneJ start_j((jd>0) ? 0 : local_jmax-1);
+  ZoneK start_k((kd>0) ? 0 : local_kmax-1);
 
-    double       * KRESTRICT psi_lf_d = psi_lf + d*num_gz_i;
-    double       * KRESTRICT psi_fr_d = psi_fr + d*num_gz_j;
-    double       * KRESTRICT psi_bo_d = psi_bo + d*num_gz_k;
+  ZoneI end_i((id>0) ? local_imax : -1);
+  ZoneJ end_j((jd>0) ? local_jmax : -1);
+  ZoneK end_k((kd>0) ? local_kmax : -1);
 
-    for (int g = 0; g < num_groups; ++g) {
-      double const * KRESTRICT sigt_g  = sigt + g*num_zones;
-      double       * KRESTRICT psi_d_g = psi_d + g*num_zones;
-      double const * KRESTRICT rhs_d_g = rhs_d + g*num_zones;
-      
-      double       * KRESTRICT psi_lf_d_g = psi_lf_d + g*num_z_i;
-      double       * KRESTRICT psi_fr_d_g = psi_fr_d + g*num_z_j;
-      double       * KRESTRICT psi_bo_d_g = psi_bo_d + g*num_z_k;
+  auto zone_layout = data_store.getVariable<ProductSet<3>>("Set/Zone").getLayout(sdom_id);
 
-      for (int k = extent.start_k; k != extent.end_k; k += extent.inc_k) {       
-        double zcos_dzk = zcos / dz[k + 1];
-        
-        for (int j = extent.start_j; j != extent.end_j; j += extent.inc_j) {
-          double ycos_dyj = ycos / dy[j + 1];
-          
-          for (int i = extent.start_i; i != extent.end_i; i += extent.inc_i) {
-            double xcos_dxi = xcos / dx[i + 1];
-            
-            int z_idx = Zonal_INDEX(i, j, k);
-            int z_i = I_PLANE_INDEX(j, k);
-            int z_j = J_PLANE_INDEX(i, k);
-            int z_k = K_PLANE_INDEX(i, j);
+
+  for (Direction d{0}; d < num_directions; ++d) {
+    for (Group g{0}; g < num_groups; ++g) {
+      for (ZoneK k = start_k; k != end_k; k += kd) {
+        for (ZoneJ j = start_j; j != end_j; j += jd) {
+          for (ZoneI i = start_i; i != end_i; i += id) {
+            double xcos_dxi = 2.0 * xcos(d) / dx(i);
+            double ycos_dyj = 2.0 * ycos(d) / dy(j);
+            double zcos_dzk = 2.0 * zcos(d) / dz(k);
+
+            Zone z(zone_layout(*i, *j, *k));
 
             /* Calculate new zonal flux */
-            double psi_d_g_z = (rhs_d_g[z_idx]
-                + psi_lf_d_g[z_i] * xcos_dxi
-                + psi_fr_d_g[z_j] * ycos_dyj
-                + psi_bo_d_g[z_k] * zcos_dzk)
-                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt_g[z_idx]);
+            double psi_d_g_z = (rhs(d,g,z)
+                + psi_lf(d, g, j, k) * xcos_dxi
+                + psi_fr(d, g, i, k) * ycos_dyj
+                + psi_bo(d, g, i, j) * zcos_dzk)
+                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt(g, z));
 
-            psi_d_g[z_idx] = psi_d_g_z;
+            psi(d, g, z) = psi_d_g_z;
             
             /* Apply diamond-difference relationships */
-            psi_lf_d_g[z_i] = 2.0 * psi_d_g_z - psi_lf_d_g[z_i];
-            psi_fr_d_g[z_j] = 2.0 * psi_d_g_z - psi_fr_d_g[z_j];
-            psi_bo_d_g[z_k] = 2.0 * psi_d_g_z - psi_bo_d_g[z_k];
+            psi_lf(d, g, j, k) = 2.0 * psi_d_g_z - psi_lf(d, g, j, k);
+            psi_fr(d, g, i, k) = 2.0 * psi_d_g_z - psi_fr(d, g, i, k);
+            psi_bo(d, g, i, j) = 2.0 * psi_d_g_z - psi_bo(d, g, i, j);
           }
         }
       }

@@ -45,7 +45,7 @@
 /**
   Run solver iterations.
 */
-int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, Grid_Data *grid_data, bool block_jacobi)
+int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, Grid_Data *grid_data, size_t max_iter, bool block_jacobi)
 {
   KRIPKE_TIMER(data_store, Solve);
 
@@ -60,7 +60,7 @@ int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, Grid_Data *grid_da
 
   // Loop over iterations
   double part_last = 0.0;
-  for(int iter = 0;iter < grid_data->niter;++ iter){
+  for(size_t iter = 0;iter < max_iter;++ iter){
 
 
     /*
@@ -87,9 +87,9 @@ int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, Grid_Data *grid_da
      */
     {
       // Create a list of all groups
-      std::vector<int> sdom_list(grid_data->subdomains.size());
-      for(size_t i = 0;i < grid_data->subdomains.size();++ i){
-        sdom_list[i] = i;
+      std::vector<SdomId> sdom_list(grid_data->subdomains.size());
+      for(SdomId i{0};i < (int)grid_data->subdomains.size();++ i){
+        sdom_list[*i] = i;
       }
 
       // Sweep everything
@@ -103,7 +103,7 @@ int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, Grid_Data *grid_da
      */
     double part = Kripke::Kernel::population(data_store);
     if(comm.rank() == 0){
-      printf("  iter %d: particle count=%e, change=%e\n", iter, part, (part-part_last)/part);
+      printf("  iter %d: particle count=%e, change=%e\n", (int)iter, part, (part-part_last)/part);
     }
     part_last = part;
 

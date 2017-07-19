@@ -1,6 +1,10 @@
-#include<Kripke.h>
-#include<Kripke/PartitionSpace.h>
-#include<array>
+#include <Kripke/PartitionSpace.h>
+
+#include <Kripke.h>
+#include <Kripke/Field.h>
+#include <Kripke/Kernel.h>
+#include <Kripke/Set.h>
+#include <array>
 
 using namespace Kripke;
 
@@ -106,6 +110,67 @@ void PartitionSpace::setup_createSubdomains(
                                          m_global_num_sdom[SPACE_RX],
                                          m_global_num_sdom[SPACE_RY],
                                          m_global_num_sdom[SPACE_RZ]);
+
+
+}
+
+/**
+ * Creates Set and Field objects that describe the subdomain decomposition.
+ * @param data_store The DataStore in which to create the objects
+ */
+void PartitionSpace::createSubdomainData(DataStore &data_store) const {
+
+  PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");
+
+  // Create a Set that has exactly 1 element for each subdomain
+  auto &set_sdomid = data_store.newVariable<LocalRangeSet>("Set/SdomId",
+      *this,
+      getNumSubdomains(SPACE_PQR));
+
+  // Create a global set with 1 element per subdomain, globally
+  auto &set_global_sdomid =
+      data_store.newVariable<GlobalRangeSet>("Set/GlobalSdomId", pspace, set_sdomid);
+
+  // Create a Field to store mappings from local subdomains to global
+  auto &field_local_to_global =
+      data_store.newVariable<Field_SdomId2GlobalSdomId>(
+          "SdomId2GlobalSdomId", set_sdomid);
+
+  auto &field_global_to_local =
+       data_store.newVariable<Field_GlobalSdomId2SdomId>(
+           "GlobalSdomId2SdomId", set_global_sdomid);
+  Kripke::Kernel::kConst(field_global_to_local, SdomId{0});
+
+  auto &field_global_to_rank =
+       data_store.newVariable<Field_GlobalSdomId2Rank>(
+           "GlobalSdomId2Rank", set_global_sdomid);
+  Kripke::Kernel::kConst(field_global_to_rank, 0);
+
+
+  size_t rank = m_comm_all.rank();
+
+  for(SdomId sdom_id : set_sdomid.getWorkList()){
+    auto local_to_global = field_local_to_global.getView(sdom_id);
+    auto global_to_local = field_global_to_local.getView(sdom_id);
+    auto global_to_rank = field_global_to_rank.getView(sdom_id);
+
+    for(SdomId local{0};local < set_sdomid.size(sdom_id);++ local){
+      GlobalSdomId global(*local + set_sdomid.lower(sdom_id));
+      local_to_global(local) = global;
+      global_to_local(global) = local;
+      global_to_rank(global) = rank;
+    }
+
+    // Perform collective to gather global addresses of all subdomains
+
+    m_comm_all.allReduceSumLong(field_global_to_rank.getData(sdom_id),
+                                field_global_to_rank.size(sdom_id));
+
+    m_comm_all.allReduceSumInt((int*)field_global_to_local.getData(sdom_id),
+                               field_global_to_local.size(sdom_id));
+  }
+
+
 
 
 }

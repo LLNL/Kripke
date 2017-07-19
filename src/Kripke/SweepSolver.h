@@ -33,7 +33,7 @@
 #ifndef KRIPKE_SWEEPSOLVER_H__
 #define KRIPKE_SWEEPSOLVER_H__
 
-
+#include <Kripke.h>
 #include <Kripke/DataStore.h>
 #include <Kripke/Grid.h>
 
@@ -42,7 +42,9 @@ namespace Kripke {
   class DataStore;
 
   void SweepSolver (Kripke::DataStore &data_store,
-      std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi);
+                    std::vector<SdomId> subdomain_list,
+                    Grid_Data *grid_data,
+                    bool block_jacobi);
 
 
 

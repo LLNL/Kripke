@@ -33,13 +33,20 @@
 #include <Kripke/ParallelComm.h>
 
 #include <Kripke/Comm.h>
+#include <Kripke/Field.h>
 #include <Kripke/Grid.h>
 #include <Kripke/Subdomain.h>
 #include <Kripke/SubTVec.h>
+#include <Kripke/VarTypes.h>
 
-ParallelComm::ParallelComm(Grid_Data *grid_data_ptr) :
-  grid_data(grid_data_ptr)
+using namespace Kripke;
+
+ParallelComm::ParallelComm(Kripke::DataStore &data_store) :
+  m_data_store(&data_store)
 {
+  m_plane_data[0] = &m_data_store->getVariable<Field_IPlane>("i_plane");
+  m_plane_data[1] = &m_data_store->getVariable<Field_JPlane>("j_plane");
+  m_plane_data[2] = &m_data_store->getVariable<Field_KPlane>("k_plane");
 
 }
 
@@ -47,45 +54,45 @@ ParallelComm::~ParallelComm(){
 
 }
 
-int ParallelComm::computeTag(int mpi_rank, int sdom_id){
+int ParallelComm::computeTag(int mpi_rank, SdomId sdom_id){
 
   Kripke::Comm comm;
   int mpi_size = comm.size();
 
-  int tag = mpi_rank + mpi_size*sdom_id;
+  int tag = mpi_rank + mpi_size* (*sdom_id);
 
   return tag;
 }
 
-void ParallelComm::computeRankSdom(int tag, int &mpi_rank, int &sdom_id){
+void ParallelComm::computeRankSdom(int tag, int &mpi_rank, SdomId &sdom_id){
   Kripke::Comm comm;
   int mpi_size = comm.size();
 
   mpi_rank = tag % mpi_size;
-  sdom_id = tag / mpi_size;
+  sdom_id = SdomId(tag / mpi_size);
 }
 
 /**
   Finds subdomain in the queue by its subdomain id.
 */
-int ParallelComm::findSubdomain(int sdom_id){
+int ParallelComm::findSubdomain(SdomId sdom_id){
 
   // find subdomain in queue
   size_t index;
   for(index = 0;index < queue_sdom_ids.size();++ index){
-    if(queue_sdom_ids[index] == sdom_id){
+    if(queue_sdom_ids[index] == *sdom_id){
       break;
     }
   }
   if(index == queue_sdom_ids.size()){
-    KRIPKE_ABORT("Cannot find subdomain id %d in work queue\n", sdom_id);
+    KRIPKE_ABORT("Cannot find subdomain id %d in work queue\n", *sdom_id);
   }
 
   return index;
 }
 
 
-Subdomain *ParallelComm::dequeueSubdomain(int sdom_id){
+Subdomain *ParallelComm::dequeueSubdomain(SdomId sdom_id){
   int index = findSubdomain(sdom_id);
 
   // Get subdomain pointer before removing it from queue
@@ -104,7 +111,7 @@ Subdomain *ParallelComm::dequeueSubdomain(int sdom_id){
   Determines if upwind dependencies require communication, and posts appropirate Irecv's.
   All recieves use the plane_data[] arrays as recieve buffers.
 */
-void ParallelComm::postRecvs(int sdom_id, Subdomain &sdom){
+void ParallelComm::postRecvs(SdomId sdom_id, Subdomain &sdom){
   Kripke::Comm comm;
   int mpi_rank = comm.size();
 
@@ -147,12 +154,14 @@ void ParallelComm::postRecvs(int sdom_id, Subdomain &sdom){
   }
 
   // add subdomain to queue
-  queue_sdom_ids.push_back(sdom_id);
+  queue_sdom_ids.push_back(*sdom_id);
   queue_subdomains.push_back(&sdom);
   queue_depends.push_back(num_depends);
 }
 
-void ParallelComm::postSends(Subdomain *sdom, double *src_buffers[3]){
+void ParallelComm::postSends(Kripke::SdomId ,
+                             Subdomain *sdom, double *src_buffers[3])
+{
   // post sends for downwind dependencies
   Kripke::Comm comm;
   int mpi_rank = comm.size();
@@ -174,13 +183,12 @@ void ParallelComm::postSends(Subdomain *sdom, double *src_buffers[3]){
       }
 
       // copy the boundary condition data into the downwinds plane data
-      Subdomain &sdom_downwind = grid_data->subdomains[sdom->downwind[dim].subdomain_id];
-      sdom_downwind.plane_data[dim]->copy(*sdom->plane_data[dim]);
-      int num_elem = sdom_downwind.plane_data[dim]->elements;
-      //double const * KRESTRICT src_ptr = sdom->plane_data[dim]->ptr();
-      double * KRESTRICT dst_ptr = sdom_downwind.plane_data[dim]->ptr();
+      SdomId sdom_id_downwind(sdom->downwind[dim].subdomain_id);
+
+      auto dst_plane = m_plane_data[dim]->getView1d(sdom_id_downwind);
+      int num_elem = m_plane_data[dim]->size(sdom_id_downwind);
       for(int i = 0;i < num_elem;++ i){
-        dst_ptr[i] = src_buffers[dim][i];
+        dst_plane(i) = src_buffers[dim][i];
       }
       continue;
     }
@@ -191,28 +199,14 @@ void ParallelComm::postSends(Subdomain *sdom, double *src_buffers[3]){
 
     // At this point, we know that we have to send an MPI message
     // Add request to send queue
-#ifdef KRIPKE_SWEEP_ISEND
     send_requests.push_back(MPI_Request());
-#endif
 
     // compute the tag id of TARGET subdomain (tags are always based on destination)
     int tag = computeTag(mpi_rank, sdom->downwind[dim].subdomain_id);
 
     // Post the send
-#ifdef KRIPKE_SWEEP_ISEND
     MPI_Isend(src_buffers[dim], sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
       tag, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
-#endif
-
-#ifdef KRIPKE_SWEEP_SEND
-    MPI_Send(src_buffers[dim], sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
-          tag, MPI_COMM_WORLD);
-#endif
-
-#ifdef KRIPKE_SWEEP_SSEND
-    MPI_Ssend(src_buffers[dim], sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
-          tag, MPI_COMM_WORLD);
-#endif
 
 #else
     // We cannot SEND anything without MPI, so fail
@@ -289,12 +283,12 @@ void ParallelComm::testRecieves(void){
 }
 
 
-std::vector<int> ParallelComm::getReadyList(void){
+std::vector<SdomId> ParallelComm::getReadyList(void){
   // build up a list of ready subdomains
-  std::vector<int> ready;
+  std::vector<SdomId> ready;
   for(size_t i = 0;i < queue_depends.size();++ i){
     if(queue_depends[i] == 0){
-      ready.push_back(queue_sdom_ids[i]);
+      ready.push_back(SdomId(queue_sdom_ids[i]));
     }
   }
   return ready;

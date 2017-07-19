@@ -45,31 +45,31 @@ double Kripke::Kernel::population(Kripke::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, Population);
 
-  auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
+  Set const &set_dir    = data_store.getVariable<Set>("Set/Direction");
+  Set const &set_group  = data_store.getVariable<Kripke::Set>("Set/Group");
+  Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
 
-  Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
+  auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
+  auto &field_w = data_store.getVariable<Field_Direction2Double>("quadrature/w");
+  auto &field_volume = data_store.getVariable<Field_Zone2Double>("volume");
 
   // sum up particles for psi and rhs
   double part = 0.0;
-  int num_subdomains = grid_data->subdomains.size();
-  for (Kripke::SdomId sdom_id{0}; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[*sdom_id];
+  for (Kripke::SdomId sdom_id : field_psi.getWorkList()){
 
-    int num_zones = sdom.num_zones;
-    int num_directions = sdom.num_directions;
-    int num_groups= sdom.num_groups;
-    Kripke::QuadraturePoint *dirs = sdom.directions;
+    int num_directions = set_dir.size(sdom_id);
+    int num_groups =     set_group.size(sdom_id);
+    int num_zones =      set_zone.size(sdom_id);
 
-    double const * KRESTRICT psi = field_psi.getData(sdom_id);
+    auto psi = field_psi.getView(sdom_id);
+    auto w = field_w.getView(sdom_id);
+    auto volume = field_volume.getView(sdom_id);
 
-    int offset = 0;
-    for(int z = 0;z < num_zones;++ z){
-      for(int d = 0;d < num_directions;++ d){
-        for(int g = 0;g < num_groups;++ g, ++ offset){
+    for(Zone z{0};z < num_zones;++ z){
+      for(Direction d{0};d < num_directions;++ d){
+        for(Group g{0};g < num_groups;++ g){
 
-          double w = dirs[d].w;
-          double vol = sdom.volume[z];
-          part += w * psi[offset] * vol;
+          part += w(d) * psi(d,g,z) * volume(z);
 
         }
       }

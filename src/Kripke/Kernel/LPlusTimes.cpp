@@ -40,48 +40,41 @@ void Kripke::Kernel::LPlusTimes(Kripke::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, LPlusTimes);
 
-  auto &set_group = data_store.getVariable<Kripke::Set>("Set/Group");
+  Set const &set_dir    = data_store.getVariable<Set>("Set/Direction");
+  Set const &set_group  = data_store.getVariable<Kripke::Set>("Set/Group");
+  Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
+  Set const &set_moment = data_store.getVariable<Set>("Set/Moment");
 
-  auto &field_rhs = data_store.getVariable<Kripke::Field_Flux>("rhs");
   auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
+  auto &field_rhs = data_store.getVariable<Kripke::Field_Flux>("rhs");
+  auto &field_ell_plus = data_store.getVariable<Field_Ell>("ell_plus");
 
-  Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
-
-  // Outer parameters
-  int num_moments = grid_data->total_num_moments;
+  // Zero RHS
+  kConst(field_rhs, 0.0);
 
   // Loop over Subdomains
-  int num_subdomains = grid_data->subdomains.size();
-  for (Kripke::SdomId sdom_id{0}; sdom_id < num_subdomains; ++ sdom_id){
-    Subdomain &sdom = grid_data->subdomains[*sdom_id];
+  for (Kripke::SdomId sdom_id : field_rhs.getWorkList()){
 
     // Get dimensioning
-    int num_zones = sdom.num_zones;
-    int num_local_groups = sdom.num_groups;
-    int num_groups = set_group.size(sdom_id);
-    int num_local_directions = sdom.num_directions;
-    int num_groups_zones = num_local_groups*num_zones;
+    int num_directions = set_dir.size(sdom_id);
+    int num_groups =     set_group.size(sdom_id);
+    int num_moments =    set_moment.size(sdom_id);
+    int num_zones =      set_zone.size(sdom_id);
 
-    // Get pointers
-    double const * KRESTRICT phi_out = field_phi_out.getData(sdom_id);
-    double const * KRESTRICT ell_plus = sdom.ell_plus->ptr();
+    // Get views
+    auto phi_out =  field_phi_out.getView(sdom_id);
+    auto rhs =      field_rhs.getView(sdom_id);
+    auto ell_plus = field_ell_plus.getView(sdom_id);
 
-    double       * KRESTRICT rhs = field_rhs.getData(sdom_id);
-    size_t rhs_size = field_rhs.size(sdom_id);
+    // Compute:  rhs =  ell_plus * phi_out
+    for (Direction d{0}; d < num_directions; d++) {
+      for(Moment nm{0};nm < num_moments;++nm){
+        for(Group g{0};g < num_groups;++g){
+          for(Zone z{0};z < num_zones;++ z){
 
-    // Zero rhs
-    for (size_t i = 0;i < rhs_size; ++ i){
-      rhs[i] = 0.0;
-    }
+            rhs(d,g,z) += ell_plus(nm, d) * phi_out(nm, g, z);
 
-    for (int d = 0; d < num_local_directions; d++) {
-      for(int nm = 0;nm < num_moments;++nm){
-        for(int gz = 0;gz < num_groups_zones; ++ gz){
-
-          rhs[d*num_groups_zones + gz] +=
-              ell_plus[d*num_moments + nm] *
-              phi_out[nm*num_groups*num_zones + gz];
-
+          }
         }
       }
     }

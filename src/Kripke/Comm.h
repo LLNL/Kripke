@@ -74,7 +74,7 @@ class Comm : public Kripke::BaseVar {
     RAJA_INLINE
     static Comm getSelf() {
 #ifdef KRIPKE_USE_MPI
-      return Comm(MPI_COMM_SELF);  
+      return Comm(MPI_COMM_SELF);
 #else
       return Comm();
 #endif
@@ -150,6 +150,33 @@ class Comm : public Kripke::BaseVar {
 #endif
       return value;
     }
+
+    /**
+     * Allreduce SUM an array, in-place
+     * Without MPI, this is a NOP
+     */
+    RAJA_INLINE
+#ifdef KRIPKE_USE_MPI
+    void allReduceSumLong(long *value, size_t len) const {
+      MPI_Allreduce(MPI_IN_PLACE, value, len, MPI_LONG, MPI_SUM, m_comm);
+    }
+#else
+    void allReduceSumLong(long *, size_t ) const {}
+#endif
+
+
+    /**
+     * Allreduce SUM an array, in-place
+     * Without MPI, this is a NOP
+     */
+    RAJA_INLINE
+#ifdef KRIPKE_USE_MPI
+    void allReduceSumInt(int *value, size_t len) const {
+      MPI_Allreduce(MPI_IN_PLACE, value, len, MPI_INT, MPI_SUM, m_comm);
+    }
+#else
+    void allReduceSumInt(int *, size_t) const {}
+#endif
 
     /**
      * Allreduce SUM a single value.

@@ -51,12 +51,6 @@ Set::Set() :
 }
 
 
-size_t Set::getNumDimensions() const{
-  return 1;
-}
-
-
-
 size_t Set::dimSize(Kripke::SdomId sdom_id, size_t ) const{
   return size(sdom_id);
 }
@@ -68,21 +62,22 @@ size_t Set::dimSize(Kripke::SdomId sdom_id, size_t ) const{
  *
  *****************************************************************************/
 
-RangeSet::RangeSet(Kripke::PartitionSpace &pspace, Kripke::SPACE space,
+RangeSet::RangeSet(Kripke::PartitionSpace const &pspace, Kripke::SPACE space,
             std::vector<size_t> const &local_sizes) :
-    m_pspace(&pspace),
     m_space(space)
 {
-  setup_setupByLocalSize(local_sizes);
+  setup_setupByLocalSize(pspace, local_sizes);
 }
 
 
-void RangeSet::setup_setupByLocalSize(std::vector<size_t> const &local_sizes){
+void RangeSet::setup_setupByLocalSize(Kripke::PartitionSpace const &pspace,
+    std::vector<size_t> const &local_sizes)
+{
 
-  Comm const &comm = m_pspace->getComm(m_space);
+  Comm const &comm = pspace.getComm(m_space);
 
   // Figure out number of subdomains and chunks
-  setup_initChunks(*m_pspace, m_space);
+  setup_initChunks(pspace, m_space);
   size_t num_chunks = m_chunk_to_subdomain.size();
 
   KRIPKE_ASSERT(local_sizes.size() == num_chunks,
@@ -114,30 +109,59 @@ void RangeSet::setup_setupByLocalSize(std::vector<size_t> const &local_sizes){
 
 }
 
+
+/*****************************************************************************
+ *
+ *  Kripke::LocalRangeSet
+ *
+ *****************************************************************************/
+
+LocalRangeSet::LocalRangeSet(Kripke::PartitionSpace const &pspace,
+            size_t local_size)
+{
+
+  Comm const &comm = pspace.getComm(SPACE_PQR);
+
+  // Figure out number of subdomains and chunks
+  setup_initChunks(pspace, SPACE_NULL);
+  size_t num_chunks = m_chunk_to_subdomain.size();
+
+  KRIPKE_ASSERT(num_chunks == 1, "Something's wrong, SPACE_NULL should have 1");
+
+  // Compute global size
+  m_global_size = comm.allReduceSumLong(local_size);
+
+  // Copy in local subdomain size
+  m_chunk_to_size = {{local_size}};
+
+  // Compute global offsets for each chunk
+  m_chunk_to_lower.resize(num_chunks);
+  m_chunk_to_lower[0] = comm.scanSumLong(local_size) - local_size;
+}
+
 /*****************************************************************************
  *
  *  Kripke::GlobalRangeSet
  *
  *****************************************************************************/
-GlobalRangeSet::GlobalRangeSet(Kripke::PartitionSpace &pspace,
+GlobalRangeSet::GlobalRangeSet(Kripke::PartitionSpace const &pspace,
     size_t global_size)
 {
-  setup_setGlobalSize(pspace.getNumSubdomains(), global_size);
+  setup_setGlobalSize(pspace, global_size);
 }
 
 
-GlobalRangeSet::GlobalRangeSet(Kripke::Set &parent_set)
+GlobalRangeSet::GlobalRangeSet(Kripke::PartitionSpace const &pspace, Kripke::Set &parent_set)
 {
-  setup_setGlobalSize(parent_set.getNumSubdomains(), parent_set.globalSize());
+  setup_setGlobalSize(pspace, parent_set.globalSize());
 }
 
 
-void GlobalRangeSet::setup_setGlobalSize(size_t num_subdomains,
+void GlobalRangeSet::setup_setGlobalSize(Kripke::PartitionSpace const &pspace,
     size_t global_size)
 {
-  // Kripke::DomainVar
-  m_subdomain_to_chunk.resize(num_subdomains, 0);
-  m_chunk_to_subdomain.resize(1, 0);
+
+  setup_initChunks(pspace, SPACE_NULL);
 
   // Kripke::Set
   m_chunk_to_size.resize(1, global_size);

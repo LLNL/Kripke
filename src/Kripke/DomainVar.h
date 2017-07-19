@@ -48,6 +48,10 @@ namespace Kripke {
       DomainVar() = default;
       virtual ~DomainVar() = default;
 
+      // Do not allow assignment or copy construction
+      DomainVar(DomainVar const &) = delete;
+      DomainVar& operator=(DomainVar const &) = delete;
+
       RAJA_INLINE
       size_t getNumSubdomains() const {
         return m_subdomain_to_chunk.size();
@@ -78,7 +82,7 @@ namespace Kripke {
 
     protected:
 
-      void setup_initChunks(Kripke::PartitionSpace &pspace,
+      void setup_initChunks(Kripke::PartitionSpace const &pspace,
           Kripke::SPACE space);
 
       void setup_initChunks(Kripke::DomainVar const &clone_from);

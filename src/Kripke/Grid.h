@@ -53,41 +53,7 @@ public:
   explicit Grid_Data(InputVariables *input_vars);
   ~Grid_Data();
 
-  void randomizeData(void);
-  void copy(Grid_Data const &b);
-  bool compare(Grid_Data const &b, double tol, bool verbose);
-#ifdef KRIPKE_USE_SILO
-  void writeSilo(std::string const &fname);
-#endif
-
-  int niter;
-
-  double source_value;
-
-  std::vector<double> sigma_tot;            // Cross section data
-
-  int num_group_sets;                       // Number of group-sets
-  int num_groups_per_set;                   // How many groups in each set
-  int num_direction_sets;                   // Number of direction-sets
-  int num_directions_per_set;               // Number of directions per dir set
-  int num_zone_sets;                        // Number of zone sets
-  int legendre_order;                       // Legendra expansion order ( >= 0 )
-  int total_num_moments;                    // Number of spherical harmonic moments
-
-  std::vector<int> moment_to_coeff;         // Map from harmonic moments to legendre coefficients
-
-  std::vector<Kripke::QuadraturePoint> directions;  // Quadrature point data, for all directions
-
   std::vector<Subdomain> subdomains;        // Group/Angle/Zone set data
-  std::vector<int> zs_to_sdomid;            // map of zonesets to subdomains with ds=gs=0
-
-  // Variables:
-  SubTVec *sigs;                            // scattering lookup table for each material
-                                            // G=g->gp, D=legendre coeff, Z=matidx
-
-  // Per directionset ell and ell_plus matrices (Subdomain point into these arrays)
-  std::vector<SubTVec *> ell;               // L matrix in nm_offset coordinates
-  std::vector<SubTVec *> ell_plus;          // L+ matrix in nm_offset coordinates
 };
 
 #endif

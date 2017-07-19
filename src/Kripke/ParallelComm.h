@@ -33,43 +33,53 @@
 #ifndef KRIPKE_PARALLELCOMM_H__
 #define KRIPKE_PARALLELCOMM_H__
 
-#include<vector>
+#include <Kripke.h>
+#include <vector>
 
 struct Grid_Data;
 struct Subdomain;
 
+
+namespace Kripke {
+
+class DataStore;
+
+template<typename T>
+class FieldStorage;
+
 class ParallelComm {
   public:
-    explicit ParallelComm(Grid_Data *grid_data_ptr);
+    explicit ParallelComm(Kripke::DataStore &data_store);
     virtual ~ParallelComm();
 
     // Adds a subdomain to the work queue
-    virtual void addSubdomain(int sdom_id, Subdomain &sdom) = 0;
+    virtual void addSubdomain(SdomId sdom_id, Subdomain &sdom) = 0;
 
     // Checks if there are any outstanding subdomains to complete
     // false indicates all work is done, and all sends have completed
     virtual bool workRemaining(void);
 
     // Returns a vector of ready subdomains, and clears them from the ready queue
-    virtual std::vector<int> readySubdomains(void) = 0;
+    virtual std::vector<SdomId> readySubdomains(void) = 0;
 
     // Marks subdomains as complete, and performs downwind communication
-    virtual void markComplete(int sdom_id) = 0;
+    virtual void markComplete(SdomId sdom_id) = 0;
 
   protected:
-    static int computeTag(int mpi_rank, int sdom_id);
-    static void computeRankSdom(int tag, int &mpi_rank, int &sdom_id);
+    static int computeTag(int mpi_rank, SdomId sdom_id);
+    static void computeRankSdom(int tag, int &mpi_rank, SdomId &sdom_id);
 
-    int findSubdomain(int sdom_id);
-    Subdomain *dequeueSubdomain(int sdom_id);
-    void postRecvs(int sdom_id, Subdomain &sdom);
-    void postSends(Subdomain *sdom, double *buffers[3]);
+    int findSubdomain(SdomId sdom_id);
+    Subdomain *dequeueSubdomain(SdomId sdom_id);
+    void postRecvs(SdomId sdom_id, Subdomain &sdom);
+    void postSends(SdomId sdom_id_upwind, Subdomain *sdom, double *buffers[3]);
     void testRecieves(void);
     void waitAllSends(void);
-    std::vector<int> getReadyList(void);
+    std::vector<SdomId> getReadyList(void);
 
+    Kripke::DataStore *m_data_store;
 
-    Grid_Data *grid_data;
+    Kripke::FieldStorage<double> *m_plane_data[3];
 
     // These vectors contian the recieve requests
 #ifdef KRIPKE_USE_MPI
@@ -91,30 +101,32 @@ class ParallelComm {
 
 class SweepComm : public ParallelComm {
   public:
-    explicit SweepComm(Grid_Data *data);
+    explicit SweepComm(Kripke::DataStore &data_store);
     virtual ~SweepComm();
 
-    virtual void addSubdomain(int sdom_id, Subdomain &sdom);
+    virtual void addSubdomain(SdomId sdom_id, Subdomain &sdom);
     virtual bool workRemaining(void);
-    virtual std::vector<int> readySubdomains(void);
-    virtual void markComplete(int sdom_id);
+    virtual std::vector<SdomId> readySubdomains(void);
+    virtual void markComplete(SdomId sdom_id);
 };
 
 
 class BlockJacobiComm : public ParallelComm {
   public:
-    explicit BlockJacobiComm(Grid_Data *data);
+    explicit BlockJacobiComm(Kripke::DataStore &data_store);
     virtual ~BlockJacobiComm();
 
-    void addSubdomain(int sdom_id, Subdomain &sdom);
+    void addSubdomain(SdomId sdom_id, Subdomain &sdom);
     bool workRemaining(void);
-    std::vector<int> readySubdomains(void);
-    void markComplete(int sdom_id);
+    std::vector<SdomId> readySubdomains(void);
+    void markComplete(SdomId sdom_id);
 
   private:
     bool posted_sends;
 };
 
+
+}
 
 
 #endif

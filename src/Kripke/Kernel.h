@@ -58,6 +58,41 @@ namespace Kripke {
     void sweepSubdomain(Kripke::DataStore &data_store, Kripke::SdomId sdom_id);
 
 
+    template<typename FieldType>
+    RAJA_INLINE
+    void kConst(FieldType &field, typename FieldType::ElementType value){
+      for(Kripke::SdomId sdom_id : field.getWorkList()){
+        auto view1d = field.getView1d(sdom_id);
+        int num_elem = field.size(sdom_id);
+        for(int i = 0;i < num_elem;++ i){
+          view1d(i) = value;
+        }
+      }
+    }
+
+
+
+
+    template<typename FieldType>
+    RAJA_INLINE
+    void kCopy(FieldType &field_dst, Kripke::SdomId sdom_id_dst,
+               FieldType &field_src, Kripke::SdomId sdom_id_src){
+      auto view_src = field_src.getView1d(sdom_id_src);
+      auto view_dst = field_dst.getView1d(sdom_id_dst);
+      int num_elem = field_src.size(sdom_id_src);
+      for(int i = 0;i < num_elem;++ i){
+        view_src(i) = view_dst(i);
+      }
+    }
+
+    template<typename FieldType>
+    RAJA_INLINE
+    void kCopy(FieldType &field_dst, FieldType &field_src){
+      for(Kripke::SdomId sdom_id : field_dst.getWorkList()){
+        kCopy(field_dst, sdom_id, field_src, sdom_id);
+      }
+    }
+
   }
 }
 

@@ -31,16 +31,21 @@
  */
 
 #include <Kripke/ParallelComm.h>
-#include <Kripke/SubTVec.h>
+
+#include <Kripke/Field.h>
 #include <Kripke/Grid.h>
+#include <Kripke/SubTVec.h>
+#include <Kripke/VarTypes.h>
 
 #include <fcntl.h>
 #include <unistd.h>
 #include <vector>
 #include <stdio.h>
 
+using namespace Kripke;
 
-SweepComm::SweepComm(Grid_Data *data) : ParallelComm(data)
+
+SweepComm::SweepComm(Kripke::DataStore &data_store) : ParallelComm(data_store)
 {
 
 }
@@ -52,7 +57,7 @@ SweepComm::~SweepComm(){
   Adds a subdomain to the work queue.
   Determines if upwind dependencies require communication, and posts appropirate Irecv's.
 */
-void SweepComm::addSubdomain(int sdom_id, Subdomain &sdom){
+void SweepComm::addSubdomain(SdomId sdom_id, Subdomain &sdom){
   // Post recieves for upwind dependencies, and add to the queue
   postRecvs(sdom_id, sdom);
 }
@@ -77,7 +82,7 @@ bool SweepComm::workRemaining(void){
 /**
   Checks for incomming messages, and returns a list of ready subdomain id's
 */
-std::vector<int> SweepComm::readySubdomains(void){
+std::vector<SdomId> SweepComm::readySubdomains(void){
   // check for incomming messages
   testRecieves();
 
@@ -86,16 +91,20 @@ std::vector<int> SweepComm::readySubdomains(void){
 }
 
 
-void SweepComm::markComplete(int sdom_id){
+void SweepComm::markComplete(SdomId sdom_id){
   // Get subdomain pointer and remove from work queue
   Subdomain *sdom = dequeueSubdomain(sdom_id);
 
+  auto &i_plane = m_data_store->getVariable<Field_IPlane>("i_plane");
+  auto &j_plane = m_data_store->getVariable<Field_JPlane>("j_plane");
+  auto &k_plane = m_data_store->getVariable<Field_KPlane>("k_plane");
+
   // Send new downwind info for sweep
   double *buf[3] = {
-    sdom->plane_data[0]->ptr(),
-    sdom->plane_data[1]->ptr(),
-    sdom->plane_data[2]->ptr()
+    i_plane.getData(sdom_id),
+    j_plane.getData(sdom_id),
+    k_plane.getData(sdom_id)
   };
-  postSends(sdom, buf);
+  postSends(sdom_id, sdom, buf);
 }
 

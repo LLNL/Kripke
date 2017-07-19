@@ -88,7 +88,7 @@ namespace Kripke {
       /**
        * Returns the dimensionality of this Set.
        */
-      virtual size_t getNumDimensions() const;
+      virtual size_t getNumDimensions() const = 0;
 
       /**
        * Returns the size of this Set along the specified dimension
@@ -104,33 +104,52 @@ namespace Kripke {
 
   class RangeSet : public Kripke::Set {
     public:
-      RangeSet(Kripke::PartitionSpace &pspace, Kripke::SPACE space,
+      RangeSet(Kripke::PartitionSpace const &pspace, Kripke::SPACE space,
           std::vector<size_t> const &local_sizes);
 
       virtual ~RangeSet() = default;
 
+      RAJA_INLINE
+      virtual size_t getNumDimensions() const{return 1;}
+
     private:
-      void setup_setupByLocalSize(std::vector<size_t> const &local_sizes);
-      Kripke::PartitionSpace *m_pspace;
+      void setup_setupByLocalSize(Kripke::PartitionSpace const &pspace,
+          std::vector<size_t> const &local_sizes);
       Kripke::SPACE m_space;
+  };
+
+
+  class LocalRangeSet : public Kripke::Set {
+    public:
+    LocalRangeSet(Kripke::PartitionSpace const &pspace, size_t local_size);
+
+      virtual ~LocalRangeSet() = default;
+
+      RAJA_INLINE
+      virtual size_t getNumDimensions() const{return 1;}
   };
 
 
   class GlobalRangeSet : public Kripke::Set {
     public:
-      GlobalRangeSet(Kripke::PartitionSpace &pspace, size_t global_size);
-      explicit GlobalRangeSet(Kripke::Set &parent_set);
+      GlobalRangeSet(Kripke::PartitionSpace const &pspace, size_t global_size);
+      GlobalRangeSet(Kripke::PartitionSpace const &pspace, Kripke::Set &parent_set);
 
       virtual ~GlobalRangeSet() = default;
 
+      RAJA_INLINE
+      virtual size_t getNumDimensions() const{return 1;}
+
     private:
-      void setup_setGlobalSize(size_t num_subdomains, size_t global_size);
+      void setup_setGlobalSize(Kripke::PartitionSpace const &pspace, size_t global_size);
   };
 
 
   template<size_t NUM_SETS>
   class ProductSet : public Kripke::Set {
     public:
+
+      using LayoutType = RAJA::Layout<NUM_SETS>;
 
       template<typename ... SPAN>
       ProductSet(Kripke::PartitionSpace &pspace, Kripke::SPACE space,
@@ -154,6 +173,21 @@ namespace Kripke {
        */
       virtual size_t dimSize(Kripke::SdomId sdom_id, size_t dim) const{
         return m_spanned_sets[dim]->size(sdom_id);
+      }
+
+      RAJA_INLINE
+      LayoutType getLayout(Kripke::SdomId sdom_id) const {
+
+        std::array<int, NUM_SETS> sizes;
+        for(size_t dim = 0;dim < NUM_SETS;++ dim){
+          sizes[dim] = dimSize(sdom_id, dim);
+        }
+
+        std::array<size_t, NUM_SETS> perm =
+            VarOps::make_index_sequence<NUM_SETS>::value;
+
+
+        return RAJA::make_permuted_layout(sizes, perm);
       }
 
     private:

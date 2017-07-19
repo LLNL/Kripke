@@ -36,7 +36,7 @@
 using namespace Kripke;
 
 
-void DomainVar::setup_initChunks(Kripke::PartitionSpace &pspace,
+void DomainVar::setup_initChunks(Kripke::PartitionSpace const &pspace,
           Kripke::SPACE space)
 {
 

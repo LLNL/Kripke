@@ -86,7 +86,8 @@ void Timing::print(void) const {
   }
 
   // Display column names
-  printf("Timers:\n");
+  printf("\nTimers\n");
+  printf("======\n\n");
   printf("  %-16s  %12s  %12s", "Timer", "Count", "Seconds");
   printf("\n");
   printf("  ----------------  ------------  ------------\n");

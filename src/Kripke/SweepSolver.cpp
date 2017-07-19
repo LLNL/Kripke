@@ -32,65 +32,62 @@
 
 #include <Kripke/SweepSolver.h>
 #include <Kripke.h>
+#include <Kripke/Grid.h>
+#include <Kripke/ParallelComm.h>
 #include <Kripke/Subdomain.h>
 #include <Kripke/SubTVec.h>
-#include <Kripke/ParallelComm.h>
-#include <Kripke/Grid.h>
+#include <Kripke/VarTypes.h>
 #include <vector>
 #include <stdio.h>
 
+using namespace Kripke;
 
 /**
   Perform full parallel sweep algorithm on subset of subdomains.
 */
-void Kripke::SweepSolver (Kripke::DataStore &data_store, std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi)
+void Kripke::SweepSolver (Kripke::DataStore &data_store, std::vector<SdomId> subdomain_list, Grid_Data *grid_data, bool block_jacobi)
 {
   KRIPKE_TIMER(data_store, SweepSolver);
 
   // Create a new sweep communicator object
   ParallelComm *comm = NULL;
   if(block_jacobi){
-    comm = new BlockJacobiComm(grid_data);
+    comm = new BlockJacobiComm(data_store);
   }
   else {
-    comm = new SweepComm(grid_data);
+    comm = new SweepComm(data_store);
   }
 
   // Add all subdomains in our list
   for(size_t i = 0;i < subdomain_list.size();++ i){
-    int sdom_id = subdomain_list[i];
-    comm->addSubdomain(sdom_id, grid_data->subdomains[sdom_id]);
+    SdomId sdom_id = subdomain_list[i];
+    comm->addSubdomain(sdom_id, grid_data->subdomains[*sdom_id]);
   }
 
 
   /* Loop until we have finished all of our work */
   while(comm->workRemaining()){
 
-    // Get a list of subdomains that have met dependencies
-    // DEBUG: Query MPI a few times between doing actual work
-    // the idea is to trick MPI into actually sending messages
-    for(int i = 0;i < KRIPKE_SWEEP_EXTRA_RECV;++ i){
-      comm->readySubdomains();
-    }
-    // now do it for real
-    std::vector<int> sdom_ready = comm->readySubdomains();
+    std::vector<SdomId> sdom_ready = comm->readySubdomains();
     int backlog = sdom_ready.size();
 
     // Run top of list
     if(backlog > 0){
-      int sdom_id = sdom_ready[0];
-      Subdomain &sdom = grid_data->subdomains[sdom_id];
+      SdomId sdom_id = sdom_ready[0];
+      Subdomain &sdom = grid_data->subdomains[*sdom_id];
       // Clear boundary conditions
-      for(int dim = 0;dim < 3;++ dim){
-        if(sdom.upwind[dim].subdomain_id == -1){
-          sdom.plane_data[dim]->clear(0.0);
-        }
+      if(sdom.upwind[0].subdomain_id == -1){
+        Kripke::Kernel::kConst(data_store.getVariable<Field_IPlane>("i_plane"), 0.0);
       }
-
+      if(sdom.upwind[1].subdomain_id == -1){
+        Kripke::Kernel::kConst(data_store.getVariable<Field_JPlane>("j_plane"), 0.0);
+      }
+      if(sdom.upwind[2].subdomain_id == -1){
+        Kripke::Kernel::kConst(data_store.getVariable<Field_KPlane>("k_plane"), 0.0);
+      }
 
       // Perform subdomain sweep
       Kripke::Kernel::sweepSubdomain(data_store, Kripke::SdomId{sdom_id});
-
 
       // Mark as complete (and do any communication)
       comm->markComplete(sdom_id);

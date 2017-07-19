@@ -37,6 +37,7 @@
 #include <Kripke/BaseVar.h>
 #include <map>
 #include <stdexcept>
+#include <utility>
 
 namespace Kripke {
 
@@ -51,6 +52,14 @@ class DataStore {
     DataStore &operator=(DataStore const &) = delete;
 
     void addVariable(std::string const &name, Kripke::BaseVar *);
+
+    template<typename T, typename ... CTOR_ARGS>
+    RAJA_INLINE
+    T &newVariable(std::string const &name, CTOR_ARGS &&... ctor_args){
+      T *new_var = new T(ctor_args...);
+      addVariable(name, new_var);
+      return *new_var;
+    }
 
     void deleteVariable(std::string const &name);
 

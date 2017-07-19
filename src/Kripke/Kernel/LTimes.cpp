@@ -40,50 +40,37 @@ void Kripke::Kernel::LTimes(Kripke::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, LTimes);
 
-  Set const &group_set  = data_store.getVariable<Kripke::Set>("Set/Group");
-  Set const &dir_set    = data_store.getVariable<Set>("Set/Direction");
-  Set const &zone_set   = data_store.getVariable<Set>("Set/Zone");
-  Set const &moment_set = data_store.getVariable<Set>("Set/Moment");
+  Set const &set_dir    = data_store.getVariable<Set>("Set/Direction");
+  Set const &set_group  = data_store.getVariable<Kripke::Set>("Set/Group");
+  Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
+  Set const &set_moment = data_store.getVariable<Set>("Set/Moment");
 
-  auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
-  auto &field_phi = data_store.getVariable<Kripke::Field_Moments>("phi");
+  auto &field_psi = data_store.getVariable<Field_Flux>("psi");
+  auto &field_phi = data_store.getVariable<Field_Moments>("phi");
+  auto &field_ell = data_store.getVariable<Field_Ell>("ell");
 
-  Grid_Data *grid_data = &data_store.getVariable<Grid_Data>("grid_data");
-
-  for (Kripke::SdomId sdom_id : field_phi.getWorkList()){
-    // Zero Phi
-    double       * KRESTRICT phi = field_phi.getData(sdom_id);
-    size_t phi_size = field_phi.size(sdom_id);
-    for(size_t i = 0;i < phi_size;++ i){
-      phi[i] = 0.0;
-    }
-  }
+  // Zero Phi
+  kConst(field_phi, 0.0);
 
   // Loop over Subdomains
   for (Kripke::SdomId sdom_id : field_psi.getWorkList()){
-    Subdomain &sdom = grid_data->subdomains[*sdom_id];
-
     // Get dimensioning
-    int num_zones = zone_set.size(sdom_id);
-    int num_groups = group_set.size(sdom_id);
-    int num_moments = moment_set.size(sdom_id);
-    int num_local_directions = dir_set.size(sdom_id);
-
+    int num_directions = set_dir.size(sdom_id);
+    int num_groups =     set_group.size(sdom_id);
+    int num_moments =    set_moment.size(sdom_id);
+    int num_zones =      set_zone.size(sdom_id);
 
     // Get pointers
-    double const * KRESTRICT ell = sdom.ell->ptr();
     auto psi = field_psi.getView(sdom_id);
     auto phi = field_phi.getView(sdom_id);
+    auto ell = field_ell.getView(sdom_id);
 
+    // Compute:  phi =  ell * psi
     for(Moment nm{0};nm < num_moments;++nm){
-      double const * KRESTRICT ell_nm = ell + (*nm)*num_local_directions;
-
-      for (Direction d{0}; d < num_local_directions; d++) {
-        double const             ell_nm_d = ell_nm[*d];
-
+      for (Direction d{0}; d < num_directions; d++) {
         for(Group g{0};g < num_groups;++ g){
           for(Zone z{0};z < num_zones;++ z){
-            phi(nm,g,z) += ell_nm_d * psi(d, g, z);
+            phi(nm,g,z) += ell(nm, d) * psi(d, g, z);
           }
         }
       }     
