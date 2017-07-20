@@ -58,6 +58,8 @@ enum SPACE {
  */
 class PartitionSpace : public Kripke::BaseVar {
   public:
+    using SdomCoord = std::array<ptrdiff_t, 5>;
+
     PartitionSpace(Kripke::Comm &base_comm, 
       size_t P, size_t Q, size_t Rx, size_t Ry, size_t Rz);
 
@@ -70,6 +72,15 @@ class PartitionSpace : public Kripke::BaseVar {
 
     size_t getNumSubdomains(Kripke::SPACE space = SPACE_PQR) const;
     size_t getGlobalNumSubdomains(Kripke::SPACE space = SPACE_PQR) const;
+
+    SdomCoord sdomIdToCoord(Kripke::SdomId sdom_id) const;
+    Kripke::SdomId coordToSdomId(SdomCoord coord) const;
+
+    SdomCoord coordToGlobalCoord(SdomCoord local_coord) const;
+    SdomCoord globalSdomIdToCoord(Kripke::GlobalSdomId global_sdom_id) const;
+    Kripke::GlobalSdomId coordToGlobalSdomId(SdomCoord global_coord) const;
+
+
 
     Kripke::Comm const &getComm(SPACE space) const {
       return m_comm_space[space];

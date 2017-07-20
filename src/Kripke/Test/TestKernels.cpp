@@ -33,7 +33,6 @@
 #include <Kripke/Test/TestKernels.h>
 #if 0
 #include <Kripke.h>
-#include <Kripke/Grid.h>
 #include <Kripke/InputVariables.h>
 #include <Kripke/SweepSolver.h>
 

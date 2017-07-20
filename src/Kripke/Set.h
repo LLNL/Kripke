@@ -121,7 +121,7 @@ namespace Kripke {
 
   class LocalRangeSet : public Kripke::Set {
     public:
-    LocalRangeSet(Kripke::PartitionSpace const &pspace, size_t local_size);
+      LocalRangeSet(Kripke::PartitionSpace const &pspace, size_t local_size);
 
       virtual ~LocalRangeSet() = default;
 

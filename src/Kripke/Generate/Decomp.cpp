@@ -69,8 +69,8 @@ void Kripke::Generate::generateDecomp(Kripke::DataStore &data_store,
 
   // Create utility Sets and Fields that describe our global subdomain layout
   pspace.createSubdomainData(data_store);
-
   pspace.print();
+
 
 }
 

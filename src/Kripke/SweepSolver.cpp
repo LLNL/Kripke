@@ -31,11 +31,11 @@
  */
 
 #include <Kripke/SweepSolver.h>
+
 #include <Kripke.h>
-#include <Kripke/Grid.h>
+#include <Kripke/Kernel.h>
 #include <Kripke/ParallelComm.h>
-#include <Kripke/Subdomain.h>
-#include <Kripke/SubTVec.h>
+#include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 #include <vector>
 #include <stdio.h>
@@ -45,7 +45,7 @@ using namespace Kripke;
 /**
   Perform full parallel sweep algorithm on subset of subdomains.
 */
-void Kripke::SweepSolver (Kripke::DataStore &data_store, std::vector<SdomId> subdomain_list, Grid_Data *grid_data, bool block_jacobi)
+void Kripke::SweepSolver (Kripke::DataStore &data_store, std::vector<SdomId> subdomain_list, bool block_jacobi)
 {
   KRIPKE_TIMER(data_store, SweepSolver);
 
@@ -61,9 +61,10 @@ void Kripke::SweepSolver (Kripke::DataStore &data_store, std::vector<SdomId> sub
   // Add all subdomains in our list
   for(size_t i = 0;i < subdomain_list.size();++ i){
     SdomId sdom_id = subdomain_list[i];
-    comm->addSubdomain(sdom_id, grid_data->subdomains[*sdom_id]);
+    comm->addSubdomain(data_store, sdom_id);
   }
 
+  auto &field_upwind = data_store.getVariable<Field_Adjacency>("upwind");
 
   /* Loop until we have finished all of our work */
   while(comm->workRemaining()){
@@ -74,15 +75,17 @@ void Kripke::SweepSolver (Kripke::DataStore &data_store, std::vector<SdomId> sub
     // Run top of list
     if(backlog > 0){
       SdomId sdom_id = sdom_ready[0];
-      Subdomain &sdom = grid_data->subdomains[*sdom_id];
+
+      auto upwind = field_upwind.getView(sdom_id);
+
       // Clear boundary conditions
-      if(sdom.upwind[0].subdomain_id == -1){
+      if(upwind(Direction{0}) == -1){
         Kripke::Kernel::kConst(data_store.getVariable<Field_IPlane>("i_plane"), 0.0);
       }
-      if(sdom.upwind[1].subdomain_id == -1){
+      if(upwind(Direction{1}) == -1){
         Kripke::Kernel::kConst(data_store.getVariable<Field_JPlane>("j_plane"), 0.0);
       }
-      if(sdom.upwind[2].subdomain_id == -1){
+      if(upwind(Direction{2}) == -1){
         Kripke::Kernel::kConst(data_store.getVariable<Field_KPlane>("k_plane"), 0.0);
       }
 
@@ -93,6 +96,8 @@ void Kripke::SweepSolver (Kripke::DataStore &data_store, std::vector<SdomId> sub
       comm->markComplete(sdom_id);
     }
   }
+
+  data_store.getVariable<Kripke::Field_Flux>("psi").dump();
 
   delete comm;
 }

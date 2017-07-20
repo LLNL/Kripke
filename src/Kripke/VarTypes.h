@@ -39,17 +39,18 @@
 
 namespace Kripke {
 
+  RAJA_INDEX_VALUE(Dimension, "Dimension");
   RAJA_INDEX_VALUE(Direction, "Direction");
-  RAJA_INDEX_VALUE(Group, "Group");
   RAJA_INDEX_VALUE(GlobalGroup, "GlobalGroup");
-  RAJA_INDEX_VALUE(Material, "Material");
-  RAJA_INDEX_VALUE(Moment, "Moment");
+  RAJA_INDEX_VALUE(Group, "Group");
   RAJA_INDEX_VALUE(Legendre, "Legendre");
+  RAJA_INDEX_VALUE(Material, "Material");
+  RAJA_INDEX_VALUE(MixElem, "MixElem");
+  RAJA_INDEX_VALUE(Moment, "Moment");
   RAJA_INDEX_VALUE(Zone, "Zone");
   RAJA_INDEX_VALUE(ZoneI, "ZoneI");
   RAJA_INDEX_VALUE(ZoneJ, "ZoneJ");
   RAJA_INDEX_VALUE(ZoneK, "ZoneK");
-  RAJA_INDEX_VALUE(MixElem, "MixElem");
 
   using Field_Flux = Kripke::Field<double, Direction, Group, Zone>;
   using Field_Moments = Kripke::Field<double, Moment, Group, Zone>;
@@ -66,6 +67,8 @@ namespace Kripke {
 
   using Field_Direction2Double = Kripke::Field<double, Direction>;
   using Field_Direction2Int    = Kripke::Field<int, Direction>;
+
+  using Field_Adjacency        = Kripke::Field<GlobalSdomId, Dimension>;
 
   using Field_Moment2Legendre  = Kripke::Field<Legendre, Moment>;
 

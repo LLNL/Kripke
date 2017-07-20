@@ -33,8 +33,8 @@
 #include <Kripke/ParallelComm.h>
 
 #include <Kripke/Field.h>
-#include <Kripke/Grid.h>
-#include <Kripke/SubTVec.h>
+#include <Kripke/Kernel.h>
+#include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
 #include <fcntl.h>
@@ -65,7 +65,7 @@ BlockJacobiComm::~BlockJacobiComm(){
   Adds a subdomain to the work queue.
   Determines if upwind dependencies require communication, and posts appropirate Irecv's.
 */
-void BlockJacobiComm::addSubdomain(SdomId sdom_id, Subdomain &sdom){
+void BlockJacobiComm::addSubdomain(Kripke::DataStore &data_store, SdomId sdom_id){
 
   // Copy old flux data to send buffers
   auto &i_plane = m_data_store->getVariable<Field_IPlane>("i_plane");
@@ -81,7 +81,7 @@ void BlockJacobiComm::addSubdomain(SdomId sdom_id, Subdomain &sdom){
   Kernel::kCopy(old_k_plane, k_plane);
 
   // post recieves
-  postRecvs(sdom_id, sdom);
+  postRecvs(data_store, sdom_id);
 
 }
 
@@ -95,8 +95,7 @@ bool BlockJacobiComm::workRemaining(void){
     auto &old_k_plane = m_data_store->getVariable<Field_KPlane>("old_k_plane");
 
     // post sends for all queued subdomains
-    for(size_t i = 0;i < queue_subdomains.size();++ i){
-      Subdomain *sdom = queue_subdomains[i];
+    for(size_t i = 0;i < queue_sdom_ids.size();++ i){
       SdomId sdom_id(queue_sdom_ids[i]);
 
       // Send new downwind info for sweep
@@ -106,7 +105,7 @@ bool BlockJacobiComm::workRemaining(void){
           old_k_plane.getData(sdom_id)
       };
 
-      postSends(sdom_id, sdom, buf);
+      postSends(*m_data_store, sdom_id, buf);
     }
     posted_sends = true;
   }

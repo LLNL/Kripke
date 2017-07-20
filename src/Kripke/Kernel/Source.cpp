@@ -31,8 +31,6 @@
  */
 
 #include <Kripke/Kernel.h>
-#include <Kripke/Grid.h>
-#include <Kripke/SubTVec.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
@@ -75,7 +73,7 @@ void Kripke::Kernel::source(Kripke::DataStore &data_store)
 
         Material material = mixelem_to_material(mix);
 
-        if(material == 0){
+        if(material == 2){
           Zone z = mixelem_to_zone(mix);
           double fraction = mixelem_to_fraction(mix);
 

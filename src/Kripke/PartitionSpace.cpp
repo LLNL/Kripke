@@ -127,9 +127,9 @@ void PartitionSpace::createSubdomainData(DataStore &data_store) const {
       *this,
       getNumSubdomains(SPACE_PQR));
 
-  // Create a global set with 1 element per subdomain, globally
+  // Create a linearized version of the above
   auto &set_global_sdomid =
-      data_store.newVariable<GlobalRangeSet>("Set/GlobalSdomId", pspace, set_sdomid);
+      data_store.newVariable<GlobalRangeSet>("Set/GlobalSdomIdLinear", pspace, set_sdomid);
 
   // Create a Field to store mappings from local subdomains to global
   auto &field_local_to_global =
@@ -155,7 +155,17 @@ void PartitionSpace::createSubdomainData(DataStore &data_store) const {
     auto global_to_rank = field_global_to_rank.getView(sdom_id);
 
     for(SdomId local{0};local < set_sdomid.size(sdom_id);++ local){
-      GlobalSdomId global(*local + set_sdomid.lower(sdom_id));
+      //GlobalSdomId global(*local + set_sdomid.lower(sdom_id));
+
+      // Get local subdomain coordinates
+      SdomCoord local_coord = sdomIdToCoord(local);
+
+      // Offset local coordinate to global coordinates
+      SdomCoord global_coord = coordToGlobalCoord(local_coord);
+
+      // Convert global coordinates to a GlobalSubdomainId
+      GlobalSdomId global =  coordToGlobalSdomId(global_coord);
+
       local_to_global(local) = global;
       global_to_local(global) = local;
       global_to_rank(global) = rank;
@@ -169,10 +179,6 @@ void PartitionSpace::createSubdomainData(DataStore &data_store) const {
     m_comm_all.allReduceSumInt((int*)field_global_to_local.getData(sdom_id),
                                field_global_to_local.size(sdom_id));
   }
-
-
-
-
 }
 
 
@@ -182,6 +188,51 @@ size_t PartitionSpace::getNumSubdomains(Kripke::SPACE space) const{
 
 size_t PartitionSpace::getGlobalNumSubdomains(Kripke::SPACE space) const{
   return m_global_num_sdom[space];
+}
+
+
+PartitionSpace::SdomCoord PartitionSpace::sdomIdToCoord(Kripke::SdomId sdom_id) const{
+
+  SdomCoord coord;
+
+  m_local_sdom_space_layout[SPACE_PQR].toIndices(*sdom_id,
+      coord[0], coord[1], coord[2], coord[3], coord[4]);
+
+  return coord;
+}
+Kripke::SdomId PartitionSpace::coordToSdomId(SdomCoord coord) const{
+
+  SdomId sdom_id(m_local_sdom_space_layout[SPACE_PQR](
+      coord[0], coord[1], coord[2], coord[3], coord[4]));
+
+  return sdom_id;
+}
+
+PartitionSpace::SdomCoord PartitionSpace::coordToGlobalCoord(SdomCoord local_coord) const{
+  SdomCoord global_coord{
+    (ptrdiff_t)(local_coord[0] + m_global_sdom_lower[SPACE_P]),
+    (ptrdiff_t)(local_coord[1] + m_global_sdom_lower[SPACE_Q]),
+    (ptrdiff_t)(local_coord[2] + m_global_sdom_lower[SPACE_RX]),
+    (ptrdiff_t)(local_coord[3] + m_global_sdom_lower[SPACE_RY]),
+    (ptrdiff_t)(local_coord[4] + m_global_sdom_lower[SPACE_RZ])};
+
+  return global_coord;
+}
+PartitionSpace::SdomCoord PartitionSpace::globalSdomIdToCoord(Kripke::GlobalSdomId global_sdom_id) const{
+
+  SdomCoord coord;
+
+  m_global_sdom_layout.toIndices(*global_sdom_id,
+      coord[0], coord[1], coord[2], coord[3], coord[4]);
+
+  return coord;
+}
+Kripke::GlobalSdomId PartitionSpace::coordToGlobalSdomId(SdomCoord global_coord) const{
+
+  GlobalSdomId global_sdom_id(m_global_sdom_layout(
+      global_coord[0], global_coord[1], global_coord[2], global_coord[3], global_coord[4]));
+
+  return global_sdom_id;
 }
 
 size_t PartitionSpace::subdomainToSpace(

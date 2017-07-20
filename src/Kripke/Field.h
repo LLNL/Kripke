@@ -210,6 +210,15 @@ namespace Kripke {
         for(auto x : Parent::m_chunk_to_data){printf("%p ", x);}
         printf("\n");
 
+        for(size_t chunk_id = 0;chunk_id < Parent::m_chunk_to_data.size();++ chunk_id){
+          printf("Chunk %d Data: ", (int)chunk_id);
+          for(size_t i = 0;i < Parent::m_chunk_to_size[chunk_id];++ i){
+            //printf(" %d", RAJA::convertIndex<int>(Parent::m_chunk_to_data[chunk_id][i]));
+            printf(" %e", Parent::m_chunk_to_data[chunk_id][i]);
+          }
+          printf("\n");
+        }
+
         DomainVar::dump();
       }
 

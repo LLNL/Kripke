@@ -284,6 +284,70 @@ void Kripke::Generate::generateQuadrature(Kripke::DataStore &data_store,
       }
     }
   }
+
+
+  // Create fields to store subdomain adjacency information for boundary comm
+  // used in sweeps and block jacobi solves
+  auto &set_dimension =
+      data_store.newVariable<GlobalRangeSet>("Set/Dimension", pspace, 3);
+
+  auto &set_adjacency = data_store.newVariable<ProductSet<1>>("Set/Adjacency",
+      pspace, SPACE_PQR, set_dimension);
+
+  auto &field_upwind = data_store.newVariable<Field_Adjacency>("upwind", set_adjacency);
+  auto &field_downwind = data_store.newVariable<Field_Adjacency>("downwind", set_adjacency);
+
+  for(SdomId sdom_id : field_upwind.getWorkList()){
+    // Get local subdomain coordinates
+    auto local_coord = pspace.sdomIdToCoord(sdom_id);
+
+    // Offset local coordinate to global coordinates
+    auto global_coord = pspace.coordToGlobalCoord(local_coord);
+
+
+    std::array<Field_Direction2Int::ViewType, 3> sweep_dir =
+        {
+          field_id.getView(sdom_id),
+          field_jd.getView(sdom_id),
+          field_kd.getView(sdom_id)
+        };
+
+    // Compute upwind and downwind coordinate
+    auto upwind = field_upwind.getView(sdom_id);
+    auto downwind = field_downwind.getView(sdom_id);
+    for(Dimension dim{0};dim < 3;++ dim){
+
+      // Compute upwind and downwind coordinates for this dimensions neighbor
+      auto global_upwind = global_coord;
+      auto global_downwind = global_coord;
+      global_upwind  [*dim+SPACE_RX] -= sweep_dir[*dim](Direction{0});
+      global_downwind[*dim+SPACE_RX] += sweep_dir[*dim](Direction{0});
+
+      // Is this an upwind boundary condition?
+      if(global_upwind[*dim+SPACE_RX] < 0 ||
+         global_upwind[*dim+SPACE_RX] >= (ptrdiff_t)pspace.getGlobalNumSubdomains((Kripke::SPACE)(*dim+SPACE_RX)))
+      {
+        upwind(dim) = GlobalSdomId{-1};
+      }
+      // Not a BC, so compute the subdomain id
+      else{
+        upwind(dim) = pspace.coordToGlobalSdomId(global_upwind);
+      }
+
+
+      // Is this an downwind boundary condition?
+      if(global_downwind[*dim+SPACE_RX] < 0 ||
+         global_downwind[*dim+SPACE_RX] >= (ptrdiff_t)pspace.getGlobalNumSubdomains((Kripke::SPACE)(*dim+SPACE_RX)))
+      {
+        downwind(dim) = GlobalSdomId{-1};
+      }
+      // Not a BC, so compute the subdomain id
+      else{
+        downwind(dim) = pspace.coordToGlobalSdomId(global_downwind);
+      }
+    }
+
+  }
 }
 
 

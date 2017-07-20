@@ -37,8 +37,6 @@
 #include <vector>
 
 struct Grid_Data;
-struct Subdomain;
-
 
 namespace Kripke {
 
@@ -53,7 +51,7 @@ class ParallelComm {
     virtual ~ParallelComm();
 
     // Adds a subdomain to the work queue
-    virtual void addSubdomain(SdomId sdom_id, Subdomain &sdom) = 0;
+    virtual void addSubdomain(Kripke::DataStore &data_store, SdomId sdom_id) = 0;
 
     // Checks if there are any outstanding subdomains to complete
     // false indicates all work is done, and all sends have completed
@@ -70,9 +68,9 @@ class ParallelComm {
     static void computeRankSdom(int tag, int &mpi_rank, SdomId &sdom_id);
 
     int findSubdomain(SdomId sdom_id);
-    Subdomain *dequeueSubdomain(SdomId sdom_id);
-    void postRecvs(SdomId sdom_id, Subdomain &sdom);
-    void postSends(SdomId sdom_id_upwind, Subdomain *sdom, double *buffers[3]);
+    void dequeueSubdomain(SdomId sdom_id);
+    void postRecvs(Kripke::DataStore &data_store, SdomId sdom_id);
+    void postSends(Kripke::DataStore &data_store, SdomId sdom_id_upwind, double *buffers[3]);
     void testRecieves(void);
     void waitAllSends(void);
     std::vector<SdomId> getReadyList(void);
@@ -89,7 +87,6 @@ class ParallelComm {
 
     // These vectors have the subdomains, and the remaining dependencies
     std::vector<int> queue_sdom_ids;
-    std::vector<Subdomain *> queue_subdomains;
     std::vector<int> queue_depends;
 
     // These vectors have the remaining send requests that are incomplete
@@ -104,7 +101,7 @@ class SweepComm : public ParallelComm {
     explicit SweepComm(Kripke::DataStore &data_store);
     virtual ~SweepComm();
 
-    virtual void addSubdomain(SdomId sdom_id, Subdomain &sdom);
+    virtual void addSubdomain(Kripke::DataStore &data_store, SdomId sdom_id);
     virtual bool workRemaining(void);
     virtual std::vector<SdomId> readySubdomains(void);
     virtual void markComplete(SdomId sdom_id);
@@ -116,10 +113,10 @@ class BlockJacobiComm : public ParallelComm {
     explicit BlockJacobiComm(Kripke::DataStore &data_store);
     virtual ~BlockJacobiComm();
 
-    void addSubdomain(SdomId sdom_id, Subdomain &sdom);
-    bool workRemaining(void);
-    std::vector<SdomId> readySubdomains(void);
-    void markComplete(SdomId sdom_id);
+    virtual void addSubdomain(Kripke::DataStore &data_store, SdomId sdom_id);
+    virtual bool workRemaining(void);
+    virtual std::vector<SdomId> readySubdomains(void);
+    virtual void markComplete(SdomId sdom_id);
 
   private:
     bool posted_sends;

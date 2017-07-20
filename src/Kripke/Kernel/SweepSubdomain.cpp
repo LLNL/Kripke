@@ -31,8 +31,6 @@
  */
 
 #include <Kripke/Kernel.h>
-#include <Kripke/Grid.h>
-#include <Kripke/SubTVec.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 

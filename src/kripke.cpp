@@ -30,26 +30,26 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
   
-#include<Kripke.h>
-#include<Kripke/Comm.h>
-#include<Kripke/DataStore.h>
-#include<Kripke/Grid.h>
-#include<Kripke/Generate.h>
-#include<Kripke/InputVariables.h>
-#include<Kripke/SteadyStateSolver.h>
-#include<Kripke/Test/TestKernels.h>
-#include<stdio.h>
-#include<string.h>
-#include<algorithm>
-#include<string>
-#include<sstream>
+#include <Kripke.h>
+#include <Kripke/Comm.h>
+#include <Kripke/DataStore.h>
+#include <Kripke/Generate.h>
+#include <Kripke/InputVariables.h>
+#include <Kripke/SteadyStateSolver.h>
+#include <Kripke/Timing.h>
+#include <Kripke/Test/TestKernels.h>
+#include <stdio.h>
+#include <string.h>
+#include <algorithm>
+#include <string>
+#include <sstream>
 
 #ifdef KRIPKE_USE_OPENMP
-#include<omp.h>
+#include <omp.h>
 #endif
 
 #ifdef KRIPKE_USE_TCMALLOC
-#include<gperftools/malloc_extension.h>
+#include <gperftools/malloc_extension.h>
 #endif
 
 #ifdef __bgq__
@@ -57,7 +57,6 @@
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/memory.h>
 #endif
 
-#include<Kripke/DataStore.h>
 
 void usage(void){
 
@@ -445,14 +444,12 @@ int main(int argc, char **argv) {
   }
   else{
     // Allocate problem 
-    Grid_Data *grid_data = new Grid_Data(&vars);
 
     Kripke::DataStore data_store;
     Kripke::generateProblem(data_store, vars);
-    data_store.addVariable("grid_data", grid_data);
 
     // Run the solver
-    Kripke::SteadyStateSolver(data_store, grid_data, vars.niter, vars.parallel_method == PMETHOD_BJ);
+    Kripke::SteadyStateSolver(data_store, vars.niter, vars.parallel_method == PMETHOD_BJ);
 
     // Print Timing Info
     data_store.getVariable<Kripke::Timing>("timing").print();

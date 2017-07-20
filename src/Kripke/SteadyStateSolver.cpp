@@ -33,10 +33,10 @@
 #include <Kripke/SteadyStateSolver.h>
 #include <Kripke.h>
 #include <Kripke/Comm.h>
-#include <Kripke/Grid.h>
+#include <Kripke/Kernel.h>
 #include <Kripke/ParallelComm.h>
-#include <Kripke/Subdomain.h>
-#include <Kripke/SubTVec.h>
+#include <Kripke/PartitionSpace.h>
+#include <Kripke/Timing.h>
 #include <Kripke/SweepSolver.h>
 #include <vector>
 #include <stdio.h>
@@ -45,10 +45,11 @@
 /**
   Run solver iterations.
 */
-int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, Grid_Data *grid_data, size_t max_iter, bool block_jacobi)
+int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, size_t max_iter, bool block_jacobi)
 {
   KRIPKE_TIMER(data_store, Solve);
 
+  PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");
 
   Kripke::Comm const &comm = data_store.getVariable<Kripke::Comm>("comm");
   if(comm.rank() == 0){
@@ -87,13 +88,14 @@ int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, Grid_Data *grid_da
      */
     {
       // Create a list of all groups
-      std::vector<SdomId> sdom_list(grid_data->subdomains.size());
-      for(SdomId i{0};i < (int)grid_data->subdomains.size();++ i){
+      int num_subdomains = pspace.getNumSubdomains(SPACE_PQR);
+      std::vector<SdomId> sdom_list(num_subdomains);
+      for(SdomId i{0};i < num_subdomains;++ i){
         sdom_list[*i] = i;
       }
 
       // Sweep everything
-      Kripke::SweepSolver(data_store, sdom_list, grid_data, block_jacobi);
+      Kripke::SweepSolver(data_store, sdom_list, block_jacobi);
     }
 
 

@@ -34,9 +34,6 @@
 
 #include <Kripke/Comm.h>
 #include <Kripke/Field.h>
-#include <Kripke/Grid.h>
-#include <Kripke/Subdomain.h>
-#include <Kripke/SubTVec.h>
 #include <Kripke/VarTypes.h>
 
 using namespace Kripke;
@@ -92,18 +89,13 @@ int ParallelComm::findSubdomain(SdomId sdom_id){
 }
 
 
-Subdomain *ParallelComm::dequeueSubdomain(SdomId sdom_id){
+void ParallelComm::dequeueSubdomain(SdomId sdom_id){
   int index = findSubdomain(sdom_id);
-
-  // Get subdomain pointer before removing it from queue
-  Subdomain *sdom = queue_subdomains[index];
 
   // remove subdomain from queue
   queue_sdom_ids.erase(queue_sdom_ids.begin()+index);
-  queue_subdomains.erase(queue_subdomains.begin()+index);
   queue_depends.erase(queue_depends.begin()+index);
 
-  return sdom;
 }
 
 /**
@@ -111,20 +103,31 @@ Subdomain *ParallelComm::dequeueSubdomain(SdomId sdom_id){
   Determines if upwind dependencies require communication, and posts appropirate Irecv's.
   All recieves use the plane_data[] arrays as recieve buffers.
 */
-void ParallelComm::postRecvs(SdomId sdom_id, Subdomain &sdom){
+void ParallelComm::postRecvs(Kripke::DataStore &data_store, SdomId sdom_id){
   Kripke::Comm comm;
   int mpi_rank = comm.size();
 
+  auto upwind = data_store.getVariable<Field_Adjacency>("upwind").getView(sdom_id);
+
+  auto global_to_rank = data_store.getVariable<Field_GlobalSdomId2Rank>("GlobalSdomId2Rank").getView(SdomId{0});
+
   // go thru each dimensions upwind neighbors, and add the dependencies
   int num_depends = 0;
-  for(int dim = 0;dim < 3;++ dim){
+  for(Dimension dim{0};dim < 3;++ dim){
+
+//    printf("upwind(%d)=%d, rank=%d, sdom=%d\n",
+//        *dim,
+//        *upwind(dim),
+//        (int)sdom.upwind[*dim].mpi_rank,
+//        (int)sdom.upwind[*dim].subdomain_id);
+
     // If it's a boundary condition, skip it
-    if(sdom.upwind[dim].mpi_rank < 0){
+    if(upwind(dim) < 0){
       continue;
     }
 
     // If it's an on-rank communication (from another subdomain)
-    if(sdom.upwind[dim].mpi_rank == mpi_rank){
+    if(global_to_rank(upwind(dim)) == mpi_rank){
       // skip it, but track the dependency
       num_depends ++;
       continue;
@@ -155,40 +158,51 @@ void ParallelComm::postRecvs(SdomId sdom_id, Subdomain &sdom){
 
   // add subdomain to queue
   queue_sdom_ids.push_back(*sdom_id);
-  queue_subdomains.push_back(&sdom);
   queue_depends.push_back(num_depends);
 }
 
-void ParallelComm::postSends(Kripke::SdomId ,
-                             Subdomain *sdom, double *src_buffers[3])
+void ParallelComm::postSends(Kripke::DataStore &data_store, Kripke::SdomId sdom_id,
+                             double *src_buffers[3])
 {
   // post sends for downwind dependencies
   Kripke::Comm comm;
   int mpi_rank = comm.size();
 
-  for(int dim = 0;dim < 3;++ dim){
+  auto downwind = data_store.getVariable<Field_Adjacency>("downwind").getView(sdom_id);
+  auto global_to_rank = data_store.getVariable<Field_GlobalSdomId2Rank>("GlobalSdomId2Rank").getView(SdomId{0});
+  auto global_to_sdom_id = data_store.getVariable<Field_GlobalSdomId2SdomId>("GlobalSdomId2SdomId").getView(SdomId{0});
+
+  for(Dimension dim{0};dim < 3;++ dim){
+//  printf("downwind(%d)=%d, rank=%d, sdom=%d\n",
+//              *dim,
+//              *downwind(dim),
+//              (int)sdom->downwind[*dim].mpi_rank,
+//              (int)sdom->downwind[*dim].subdomain_id);
     // If it's a boundary condition, skip it
-    if(sdom->downwind[dim].mpi_rank < 0){
+    if(downwind(dim) < 0){
       continue;
     }
 
+
+
     // If it's an on-rank communication (to another subdomain)
-    if(sdom->downwind[dim].mpi_rank == mpi_rank){
+    if(global_to_rank(downwind(dim)) == mpi_rank){
+
+      SdomId sdom_id_downwind = global_to_sdom_id(downwind(dim));
+
       // find the local subdomain in the queue, and decrement the counter
       for(size_t i = 0;i < queue_sdom_ids.size();++ i){
-        if(queue_sdom_ids[i] == sdom->downwind[dim].subdomain_id){
+        if(queue_sdom_ids[i] == *sdom_id_downwind){
           queue_depends[i] --;
           break;
         }
       }
 
       // copy the boundary condition data into the downwinds plane data
-      SdomId sdom_id_downwind(sdom->downwind[dim].subdomain_id);
-
-      auto dst_plane = m_plane_data[dim]->getView1d(sdom_id_downwind);
-      int num_elem = m_plane_data[dim]->size(sdom_id_downwind);
+      auto dst_plane = m_plane_data[*dim]->getView1d(sdom_id_downwind);
+      int num_elem = m_plane_data[*dim]->size(sdom_id_downwind);
       for(int i = 0;i < num_elem;++ i){
-        dst_plane(i) = src_buffers[dim][i];
+        dst_plane(i) = src_buffers[*dim][i];
       }
       continue;
     }
@@ -220,9 +234,9 @@ void ParallelComm::postSends(Kripke::SdomId ,
 // Checks if there are any outstanding subdomains to complete
 bool ParallelComm::workRemaining(void){
 #ifdef KRIPKE_USE_MPI
-  return (recv_requests.size() > 0 || queue_subdomains.size() > 0);
+  return (recv_requests.size() > 0 || queue_sdom_ids.size() > 0);
 #else
-  return (queue_subdomains.size() > 0);
+  return (queue_sdom_ids.size() > 0);
 #endif
 }
 

@@ -35,13 +35,12 @@
 
 
 #include <Kripke/DataStore.h>
-#include <Kripke/Grid.h>
 
 namespace Kripke {
 
   class DataStore;
 
-  int SteadyStateSolver(Kripke::DataStore &data_store, Grid_Data *grid_data, size_t max_iter, bool block_jacobi);
+  int SteadyStateSolver(Kripke::DataStore &data_store, size_t max_iter, bool block_jacobi);
 
 
 } // namespace
