@@ -80,13 +80,13 @@ void Kripke::SweepSolver (Kripke::DataStore &data_store, std::vector<SdomId> sub
 
       // Clear boundary conditions
       if(upwind(Direction{0}) == -1){
-        Kripke::Kernel::kConst(data_store.getVariable<Field_IPlane>("i_plane"), 0.0);
+        Kripke::Kernel::kConst(data_store.getVariable<Field_IPlane>("i_plane"), sdom_id, 0.0);
       }
       if(upwind(Direction{1}) == -1){
-        Kripke::Kernel::kConst(data_store.getVariable<Field_JPlane>("j_plane"), 0.0);
+        Kripke::Kernel::kConst(data_store.getVariable<Field_JPlane>("j_plane"), sdom_id, 0.0);
       }
       if(upwind(Direction{2}) == -1){
-        Kripke::Kernel::kConst(data_store.getVariable<Field_KPlane>("k_plane"), 0.0);
+        Kripke::Kernel::kConst(data_store.getVariable<Field_KPlane>("k_plane"), sdom_id, 0.0);
       }
 
       // Perform subdomain sweep
@@ -96,8 +96,6 @@ void Kripke::SweepSolver (Kripke::DataStore &data_store, std::vector<SdomId> sub
       comm->markComplete(sdom_id);
     }
   }
-
-  data_store.getVariable<Kripke::Field_Flux>("psi").dump();
 
   delete comm;
 }

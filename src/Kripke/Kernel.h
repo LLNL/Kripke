@@ -60,13 +60,19 @@ namespace Kripke {
 
     template<typename FieldType>
     RAJA_INLINE
+    void kConst(FieldType &field, Kripke::SdomId sdom_id, typename FieldType::ElementType value){
+      auto view1d = field.getView1d(sdom_id);
+      int num_elem = field.size(sdom_id);
+      for(int i = 0;i < num_elem;++ i){
+        view1d(i) = value;
+      }
+    }
+
+    template<typename FieldType>
+    RAJA_INLINE
     void kConst(FieldType &field, typename FieldType::ElementType value){
       for(Kripke::SdomId sdom_id : field.getWorkList()){
-        auto view1d = field.getView1d(sdom_id);
-        int num_elem = field.size(sdom_id);
-        for(int i = 0;i < num_elem;++ i){
-          view1d(i) = value;
-        }
+        kConst(field, sdom_id, value);
       }
     }
 

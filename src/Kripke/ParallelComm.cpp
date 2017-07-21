@@ -47,27 +47,7 @@ ParallelComm::ParallelComm(Kripke::DataStore &data_store) :
 
 }
 
-ParallelComm::~ParallelComm(){
 
-}
-
-int ParallelComm::computeTag(int mpi_rank, SdomId sdom_id){
-
-  Kripke::Comm comm;
-  int mpi_size = comm.size();
-
-  int tag = mpi_rank + mpi_size* (*sdom_id);
-
-  return tag;
-}
-
-void ParallelComm::computeRankSdom(int tag, int &mpi_rank, SdomId &sdom_id){
-  Kripke::Comm comm;
-  int mpi_size = comm.size();
-
-  mpi_rank = tag % mpi_size;
-  sdom_id = SdomId(tag / mpi_size);
-}
 
 /**
   Finds subdomain in the queue by its subdomain id.
@@ -105,7 +85,7 @@ void ParallelComm::dequeueSubdomain(SdomId sdom_id){
 */
 void ParallelComm::postRecvs(Kripke::DataStore &data_store, SdomId sdom_id){
   Kripke::Comm comm;
-  int mpi_rank = comm.size();
+  int mpi_rank = comm.rank();
 
   auto upwind = data_store.getVariable<Field_Adjacency>("upwind").getView(sdom_id);
 
@@ -114,12 +94,6 @@ void ParallelComm::postRecvs(Kripke::DataStore &data_store, SdomId sdom_id){
   // go thru each dimensions upwind neighbors, and add the dependencies
   int num_depends = 0;
   for(Dimension dim{0};dim < 3;++ dim){
-
-//    printf("upwind(%d)=%d, rank=%d, sdom=%d\n",
-//        *dim,
-//        *upwind(dim),
-//        (int)sdom.upwind[*dim].mpi_rank,
-//        (int)sdom.upwind[*dim].subdomain_id);
 
     // If it's a boundary condition, skip it
     if(upwind(dim) < 0){
@@ -166,18 +140,13 @@ void ParallelComm::postSends(Kripke::DataStore &data_store, Kripke::SdomId sdom_
 {
   // post sends for downwind dependencies
   Kripke::Comm comm;
-  int mpi_rank = comm.size();
+  int mpi_rank = comm.rank();
 
   auto downwind = data_store.getVariable<Field_Adjacency>("downwind").getView(sdom_id);
   auto global_to_rank = data_store.getVariable<Field_GlobalSdomId2Rank>("GlobalSdomId2Rank").getView(SdomId{0});
   auto global_to_sdom_id = data_store.getVariable<Field_GlobalSdomId2SdomId>("GlobalSdomId2SdomId").getView(SdomId{0});
 
   for(Dimension dim{0};dim < 3;++ dim){
-//  printf("downwind(%d)=%d, rank=%d, sdom=%d\n",
-//              *dim,
-//              *downwind(dim),
-//              (int)sdom->downwind[*dim].mpi_rank,
-//              (int)sdom->downwind[*dim].subdomain_id);
     // If it's a boundary condition, skip it
     if(downwind(dim) < 0){
       continue;

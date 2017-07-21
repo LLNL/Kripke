@@ -48,7 +48,7 @@ class FieldStorage;
 class ParallelComm {
   public:
     explicit ParallelComm(Kripke::DataStore &data_store);
-    virtual ~ParallelComm();
+    virtual ~ParallelComm() = default;
 
     // Adds a subdomain to the work queue
     virtual void addSubdomain(Kripke::DataStore &data_store, SdomId sdom_id) = 0;
@@ -64,9 +64,6 @@ class ParallelComm {
     virtual void markComplete(SdomId sdom_id) = 0;
 
   protected:
-    static int computeTag(int mpi_rank, SdomId sdom_id);
-    static void computeRankSdom(int tag, int &mpi_rank, SdomId &sdom_id);
-
     int findSubdomain(SdomId sdom_id);
     void dequeueSubdomain(SdomId sdom_id);
     void postRecvs(Kripke::DataStore &data_store, SdomId sdom_id);

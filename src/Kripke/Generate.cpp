@@ -35,7 +35,6 @@
 #include <Kripke/Comm.h>
 #include <Kripke/Field.h>
 #include <Kripke/Kernel.h>
-#include <Kripke/Quadrature.h>
 #include <Kripke/PartitionSpace.h>
 #include <Kripke/Set.h>
 #include <Kripke/Timing.h>

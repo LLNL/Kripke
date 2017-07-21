@@ -79,7 +79,6 @@ blt_add_library(
               "src/Kripke/ParallelComm/SweepComm.cpp"
               "src/Kripke/ParallelComm.cpp"
               "src/Kripke/PartitionSpace.cpp"
-              "src/Kripke/Quadrature.cpp"
               "src/Kripke/Set.cpp"
               "src/Kripke/SteadyStateSolver.cpp"
               "src/Kripke/SweepSolver.cpp"
