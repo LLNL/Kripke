@@ -49,6 +49,11 @@ void Kripke::SweepSolver (Kripke::DataStore &data_store, std::vector<SdomId> sub
 {
   KRIPKE_TIMER(data_store, SweepSolver);
 
+  // Initialize plane data
+  Kripke::Kernel::kConst(data_store.getVariable<Field_IPlane>("i_plane"), 0.0);
+  Kripke::Kernel::kConst(data_store.getVariable<Field_JPlane>("j_plane"), 0.0);
+  Kripke::Kernel::kConst(data_store.getVariable<Field_KPlane>("k_plane"), 0.0);
+
   // Create a new sweep communicator object
   ParallelComm *comm = NULL;
   if(block_jacobi){

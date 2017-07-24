@@ -70,6 +70,9 @@ void Kripke::Generate::generateSpace(Kripke::DataStore &data_store,
   size_t nx_per_sdom = input_vars.nx /
                        pspace.getGlobalNumSubdomains(SPACE_RX);
 
+  KRIPKE_ASSERT(nx_per_sdom * pspace.getGlobalNumSubdomains(SPACE_RX) == (size_t)input_vars.nx,
+      "Number of zones in X must evenly divide into the number of subdomains\n");
+
   std::vector<size_t> local_nx(pspace.getNumSubdomains(SPACE_RX),
                                nx_per_sdom);
 
@@ -83,6 +86,9 @@ void Kripke::Generate::generateSpace(Kripke::DataStore &data_store,
   size_t ny_per_sdom = input_vars.ny /
                        pspace.getGlobalNumSubdomains(SPACE_RY);
 
+  KRIPKE_ASSERT(ny_per_sdom * pspace.getGlobalNumSubdomains(SPACE_RY) == (size_t)input_vars.ny,
+        "Number of zones in Y must evenly divide into the number of subdomains\n");
+
   std::vector<size_t> local_ny(pspace.getNumSubdomains(SPACE_RY),
                                ny_per_sdom);
 
@@ -94,6 +100,9 @@ void Kripke::Generate::generateSpace(Kripke::DataStore &data_store,
   // Create set for Z mesh
   size_t nz_per_sdom = input_vars.nz /
                        pspace.getGlobalNumSubdomains(SPACE_RZ);
+
+  KRIPKE_ASSERT(nz_per_sdom * pspace.getGlobalNumSubdomains(SPACE_RZ) == (size_t)input_vars.nz,
+          "Number of zones in Z must evenly divide into the number of subdomains\n");
 
   std::vector<size_t> local_nz(pspace.getNumSubdomains(SPACE_RZ),
                                nz_per_sdom);
@@ -164,6 +173,8 @@ void Kripke::Generate::generateSpace(Kripke::DataStore &data_store,
    * Define a function describing the material region distribution in space
    */
   auto material_fcn = [](double x, double y, double z) -> Material {
+
+    return Material{2};
     // Problem is defined for one octant, with reflecting boundaries
     // We "unreflect" it here by taking abs values
     x = std::abs(x);
