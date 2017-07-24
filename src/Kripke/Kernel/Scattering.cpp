@@ -31,7 +31,7 @@
  */
 
 #include <Kripke/Kernel.h>
-#include <Kripke/PartitionSpace.h>
+#include <Kripke/Core/PartitionSpace.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 

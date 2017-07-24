@@ -32,11 +32,11 @@
 
 #include <Kripke/Generate.h>
 
-#include <Kripke/Comm.h>
-#include <Kripke/Field.h>
+#include <Kripke/Core/Comm.h>
+#include <Kripke/Core/Field.h>
 #include <Kripke/Kernel.h>
-#include <Kripke/PartitionSpace.h>
-#include <Kripke/Set.h>
+#include <Kripke/Core/PartitionSpace.h>
+#include <Kripke/Core/Set.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 

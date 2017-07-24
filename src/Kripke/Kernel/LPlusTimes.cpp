@@ -30,9 +30,9 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include<Kripke/Kernel.h>
-#include<Kripke/Timing.h>
-#include<Kripke/VarTypes.h>
+#include <Kripke/Kernel.h>
+#include <Kripke/Timing.h>
+#include <Kripke/VarTypes.h>
 
 void Kripke::Kernel::LPlusTimes(Kripke::DataStore &data_store)
 {

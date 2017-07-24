@@ -31,8 +31,8 @@
  */
   
 #include <Kripke.h>
-#include <Kripke/Comm.h>
-#include <Kripke/DataStore.h>
+#include <Kripke/Core/Comm.h>
+#include <Kripke/Core/DataStore.h>
 #include <Kripke/Generate.h>
 #include <Kripke/InputVariables.h>
 #include <Kripke/SteadyStateSolver.h>

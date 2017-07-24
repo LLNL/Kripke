@@ -30,9 +30,9 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include<Kripke/InputVariables.h>
+#include <Kripke/InputVariables.h>
 
-#include <Kripke/Comm.h>
+#include <Kripke/Core/Comm.h>
 
 /**
 * Setup the default input choices

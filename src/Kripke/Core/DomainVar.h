@@ -33,9 +33,9 @@
 #ifndef KRIPKE_DOMAIN_VAR_H__
 #define KRIPKE_DOMAIN_VAR_H__
 
-#include<Kripke.h>
-#include<Kripke/BaseVar.h>
-#include<Kripke/PartitionSpace.h>
+#include <Kripke.h>
+#include <Kripke/Core/BaseVar.h>
+#include <Kripke/Core/PartitionSpace.h>
 
 namespace Kripke {
 

@@ -32,8 +32,8 @@
 
 #include <Kripke/ParallelComm.h>
 
-#include <Kripke/Comm.h>
-#include <Kripke/Field.h>
+#include <Kripke/Core/Comm.h>
+#include <Kripke/Core/Field.h>
 #include <Kripke/VarTypes.h>
 
 using namespace Kripke;

@@ -34,7 +34,7 @@
 #define KRIPKE_COMM_H__
 
 #include <Kripke.h>
-#include <Kripke/BaseVar.h>
+#include <Kripke/Core/BaseVar.h>
 
 #ifdef KRIPKE_USE_MPI
 #include <mpi.h>

@@ -1,6 +1,6 @@
 
-#include<Kripke.h>
-#include<Kripke/DataStore.h>
+#include <Kripke.h>
+#include <Kripke/Core/DataStore.h>
 
 using namespace Kripke;
 

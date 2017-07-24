@@ -34,8 +34,8 @@
 #define KRIPKE_SET_H__
 
 #include <Kripke.h>
-#include <Kripke/DomainVar.h>
-#include <Kripke/PartitionSpace.h>
+#include <Kripke/Core/DomainVar.h>
+#include <Kripke/Core/PartitionSpace.h>
 #include <map>
 #include <vector>
 

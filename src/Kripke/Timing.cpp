@@ -32,8 +32,8 @@
 
 #include <Kripke/Timing.h>
 
-#include<Kripke.h>
-#include<Kripke/Comm.h>
+#include <Kripke.h>
+#include <Kripke/Core/Comm.h>
 
 #include <stdio.h>
 #include <algorithm>

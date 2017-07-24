@@ -30,7 +30,7 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include<Kripke/Set.h>
+#include <Kripke/Core/Set.h>
 
 
 using namespace Kripke;

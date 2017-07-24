@@ -60,8 +60,8 @@ include_directories(./src ${PROJECT_BINARY_DIR}/include)
 
 blt_add_library(
   NAME        kripke
-  SOURCES     "src/Kripke/DataStore.cpp"
-              "src/Kripke/DomainVar.cpp"
+  SOURCES     "src/Kripke/Core/DataStore.cpp"
+              "src/Kripke/Core/DomainVar.cpp"
               "src/Kripke/Generate.cpp"
               "src/Kripke/Generate/Data.cpp"
               "src/Kripke/Generate/Decomp.cpp"
@@ -78,8 +78,8 @@ blt_add_library(
               "src/Kripke/ParallelComm/BlockJacobiComm.cpp"
               "src/Kripke/ParallelComm/SweepComm.cpp"
               "src/Kripke/ParallelComm.cpp"
-              "src/Kripke/PartitionSpace.cpp"
-              "src/Kripke/Set.cpp"
+              "src/Kripke/Core/PartitionSpace.cpp"
+              "src/Kripke/Core/Set.cpp"
               "src/Kripke/SteadyStateSolver.cpp"
               "src/Kripke/SweepSolver.cpp"
               "src/Kripke/Test/TestKernels.cpp"

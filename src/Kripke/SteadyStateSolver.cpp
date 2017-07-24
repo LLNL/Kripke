@@ -32,10 +32,10 @@
 
 #include <Kripke/SteadyStateSolver.h>
 #include <Kripke.h>
-#include <Kripke/Comm.h>
+#include <Kripke/Core/Comm.h>
 #include <Kripke/Kernel.h>
 #include <Kripke/ParallelComm.h>
-#include <Kripke/PartitionSpace.h>
+#include <Kripke/Core/PartitionSpace.h>
 #include <Kripke/Timing.h>
 #include <Kripke/SweepSolver.h>
 #include <vector>

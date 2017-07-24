@@ -34,8 +34,8 @@
 #define KRIPKE_PARTITION_SPACE_H__
 
 #include <Kripke.h>
-#include <Kripke/Comm.h>
-#include <Kripke/DataStore.h>
+#include <Kripke/Core/Comm.h>
+#include <Kripke/Core/DataStore.h>
 #include <array>
 
 namespace Kripke {

@@ -34,7 +34,7 @@
 #define KRIPKE_KERNEL_H__
 
 #include <Kripke.h>
-#include <Kripke/DataStore.h>
+#include <Kripke/Core/DataStore.h>
 
 namespace Kripke {
 

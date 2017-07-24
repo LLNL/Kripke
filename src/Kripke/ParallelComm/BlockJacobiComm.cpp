@@ -32,7 +32,7 @@
 
 #include <Kripke/ParallelComm.h>
 
-#include <Kripke/Field.h>
+#include <Kripke/Core/Field.h>
 #include <Kripke/Kernel.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>

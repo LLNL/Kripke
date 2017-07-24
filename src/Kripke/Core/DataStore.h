@@ -34,7 +34,7 @@
 #define KRIPKE_DATASTORE_H__
 
 #include <Kripke.h>
-#include <Kripke/BaseVar.h>
+#include <Kripke/Core/BaseVar.h>
 #include <map>
 #include <stdexcept>
 #include <utility>

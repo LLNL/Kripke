@@ -34,7 +34,7 @@
 #define KRIPKE_SWEEPSOLVER_H__
 
 #include <Kripke.h>
-#include <Kripke/DataStore.h>
+#include <Kripke/Core/DataStore.h>
 #include <Kripke/VarTypes.h>
 #include <vector>
 

@@ -34,9 +34,9 @@
 #define KRIPKE_FIELD_H__
 
 #include <Kripke.h>
-#include <Kripke/DataStore.h>
-#include <Kripke/DomainVar.h>
-#include <Kripke/Set.h>
+#include <Kripke/Core/DataStore.h>
+#include <Kripke/Core/DomainVar.h>
+#include <Kripke/Core/Set.h>
 #include <vector>
 
 namespace Kripke {

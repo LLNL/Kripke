@@ -34,8 +34,8 @@
 #define KRIPKE_VARTYPES_H__
 
 #include <Kripke.h>
-#include <Kripke/Set.h>
-#include <Kripke/Field.h>
+#include <Kripke/Core/Set.h>
+#include <Kripke/Core/Field.h>
 
 namespace Kripke {
 

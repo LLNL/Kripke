@@ -33,7 +33,7 @@
 #ifndef KRIPKE_INPUT_VARIABLES_H__
 #define KRIPKE_INPUT_VARIABLES_H__
 
-#include<Kripke.h>
+#include <Kripke.h>
 
 /**
  * This structure defines the input parameters to setup a problem.

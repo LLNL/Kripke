@@ -31,7 +31,7 @@
  */
 
 
-#include<Kripke/DomainVar.h>
+#include <Kripke/Core/DomainVar.h>
 
 using namespace Kripke;
 

@@ -34,7 +34,7 @@
 #define KRIPKE_STEADYSTATESOLVER_H__
 
 
-#include <Kripke/DataStore.h>
+#include <Kripke/Core/DataStore.h>
 
 namespace Kripke {
 
