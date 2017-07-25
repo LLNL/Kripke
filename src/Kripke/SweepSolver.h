@@ -42,7 +42,7 @@ namespace Kripke {
 
   class DataStore;
 
-  void SweepSolver (Kripke::DataStore &data_store,
+  void SweepSolver (Kripke::Core::DataStore &data_store,
                     std::vector<SdomId> subdomain_list,
                     bool block_jacobi);
 

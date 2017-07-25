@@ -41,17 +41,18 @@
 #include <vector>
 #include <stdio.h>
 
+using namespace Kripke::Core;
 
 /**
   Run solver iterations.
 */
-int Kripke::SteadyStateSolver (Kripke::DataStore &data_store, size_t max_iter, bool block_jacobi)
+int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_iter, bool block_jacobi)
 {
   KRIPKE_TIMER(data_store, Solve);
 
   PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");
 
-  Kripke::Comm const &comm = data_store.getVariable<Kripke::Comm>("comm");
+  Kripke::Core::Comm const &comm = data_store.getVariable<Kripke::Core::Comm>("comm");
   if(comm.rank() == 0){
     printf("\n");
     printf("Steady State Solve\n");

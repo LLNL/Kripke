@@ -41,9 +41,10 @@
 #include <Kripke/VarTypes.h>
 
 using namespace Kripke;
+using namespace Kripke::Core;
 
 
-void Kripke::Generate::generateEnergy(Kripke::DataStore &data_store,
+void Kripke::Generate::generateEnergy(Kripke::Core::DataStore &data_store,
     InputVariables const &input_vars)
 {
 

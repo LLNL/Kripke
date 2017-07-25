@@ -60,7 +60,7 @@
 
 void usage(void){
 
-  Kripke::Comm comm;
+  Kripke::Core::Comm comm;
   if(comm.rank() == 0){
     // Get a new object with defaulted values
     InputVariables def;
@@ -150,7 +150,7 @@ void usage(void){
     printf("\n");
   }
 
-  Kripke::Comm::finalize();
+  Kripke::Core::Comm::finalize();
 
   exit(1);
 }
@@ -205,9 +205,9 @@ int main(int argc, char **argv) {
   /*
    * Initialize MPI
    */
-  Kripke::Comm::init(&argc, &argv);
+  Kripke::Core::Comm::init(&argc, &argv);
 
-  Kripke::Comm comm;
+  Kripke::Core::Comm comm;
 
   int myid = comm.rank();
   int num_tasks = comm.size();
@@ -445,7 +445,7 @@ int main(int argc, char **argv) {
   else{
     // Allocate problem 
 
-    Kripke::DataStore data_store;
+    Kripke::Core::DataStore data_store;
     Kripke::generateProblem(data_store, vars);
 
     // Run the solver
@@ -489,7 +489,7 @@ int main(int argc, char **argv) {
   }
   
   // Cleanup and exit
-  Kripke::Comm::finalize();
+  Kripke::Core::Comm::finalize();
 
   return (0);
 }

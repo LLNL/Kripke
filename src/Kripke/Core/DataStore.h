@@ -40,6 +40,7 @@
 #include <utility>
 
 namespace Kripke {
+namespace Core {
 
 /**
  * Container to store variables by name
@@ -51,7 +52,7 @@ class DataStore {
     DataStore(DataStore const &) = delete;
     DataStore &operator=(DataStore const &) = delete;
 
-    void addVariable(std::string const &name, Kripke::BaseVar *);
+    void addVariable(std::string const &name, Kripke::Core::BaseVar *);
 
     template<typename T, typename ... CTOR_ARGS>
     RAJA_INLINE
@@ -87,10 +88,10 @@ class DataStore {
     }
 
   private:
-    std::map<std::string, Kripke::BaseVar *> m_vars;
+    std::map<std::string, Kripke::Core::BaseVar *> m_vars;
 
 };
 
-}
+} } // namespace
 
 #endif

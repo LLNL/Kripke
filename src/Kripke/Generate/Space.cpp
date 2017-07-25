@@ -41,6 +41,7 @@
 #include <Kripke/VarTypes.h>
 
 using namespace Kripke;
+using namespace Kripke::Core;
 
 namespace {
 
@@ -59,7 +60,7 @@ struct ZoneMixture {
 }
 
 
-void Kripke::Generate::generateSpace(Kripke::DataStore &data_store,
+void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
     InputVariables const &input_vars)
 {
   PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");

@@ -35,20 +35,22 @@
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
+using namespace Kripke::Core;
+
 /**
   Compute scattering source term phi_out from flux moments in phi.
   phi_out(gp,z,nm) = sum_g { sigs(g, n, gp) * phi(g,z,nm) }
 */
 
-void Kripke::Kernel::scattering(Kripke::DataStore &data_store)
+void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, Scattering);
 
-  auto &pspace = data_store.getVariable<Kripke::PartitionSpace>("pspace");
+  auto &pspace = data_store.getVariable<Kripke::Core::PartitionSpace>("pspace");
 
-  auto &set_group  = data_store.getVariable<Kripke::Set>("Set/Group");
-  auto &set_moment = data_store.getVariable<Kripke::Set>("Set/Moment");
-  auto &set_zone   = data_store.getVariable<Kripke::Set>("Set/Zone");
+  auto &set_group  = data_store.getVariable<Kripke::Core::Set>("Set/Group");
+  auto &set_moment = data_store.getVariable<Kripke::Core::Set>("Set/Moment");
+  auto &set_zone   = data_store.getVariable<Kripke::Core::Set>("Set/Zone");
 
   auto &field_phi     = data_store.getVariable<Kripke::Field_Moments>("phi");
   auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");

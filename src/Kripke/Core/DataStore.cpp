@@ -3,6 +3,7 @@
 #include <Kripke/Core/DataStore.h>
 
 using namespace Kripke;
+using namespace Kripke::Core;
 
 DataStore::DataStore(){}
 
@@ -17,7 +18,7 @@ DataStore::~DataStore(){
 }
 
 void DataStore::addVariable(std::string const &name,
-  BaseVar *var)
+  Kripke::Core::BaseVar *var)
 {
   if(m_vars.find(name) != m_vars.end()){
     throw std::domain_error("Variable '" + name + "' already exists");

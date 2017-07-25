@@ -36,15 +36,17 @@
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
+using namespace Kripke::Core;
+
 /**
  * Returns the integral of Psi over all phase-space, to look at convergence
  */
-double Kripke::Kernel::population(Kripke::DataStore &data_store)
+double Kripke::Kernel::population(Kripke::Core::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, Population);
 
   Set const &set_dir    = data_store.getVariable<Set>("Set/Direction");
-  Set const &set_group  = data_store.getVariable<Kripke::Set>("Set/Group");
+  Set const &set_group  = data_store.getVariable<Kripke::Core::Set>("Set/Group");
   Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
 
   auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
@@ -75,7 +77,7 @@ double Kripke::Kernel::population(Kripke::DataStore &data_store)
   }
 
   // reduce
-  auto const &comm = data_store.getVariable<Kripke::Comm>("comm");
+  auto const &comm = data_store.getVariable<Kripke::Core::Comm>("comm");
   return comm.allReduceSumDouble(part);
 }
 

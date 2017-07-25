@@ -68,7 +68,7 @@ void Timing::stopAll(void){
 }
 
 void Timing::print(void) const {
-  Kripke::Comm default_comm;
+  Kripke::Core::Comm default_comm;
   if(default_comm.rank() != 0){
     return;
   }

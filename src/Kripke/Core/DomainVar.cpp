@@ -34,10 +34,11 @@
 #include <Kripke/Core/DomainVar.h>
 
 using namespace Kripke;
+using namespace Kripke::Core;
 
 
-void DomainVar::setup_initChunks(Kripke::PartitionSpace const &pspace,
-          Kripke::SPACE space)
+void DomainVar::setup_initChunks(Kripke::Core::PartitionSpace const &pspace,
+          Kripke::Core::SPACE space)
 {
 
   size_t num_subdomains = pspace.getNumSubdomains();
@@ -63,7 +64,7 @@ void DomainVar::setup_initChunks(Kripke::PartitionSpace const &pspace,
 }
 
 
-void DomainVar::setup_initChunks(Kripke::DomainVar const &clone_from){
+void DomainVar::setup_initChunks(Kripke::Core::DomainVar const &clone_from){
   m_subdomain_to_chunk = clone_from.m_subdomain_to_chunk;
   m_chunk_to_subdomain = clone_from.m_chunk_to_subdomain;
   m_work_list = clone_from.m_work_list;

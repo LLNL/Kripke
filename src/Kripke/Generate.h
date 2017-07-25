@@ -42,26 +42,26 @@ namespace Kripke {
   /**
    * Takes an Input_Variables object and generates a problem in the DataStore
    */
-  void generateProblem(Kripke::DataStore &data_store,
+  void generateProblem(Kripke::Core::DataStore &data_store,
       InputVariables const &input_variables);
   
 
   namespace Generate {
 
 
-    void generateDecomp(Kripke::DataStore &data_store,
+    void generateDecomp(Kripke::Core::DataStore &data_store,
         InputVariables const &input_variables);
 
-    void generateEnergy(Kripke::DataStore &data_store,
+    void generateEnergy(Kripke::Core::DataStore &data_store,
           InputVariables const &input_variables);
 
-    void generateQuadrature(Kripke::DataStore &data_store,
+    void generateQuadrature(Kripke::Core::DataStore &data_store,
           InputVariables const &input_variables);
 
-    void generateSpace(Kripke::DataStore &data_store,
+    void generateSpace(Kripke::Core::DataStore &data_store,
           InputVariables const &input_variables);
 
-    void generateData(Kripke::DataStore &data_store,
+    void generateData(Kripke::Core::DataStore &data_store,
           InputVariables const &input_variables);
 
   }

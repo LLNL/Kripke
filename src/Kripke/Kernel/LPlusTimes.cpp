@@ -34,12 +34,14 @@
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
-void Kripke::Kernel::LPlusTimes(Kripke::DataStore &data_store)
+using namespace Kripke::Core;
+
+void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, LPlusTimes);
 
   Set const &set_dir    = data_store.getVariable<Set>("Set/Direction");
-  Set const &set_group  = data_store.getVariable<Kripke::Set>("Set/Group");
+  Set const &set_group  = data_store.getVariable<Kripke::Core::Set>("Set/Group");
   Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
   Set const &set_moment = data_store.getVariable<Set>("Set/Moment");
 

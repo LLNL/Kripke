@@ -41,6 +41,7 @@
 #include <Kripke/VarTypes.h>
 
 using namespace Kripke;
+using namespace Kripke::Core;
 
 
 namespace {
@@ -336,7 +337,7 @@ createQuadratureSet(InputVariables const &input_vars)
 
 
 
-void Kripke::Generate::generateQuadrature(Kripke::DataStore &data_store,
+void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
     InputVariables const &input_vars)
 {
 
@@ -508,7 +509,7 @@ void Kripke::Generate::generateQuadrature(Kripke::DataStore &data_store,
 
       // Is this an upwind boundary condition?
       if(global_upwind[*dim+SPACE_RX] < 0 ||
-         global_upwind[*dim+SPACE_RX] >= (ptrdiff_t)pspace.getGlobalNumSubdomains((Kripke::SPACE)(*dim+SPACE_RX)))
+         global_upwind[*dim+SPACE_RX] >= (ptrdiff_t)pspace.getGlobalNumSubdomains((Kripke::Core::SPACE)(*dim+SPACE_RX)))
       {
         upwind(dim) = GlobalSdomId{-1};
       }
@@ -520,7 +521,7 @@ void Kripke::Generate::generateQuadrature(Kripke::DataStore &data_store,
 
       // Is this an downwind boundary condition?
       if(global_downwind[*dim+SPACE_RX] < 0 ||
-         global_downwind[*dim+SPACE_RX] >= (ptrdiff_t)pspace.getGlobalNumSubdomains((Kripke::SPACE)(*dim+SPACE_RX)))
+         global_downwind[*dim+SPACE_RX] >= (ptrdiff_t)pspace.getGlobalNumSubdomains((Kripke::Core::SPACE)(*dim+SPACE_RX)))
       {
         downwind(dim) = GlobalSdomId{-1};
       }

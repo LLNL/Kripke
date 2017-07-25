@@ -41,10 +41,11 @@
 
 namespace Kripke {
 
+namespace Core {
   /**
    * Base class for defining an ordered set used for dimensioning Fields
    */
-  class Set : public Kripke::DomainVar {
+  class Set : public Kripke::Core::DomainVar {
     public:
       Set();
       virtual ~Set() = default;
@@ -102,9 +103,9 @@ namespace Kripke {
   };
 
 
-  class RangeSet : public Kripke::Set {
+  class RangeSet : public Kripke::Core::Set {
     public:
-      RangeSet(Kripke::PartitionSpace const &pspace, Kripke::SPACE space,
+      RangeSet(Kripke::Core::PartitionSpace const &pspace, Kripke::Core::SPACE space,
           std::vector<size_t> const &local_sizes);
 
       virtual ~RangeSet() = default;
@@ -113,15 +114,15 @@ namespace Kripke {
       virtual size_t getNumDimensions() const{return 1;}
 
     private:
-      void setup_setupByLocalSize(Kripke::PartitionSpace const &pspace,
+      void setup_setupByLocalSize(Kripke::Core::PartitionSpace const &pspace,
           std::vector<size_t> const &local_sizes);
-      Kripke::SPACE m_space;
+      Kripke::Core::SPACE m_space;
   };
 
 
-  class LocalRangeSet : public Kripke::Set {
+  class LocalRangeSet : public Kripke::Core::Set {
     public:
-      LocalRangeSet(Kripke::PartitionSpace const &pspace, size_t local_size);
+      LocalRangeSet(Kripke::Core::PartitionSpace const &pspace, size_t local_size);
 
       virtual ~LocalRangeSet() = default;
 
@@ -130,10 +131,10 @@ namespace Kripke {
   };
 
 
-  class GlobalRangeSet : public Kripke::Set {
+  class GlobalRangeSet : public Kripke::Core::Set {
     public:
-      GlobalRangeSet(Kripke::PartitionSpace const &pspace, size_t global_size);
-      GlobalRangeSet(Kripke::PartitionSpace const &pspace, Kripke::Set &parent_set);
+      GlobalRangeSet(Kripke::Core::PartitionSpace const &pspace, size_t global_size);
+      GlobalRangeSet(Kripke::Core::PartitionSpace const &pspace, Kripke::Core::Set &parent_set);
 
       virtual ~GlobalRangeSet() = default;
 
@@ -141,18 +142,18 @@ namespace Kripke {
       virtual size_t getNumDimensions() const{return 1;}
 
     private:
-      void setup_setGlobalSize(Kripke::PartitionSpace const &pspace, size_t global_size);
+      void setup_setGlobalSize(Kripke::Core::PartitionSpace const &pspace, size_t global_size);
   };
 
 
   template<size_t NUM_SETS>
-  class ProductSet : public Kripke::Set {
+  class ProductSet : public Kripke::Core::Set {
     public:
 
       using LayoutType = RAJA::Layout<NUM_SETS>;
 
       template<typename ... SPAN>
-      ProductSet(Kripke::PartitionSpace &pspace, Kripke::SPACE space,
+      ProductSet(Kripke::Core::PartitionSpace &pspace, Kripke::Core::SPACE space,
           SPAN const &... spanned_sets){
         static_assert(sizeof...(SPAN) == NUM_SETS,
             "Must provide same number of sets as dimensionality of ProductSet");
@@ -196,7 +197,7 @@ namespace Kripke {
        * Helper function to expand variadic arguments to the constructor.
        */
       void setup_setSpannedSets(
-          std::array<Kripke::Set const *, NUM_SETS> const &spanned_sets){
+          std::array<Kripke::Core::Set const *, NUM_SETS> const &spanned_sets){
         m_spanned_sets = spanned_sets;
 
         size_t num_chunks = m_chunk_to_subdomain.size();
@@ -215,14 +216,14 @@ namespace Kripke {
 
       static const size_t s_num_sets = NUM_SETS;
 
-      std::array<Kripke::Set const *, NUM_SETS> m_spanned_sets;
+      std::array<Kripke::Core::Set const *, NUM_SETS> m_spanned_sets;
 
 
   };
 
 
 
-} // namespace
+} } // namespace
 
 #endif
 

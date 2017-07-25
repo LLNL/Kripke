@@ -52,38 +52,38 @@ namespace Kripke {
   RAJA_INDEX_VALUE(ZoneJ, "ZoneJ");
   RAJA_INDEX_VALUE(ZoneK, "ZoneK");
 
-  using Field_Flux = Kripke::Field<double, Direction, Group, Zone>;
-  using Field_Moments = Kripke::Field<double, Moment, Group, Zone>;
+  using Field_Flux = Kripke::Core::Field<double, Direction, Group, Zone>;
+  using Field_Moments = Kripke::Core::Field<double, Moment, Group, Zone>;
 
-  using Field_IPlane = Kripke::Field<double, Direction, Group, ZoneJ, ZoneK>;
-  using Field_JPlane = Kripke::Field<double, Direction, Group, ZoneI, ZoneK>;
-  using Field_KPlane = Kripke::Field<double, Direction, Group, ZoneI, ZoneJ>;
+  using Field_IPlane = Kripke::Core::Field<double, Direction, Group, ZoneJ, ZoneK>;
+  using Field_JPlane = Kripke::Core::Field<double, Direction, Group, ZoneI, ZoneK>;
+  using Field_KPlane = Kripke::Core::Field<double, Direction, Group, ZoneI, ZoneJ>;
 
-  using Field_Ell = Kripke::Field<double, Moment, Direction>;
+  using Field_Ell = Kripke::Core::Field<double, Moment, Direction>;
 
-  using Field_Speed  = Kripke::Field<double, Material, GlobalGroup>;
-  using Field_SigmaT = Kripke::Field<double, Material, GlobalGroup>;
-  using Field_SigmaS = Kripke::Field<double, Material, Legendre, GlobalGroup, GlobalGroup>;
+  using Field_Speed  = Kripke::Core::Field<double, Material, GlobalGroup>;
+  using Field_SigmaT = Kripke::Core::Field<double, Material, GlobalGroup>;
+  using Field_SigmaS = Kripke::Core::Field<double, Material, Legendre, GlobalGroup, GlobalGroup>;
 
-  using Field_Direction2Double = Kripke::Field<double, Direction>;
-  using Field_Direction2Int    = Kripke::Field<int, Direction>;
+  using Field_Direction2Double = Kripke::Core::Field<double, Direction>;
+  using Field_Direction2Int    = Kripke::Core::Field<int, Direction>;
 
-  using Field_Adjacency        = Kripke::Field<GlobalSdomId, Dimension>;
+  using Field_Adjacency        = Kripke::Core::Field<GlobalSdomId, Dimension>;
 
-  using Field_Moment2Legendre  = Kripke::Field<Legendre, Moment>;
+  using Field_Moment2Legendre  = Kripke::Core::Field<Legendre, Moment>;
 
-  using Field_ZoneI2Double  = Kripke::Field<double, ZoneI>;
-  using Field_ZoneJ2Double  = Kripke::Field<double, ZoneJ>;
-  using Field_ZoneK2Double  = Kripke::Field<double, ZoneK>;
-  using Field_Zone2Double   = Kripke::Field<double, Zone>;
-  using Field_Zone2Int      = Kripke::Field<int, Zone>;
-  using Field_Zone2MixElem  = Kripke::Field<MixElem, Zone>;
+  using Field_ZoneI2Double  = Kripke::Core::Field<double, ZoneI>;
+  using Field_ZoneJ2Double  = Kripke::Core::Field<double, ZoneJ>;
+  using Field_ZoneK2Double  = Kripke::Core::Field<double, ZoneK>;
+  using Field_Zone2Double   = Kripke::Core::Field<double, Zone>;
+  using Field_Zone2Int      = Kripke::Core::Field<int, Zone>;
+  using Field_Zone2MixElem  = Kripke::Core::Field<MixElem, Zone>;
 
-  using Field_MixElem2Double   = Kripke::Field<double, MixElem>;
-  using Field_MixElem2Material = Kripke::Field<Material, MixElem>;
-  using Field_MixElem2Zone     = Kripke::Field<Zone, MixElem>;
+  using Field_MixElem2Double   = Kripke::Core::Field<double, MixElem>;
+  using Field_MixElem2Material = Kripke::Core::Field<Material, MixElem>;
+  using Field_MixElem2Zone     = Kripke::Core::Field<Zone, MixElem>;
 
-  using Field_SigmaTZonal = Kripke::Field<double, Group, Zone>;
+  using Field_SigmaTZonal = Kripke::Core::Field<double, Group, Zone>;
 }
 
 #endif

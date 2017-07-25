@@ -38,7 +38,7 @@
 
 using namespace Kripke;
 
-ParallelComm::ParallelComm(Kripke::DataStore &data_store) :
+ParallelComm::ParallelComm(Kripke::Core::DataStore &data_store) :
   m_data_store(&data_store)
 {
   m_plane_data[0] = &m_data_store->getVariable<Field_IPlane>("i_plane");
@@ -83,8 +83,8 @@ void ParallelComm::dequeueSubdomain(SdomId sdom_id){
   Determines if upwind dependencies require communication, and posts appropirate Irecv's.
   All recieves use the plane_data[] arrays as recieve buffers.
 */
-void ParallelComm::postRecvs(Kripke::DataStore &data_store, SdomId sdom_id){
-  Kripke::Comm comm;
+void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id){
+  Kripke::Core::Comm comm;
   int mpi_rank = comm.rank();
 
   auto upwind = data_store.getVariable<Field_Adjacency>("upwind").getView(sdom_id);
@@ -135,11 +135,11 @@ void ParallelComm::postRecvs(Kripke::DataStore &data_store, SdomId sdom_id){
   queue_depends.push_back(num_depends);
 }
 
-void ParallelComm::postSends(Kripke::DataStore &data_store, Kripke::SdomId sdom_id,
+void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId sdom_id,
                              double *src_buffers[3])
 {
   // post sends for downwind dependencies
-  Kripke::Comm comm;
+  Kripke::Core::Comm comm;
   int mpi_rank = comm.rank();
 
   auto downwind = data_store.getVariable<Field_Adjacency>("downwind").getView(sdom_id);

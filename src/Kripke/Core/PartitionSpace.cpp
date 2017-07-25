@@ -7,8 +7,9 @@
 #include <array>
 
 using namespace Kripke;
+using namespace Kripke::Core;
 
-PartitionSpace::PartitionSpace(Kripke::Comm &base_comm,
+PartitionSpace::PartitionSpace(Kripke::Core::Comm &base_comm,
   size_t P, size_t Q, size_t Rx, size_t Ry, size_t Rz) :
   m_comm_all(base_comm),
   m_local_num_sdom{{0,0,0,0,0,0,0}},
@@ -94,7 +95,7 @@ void PartitionSpace::setup_createSubdomains(
   for(size_t space = 0;space < NUM_SPACES;++ space){
 
     // Get the communicator for this space
-    Kripke::Comm const &comm = m_comm_space[space];
+    Kripke::Core::Comm const &comm = m_comm_space[space];
 
     // Compute the total number of subdomains in this space's partition
     m_global_num_sdom[space] = comm.allReduceSumLong(m_local_num_sdom[space]);
@@ -118,7 +119,7 @@ void PartitionSpace::setup_createSubdomains(
  * Creates Set and Field objects that describe the subdomain decomposition.
  * @param data_store The DataStore in which to create the objects
  */
-void PartitionSpace::createSubdomainData(DataStore &data_store) const {
+void PartitionSpace::createSubdomainData(Kripke::Core::DataStore &data_store) const {
 
   PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");
 
@@ -182,11 +183,11 @@ void PartitionSpace::createSubdomainData(DataStore &data_store) const {
 }
 
 
-size_t PartitionSpace::getNumSubdomains(Kripke::SPACE space) const{
+size_t PartitionSpace::getNumSubdomains(Kripke::Core::SPACE space) const{
   return m_local_num_sdom[space];
 }
 
-size_t PartitionSpace::getGlobalNumSubdomains(Kripke::SPACE space) const{
+size_t PartitionSpace::getGlobalNumSubdomains(Kripke::Core::SPACE space) const{
   return m_global_num_sdom[space];
 }
 
@@ -236,7 +237,7 @@ Kripke::GlobalSdomId PartitionSpace::coordToGlobalSdomId(SdomCoord global_coord)
 }
 
 size_t PartitionSpace::subdomainToSpace(
-    Kripke::SPACE space, SdomId sdom_id) const
+    Kripke::Core::SPACE space, SdomId sdom_id) const
 {
   // Map the subdomain id back to the bases spaces, P, Q, Rx, Ry, Rz
   std::array<int, 5> idx;
@@ -251,7 +252,7 @@ size_t PartitionSpace::subdomainToSpace(
 
 
 SdomId PartitionSpace::spaceToSubdomain(
-    Kripke::SPACE space, size_t space_id) const
+    Kripke::Core::SPACE space, size_t space_id) const
 {
   // build up indices in the P, Q, Rx, Ry, Rz space
   std::array<int, 5> idx{{0, 0, 0, 0, 0}};

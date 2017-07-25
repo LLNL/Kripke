@@ -43,8 +43,9 @@
 #include <stdio.h>
 
 using namespace Kripke;
+using namespace Kripke::Core;
 
-BlockJacobiComm::BlockJacobiComm(Kripke::DataStore &data_store) :
+BlockJacobiComm::BlockJacobiComm(Kripke::Core::DataStore &data_store) :
 ParallelComm(data_store), posted_sends(false)
 {
   Set const &set_iplane = data_store.getVariable<Set>("Set/IPlane");
@@ -65,7 +66,7 @@ BlockJacobiComm::~BlockJacobiComm(){
   Adds a subdomain to the work queue.
   Determines if upwind dependencies require communication, and posts appropirate Irecv's.
 */
-void BlockJacobiComm::addSubdomain(Kripke::DataStore &data_store, SdomId sdom_id){
+void BlockJacobiComm::addSubdomain(Kripke::Core::DataStore &data_store, SdomId sdom_id){
 
   // Copy old flux data to send buffers
   auto &i_plane = m_data_store->getVariable<Field_IPlane>("i_plane");

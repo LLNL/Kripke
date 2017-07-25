@@ -41,13 +41,14 @@
 #include <Kripke/VarTypes.h>
 
 using namespace Kripke;
+using namespace Kripke::Core;
 
 
-void Kripke::Generate::generateDecomp(Kripke::DataStore &data_store,
+void Kripke::Generate::generateDecomp(Kripke::Core::DataStore &data_store,
     InputVariables const &input_vars)
 {
   // Create a "Comm World"
-  auto &comm = data_store.newVariable<Comm>("comm");
+  auto &comm = data_store.newVariable<Kripke::Core::Comm>("comm");
 
   // Create our partitioning over MPI
   auto &pspace = data_store.newVariable<PartitionSpace>("pspace",

@@ -83,7 +83,7 @@ namespace Kripke {
       RAJA::Timer timer;
   };
 
-  class Timing : public Kripke::BaseVar {
+  class Timing : public Kripke::Core::BaseVar {
     public:
       virtual ~Timing();
 

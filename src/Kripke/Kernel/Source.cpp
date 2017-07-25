@@ -40,12 +40,12 @@
  *
  * Since it's isotropic, we're just adding this to nm=0.
  */
-void Kripke::Kernel::source(Kripke::DataStore &data_store)
+void Kripke::Kernel::source(Kripke::Core::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, Source);
 
-  auto &set_group   = data_store.getVariable<Kripke::Set>("Set/Group");
-  auto &set_mixelem = data_store.getVariable<Kripke::Set>("Set/MixElem");
+  auto &set_group   = data_store.getVariable<Kripke::Core::Set>("Set/Group");
+  auto &set_mixelem = data_store.getVariable<Kripke::Core::Set>("Set/MixElem");
 
   auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
 

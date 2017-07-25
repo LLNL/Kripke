@@ -39,6 +39,7 @@
 #include <array>
 
 namespace Kripke {
+namespace Core {
 
 enum SPACE {
   SPACE_P = 0,
@@ -56,11 +57,11 @@ enum SPACE {
 /**
  *  Defines a decomposition of the phase space by subdomains.
  */
-class PartitionSpace : public Kripke::BaseVar {
+class PartitionSpace : public Kripke::Core::BaseVar {
   public:
     using SdomCoord = std::array<ptrdiff_t, 5>;
 
-    PartitionSpace(Kripke::Comm &base_comm, 
+    PartitionSpace(Kripke::Core::Comm &base_comm, 
       size_t P, size_t Q, size_t Rx, size_t Ry, size_t Rz);
 
     virtual ~PartitionSpace() = default;
@@ -68,10 +69,10 @@ class PartitionSpace : public Kripke::BaseVar {
     void setup_createSubdomains(
         size_t SP, size_t SQ, size_t Sx, size_t Sy, size_t Sz);
 
-    void createSubdomainData(DataStore &data_store) const;
+    void createSubdomainData(Kripke::Core::DataStore &data_store) const;
 
-    size_t getNumSubdomains(Kripke::SPACE space = SPACE_PQR) const;
-    size_t getGlobalNumSubdomains(Kripke::SPACE space = SPACE_PQR) const;
+    size_t getNumSubdomains(Kripke::Core::SPACE space = SPACE_PQR) const;
+    size_t getGlobalNumSubdomains(Kripke::Core::SPACE space = SPACE_PQR) const;
 
     SdomCoord sdomIdToCoord(Kripke::SdomId sdom_id) const;
     Kripke::SdomId coordToSdomId(SdomCoord coord) const;
@@ -82,20 +83,20 @@ class PartitionSpace : public Kripke::BaseVar {
 
 
 
-    Kripke::Comm const &getComm(SPACE space) const {
+    Kripke::Core::Comm const &getComm(SPACE space) const {
       return m_comm_space[space];
     }
     
-    size_t subdomainToSpace(Kripke::SPACE space, SdomId sdom_id) const;
-    SdomId spaceToSubdomain(Kripke::SPACE space, size_t sdom_space) const;
+    size_t subdomainToSpace(Kripke::Core::SPACE space, SdomId sdom_id) const;
+    SdomId spaceToSubdomain(Kripke::Core::SPACE space, size_t sdom_space) const;
 
     void print() const;
 
   private:
-    Kripke::Comm m_comm_all;
+    Kripke::Core::Comm m_comm_all;
 
     // Parallel decomposition of comm_all
-    Kripke::Comm m_comm_space[NUM_SPACES];
+    Kripke::Core::Comm m_comm_space[NUM_SPACES];
     
     // Decomposition of ranks into subdomains
     std::array<long, NUM_SPACES> m_local_num_sdom;
@@ -116,9 +117,11 @@ class PartitionSpace : public Kripke::BaseVar {
 template<typename ELEMENT, typename ... IDX_TYPES>
 class Field;
 
-using Field_SdomId2GlobalSdomId = Kripke::Field<GlobalSdomId, SdomId>;
-using Field_GlobalSdomId2Rank = Kripke::Field<long, GlobalSdomId>;
-using Field_GlobalSdomId2SdomId = Kripke::Field<SdomId, GlobalSdomId>;
+} // namespace Core
+
+using Field_SdomId2GlobalSdomId = Kripke::Core::Field<GlobalSdomId, SdomId>;
+using Field_GlobalSdomId2Rank = Kripke::Core::Field<long, GlobalSdomId>;
+using Field_GlobalSdomId2SdomId = Kripke::Core::Field<SdomId, GlobalSdomId>;
 
 
 } // namespace

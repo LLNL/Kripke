@@ -45,7 +45,7 @@ using namespace Kripke;
 /**
   Perform full parallel sweep algorithm on subset of subdomains.
 */
-void Kripke::SweepSolver (Kripke::DataStore &data_store, std::vector<SdomId> subdomain_list, bool block_jacobi)
+void Kripke::SweepSolver (Kripke::Core::DataStore &data_store, std::vector<SdomId> subdomain_list, bool block_jacobi)
 {
   KRIPKE_TIMER(data_store, SweepSolver);
 

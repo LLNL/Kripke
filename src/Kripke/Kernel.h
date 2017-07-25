@@ -40,22 +40,22 @@ namespace Kripke {
 
   namespace Kernel {
 
-    void LPlusTimes(Kripke::DataStore &data_store);
+    void LPlusTimes(Kripke::Core::DataStore &data_store);
 
 
-    void LTimes(Kripke::DataStore &data_store);
+    void LTimes(Kripke::Core::DataStore &data_store);
 
 
-    double population(Kripke::DataStore &data_store);
+    double population(Kripke::Core::DataStore &data_store);
 
 
-    void scattering(Kripke::DataStore &data_store);
+    void scattering(Kripke::Core::DataStore &data_store);
 
 
-    void source(Kripke::DataStore &data_store);
+    void source(Kripke::Core::DataStore &data_store);
 
 
-    void sweepSubdomain(Kripke::DataStore &data_store, Kripke::SdomId sdom_id);
+    void sweepSubdomain(Kripke::Core::DataStore &data_store, Kripke::SdomId sdom_id);
 
 
     template<typename FieldType>

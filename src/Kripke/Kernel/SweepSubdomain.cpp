@@ -34,8 +34,9 @@
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
+using namespace Kripke::Core;
 
-void Kripke::Kernel::sweepSubdomain(Kripke::DataStore &data_store,
+void Kripke::Kernel::sweepSubdomain(Kripke::Core::DataStore &data_store,
     Kripke::SdomId sdom_id)
 {
   KRIPKE_TIMER(data_store, SweepSubdomain);

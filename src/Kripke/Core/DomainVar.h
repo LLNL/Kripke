@@ -38,12 +38,13 @@
 #include <Kripke/Core/PartitionSpace.h>
 
 namespace Kripke {
+namespace Core {
 
   /**
    * Base class for variables that are defined over a PartitionSpace's
    * subdomains
    */
-  class DomainVar : public Kripke::BaseVar {
+  class DomainVar : public Kripke::Core::BaseVar {
     public:
       DomainVar() = default;
       virtual ~DomainVar() = default;
@@ -82,16 +83,16 @@ namespace Kripke {
 
     protected:
 
-      void setup_initChunks(Kripke::PartitionSpace const &pspace,
-          Kripke::SPACE space);
+      void setup_initChunks(Kripke::Core::PartitionSpace const &pspace,
+          Kripke::Core::SPACE space);
 
-      void setup_initChunks(Kripke::DomainVar const &clone_from);
+      void setup_initChunks(Kripke::Core::DomainVar const &clone_from);
 
       std::vector<size_t> m_subdomain_to_chunk;
       std::vector<size_t> m_chunk_to_subdomain;
       std::vector<Kripke::SdomId> m_work_list;
   };
 
-}  // namespace
+} } // namespace
 
 #endif

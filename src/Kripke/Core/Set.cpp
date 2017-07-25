@@ -34,12 +34,13 @@
 
 
 using namespace Kripke;
+using namespace Kripke::Core;
 
 
 
 /*****************************************************************************
  *
- *  Kripke::Set
+ *  Kripke::Core::Set
  *
  *****************************************************************************/
 
@@ -62,7 +63,7 @@ size_t Set::dimSize(Kripke::SdomId sdom_id, size_t ) const{
  *
  *****************************************************************************/
 
-RangeSet::RangeSet(Kripke::PartitionSpace const &pspace, Kripke::SPACE space,
+RangeSet::RangeSet(Kripke::Core::PartitionSpace const &pspace, Kripke::Core::SPACE space,
             std::vector<size_t> const &local_sizes) :
     m_space(space)
 {
@@ -70,7 +71,7 @@ RangeSet::RangeSet(Kripke::PartitionSpace const &pspace, Kripke::SPACE space,
 }
 
 
-void RangeSet::setup_setupByLocalSize(Kripke::PartitionSpace const &pspace,
+void RangeSet::setup_setupByLocalSize(Kripke::Core::PartitionSpace const &pspace,
     std::vector<size_t> const &local_sizes)
 {
 
@@ -116,7 +117,7 @@ void RangeSet::setup_setupByLocalSize(Kripke::PartitionSpace const &pspace,
  *
  *****************************************************************************/
 
-LocalRangeSet::LocalRangeSet(Kripke::PartitionSpace const &pspace,
+LocalRangeSet::LocalRangeSet(Kripke::Core::PartitionSpace const &pspace,
             size_t local_size)
 {
 
@@ -144,26 +145,26 @@ LocalRangeSet::LocalRangeSet(Kripke::PartitionSpace const &pspace,
  *  Kripke::GlobalRangeSet
  *
  *****************************************************************************/
-GlobalRangeSet::GlobalRangeSet(Kripke::PartitionSpace const &pspace,
+GlobalRangeSet::GlobalRangeSet(Kripke::Core::PartitionSpace const &pspace,
     size_t global_size)
 {
   setup_setGlobalSize(pspace, global_size);
 }
 
 
-GlobalRangeSet::GlobalRangeSet(Kripke::PartitionSpace const &pspace, Kripke::Set &parent_set)
+GlobalRangeSet::GlobalRangeSet(Kripke::Core::PartitionSpace const &pspace, Kripke::Core::Set &parent_set)
 {
   setup_setGlobalSize(pspace, parent_set.globalSize());
 }
 
 
-void GlobalRangeSet::setup_setGlobalSize(Kripke::PartitionSpace const &pspace,
+void GlobalRangeSet::setup_setGlobalSize(Kripke::Core::PartitionSpace const &pspace,
     size_t global_size)
 {
 
   setup_initChunks(pspace, SPACE_NULL);
 
-  // Kripke::Set
+  // Kripke::Core::Set
   m_chunk_to_size.resize(1, global_size);
   m_chunk_to_lower.resize(1, 0);
   m_global_size = global_size;

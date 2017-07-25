@@ -40,12 +40,12 @@
 #include <vector>
 
 namespace Kripke {
-
+namespace Core {
   /**
    * Base class for Field which provides storage allocation
    */
   template<typename ELEMENT>
-  class FieldStorage : public Kripke::DomainVar {
+  class FieldStorage : public Kripke::Core::DomainVar {
     public:
       using ElementType = ELEMENT;
       using ElementPtr = ELEMENT*;
@@ -54,7 +54,7 @@ namespace Kripke {
       using View1dType = RAJA::View<ElementType, Layout1dType>;
 
 
-      explicit FieldStorage(Kripke::Set const &spanned_set) :
+      explicit FieldStorage(Kripke::Core::Set const &spanned_set) :
         m_set(&spanned_set)
       {
 
@@ -117,7 +117,7 @@ namespace Kripke {
       }
 
     protected:
-      Kripke::Set const *m_set;
+      Kripke::Core::Set const *m_set;
       std::vector<size_t> m_chunk_to_size;
       std::vector<ElementPtr> m_chunk_to_data;
   };
@@ -126,10 +126,10 @@ namespace Kripke {
    * Defines a multi-dimensional data field defined over a Set
    */
   template<typename ELEMENT, typename ... IDX_TYPES>
-  class Field : public Kripke::FieldStorage<ELEMENT> {
+  class Field : public Kripke::Core::FieldStorage<ELEMENT> {
     public:
 
-      using Parent = Kripke::FieldStorage<ELEMENT>;
+      using Parent = Kripke::Core::FieldStorage<ELEMENT>;
 
       using ElementType = ELEMENT;
       using ElementPtr = ELEMENT*;
@@ -148,7 +148,7 @@ namespace Kripke {
         return VarOps::make_index_sequence<NumDims>::value;
       }
 
-      Field(Kripke::Set const &spanned_set,
+      Field(Kripke::Core::Set const &spanned_set,
             LayoutFunction layout_fcn = defaultLayout) :
         Parent(spanned_set)
       {
@@ -219,14 +219,14 @@ namespace Kripke {
           printf("\n");
         }
 
-        DomainVar::dump();
+        Kripke::Core::DomainVar::dump();
       }
 
     protected:
       std::vector<LayoutType> m_chunk_to_layout;
   };
 
-} // namespace
+} } // namespace
 
 #endif
 

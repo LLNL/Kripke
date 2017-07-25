@@ -40,18 +40,20 @@ struct Grid_Data;
 
 namespace Kripke {
 
-class DataStore;
+namespace Core {
+  class DataStore;
 
-template<typename T>
-class FieldStorage;
+  template<typename T>
+  class FieldStorage;
+}
 
 class ParallelComm {
   public:
-    explicit ParallelComm(Kripke::DataStore &data_store);
+    explicit ParallelComm(Kripke::Core::DataStore &data_store);
     virtual ~ParallelComm() = default;
 
     // Adds a subdomain to the work queue
-    virtual void addSubdomain(Kripke::DataStore &data_store, SdomId sdom_id) = 0;
+    virtual void addSubdomain(Kripke::Core::DataStore &data_store, SdomId sdom_id) = 0;
 
     // Checks if there are any outstanding subdomains to complete
     // false indicates all work is done, and all sends have completed
@@ -66,15 +68,15 @@ class ParallelComm {
   protected:
     int findSubdomain(SdomId sdom_id);
     void dequeueSubdomain(SdomId sdom_id);
-    void postRecvs(Kripke::DataStore &data_store, SdomId sdom_id);
-    void postSends(Kripke::DataStore &data_store, SdomId sdom_id_upwind, double *buffers[3]);
+    void postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id);
+    void postSends(Kripke::Core::DataStore &data_store, SdomId sdom_id_upwind, double *buffers[3]);
     void testRecieves(void);
     void waitAllSends(void);
     std::vector<SdomId> getReadyList(void);
 
-    Kripke::DataStore *m_data_store;
+    Kripke::Core::DataStore *m_data_store;
 
-    Kripke::FieldStorage<double> *m_plane_data[3];
+    Kripke::Core::FieldStorage<double> *m_plane_data[3];
 
     // These vectors contian the recieve requests
 #ifdef KRIPKE_USE_MPI
@@ -95,10 +97,10 @@ class ParallelComm {
 
 class SweepComm : public ParallelComm {
   public:
-    explicit SweepComm(Kripke::DataStore &data_store);
+    explicit SweepComm(Kripke::Core::DataStore &data_store);
     virtual ~SweepComm();
 
-    virtual void addSubdomain(Kripke::DataStore &data_store, SdomId sdom_id);
+    virtual void addSubdomain(Kripke::Core::DataStore &data_store, SdomId sdom_id);
     virtual bool workRemaining(void);
     virtual std::vector<SdomId> readySubdomains(void);
     virtual void markComplete(SdomId sdom_id);
@@ -107,10 +109,10 @@ class SweepComm : public ParallelComm {
 
 class BlockJacobiComm : public ParallelComm {
   public:
-    explicit BlockJacobiComm(Kripke::DataStore &data_store);
+    explicit BlockJacobiComm(Kripke::Core::DataStore &data_store);
     virtual ~BlockJacobiComm();
 
-    virtual void addSubdomain(Kripke::DataStore &data_store, SdomId sdom_id);
+    virtual void addSubdomain(Kripke::Core::DataStore &data_store, SdomId sdom_id);
     virtual bool workRemaining(void);
     virtual std::vector<SdomId> readySubdomains(void);
     virtual void markComplete(SdomId sdom_id);

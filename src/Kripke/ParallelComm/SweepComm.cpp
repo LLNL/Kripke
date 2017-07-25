@@ -45,7 +45,7 @@
 using namespace Kripke;
 
 
-SweepComm::SweepComm(Kripke::DataStore &data_store) : ParallelComm(data_store)
+SweepComm::SweepComm(Kripke::Core::DataStore &data_store) : ParallelComm(data_store)
 {
 
 }
@@ -57,7 +57,7 @@ SweepComm::~SweepComm(){
   Adds a subdomain to the work queue.
   Determines if upwind dependencies require communication, and posts appropirate Irecv's.
 */
-void SweepComm::addSubdomain(Kripke::DataStore &data_store, SdomId sdom_id){
+void SweepComm::addSubdomain(Kripke::Core::DataStore &data_store, SdomId sdom_id){
   // Post recieves for upwind dependencies, and add to the queue
   postRecvs(data_store, sdom_id);
 }

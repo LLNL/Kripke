@@ -76,7 +76,7 @@ InputVariables::InputVariables() :
 bool InputVariables::checkValues(void) const{
   // make sure any output only goes to root
 
-  Kripke::Comm comm;
+  Kripke::Core::Comm comm;
   int rank = comm.rank();
 
   if(num_zonesets_dim[0] <= 0 || num_zonesets_dim[1] <= 0 || num_zonesets_dim[2] <= 0){

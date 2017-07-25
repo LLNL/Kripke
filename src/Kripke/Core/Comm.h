@@ -41,14 +41,14 @@
 #endif
 
 namespace Kripke {
-
+namespace Core {
 /**
  * An interprocess communicator.
  *
  * Used as an abstraction layer around MPI... mainly to allow compilation w/o
  * MPI
  */
-class Comm : public Kripke::BaseVar {
+class Comm : public Kripke::Core::BaseVar {
   public:
 
 
@@ -212,6 +212,6 @@ class Comm : public Kripke::BaseVar {
 
 
 
-} // namespace
+} } // namespace
 
 #endif

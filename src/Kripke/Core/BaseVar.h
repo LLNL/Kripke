@@ -34,7 +34,7 @@
 #define KRIPKE_BASE_VAR_H__
 
 namespace Kripke {
-
+namespace Core {
 /**
  * Variable base class for DataStore class
  */
@@ -45,6 +45,6 @@ class BaseVar {
 };
 
 
-}  // namespace
+} } // namespace
 
 #endif
