@@ -60,6 +60,10 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
   }
 
 
+  // Intialize unknowns
+  Kripke::Kernel::kConst(data_store.getVariable<Kripke::Field_Flux>("psi"), 0.0);
+
+
   // Loop over iterations
   double part_last = 0.0;
   for(size_t iter = 0;iter < max_iter;++ iter){
@@ -80,6 +84,9 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
 
     // Moments to Discrete transformation (rhs = LPlus*psi_out)
     Kripke::Kernel::LPlusTimes(data_store);
+
+
+
 
 
 

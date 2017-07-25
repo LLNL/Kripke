@@ -77,6 +77,7 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
         continue;
       }
 
+
       // Get glower for src and dst ranges (to index into sigma_s)
       int glower_src = set_group.lower(sdom_src);
       int glower_dst = set_group.lower(sdom_dst);
@@ -123,6 +124,7 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
                     sigs(mat, n, global_g, global_gp)
                     * phi(nm, gp, z)
                     * fraction;
+
               }
             }
           }
@@ -130,6 +132,7 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
       }
     }
   }
+
 }
 
 
