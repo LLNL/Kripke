@@ -210,12 +210,12 @@ Kripke::SdomId PartitionSpace::coordToSdomId(SdomCoord coord) const{
 }
 
 PartitionSpace::SdomCoord PartitionSpace::coordToGlobalCoord(SdomCoord local_coord) const{
-  SdomCoord global_coord{
+  SdomCoord global_coord{{
     (ptrdiff_t)(local_coord[0] + m_global_sdom_lower[SPACE_P]),
     (ptrdiff_t)(local_coord[1] + m_global_sdom_lower[SPACE_Q]),
     (ptrdiff_t)(local_coord[2] + m_global_sdom_lower[SPACE_RX]),
     (ptrdiff_t)(local_coord[3] + m_global_sdom_lower[SPACE_RY]),
-    (ptrdiff_t)(local_coord[4] + m_global_sdom_lower[SPACE_RZ])};
+    (ptrdiff_t)(local_coord[4] + m_global_sdom_lower[SPACE_RZ]) }};
 
   return global_coord;
 }

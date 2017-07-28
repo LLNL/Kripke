@@ -62,7 +62,7 @@ int ParallelComm::findSubdomain(SdomId sdom_id){
     }
   }
   if(index == queue_sdom_ids.size()){
-    KRIPKE_ABORT("Cannot find subdomain id %d in work queue\n", *sdom_id);
+    KRIPKE_ABORT("Cannot find subdomain id %ld in work queue\n", (long)*sdom_id);
   }
 
   return index;

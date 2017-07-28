@@ -165,7 +165,7 @@ namespace Core {
           // Create a layout using dim sizes from the Set, and permutation
           // defined by the layout function
           SdomId sdom_id(Parent::m_chunk_to_subdomain[chunk_id]);
-          std::array<int, NumDims> sizes;
+          std::array<RAJA::Index_type, NumDims> sizes;
           for(size_t dim = 0;dim < NumDims;++ dim){
             sizes[dim] = spanned_set.dimSize(sdom_id, dim);
           }

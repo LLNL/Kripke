@@ -133,7 +133,7 @@ LocalRangeSet::LocalRangeSet(Kripke::Core::PartitionSpace const &pspace,
   m_global_size = comm.allReduceSumLong(local_size);
 
   // Copy in local subdomain size
-  m_chunk_to_size = {{local_size}};
+  m_chunk_to_size = {local_size};
 
   // Compute global offsets for each chunk
   m_chunk_to_lower.resize(num_chunks);

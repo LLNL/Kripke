@@ -490,11 +490,11 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
 
 
     std::array<Field_Direction2Int::ViewType, 3> sweep_dir =
-        {
+        {{
           field_id.getView(sdom_id),
           field_jd.getView(sdom_id),
           field_kd.getView(sdom_id)
-        };
+        }};
 
     // Compute upwind and downwind coordinate
     auto upwind = field_upwind.getView(sdom_id);

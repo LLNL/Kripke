@@ -175,7 +175,6 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
    */
   auto material_fcn = [](double x, double y, double z) -> Material {
 
-    return Material{2};
     // Problem is defined for one octant, with reflecting boundaries
     // We "unreflect" it here by taking abs values
     x = std::abs(x);
@@ -249,7 +248,7 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
           double zi = z0 + dz*k;
 
           // subsample probe the geometry to get our materials
-          sdom_mix[zone] = {0.0, 0.0, 0.0}; // fraction of both materials
+          sdom_mix[zone] = {{0.0, 0.0, 0.0}}; // fraction of both materials
 
           for(int si = 0;si < num_subsamples;++ si){
             for(int sj = 0;sj < num_subsamples;++ sj){

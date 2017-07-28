@@ -31,6 +31,9 @@
  */
 
 #include <Kripke/Kernel.h>
+
+#include <Kripke.h>
+#include <Kripke/Arch/Scattering.h>
 #include <Kripke/Core/PartitionSpace.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
@@ -102,10 +105,13 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
       int num_groups_dst = set_group.size(sdom_dst);
       int num_moments =    set_moment.size(sdom_dst);
 
-      for(Moment nm{0};nm < num_moments;++ nm){
-        for(Group g{0};g < num_groups_dst;++ g){ // dst group
-          for(Group gp{0};gp < num_groups_src;++ gp){ // src group
-            for(Zone z{0};z < num_zones;++ z){
+      RAJA::nested::forall(Kripke::Arch::Policy_Scattering{},
+          RAJA::util::make_tuple(
+              RAJA::RangeSegment(0, num_moments),
+              RAJA::RangeSegment(0, num_groups_dst),
+              RAJA::RangeSegment(0, num_groups_src),
+              RAJA::RangeSegment(0, num_zones) ),
+          KRIPKE_LAMBDA (Moment nm, Group g, Group gp, Zone z) {
 
               // map nm to n
               Legendre n = moment_to_legendre(nm);
@@ -125,11 +131,11 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
                     * phi(nm, gp, z)
                     * fraction;
 
+
               }
-            }
           }
-        }
-      }
+      );
+
     }
   }
 

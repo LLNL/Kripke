@@ -32,6 +32,8 @@
 
 #include <Kripke/Kernel.h>
 
+#include <Kripke.h>
+#include <Kripke/Arch/Population.h>
 #include <Kripke/Core/Comm.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
@@ -65,15 +67,19 @@ double Kripke::Kernel::population(Kripke::Core::DataStore &data_store)
     auto w = field_w.getView(sdom_id);
     auto volume = field_volume.getView(sdom_id);
 
-    for(Zone z{0};z < num_zones;++ z){
-      for(Direction d{0};d < num_directions;++ d){
-        for(Group g{0};g < num_groups;++ g){
+    double *part_ref = &part;
 
-          part += w(d) * psi(d,g,z) * volume(z);
+    RAJA::nested::forall(Kripke::Arch::Policy_Population{},
+        RAJA::util::make_tuple(
+            RAJA::RangeSegment(0, num_directions),
+            RAJA::RangeSegment(0, num_groups),
+            RAJA::RangeSegment(0, num_zones) ),
+        KRIPKE_LAMBDA (Direction d, Group g, Zone z) {
+
+          *part_ref += w(d) * psi(d,g,z) * volume(z);
 
         }
-      }
-    }
+    );
   }
 
   // reduce

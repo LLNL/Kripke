@@ -30,11 +30,15 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
+#include <Kripke.h>
+#include <Kripke/Arch/LTimes.h>
 #include <Kripke/Kernel.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
+using namespace Kripke;
 using namespace Kripke::Core;
+
 
 void Kripke::Kernel::LTimes(Kripke::Core::DataStore &data_store)
 {
@@ -54,6 +58,7 @@ void Kripke::Kernel::LTimes(Kripke::Core::DataStore &data_store)
 
   // Loop over Subdomains
   for (Kripke::SdomId sdom_id : field_psi.getWorkList()){
+
     // Get dimensioning
     int num_directions = set_dir.size(sdom_id);
     int num_groups =     set_group.size(sdom_id);
@@ -66,14 +71,22 @@ void Kripke::Kernel::LTimes(Kripke::Core::DataStore &data_store)
     auto ell = field_ell.getView(sdom_id);
 
     // Compute:  phi =  ell * psi
-    for(Moment nm{0};nm < num_moments;++nm){
-      for (Direction d{0}; d < num_directions; d++) {
-        for(Group g{0};g < num_groups;++ g){
-          for(Zone z{0};z < num_zones;++ z){
-            phi(nm,g,z) += ell(nm, d) * psi(d, g, z);
-          }
+    RAJA::nested::forall(Kripke::Arch::Policy_LTimes{},
+        RAJA::util::make_tuple(
+            RAJA::RangeSegment(0, num_moments),
+            RAJA::RangeSegment(0, num_directions),
+            RAJA::RangeSegment(0, num_groups),
+            RAJA::RangeSegment(0, num_zones) ),
+        KRIPKE_LAMBDA (Moment nm, Direction d, Group g, Zone z) {
+
+           phi(nm,g,z) += ell(nm, d) * psi(d, g, z);
+
         }
-      }     
-    }
-  } 
+    );
+
+  }
+
+
 }
+
+

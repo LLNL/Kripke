@@ -179,7 +179,7 @@ namespace Core {
       RAJA_INLINE
       LayoutType getLayout(Kripke::SdomId sdom_id) const {
 
-        std::array<int, NUM_SETS> sizes;
+        std::array<RAJA::Index_type, NUM_SETS> sizes;
         for(size_t dim = 0;dim < NUM_SETS;++ dim){
           sizes[dim] = dimSize(sdom_id, dim);
         }

@@ -36,6 +36,7 @@
 #include <KripkeConfig.h>
 
 #include <RAJA/RAJA.hpp>
+#include <RAJA/pattern/nested.hpp>
 
 #include <string>
 #include <vector>
@@ -72,6 +73,8 @@ struct Grid_Data;
     KRIPKE_ABORT("Assertion Failed: " __VA_ARGS__); \
   }
    
+
+#define KRIPKE_LAMBDA [=] RAJA_HOST_DEVICE
 
 namespace Kripke {
 

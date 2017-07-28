@@ -11,7 +11,7 @@ set(RAJA_ENABLE_OPENMP ${ENABLE_OPENMP})
 set(RAJA_ENABLE_TESTS Off)
 set(RAJA_ENABLE_EXAMPLES Off)
 set(RAJA_ENABLE_DOCUMENTATION Off)
-add_subdirectory(tpl/raja EXCLUDE_FROM_ALL)
+add_subdirectory(tpl/raja) # EXCLUDE_FROM_ALL)
 
 get_property(RAJA_INCLUDE_DIRS DIRECTORY tpl/raja PROPERTY INCLUDE_DIRECTORIES)
 include_directories(${RAJA_INCLUDE_DIRS})

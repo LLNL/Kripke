@@ -31,6 +31,9 @@
  */
 
 #include <Kripke/Kernel.h>
+
+#include <Kripke.h>
+#include <Kripke/Arch/Source.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
@@ -68,20 +71,26 @@ void Kripke::Kernel::source(Kripke::Core::DataStore &data_store)
     int num_mixed  = set_mixelem.size(sdom_id);
     int num_groups = set_group.size(sdom_id);
 
-    for(Group g{0};g < num_groups;++ g){
-      for(MixElem mix{0};mix < num_mixed;++ mix){
 
-        Material material = mixelem_to_material(mix);
+    // Compute:  phi =  ell * psi
+    RAJA::nested::forall(Kripke::Arch::Policy_Source{},
+        RAJA::util::make_tuple(
+            RAJA::RangeSegment(0, num_groups),
+            RAJA::RangeSegment(0, num_mixed) ),
+        KRIPKE_LAMBDA (Group g, MixElem mix) {
 
-        if(material == 2){
-          Zone z = mixelem_to_zone(mix);
-          double fraction = mixelem_to_fraction(mix);
+            Material material = mixelem_to_material(mix);
 
-          phi_out(nm, g, z) += 1.0 * fraction;
+            if(material == 2){
+              Zone z = mixelem_to_zone(mix);
+              double fraction = mixelem_to_fraction(mix);
+
+              phi_out(nm, g, z) += 1.0 * fraction;
+            }
+
         }
+    );
 
-      }
-    }
   }
 }
 
