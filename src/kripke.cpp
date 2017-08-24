@@ -33,6 +33,7 @@
 #include <Kripke.h>
 #include <Kripke/Core/Comm.h>
 #include <Kripke/Core/DataStore.h>
+#include <Kripke/Core/Set.h>
 #include <Kripke/Generate.h>
 #include <Kripke/InputVariables.h>
 #include <Kripke/SteadyStateSolver.h>
@@ -452,8 +453,30 @@ int main(int argc, char **argv) {
     Kripke::SteadyStateSolver(data_store, vars.niter, vars.parallel_method == PMETHOD_BJ);
 
     // Print Timing Info
-    data_store.getVariable<Kripke::Timing>("timing").print();
+    auto &timing = data_store.getVariable<Kripke::Timing>("timing");
+		timing.print();
 
+		// Compute performance metrics
+		auto &set_group  = data_store.getVariable<Kripke::Core::Set>("Set/Group");
+	  auto &set_dir    = data_store.getVariable<Kripke::Core::Set>("Set/Direction");
+		auto &set_zone   = data_store.getVariable<Kripke::Core::Set>("Set/Zone");
+		
+		size_t num_unknowns = set_group.globalSize() 
+		                    * set_dir.globalSize()
+												* set_zone.globalSize();
+
+		size_t num_iter = timing.getCount("SweepSolver");
+		double solve_time = timing.getTotal("Solve");
+		double grind_time = solve_time / num_unknowns / num_iter;
+
+		double sweep_eff = timing.getTotal("SweepSubdomain") / timing.getTotal("SweepSolver");
+
+		printf("\n");
+		printf("Figures of Merit\n");
+		printf("================\n");
+		printf("\n");
+		printf("  Grind time :       %e [seconds/unknown/iterations]\n", grind_time);
+		printf("  Sweep efficiency : %e [SweepSubdomain time / SweepSolver time]\n", sweep_eff);
   }
 
   // Gather post-point memory info
@@ -491,5 +514,8 @@ int main(int argc, char **argv) {
   // Cleanup and exit
   Kripke::Core::Comm::finalize();
 
+
+	printf("\n");
+	printf("END\n");
   return (0);
 }

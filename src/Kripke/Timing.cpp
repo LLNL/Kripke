@@ -129,3 +129,11 @@ double Timing::getTotal(std::string const &name) const{
   return i->second.getElapsed();
 }
 
+size_t Timing::getCount(std::string const &name) const{
+  auto i = timers.find(name);
+  if(i == timers.end()){
+    return 0;
+  }
+  return i->second.getCount();
+}
+

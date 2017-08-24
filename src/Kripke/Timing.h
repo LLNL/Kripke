@@ -97,6 +97,7 @@ namespace Kripke {
 
       void print(void) const;
       double getTotal(std::string const &name) const;
+      size_t getCount(std::string const &name) const;
 
     private:
       using TimerMap = std::map<std::string, Timer>;
