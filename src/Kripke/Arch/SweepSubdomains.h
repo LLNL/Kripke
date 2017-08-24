@@ -39,4 +39,8 @@
 #include <Kripke/Arch/Sequential/SweepSubdomains.h>
 #endif
 
+#ifdef KRIPKE_ARCH_OPENMP
+#include <Kripke/Arch/OpenMP/SweepSubdomains.h>
+#endif
+
 #endif

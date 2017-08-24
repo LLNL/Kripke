@@ -39,4 +39,8 @@
 #include <Kripke/Arch/Sequential/LTimes.h>
 #endif
 
+#ifdef KRIPKE_ARCH_OPENMP
+#include <Kripke/Arch/OpenMP/LTimes.h>
+#endif
+
 #endif

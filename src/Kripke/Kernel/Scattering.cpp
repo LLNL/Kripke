@@ -106,7 +106,7 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
       int num_moments =    set_moment.size(sdom_dst);
 
       RAJA::nested::forall(Kripke::Arch::Policy_Scattering{},
-          RAJA::util::make_tuple(
+          camp::make_tuple(
               RAJA::RangeSegment(0, num_moments),
               RAJA::RangeSegment(0, num_groups_dst),
               RAJA::RangeSegment(0, num_groups_src),

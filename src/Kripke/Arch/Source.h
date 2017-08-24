@@ -39,4 +39,8 @@
 #include <Kripke/Arch/Sequential/Source.h>
 #endif
 
+#ifdef KRIPKE_ARCH_OPENMP
+#include <Kripke/Arch/OpenMP/Source.h>
+#endif
+
 #endif

@@ -45,7 +45,7 @@ using Policy_LTimes =
       RAJA::nested::TypedFor<0, RAJA::seq_exec, Moment>,
       RAJA::nested::TypedFor<1, RAJA::seq_exec, Direction>,
       RAJA::nested::TypedFor<2, RAJA::seq_exec, Group>,
-      RAJA::nested::TypedFor<3, RAJA::simd_exec, Zone>
+      RAJA::nested::TypedFor<3, RAJA::seq_exec, Zone>
     >;
 
 

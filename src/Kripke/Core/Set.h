@@ -184,9 +184,8 @@ namespace Core {
           sizes[dim] = dimSize(sdom_id, dim);
         }
 
-        std::array<size_t, NUM_SETS> perm =
-            VarOps::make_index_sequence<NUM_SETS>::value;
-
+        //auto perm = camp::make_idx_seq<NUM_SETS>::array();
+				auto perm = RAJA::as_array<RAJA::MakePerm<NUM_SETS>>::get();
 
         return RAJA::make_permuted_layout(sizes, perm);
       }

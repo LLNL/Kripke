@@ -74,7 +74,7 @@ void Kripke::Kernel::source(Kripke::Core::DataStore &data_store)
 
     // Compute:  phi =  ell * psi
     RAJA::nested::forall(Kripke::Arch::Policy_Source{},
-        RAJA::util::make_tuple(
+        camp::make_tuple(
             RAJA::RangeSegment(0, num_groups),
             RAJA::RangeSegment(0, num_mixed) ),
         KRIPKE_LAMBDA (Group g, MixElem mix) {

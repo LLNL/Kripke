@@ -141,12 +141,14 @@ namespace Core {
 
 
       using LayoutFunction = std::function<
-                              std::array<size_t, NumDims>(Kripke::SdomId)
+                              std::array<ptrdiff_t, NumDims>(Kripke::SdomId)
                              >;
 
-      static std::array<size_t, NumDims> defaultLayout(Kripke::SdomId) {
-        return VarOps::make_index_sequence<NumDims>::value;
-      }
+      static std::array<ptrdiff_t, NumDims> defaultLayout(Kripke::SdomId) {
+        //return VarOps::make_index_sequence<NumDims>::value;
+        //return camp::make_idx_seq<NumDims>::array();
+      	return RAJA::as_array<RAJA::MakePerm<NumDims>>::get();
+			}
 
       Field(Kripke::Core::Set const &spanned_set,
             LayoutFunction layout_fcn = defaultLayout) :

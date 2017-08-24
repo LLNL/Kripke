@@ -48,6 +48,7 @@ namespace Kripke {
       RAJA_INLINE
       Timer() :
         started(false),
+				elapsed(0.),
         count(0)
       {}
 
@@ -64,6 +65,7 @@ namespace Kripke {
       void stop(std::string const &my_name) {
         if(started){
           timer.stop(my_name.c_str());
+					elapsed += timer.elapsed();
         }
       }
 
@@ -74,11 +76,12 @@ namespace Kripke {
 
       RAJA_INLINE
       double getElapsed() const {
-        return timer.elapsed();
+        return elapsed;
       }
 
     private:
       bool started;
+			double elapsed;
       size_t count;
       RAJA::Timer timer;
   };

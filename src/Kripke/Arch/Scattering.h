@@ -39,4 +39,8 @@
 #include <Kripke/Arch/Sequential/Scattering.h>
 #endif
 
+#ifdef KRIPKE_ARCH_OPENMP
+#include <Kripke/Arch/OpenMP/Scattering.h>
+#endif
+
 #endif

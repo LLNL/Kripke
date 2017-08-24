@@ -72,7 +72,7 @@ void Kripke::Kernel::LTimes(Kripke::Core::DataStore &data_store)
 
     // Compute:  phi =  ell * psi
     RAJA::nested::forall(Kripke::Arch::Policy_LTimes{},
-        RAJA::util::make_tuple(
+        camp::make_tuple(
             RAJA::RangeSegment(0, num_moments),
             RAJA::RangeSegment(0, num_directions),
             RAJA::RangeSegment(0, num_groups),

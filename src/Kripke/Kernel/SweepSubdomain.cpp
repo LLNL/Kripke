@@ -86,7 +86,7 @@ void Kripke::Kernel::sweepSubdomain(Kripke::Core::DataStore &data_store,
   auto zone_layout = data_store.getVariable<ProductSet<3>>("Set/Zone").getLayout(sdom_id);
 
   RAJA::nested::forall(Kripke::Arch::Policy_SweepSubdomains{},
-      RAJA::util::make_tuple(
+      camp::make_tuple(
           RAJA::RangeSegment(0, num_directions),
           RAJA::RangeSegment(0, num_groups),
           RAJA::RangeStrideSegment(*start_k, *end_k, kd),

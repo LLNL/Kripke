@@ -39,4 +39,8 @@
 #include <Kripke/Arch/Sequential/Population.h>
 #endif
 
+#ifdef KRIPKE_ARCH_OPENMP
+#include <Kripke/Arch/OpenMP/Population.h>
+#endif
+
 #endif

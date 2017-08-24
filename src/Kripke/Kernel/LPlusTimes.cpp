@@ -35,6 +35,7 @@
 #include <Kripke/Kernel.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
+#include "RAJA/pattern/nested.hpp"
 
 using namespace Kripke::Core;
 
@@ -70,7 +71,7 @@ void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)
 
     // Compute:  rhs =  ell_plus * phi_out
     RAJA::nested::forall(Kripke::Arch::Policy_LPlusTimes{},
-        RAJA::util::make_tuple(
+        camp::make_tuple(
             RAJA::RangeSegment(0, num_moments),
             RAJA::RangeSegment(0, num_directions),
             RAJA::RangeSegment(0, num_groups),

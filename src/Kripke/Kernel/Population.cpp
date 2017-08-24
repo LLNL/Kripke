@@ -70,7 +70,7 @@ double Kripke::Kernel::population(Kripke::Core::DataStore &data_store)
     double *part_ref = &part;
 
     RAJA::nested::forall(Kripke::Arch::Policy_Population{},
-        RAJA::util::make_tuple(
+        camp::make_tuple(
             RAJA::RangeSegment(0, num_directions),
             RAJA::RangeSegment(0, num_groups),
             RAJA::RangeSegment(0, num_zones) ),
