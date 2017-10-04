@@ -132,8 +132,6 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
    * y:  -100.0  to 100.0
    * z:   -60.0  to  60.0
    */
-
-
   double const x_min = -60.0;
   double const x_max = 60.0;
 
@@ -142,15 +140,8 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
 
   double const z_min = -60.0;
   double const z_max = 60.0;
-/*
-  double const x_min = 0;
-  double const x_max = 1;
 
-  double const y_min = 0;
-  double const y_max = 1;
 
-  double const z_min = 0;
-  double const z_max = 1; */
   auto &field_dx = data_store.newVariable<Field_ZoneI2Double>("dx", set_zonei);
   double dx = (x_max-x_min) / set_zonei.globalSize();
   Kripke::Kernel::kConst(field_dx, dx);
@@ -285,8 +276,6 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
   // Create a new set that describes the number of mixed zones per sdom
   auto &set_mixelem = data_store.newVariable<RangeSet>(
             "Set/MixElem", pspace, SPACE_R, sdom_to_num_mixed);
-
-  //printf("Global size of Set/MixElem: %d\n", (int)set_mixelem.globalSize());
 
   // Create fields to store mixture information
   auto &field_mixed_to_zone = data_store.newVariable<Field_MixElem2Zone>(

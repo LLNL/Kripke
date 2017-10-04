@@ -34,13 +34,30 @@
 #define KRIPKE_ARCH_POPULATION
 
 #include <Kripke.h>
+#include <Kripke/VarTypes.h>
+
+namespace Kripke {
+namespace Arch {
 
 #ifdef KRIPKE_ARCH_SEQUENTIAL
-#include <Kripke/Arch/Sequential/Population.h>
+  using Policy_Population =
+    RAJA::nested::Policy<
+      RAJA::nested::TypedFor<0, RAJA::seq_exec, Direction>,
+      RAJA::nested::TypedFor<1, RAJA::seq_exec, Group>,
+      RAJA::nested::TypedFor<2, RAJA::seq_exec, Zone>
+    >;
 #endif
 
 #ifdef KRIPKE_ARCH_OPENMP
-#include <Kripke/Arch/OpenMP/Population.h>
+  using Policy_Population =
+    RAJA::nested::Policy<
+      RAJA::nested::TypedFor<0, RAJA::seq_exec, Direction>,
+      RAJA::nested::TypedFor<1, RAJA::seq_exec, Group>,
+      RAJA::nested::TypedFor<2, RAJA::seq_exec, Zone>
+    >;
 #endif
+
+}
+}
 
 #endif

@@ -34,13 +34,28 @@
 #define KRIPKE_ARCH_SOURCE
 
 #include <Kripke.h>
+#include <Kripke/VarTypes.h>
+
+namespace Kripke {
+namespace Arch {
 
 #ifdef KRIPKE_ARCH_SEQUENTIAL
-#include <Kripke/Arch/Sequential/Source.h>
+  using Policy_Source =
+    RAJA::nested::Policy<
+      RAJA::nested::TypedFor<0, RAJA::seq_exec, Group>,
+      RAJA::nested::TypedFor<1, RAJA::seq_exec, MixElem>
+    >;
 #endif
 
 #ifdef KRIPKE_ARCH_OPENMP
-#include <Kripke/Arch/OpenMP/Source.h>
+  using Policy_Source =
+    RAJA::nested::Policy<
+      RAJA::nested::TypedFor<0, RAJA::seq_exec, Group>,
+      RAJA::nested::TypedFor<1, RAJA::seq_exec, MixElem>
+    >;
 #endif
+
+}
+}
 
 #endif

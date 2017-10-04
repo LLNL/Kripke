@@ -34,13 +34,32 @@
 #define KRIPKE_ARCH_SCATTERING
 
 #include <Kripke.h>
+#include <Kripke/VarTypes.h>
+
+namespace Kripke {
+namespace Arch {
 
 #ifdef KRIPKE_ARCH_SEQUENTIAL
-#include <Kripke/Arch/Sequential/Scattering.h>
+  using Policy_Scattering =
+    RAJA::nested::Policy<
+      RAJA::nested::TypedFor<0, RAJA::seq_exec, Moment>,
+      RAJA::nested::TypedFor<1, RAJA::seq_exec, Group>,
+      RAJA::nested::TypedFor<2, RAJA::seq_exec, Group>,
+      RAJA::nested::TypedFor<3, RAJA::simd_exec, Zone>
+    >;
 #endif
 
 #ifdef KRIPKE_ARCH_OPENMP
-#include <Kripke/Arch/OpenMP/Scattering.h>
+  using Policy_Scattering =
+    RAJA::nested::Policy<
+      RAJA::nested::TypedFor<0, RAJA::seq_exec, Moment>,
+      RAJA::nested::TypedFor<1, RAJA::seq_exec, Group>,
+      RAJA::nested::TypedFor<2, RAJA::seq_exec, Group>,
+      RAJA::nested::TypedFor<3, RAJA::simd_exec, Zone>
+    >;
 #endif
+
+}
+}
 
 #endif

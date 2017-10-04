@@ -34,13 +34,34 @@
 #define KRIPKE_ARCH_SWEEPSUBDOMAINS
 
 #include <Kripke.h>
+#include <Kripke/VarTypes.h>
+
+namespace Kripke {
+namespace Arch {
 
 #ifdef KRIPKE_ARCH_SEQUENTIAL
-#include <Kripke/Arch/Sequential/SweepSubdomains.h>
+  using Policy_SweepSubdomains =
+    RAJA::nested::Policy<
+      RAJA::nested::TypedFor<0, RAJA::seq_exec, Direction>,
+      RAJA::nested::TypedFor<1, RAJA::seq_exec, Group>,
+      RAJA::nested::TypedFor<2, RAJA::seq_exec, ZoneK>,
+      RAJA::nested::TypedFor<3, RAJA::seq_exec, ZoneJ>,
+      RAJA::nested::TypedFor<4, RAJA::seq_exec, ZoneI>
+    >;
 #endif
 
 #ifdef KRIPKE_ARCH_OPENMP
-#include <Kripke/Arch/OpenMP/SweepSubdomains.h>
+  using Policy_SweepSubdomains =
+    RAJA::nested::Policy<
+      RAJA::nested::TypedFor<0, RAJA::seq_exec, Direction>,
+      RAJA::nested::TypedFor<1, RAJA::seq_exec, Group>,
+      RAJA::nested::TypedFor<2, RAJA::seq_exec, ZoneK>,
+      RAJA::nested::TypedFor<3, RAJA::seq_exec, ZoneJ>,
+      RAJA::nested::TypedFor<4, RAJA::seq_exec, ZoneI>
+    >;
 #endif
+
+}
+}
 
 #endif
