@@ -116,6 +116,11 @@ namespace Core {
         return  m_chunk_to_data[chunk_id];
       }
 
+      RAJA_INLINE
+      Kripke::Core::Set const &getSet() const {
+        return *m_set;
+      }
+
     protected:
       Kripke::Core::Set const *m_set;
       std::vector<size_t> m_chunk_to_size;

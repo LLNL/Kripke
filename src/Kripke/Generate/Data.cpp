@@ -127,41 +127,7 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
     }
   }
 
-  Kripke::Core::Comm default_comm;
-  if(default_comm.rank() == 0){
 
-    unsigned long flux_size = flux_set->globalSize();
-    unsigned long moment_size = fluxmoment_set->globalSize();
-    unsigned long sigs_size = sigs_set->globalSize();
-    unsigned long total_size = (2*moment_size + 2*flux_size + sigs_size);
-
-    printf("\n");
-    printf("  Variable     Num Elements      Megabytes\n");
-    printf("  --------     ------------      ---------\n");
-    printf("  psi          %12lu   %12.3lf\n",
-        flux_size,
-        (double)flux_size*8.0/1024.0/1024.0);
-
-    printf("  rhs          %12lu   %12.3lf\n",
-        flux_size,
-        (double)flux_size*8.0/1024.0/1024.0);
-
-    printf("  phi          %12lu   %12.3lf\n",
-        moment_size,
-        (double)moment_size*8.0/1024.0/1024.0);
-
-    printf("  phi_out      %12lu   %12.3lf\n",
-        moment_size,
-        (double)moment_size*8.0/1024.0/1024.0);
-
-    printf("  sigs         %12lu   %12.3lf\n",
-        sigs_size,
-        (double)sigs_size*8.0/1024.0/1024.0);
-
-    printf("  TOTAL        %12lu   %12.3lf\n",
-        total_size,
-        (double)total_size*8.0/1024.0/1024.0);
-  }
 
 }
 

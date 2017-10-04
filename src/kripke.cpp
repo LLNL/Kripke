@@ -49,13 +49,8 @@
 #include <omp.h>
 #endif
 
-#ifdef KRIPKE_USE_TCMALLOC
-#include <gperftools/malloc_extension.h>
-#endif
-
 #ifdef __bgq__
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/location.h>
-#include </bgsys/drivers/ppcfloor/spi/include/kernel/memory.h>
 #endif
 
 
@@ -242,11 +237,31 @@ int main(int argc, char **argv) {
     printf("  Compiler Flags:         \"%s\"\n", KRIPKE_CXX_FLAGS);
     printf("  Linker Flags:           \"%s\"\n", KRIPKE_LINK_FLAGS);
 
+#ifdef KRIPKE_USE_MPI
+    printf("  MPI Enabled:            Yes\n");
+#else
+    printf("  MPI Enabled:            No\n");
+#endif
+
+#ifdef KRIPKE_USE_OPENMP
+    printf("  OpenMP Enabled:         Yes\n");
+#else
+    printf("  OpenMP Enabled:         No\n");
+#endif
+
 
     /* Print out some information about how OpenMP threads are being mapped
      * to CPU cores.
      */
 #ifdef KRIPKE_USE_OPENMP
+
+    // Get max number of threads
+    int max_threads = omp_get_max_threads();
+
+    // Allocate an array to store which core each thread is running on
+    std::vector<int> thread_to_core(max_threads, -1);
+
+    // Collect thread->core mapping
 #pragma omp parallel
     {
       int tid = omp_get_thread_num();
@@ -255,8 +270,17 @@ int main(int argc, char **argv) {
 #else
       int core = sched_getcpu();
 #endif
-      printf("Rank: %d Thread %d: Core %d\n", myid, tid, core);
+      thread_to_core[tid] = core;
     }
+
+    printf("\nOpenMP Thread->Core mapping for %d threads on rank 0", max_threads);
+    for(int tid = 0;tid < max_threads;++ tid){
+      if(!(tid%8)){
+        printf("\n");
+      }
+      printf("  %3d->%3d", tid, thread_to_core[tid]);
+    }
+    printf("\n");
 #endif
   }
 
@@ -377,12 +401,15 @@ int main(int argc, char **argv) {
    */
   if (myid == 0) {
 
+    printf("\nInput Parameters\n");
+    printf("================\n");
+
     printf("\n");
-    printf("Problem Size:\n");
-    printf("  Zones:                 %d x %d x %d\n", vars.nx, vars.ny, vars.nz);
-    printf("  Groups:                %d\n", vars.num_groups);
-    printf("  Legendre Order:        %d\n", vars.legendre_order);
-    printf("  Quadrature Set:        ");
+    printf("  Problem Size:\n");
+    printf("    Zones:                 %d x %d x %d\n", vars.nx, vars.ny, vars.nz);
+    printf("    Groups:                %d\n", vars.num_groups);
+    printf("    Legendre Order:        %d\n", vars.legendre_order);
+    printf("    Quadrature Set:        ");
     if(vars.quad_num_polar == 0){
       printf("Dummy S2 with %d points\n", vars.num_directions);
     }
@@ -392,22 +419,22 @@ int main(int argc, char **argv) {
    
 
     printf("\n");
-    printf("Physical Properties:\n");
-    printf("  Total X-Sec:           sigt=[%lf, %lf, %lf]\n", vars.sigt[0], vars.sigt[1], vars.sigt[2]);
-    printf("  Scattering X-Sec:      sigs=[%lf, %lf, %lf]\n", vars.sigs[0], vars.sigs[1], vars.sigs[2]);
+    printf("  Physical Properties:\n");
+    printf("    Total X-Sec:           sigt=[%lf, %lf, %lf]\n", vars.sigt[0], vars.sigt[1], vars.sigt[2]);
+    printf("    Scattering X-Sec:      sigs=[%lf, %lf, %lf]\n", vars.sigs[0], vars.sigs[1], vars.sigs[2]);
 
 
     printf("\n");
-    printf("Solver Options:\n");
-    printf("  Number iterations:     %d\n", vars.niter);
+    printf("  Solver Options:\n");
+    printf("    Number iterations:     %d\n", vars.niter);
 
     
     
     printf("\n");
-    printf("MPI Decomposition Options:\n");
-    printf("  Total MPI tasks:       %d\n", num_tasks);
-    printf("  Spatial decomp:        %d x %d x %d MPI tasks\n", vars.npx, vars.npy, vars.npz);
-    printf("  Block solve method:    ");
+    printf("  MPI Decomposition Options:\n");
+    printf("    Total MPI tasks:       %d\n", num_tasks);
+    printf("    Spatial decomp:        %d x %d x %d MPI tasks\n", vars.npx, vars.npy, vars.npz);
+    printf("    Block solve method:    ");
     if(vars.parallel_method == PMETHOD_SWEEP){
       printf("Sweep\n");
     }
@@ -417,22 +444,12 @@ int main(int argc, char **argv) {
 
 
     printf("\n");
-    printf("Per-Task Options:\n"); 
-    printf("  DirSets/Directions:    %d sets, %d directions/set\n", vars.num_dirsets, vars.num_directions/vars.num_dirsets);
-    printf("  GroupSet/Groups:       %d sets, %d groups/set\n", vars.num_groupsets, vars.num_groups/vars.num_groupsets);
-    printf("  Zone Sets:             %d x %d x %d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
-   printf("  Loop Nesting Order     %s\n", nestingString(vars.nesting).c_str());        
-#ifdef KRIPKE_USE_OPENMP
-    int num_threads=1;
-#pragma omp parallel
-    {
-      num_threads = omp_get_num_threads();
-      if(omp_get_thread_num() == 0){
-          printf("OpenMP threads/task:     %d\n", num_threads);
-          printf("OpenMP total threads:    %d\n", num_threads*num_tasks);
-        }
-    }
-#endif
+    printf("  Per-Task Options:\n");
+    printf("    DirSets/Directions:    %d sets, %d directions/set\n", vars.num_dirsets, vars.num_directions/vars.num_dirsets);
+    printf("    GroupSet/Groups:       %d sets, %d groups/set\n", vars.num_groupsets, vars.num_groups/vars.num_groupsets);
+    printf("    Zone Sets:             %d x %d x %d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
+    printf("    Loop Nesting Order     %s\n", nestingString(vars.nesting).c_str());
+
 
     
     
@@ -471,51 +488,22 @@ int main(int argc, char **argv) {
 
 		double sweep_eff = timing.getTotal("SweepSubdomain") / timing.getTotal("SweepSolver");
 
-		printf("\n");
-		printf("Figures of Merit\n");
-		printf("================\n");
-		printf("\n");
-		printf("  Grind time :       %e [seconds/unknown/iterations]\n", grind_time);
-		printf("  Sweep efficiency : %e [SweepSubdomain time / SweepSolver time]\n", sweep_eff);
-  }
-
-  // Gather post-point memory info
-  double heap_mb = -1.0;
-  double hwm_mb = -1.0;
-#ifdef KRIPKE_USE_TCMALLOC
-  // If we are using tcmalloc, we need to use it's interface
-  MallocExtension *mext = MallocExtension::instance();
-  size_t bytes;
-
-  mext->GetNumericProperty("generic.current_allocated_bytes", &bytes);
-  heap_mb = ((double)bytes)/1024.0/1024.0;
-
-  mext->GetNumericProperty("generic.heap_size", &bytes);
-  hwm_mb = ((double)bytes)/1024.0/1024.0;
-#else
-#ifdef __bgq__
-  // use BG/Q specific calls (if NOT using tcmalloc)
-  uint64_t bytes;
-
-  int rc = Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &bytes);
-  heap_mb = ((double)bytes)/1024.0/1024.0;
-
-  rc = Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAPMAX, &bytes);
-  hwm_mb = ((double)bytes)/1024.0/1024.0;
-#endif
-#endif
-  // Print memory info
-  if(myid == 0 && heap_mb >= 0.0){
-    printf("Bytes allocated: %lf MB\n", heap_mb);
-    printf("Heap Size      : %lf MB\n", hwm_mb);
-
+		if(myid == 0){
+      printf("\n");
+      printf("Figures of Merit\n");
+      printf("================\n");
+      printf("\n");
+      printf("  Grind time :       %e [seconds/unknown/iterations]\n", grind_time);
+      printf("  Sweep efficiency : %e [SweepSubdomain time / SweepSolver time]\n", sweep_eff);
+		}
   }
   
   // Cleanup and exit
   Kripke::Core::Comm::finalize();
 
-
-	printf("\n");
-	printf("END\n");
+  if(myid == 0){
+    printf("\n");
+    printf("END\n");
+  }
   return (0);
 }

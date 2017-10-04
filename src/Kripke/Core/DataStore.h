@@ -80,12 +80,31 @@ class DataStore {
 
       return *var_ptr;
     }
-    
+
     template<typename T>
     RAJA_INLINE
     T const &getVariable(std::string const &name) const{
       return const_cast<DataStore *>(this)-> template getVariable<T>(name);
     }
+    
+
+    template<typename T>
+    RAJA_INLINE
+    bool isVariableType(std::string const &name) const{
+
+      // Perform lookup by name
+      auto it = m_vars.find(name);
+      if(it == m_vars.end()){
+        return false;
+      }
+
+      // Cast from BaseVar* to see if it's correct type
+      T *var_ptr = dynamic_cast<T*>(it->second);
+
+      return var_ptr != nullptr;
+    }
+
+    std::vector<std::string> getVariableList() const;
 
   private:
     std::map<std::string, Kripke::Core::BaseVar *> m_vars;

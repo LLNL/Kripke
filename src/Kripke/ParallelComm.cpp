@@ -80,16 +80,20 @@ void ParallelComm::dequeueSubdomain(SdomId sdom_id){
 
 /**
   Adds a subdomain to the work queue.
-  Determines if upwind dependencies require communication, and posts appropirate Irecv's.
-  All recieves use the plane_data[] arrays as recieve buffers.
+  Determines if upwind dependencies require communication, and posts appropriate Irecv's.
+  All receives use the plane_data[] arrays as receive buffers.
 */
 void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id){
-  Kripke::Core::Comm comm;
+  using namespace Kripke::Core;
+  Comm comm;
   int mpi_rank = comm.rank();
 
   auto upwind = data_store.getVariable<Field_Adjacency>("upwind").getView(sdom_id);
 
   auto global_to_rank = data_store.getVariable<Field_GlobalSdomId2Rank>("GlobalSdomId2Rank").getView(SdomId{0});
+
+  auto local_to_global = data_store.getVariable<Field_SdomId2GlobalSdomId>("SdomId2GlobalSdomId").getView(SdomId{0});
+
 
   // go thru each dimensions upwind neighbors, and add the dependencies
   int num_depends = 0;
@@ -101,7 +105,12 @@ void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id
     }
 
     // If it's an on-rank communication (from another subdomain)
-    if(global_to_rank(upwind(dim)) == mpi_rank){
+    GlobalSdomId upwind_sdom = upwind(dim);
+    int upwind_rank = global_to_rank(upwind_sdom);
+//    printf("postRecv: rank=%d, sdom=%d, dim=%d, upwind_sdom=%d, upwind_rank=%d\n",
+//        mpi_rank, (int)*sdom_id, (int)*dim, (int)*upwind_sdom, upwind_rank);
+//    fflush(stdout);
+    if(upwind_rank == mpi_rank){
       // skip it, but track the dependency
       num_depends ++;
       continue;
@@ -109,18 +118,19 @@ void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id
 
 #ifdef KRIPKE_USE_MPI
 
-    int mpi_size = comm.size();
-
     // Add request to pending list
     recv_requests.push_back(MPI_Request());
-    recv_subdomains.push_back(sdom_id);
+    recv_subdomains.push_back(*sdom_id);
 
-    // compute the tag id of THIS subdomain (tags are always based on destination)
-    int tag = computeTag(sdom.upwind[dim].mpi_rank, sdom.upwind[dim].subdomain_id);
+    auto &plane_data = *m_plane_data[*dim];
+    double *plane_data_ptr = plane_data.getData(sdom_id);
+    size_t plane_data_size = plane_data.size(sdom_id);
+
+    GlobalSdomId global_sdom_id = local_to_global(sdom_id);
 
     // Post the recieve
-    MPI_Irecv(sdom.plane_data[dim]->ptr(), sdom.plane_data[dim]->elements, MPI_DOUBLE, sdom.upwind[dim].mpi_rank,
-      tag, MPI_COMM_WORLD, &recv_requests[recv_requests.size()-1]);
+    MPI_Irecv(plane_data_ptr, plane_data_size, MPI_DOUBLE, upwind_rank,
+      *global_sdom_id, MPI_COMM_WORLD, &recv_requests[recv_requests.size()-1]);
 
     // increment number of dependencies
     num_depends ++;
@@ -155,7 +165,9 @@ void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId
 
 
     // If it's an on-rank communication (to another subdomain)
-    if(global_to_rank(downwind(dim)) == mpi_rank){
+    GlobalSdomId downwind_sdom = downwind(dim);
+    int downwind_rank = global_to_rank(downwind_sdom);
+    if(downwind_rank == mpi_rank){
 
       SdomId sdom_id_downwind = global_to_sdom_id(downwind(dim));
 
@@ -178,18 +190,20 @@ void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId
 
 #ifdef KRIPKE_USE_MPI
 
-    int mpi_size = comm.size();
-
     // At this point, we know that we have to send an MPI message
     // Add request to send queue
     send_requests.push_back(MPI_Request());
 
-    // compute the tag id of TARGET subdomain (tags are always based on destination)
-    int tag = computeTag(mpi_rank, sdom->downwind[dim].subdomain_id);
+    // Get size of outgoing boudnary data
+    auto &plane_data = *m_plane_data[*dim];
+    size_t plane_data_size = plane_data.size(sdom_id);
 
+//    printf("postSend: rank=%d, sdom=%d, dim=%d, downwind_sdom=%d, downwind_rank=%d\n",
+//            mpi_rank, (int)*sdom_id, (int)*dim, (int)*downwind_sdom, downwind_rank);
+//    fflush(stdout);
     // Post the send
-    MPI_Isend(src_buffers[dim], sdom->plane_data[dim]->elements, MPI_DOUBLE, sdom->downwind[dim].mpi_rank,
-      tag, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
+    MPI_Isend(src_buffers[*dim], plane_data_size, MPI_DOUBLE, downwind_rank,
+      *downwind_sdom, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
 
 #else
     // We cannot SEND anything without MPI, so fail

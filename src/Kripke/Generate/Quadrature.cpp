@@ -380,7 +380,6 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
   KRIPKE_ASSERT(nm == (int)moment_set->globalSize());
 
   // fill in the global
-  printf("num sdom=%d\n", (int)field_moment_to_legendre.getWorkList().size());
   for(SdomId sdom_id : field_moment_to_legendre.getWorkList()){
     auto moment_to_legendre = field_moment_to_legendre.getView(sdom_id);
 

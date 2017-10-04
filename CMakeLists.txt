@@ -56,6 +56,9 @@ configure_file(${PROJECT_SOURCE_DIR}/src/KripkeConfig.h.in
 # Define build targets for Kripke
 #
 
+set(KRIPKE_DEPENDS mpi openmp)
+ 
+
 include_directories(./src ${PROJECT_BINARY_DIR}/include)
 
 blt_add_library(
@@ -84,7 +87,7 @@ blt_add_library(
               "src/Kripke/SweepSolver.cpp"
               "src/Kripke/Test/TestKernels.cpp"
               "src/Kripke/Timing.cpp"
-  DEPENDS_ON   
+  DEPENDS_ON  ${KRIPKE_DEPENDS}
 )
 
 add_dependencies(kripke RAJA)
@@ -92,7 +95,7 @@ add_dependencies(kripke RAJA)
 blt_add_executable( 
   NAME        kripke.exe
   SOURCES     "src/kripke.cpp"
-  DEPENDS_ON  kripke
+  DEPENDS_ON  ${KRIPKE_DEPENDS} kripke
 )
 
 

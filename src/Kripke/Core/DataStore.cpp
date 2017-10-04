@@ -43,3 +43,12 @@ void DataStore::deleteVariable(std::string const &name){
 }
 
 
+std::vector<std::string> DataStore::getVariableList() const{
+  std::vector<std::string> var_list;
+
+  for(auto iter = m_vars.begin();iter != m_vars.end();++ iter){
+    var_list.push_back(iter->first);
+  }
+
+  return var_list;
+}

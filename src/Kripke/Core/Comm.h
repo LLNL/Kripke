@@ -191,6 +191,17 @@ class Comm : public Kripke::Core::BaseVar {
     }
 
     /**
+     * Allreduce SUM an array, in-place.
+     * Without MPI, this is a NOP
+     */
+    RAJA_INLINE
+    void allReduceSumDouble(double *value, size_t len) const {
+#ifdef KRIPKE_USE_MPI
+      MPI_Allreduce(MPI_IN_PLACE, value, len, MPI_DOUBLE, MPI_SUM, m_comm);
+#endif
+    }
+
+    /**
      * Prefix scan SUM a single value.
      * Without MPI, this is a NOP
      */

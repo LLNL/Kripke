@@ -46,10 +46,14 @@
 #include <stdlib.h>
 
 // Make sure that there's openmp support, otherwise error out
-#if KRIPKE_USE_OPENMP
+#ifdef KRIPKE_USE_OPENMP
 #ifndef _OPENMP
 #error "OpenMP selected for build, but OpenMP is not available"
 #endif
+#endif
+
+#ifdef KRIPKE_USE_MPI
+#include <mpi.h>
 #endif
 
 // Forward Decl
@@ -60,7 +64,7 @@ struct Grid_Data;
 #ifdef KRIPKE_USE_MPI
 #define KRIPKE_ABORT(...) \
   printf(__VA_ARGS__); \
-  MPI_Abort(MPI_COMM_WORLD);
+  MPI_Abort(MPI_COMM_WORLD, 1);
 #else
 #define KRIPKE_ABORT(...) \
   printf(__VA_ARGS__); \

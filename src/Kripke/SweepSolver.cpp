@@ -65,6 +65,8 @@ void Kripke::SweepSolver (Kripke::Core::DataStore &data_store, std::vector<SdomI
 
   // Add all subdomains in our list
   for(size_t i = 0;i < subdomain_list.size();++ i){
+//    Kripke::Core::Comm default_comm;
+//    printf("SweepSolver: rank=%d, sdom=%d\n", (int)default_comm.rank(), (int)*subdomain_list[i]);
     SdomId sdom_id = subdomain_list[i];
     comm->addSubdomain(data_store, sdom_id);
   }

@@ -286,7 +286,7 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
   auto &set_mixelem = data_store.newVariable<RangeSet>(
             "Set/MixElem", pspace, SPACE_R, sdom_to_num_mixed);
 
-  printf("Global size of Set/MixElem: %d\n", (int)set_mixelem.globalSize());
+  //printf("Global size of Set/MixElem: %d\n", (int)set_mixelem.globalSize());
 
   // Create fields to store mixture information
   auto &field_mixed_to_zone = data_store.newVariable<Field_MixElem2Zone>(
@@ -347,8 +347,14 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
     KRIPKE_ASSERT((*mixelem) == num_mixelems, "Mismatch in mixture info");
   }
 
-  printf("Volumes: %.12e, %.12e, %.12e\n", total_volume[0],
+  // Display the total volume
+  Kripke::Core::Comm default_comm;
+  auto const &r_comm = pspace.getComm(SPACE_R);
+  r_comm.allReduceSumDouble(total_volume, 3);
+  if(default_comm.rank() == 0){
+    printf("\n  Material Volumes=[%e, %e, %e]\n", total_volume[0],
       total_volume[1],total_volume[2]);
+  }
 
 
   // Allocate storage for our zonal total cross-section
