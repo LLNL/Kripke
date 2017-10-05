@@ -56,6 +56,8 @@ void Kripke::Kernel::source(Kripke::Core::DataStore &data_store)
   auto &field_mixed_to_material = data_store.getVariable<Field_MixElem2Material>("mixelem_to_material");
   auto &field_mixed_to_fraction = data_store.getVariable<Field_MixElem2Double>("mixelem_to_fraction");
 
+  double source_strength = 1.0;
+
   // Source term is isotropic
   Moment nm{0};
 
@@ -85,7 +87,7 @@ void Kripke::Kernel::source(Kripke::Core::DataStore &data_store)
               Zone z = mixelem_to_zone(mix);
               double fraction = mixelem_to_fraction(mix);
 
-              phi_out(nm, g, z) += 1.0 * fraction;
+              phi_out(nm, g, z) += source_strength * fraction;
             }
 
         }

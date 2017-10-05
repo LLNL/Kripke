@@ -12,6 +12,9 @@
 #cmakedefine KRIPKE_USE_MPI
 #cmakedefine KRIPKE_USE_OPENMP
 
-#define KRIPKE_ARCH_SEQUENTIAL
+#cmakedefine KRIPKE_ARCH "@KRIPKE_ARCH@"
+#cmakedefine KRIPKE_ARCH_SEQUENTIAL
+#cmakedefine KRIPKE_ARCH_OPENMP
+#cmakedefine KRIPKE_ARCH_BGQ
 
 #endif

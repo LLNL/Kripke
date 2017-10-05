@@ -42,8 +42,8 @@ namespace Arch {
 #ifdef KRIPKE_ARCH_SEQUENTIAL
   using Policy_Source =
     RAJA::nested::Policy<
-      RAJA::nested::TypedFor<0, RAJA::seq_exec, Group>,
-      RAJA::nested::TypedFor<1, RAJA::seq_exec, MixElem>
+      RAJA::nested::TypedFor<0, RAJA::loop_exec, Group>,
+      RAJA::nested::TypedFor<1, RAJA::loop_exec, MixElem>
     >;
 #endif
 

@@ -63,9 +63,10 @@ namespace Kripke {
     void kConst(FieldType &field, Kripke::SdomId sdom_id, typename FieldType::ElementType value){
       auto view1d = field.getView1d(sdom_id);
       int num_elem = field.size(sdom_id);
-      for(int i = 0;i < num_elem;++ i){
-        view1d(i) = value;
-      }
+      //for(int i = 0;i < num_elem;++ i){
+      RAJA::forall<RAJA::simd_exec>(0, num_elem, [=](RAJA::Index_type i){ 
+			 	view1d(i) = value;
+      });
     }
 
     template<typename FieldType>
@@ -86,9 +87,10 @@ namespace Kripke {
       auto view_src = field_src.getView1d(sdom_id_src);
       auto view_dst = field_dst.getView1d(sdom_id_dst);
       int num_elem = field_src.size(sdom_id_src);
-      for(int i = 0;i < num_elem;++ i){
+      //for(int i = 0;i < num_elem;++ i){
+      RAJA::forall<RAJA::simd_exec>(0, num_elem, [=](RAJA::Index_type i){ 
         view_src(i) = view_dst(i);
-      }
+      });
     }
 
     template<typename FieldType>

@@ -9,9 +9,10 @@ project(KRIPKE LANGUAGES CXX)
 
 set(RAJA_ENABLE_OPENMP ${ENABLE_OPENMP})
 set(RAJA_ENABLE_TESTS Off)
+set(RAJA_ENABLE_TBB Off)
 set(RAJA_ENABLE_EXAMPLES Off)
 set(RAJA_ENABLE_DOCUMENTATION Off)
-add_subdirectory(tpl/raja) # EXCLUDE_FROM_ALL)
+add_subdirectory(tpl/raja EXCLUDE_FROM_ALL)
 
 get_property(RAJA_INCLUDE_DIRS DIRECTORY tpl/raja PROPERTY INCLUDE_DIRECTORIES)
 include_directories(${RAJA_INCLUDE_DIRS})
@@ -26,18 +27,56 @@ include_directories(${RAJA_INCLUDE_DIRS})
 include(blt/SetupBLT.cmake)
 
 
+#
+# Figure out what Arch we are selecting
+#
+
+
+set(${KRIPKE_ARCH_FOUND} 0)
+if(NOT KRIPKE_ARCH)
+  set(KRIPKE_ARCH "Sequential")
+endif()
+
+if(${KRIPKE_ARCH} STREQUAL "Sequential")
+  set(${KRIPKE_ARCH_FOUND} 1)
+  set(KRIPKE_ARCH_SEQUENTIAL 1)
+endif()
+
+
+if(${KRIPKE_ARCH} STREQUAL "OpenMP")
+  set(${KRIPKE_ARCH_FOUND} 1)
+  set(KRIPKE_ARCH_OPENMP 1)
+endif()
+
+
+if(${KRIPKE_ARCH} STREQUAL "BGQ")
+  set(${KRIPKE_ARCH_FOUND} 1)
+  set(KRIPKE_ARCH_BGQ 1)
+endif()
+
+
+if(NOT ${KRIPKE_ARCH_FOUND})
+  error("I don't know what architecture this is:'${KRIPKE_ARCH}'")
+endif()
+
+
+message(STATUS "Kripke selected architecture '${KRIPKE_ARCH}'")
 
 
 #
 # Setup variables to pass to KripkeConfig.h
 # 
 
+
+
 if(ENABLE_MPI)
 	set(KRIPKE_USE_MPI 1)
+	set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} mpi)
 endif()
 
 if(ENABLE_OPENMP)
 	set(KRIPKE_USE_OPENMP 1)
+	set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} openmp)
 endif()
 
 string(TOUPPER ${CMAKE_BUILD_TYPE} KRIPKE_BUILD_TYPE)
@@ -52,11 +91,10 @@ configure_file(${PROJECT_SOURCE_DIR}/src/KripkeConfig.h.in
 
 
 
+
 #
 # Define build targets for Kripke
 #
-
-set(KRIPKE_DEPENDS mpi openmp)
  
 
 include_directories(./src ${PROJECT_BINARY_DIR}/include)

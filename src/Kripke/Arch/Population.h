@@ -42,9 +42,9 @@ namespace Arch {
 #ifdef KRIPKE_ARCH_SEQUENTIAL
   using Policy_Population =
     RAJA::nested::Policy<
-      RAJA::nested::TypedFor<0, RAJA::seq_exec, Direction>,
-      RAJA::nested::TypedFor<1, RAJA::seq_exec, Group>,
-      RAJA::nested::TypedFor<2, RAJA::seq_exec, Zone>
+      RAJA::nested::TypedFor<0, RAJA::loop_exec, Direction>,
+      RAJA::nested::TypedFor<1, RAJA::loop_exec, Group>,
+      RAJA::nested::TypedFor<2, RAJA::loop_exec, Zone>
     >;
 #endif
 
