@@ -238,6 +238,18 @@ int main(int argc, char **argv) {
     printf("  Compiler Flags:         \"%s\"\n", KRIPKE_CXX_FLAGS);
     printf("  Linker Flags:           \"%s\"\n", KRIPKE_LINK_FLAGS);
 
+#ifdef KRIPKE_USE_CHAI
+    printf("  CHAI Enabled:           Yes\n");
+#else
+    printf("  CHAI Enabled:           No\n");
+#endif
+
+#ifdef KRIPKE_USE_CUDA
+    printf("  CUDA Enabled:           Yes\n");
+#else
+    printf("  CUDA Enabled:           No\n");
+#endif
+
 #ifdef KRIPKE_USE_MPI
     printf("  MPI Enabled:            Yes\n");
 #else
@@ -249,6 +261,9 @@ int main(int argc, char **argv) {
 #else
     printf("  OpenMP Enabled:         No\n");
 #endif
+
+
+
 
 
     /* Print out some information about how OpenMP threads are being mapped
