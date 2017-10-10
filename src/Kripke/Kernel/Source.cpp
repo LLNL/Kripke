@@ -37,38 +37,38 @@
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
+using namespace Kripke;
+using namespace Kripke::Core;
+
 /**
  * Add an isotropic source, with flux of 1, to every zone with Region 1
  * (or material 0).
  *
  * Since it's isotropic, we're just adding this to nm=0.
  */
-void Kripke::Kernel::source(Kripke::Core::DataStore &data_store)
-{
-  KRIPKE_TIMER(data_store, Source);
+struct SourceSdom {
 
-  auto &set_group   = data_store.getVariable<Kripke::Core::Set>("Set/Group");
-  auto &set_mixelem = data_store.getVariable<Kripke::Core::Set>("Set/MixElem");
+  template<typename AL>
+  RAJA_INLINE
+  void operator()(AL, Kripke::Core::DataStore &,
+                  Kripke::SdomId          sdom_id,
+                  Set const               &set_group,
+                  Set const               &set_mixelem,
+                  Field_Moments           &field_phi_out,
+                  Field_MixElem2Zone      &field_mixed_to_zone,
+                  Field_MixElem2Material  &field_mixed_to_material,
+                  Field_MixElem2Double    &field_mixed_to_fraction,
+                  double                  source_strength) const
+  {
 
-  auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
+    // Source term is isotropic
+    Moment nm{0};
 
-  auto &field_mixed_to_zone     = data_store.getVariable<Field_MixElem2Zone>("mixelem_to_zone");
-  auto &field_mixed_to_material = data_store.getVariable<Field_MixElem2Material>("mixelem_to_material");
-  auto &field_mixed_to_fraction = data_store.getVariable<Field_MixElem2Double>("mixelem_to_fraction");
+    auto phi_out = field_phi_out.getViewAL<AL>(sdom_id);
 
-  double source_strength = 1.0;
-
-  // Source term is isotropic
-  Moment nm{0};
-
-  // Loop over zoneset subdomains
-  for(auto sdom_id : field_phi_out.getWorkList()){
-
-    auto mixelem_to_zone     = field_mixed_to_zone.getView(sdom_id);
-    auto mixelem_to_material = field_mixed_to_material.getView(sdom_id);
-    auto mixelem_to_fraction = field_mixed_to_fraction.getView(sdom_id);
-
-    auto phi_out = field_phi_out.getView(sdom_id);
+    auto mixelem_to_zone     = field_mixed_to_zone.getViewAL<AL>(sdom_id);
+    auto mixelem_to_material = field_mixed_to_material.getViewAL<AL>(sdom_id);
+    auto mixelem_to_fraction = field_mixed_to_fraction.getViewAL<AL>(sdom_id);
 
     int num_mixed  = set_mixelem.size(sdom_id);
     int num_groups = set_group.size(sdom_id);
@@ -94,5 +94,37 @@ void Kripke::Kernel::source(Kripke::Core::DataStore &data_store)
     );
 
   }
-}
+};
 
+
+
+void Kripke::Kernel::source(DataStore &data_store)
+{
+  KRIPKE_TIMER(data_store, Source);
+
+  auto &set_group   = data_store.getVariable<Set>("Set/Group");
+  auto &set_mixelem = data_store.getVariable<Set>("Set/MixElem");
+
+  auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
+
+  auto &field_mixed_to_zone     = data_store.getVariable<Field_MixElem2Zone>("mixelem_to_zone");
+  auto &field_mixed_to_material = data_store.getVariable<Field_MixElem2Material>("mixelem_to_material");
+  auto &field_mixed_to_fraction = data_store.getVariable<Field_MixElem2Double>("mixelem_to_fraction");
+
+  double source_strength = 1.0;
+
+
+  // Loop over zoneset subdomains
+  for(auto sdom_id : field_phi_out.getWorkList()){
+
+    Kripke::Kernel::dispatch(data_store, sdom_id, SourceSdom{},
+                                 set_group, set_mixelem,
+                                 field_phi_out,
+                                 field_mixed_to_zone,
+                                 field_mixed_to_material,
+                                 field_mixed_to_fraction,
+                                 source_strength);
+
+  }
+
+}

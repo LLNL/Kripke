@@ -30,8 +30,8 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_DOMAIN_VAR_H__
-#define KRIPKE_DOMAIN_VAR_H__
+#ifndef KRIPKE_CORE_DOMAIN_VAR_H__
+#define KRIPKE_CORE_DOMAIN_VAR_H__
 
 #include <Kripke.h>
 #include <Kripke/Core/BaseVar.h>

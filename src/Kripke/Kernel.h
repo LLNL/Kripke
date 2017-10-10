@@ -34,11 +34,25 @@
 #define KRIPKE_KERNEL_H__
 
 #include <Kripke.h>
+#include <Kripke/Core/ArchLayout.h>
 #include <Kripke/Core/DataStore.h>
+#include <utility>
 
 namespace Kripke {
 
   namespace Kernel {
+
+    template<typename Function, typename ... Args>
+    RAJA_INLINE
+    void dispatch(Kripke::Core::DataStore &data_store, Kripke::SdomId sdom_id,
+        Function const &fcn, Args &&... args)
+    {
+      using namespace Kripke::Core;
+      fcn(ArchLayout<Arch_Sequential,Layout_Default>{},
+          data_store, sdom_id,
+          std::forward<Args>(args)...);
+    }
+
 
     void LPlusTimes(Kripke::Core::DataStore &data_store);
 
@@ -63,8 +77,7 @@ namespace Kripke {
     void kConst(FieldType &field, Kripke::SdomId sdom_id, typename FieldType::ElementType value){
       auto view1d = field.getView1d(sdom_id);
       int num_elem = field.size(sdom_id);
-      //for(int i = 0;i < num_elem;++ i){
-      RAJA::forall<RAJA::simd_exec>(0, num_elem, [=](RAJA::Index_type i){ 
+      RAJA::forall<RAJA::loop_exec>(0, num_elem, [=](RAJA::Index_type i){
 			 	view1d(i) = value;
       });
     }
@@ -87,7 +100,7 @@ namespace Kripke {
       auto view_src = field_src.getView1d(sdom_id_src);
       auto view_dst = field_dst.getView1d(sdom_id_dst);
       int num_elem = field_src.size(sdom_id_src);
-      //for(int i = 0;i < num_elem;++ i){
+
       RAJA::forall<RAJA::simd_exec>(0, num_elem, [=](RAJA::Index_type i){ 
         view_src(i) = view_dst(i);
       });

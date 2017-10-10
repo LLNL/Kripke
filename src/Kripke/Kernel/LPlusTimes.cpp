@@ -37,26 +37,22 @@
 #include <Kripke/VarTypes.h>
 #include "RAJA/pattern/nested.hpp"
 
+using namespace Kripke;
 using namespace Kripke::Core;
 
-void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)
-{
-  KRIPKE_TIMER(data_store, LPlusTimes);
+struct LPlusTimesSdom {
 
-  Set const &set_dir    = data_store.getVariable<Set>("Set/Direction");
-  Set const &set_group  = data_store.getVariable<Kripke::Core::Set>("Set/Group");
-  Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
-  Set const &set_moment = data_store.getVariable<Set>("Set/Moment");
-
-  auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
-  auto &field_rhs = data_store.getVariable<Kripke::Field_Flux>("rhs");
-  auto &field_ell_plus = data_store.getVariable<Field_Ell>("ell_plus");
-
-  // Zero RHS
-  kConst(field_rhs, 0.0);
-
-  // Loop over Subdomains
-  for (Kripke::SdomId sdom_id : field_rhs.getWorkList()){
+  template<typename AL>
+  void operator()(AL, Kripke::Core::DataStore &,
+                  Kripke::SdomId sdom_id,
+                  Set const       &set_dir,
+                  Set const       &set_group,
+                  Set const       &set_zone,
+                  Set const       &set_moment,
+                  Field_Moments   &field_phi_out,
+                  Field_Flux      &field_rhs,
+                  Field_Ell       &field_ell_plus) const
+  {
 
     // Get dimensioning
     int num_directions = set_dir.size(sdom_id);
@@ -65,12 +61,13 @@ void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)
     int num_zones =      set_zone.size(sdom_id);
 
     // Get views
-    auto phi_out =  field_phi_out.getView(sdom_id);
-    auto rhs =      field_rhs.getView(sdom_id);
-    auto ell_plus = field_ell_plus.getView(sdom_id);
+    auto phi_out =  field_phi_out.getViewAL<AL>(sdom_id);
+    auto rhs =      field_rhs.getViewAL<AL>(sdom_id);
+    auto ell_plus = field_ell_plus.getViewAL<AL>(sdom_id);
 
     // Compute:  rhs =  ell_plus * phi_out
-    RAJA::nested::forall(Kripke::Arch::Policy_LPlusTimes{},
+    RAJA::nested::forall(
+        Kripke::Arch::Policy_LPlusTimes{},
         camp::make_tuple(
             RAJA::RangeSegment(0, num_moments),
             RAJA::RangeSegment(0, num_directions),
@@ -83,4 +80,32 @@ void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)
         }
     );
   }
+
+};
+
+
+
+void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)
+{
+  KRIPKE_TIMER(data_store, LPlusTimes);
+
+  Set const &set_dir    = data_store.getVariable<Set>("Set/Direction");
+  Set const &set_group  = data_store.getVariable<Set>("Set/Group");
+  Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
+  Set const &set_moment = data_store.getVariable<Set>("Set/Moment");
+
+  auto &field_phi_out =   data_store.getVariable<Field_Moments>("phi_out");
+  auto &field_rhs =       data_store.getVariable<Field_Flux>("rhs");
+  auto &field_ell_plus =  data_store.getVariable<Field_Ell>("ell_plus");
+
+  // Loop over Subdomains
+  for (Kripke::SdomId sdom_id : field_rhs.getWorkList()){
+
+    Kripke::Kernel::dispatch(data_store, sdom_id, LPlusTimesSdom{},
+                             set_dir, set_group, set_zone, set_moment,
+                             field_phi_out, field_rhs, field_ell_plus);
+
+  }
+
+
 }

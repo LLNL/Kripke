@@ -470,7 +470,8 @@ int main(int argc, char **argv) {
     
     
   }
-  
+
+
 
   if(test){
     // Invoke Kernel testing
@@ -502,7 +503,7 @@ int main(int argc, char **argv) {
 		double solve_time = timing.getTotal("Solve");
 		double grind_time = solve_time / num_unknowns / num_iter;
 
-		double sweep_eff = timing.getTotal("SweepSubdomain") / timing.getTotal("SweepSolver");
+		double sweep_eff = 100.0 * timing.getTotal("SweepSubdomain") / timing.getTotal("SweepSolver");
 
 		if(myid == 0){
       printf("\n");
@@ -510,7 +511,7 @@ int main(int argc, char **argv) {
       printf("================\n");
       printf("\n");
       printf("  Grind time :       %e [seconds/unknown/iterations]\n", grind_time);
-      printf("  Sweep efficiency : %e [SweepSubdomain time / SweepSolver time]\n", sweep_eff);
+      printf("  Sweep efficiency : %4.5lf [100.0 * SweepSubdomain time / SweepSolver time]\n", sweep_eff);
 		}
   }
   

@@ -30,8 +30,8 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_BASE_VAR_H__
-#define KRIPKE_BASE_VAR_H__
+#ifndef KRIPKE_CORE_BASE_VAR_H__
+#define KRIPKE_CORE_BASE_VAR_H__
 
 namespace Kripke {
 namespace Core {

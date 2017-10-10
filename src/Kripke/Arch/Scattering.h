@@ -52,10 +52,10 @@ namespace Arch {
 #ifdef KRIPKE_ARCH_OPENMP
   using Policy_Scattering =
     RAJA::nested::Policy<
-      RAJA::nested::TypedFor<0, RAJA::seq_exec, Moment>,
-      RAJA::nested::TypedFor<1, RAJA::seq_exec, Group>,
-      RAJA::nested::TypedFor<2, RAJA::seq_exec, Group>,
-      RAJA::nested::TypedFor<3, RAJA::simd_exec, Zone>
+      RAJA::nested::TypedFor<0, RAJA::loop_exec, Moment>,
+      RAJA::nested::TypedFor<1, RAJA::loop_exec, Group>,
+      RAJA::nested::TypedFor<2, RAJA::loop_exec, Group>,
+      RAJA::nested::TypedFor<3, RAJA::loop_exec, Zone>
     >;
 #endif
 

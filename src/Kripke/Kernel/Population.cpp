@@ -38,7 +38,47 @@
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
+using namespace Kripke;
 using namespace Kripke::Core;
+
+
+struct PopulationSdom {
+
+  template<typename AL>
+  void operator()(AL, Kripke::Core::DataStore &,
+                  Kripke::SdomId sdom_id,
+                  Set const               &set_dir,
+                  Set const               &set_group,
+                  Set const               &set_zone,
+                  Field_Flux              &field_psi,
+                  Field_Direction2Double  &field_w,
+                  Field_Zone2Double       &field_volume,
+                  double                  *part_ptr) const
+  {
+
+    int num_directions = set_dir.size(sdom_id);
+    int num_groups =     set_group.size(sdom_id);
+    int num_zones =      set_zone.size(sdom_id);
+
+    auto psi = field_psi.getViewAL<AL>(sdom_id);
+    auto w = field_w.getViewAL<AL>(sdom_id);
+    auto volume = field_volume.getViewAL<AL>(sdom_id);
+
+    RAJA::nested::forall(Kripke::Arch::Policy_Population{},
+        camp::make_tuple(
+            RAJA::RangeSegment(0, num_directions),
+            RAJA::RangeSegment(0, num_groups),
+            RAJA::RangeSegment(0, num_zones) ),
+        KRIPKE_LAMBDA (Direction d, Group g, Zone z) {
+
+          *part_ptr += w(d) * psi(d,g,z) * volume(z);
+
+        }
+    );
+  }
+
+};
+
 
 /**
  * Returns the integral of Psi over all phase-space, to look at convergence
@@ -48,38 +88,21 @@ double Kripke::Kernel::population(Kripke::Core::DataStore &data_store)
   KRIPKE_TIMER(data_store, Population);
 
   Set const &set_dir    = data_store.getVariable<Set>("Set/Direction");
-  Set const &set_group  = data_store.getVariable<Kripke::Core::Set>("Set/Group");
+  Set const &set_group  = data_store.getVariable<Set>("Set/Group");
   Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
 
-  auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
-  auto &field_w = data_store.getVariable<Field_Direction2Double>("quadrature/w");
-  auto &field_volume = data_store.getVariable<Field_Zone2Double>("volume");
+  auto &field_psi =       data_store.getVariable<Field_Flux>("psi");
+  auto &field_w =         data_store.getVariable<Field_Direction2Double>("quadrature/w");
+  auto &field_volume =    data_store.getVariable<Field_Zone2Double>("volume");
 
   // sum up particles for psi and rhs
   double part = 0.0;
   for (Kripke::SdomId sdom_id : field_psi.getWorkList()){
 
-    int num_directions = set_dir.size(sdom_id);
-    int num_groups =     set_group.size(sdom_id);
-    int num_zones =      set_zone.size(sdom_id);
-
-    auto psi = field_psi.getView(sdom_id);
-    auto w = field_w.getView(sdom_id);
-    auto volume = field_volume.getView(sdom_id);
-
-    double *part_ref = &part;
-
-    RAJA::nested::forall(Kripke::Arch::Policy_Population{},
-        camp::make_tuple(
-            RAJA::RangeSegment(0, num_directions),
-            RAJA::RangeSegment(0, num_groups),
-            RAJA::RangeSegment(0, num_zones) ),
-        KRIPKE_LAMBDA (Direction d, Group g, Zone z) {
-
-          *part_ref += w(d) * psi(d,g,z) * volume(z);
-
-        }
-    );
+    Kripke::Kernel::dispatch(data_store, sdom_id, PopulationSdom{},
+                             set_dir, set_group, set_zone,
+                             field_psi, field_w, field_volume,
+                             &part);
   }
 
   // reduce

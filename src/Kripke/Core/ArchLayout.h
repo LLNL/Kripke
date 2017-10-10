@@ -30,37 +30,57 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_ARCH_LTIMES
-#define KRIPKE_ARCH_LTIMES
-
-#include <Kripke.h>
-#include <Kripke/VarTypes.h>
+#ifndef KRIPKE_CORE_ARCH_LAYOUT_H__
+#define KRIPKE_CORE_ARCH_LAYOUT_H__
 
 namespace Kripke {
-namespace Arch {
+namespace Core {
 
-#ifdef KRIPKE_ARCH_SEQUENTIAL
-  using Policy_LTimes =
-    RAJA::nested::Policy<
-      RAJA::nested::TypedFor<0, RAJA::loop_exec, Moment>,
-      RAJA::nested::TypedFor<1, RAJA::loop_exec, Direction>,
-      RAJA::nested::TypedFor<2, RAJA::loop_exec, Group>,
-      RAJA::nested::TypedFor<3, RAJA::loop_exec, Zone>
-    >;
+
+struct Layout_DGZ {};
+
+using Layout_Default = Layout_DGZ;
+
+struct Arch_Sequential {};
+struct Arch_OpenMP {};
+struct Arch_CUDA {};
+
+
+template<typename ARCH, typename LAYOUT>
+struct ArchLayout {
+  using Arch = ARCH;
+  using Layout = LAYOUT;
+};
+
+
+
+
+
+template<typename Layout, typename IdxTuple>
+struct FieldLayout;
+
+/*
+ * Default layouts are all defined as the default layout with
+ * stride-1 access on right-most index
+ */
+template<typename ... IdxTypes>
+struct FieldLayout<Layout_Default,
+                   camp::tuple<IdxTypes...>>{
+
+  static constexpr size_t num_dims = sizeof...(IdxTypes);
+
+  static constexpr ptrdiff_t stride_one_dim = (ptrdiff_t)(num_dims) - 1;
+
+  static std::array<ptrdiff_t, num_dims> getPermutation(){
+    RAJA::as_array<RAJA::MakePerm<num_dims>>::get();
+  }
+
+
+};
+
+
+
+} } // namespace
+
 #endif
 
-#ifdef KRIPKE_ARCH_OPENMP
-  using Policy_LTimes =
-      RAJA::nested::Policy<
-        RAJA::nested::TypedFor<0, RAJA::loop_exec, Moment>,
-        RAJA::nested::TypedFor<1, RAJA::loop_exec, Direction>,
-        RAJA::nested::TypedFor<2, RAJA::loop_exec, Group>,
-        RAJA::nested::TypedFor<3, RAJA::loop_exec, Zone>
-      >;
-#endif
-
-
-}
-}
-
-#endif

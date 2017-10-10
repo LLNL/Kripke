@@ -73,16 +73,26 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
      * Compute the RHS:  rhs = LPlus*S*L*psi + Q
      */
 
+
     // Discrete to Moments transformation (phi = L*psi)
+    Kripke::Kernel::kConst(data_store.getVariable<Field_Moments>("phi"), 0.0);
     Kripke::Kernel::LTimes(data_store);
 
+
+
     // Compute Scattering Source Term (psi_out = S*phi)
+    Kripke::Kernel::kConst(data_store.getVariable<Kripke::Field_Moments>("phi_out"), 0.0);
     Kripke::Kernel::scattering(data_store);
+
+
 
     // Compute External Source Term (psi_out = psi_out + Q)
     Kripke::Kernel::source(data_store);
 
+
+
     // Moments to Discrete transformation (rhs = LPlus*psi_out)
+    Kripke::Kernel::kConst(data_store.getVariable<Kripke::Field_Flux>("rhs"), 0.0);
     Kripke::Kernel::LPlusTimes(data_store);
 
 

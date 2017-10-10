@@ -30,10 +30,11 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_FIELD_H__
-#define KRIPKE_FIELD_H__
+#ifndef KRIPKE_CORE_FIELD_H__
+#define KRIPKE_CORE_FIELD_H__
 
 #include <Kripke.h>
+#include <Kripke/Core/ArchLayout.h>
 #include <Kripke/Core/DataStore.h>
 #include <Kripke/Core/DomainVar.h>
 #include <Kripke/Core/Set.h>
@@ -50,7 +51,7 @@ namespace Core {
       using ElementType = ELEMENT;
       using ElementPtr = ELEMENT*;
 
-      using Layout1dType = RAJA::TypedLayout<RAJA::Index_type, RAJA::Index_type>;
+      using Layout1dType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<RAJA::Index_type>, 0>;
       using View1dType = RAJA::View<ElementType, Layout1dType>;
 
 
@@ -82,6 +83,9 @@ namespace Core {
           delete[] i;
         }
       }
+
+      // Dissallow copy construction
+      FieldStorage(FieldStorage<ElementType> const &) = delete;
 
       /**
        * Returns the number of elements in this subdomain.
@@ -141,8 +145,15 @@ namespace Core {
 
       static constexpr size_t NumDims = sizeof...(IDX_TYPES);
 
-      using LayoutType = RAJA::TypedLayout<RAJA::Index_type, IDX_TYPES...>;
+      using LayoutType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>>;
       using ViewType = RAJA::View<ElementType, LayoutType>;
+
+
+      template<ptrdiff_t StrideOneDim>
+      using LayoutTypeS1 = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>, StrideOneDim>;
+
+      template<ptrdiff_t StrideOneDim>
+      using ViewTypeS1 = RAJA::View<ElementType, LayoutTypeS1<StrideOneDim>>;
 
 
       using LayoutFunction = std::function<
@@ -190,7 +201,6 @@ namespace Core {
 
 
 
-
       RAJA_INLINE
       ViewType getView(Kripke::SdomId sdom_id) const {
 
@@ -200,6 +210,24 @@ namespace Core {
         LayoutType layout = m_chunk_to_layout[chunk_id];
 
         return ViewType(ptr, layout);
+      }
+
+
+      template<typename AL>
+      RAJA_INLINE
+      auto getViewAL(Kripke::SdomId sdom_id) const ->
+        RAJA::View<ElementType, RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>, sizeof...(IDX_TYPES)-1>>
+      {
+        size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
+
+        ElementPtr ptr = Parent::m_chunk_to_data[chunk_id];
+
+        using FL = Kripke::Core::FieldLayout<typename AL::Layout, camp::tuple<IDX_TYPES...>>;
+
+        auto layout = RAJA::make_stride_one<FL::stride_one_dim>(m_chunk_to_layout[chunk_id]);
+
+        return RAJA::View<ElementType, RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>, sizeof...(IDX_TYPES)-1>>
+            (ptr, layout);
       }
 
 

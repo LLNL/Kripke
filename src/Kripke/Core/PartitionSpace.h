@@ -30,8 +30,8 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_PARTITION_SPACE_H__
-#define KRIPKE_PARTITION_SPACE_H__
+#ifndef KRIPKE_CORE_PARTITION_SPACE_H__
+#define KRIPKE_CORE_PARTITION_SPACE_H__
 
 #include <Kripke.h>
 #include <Kripke/Core/Comm.h>

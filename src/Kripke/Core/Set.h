@@ -30,8 +30,8 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_SET_H__
-#define KRIPKE_SET_H__
+#ifndef KRIPKE_CORE_SET_H__
+#define KRIPKE_CORE_SET_H__
 
 #include <Kripke.h>
 #include <Kripke/Core/DomainVar.h>
@@ -49,6 +49,9 @@ namespace Core {
     public:
       Set();
       virtual ~Set() = default;
+
+      // Don't allow copy construction
+      Set(Set const &) = delete;
 
       /**
        * Returns the number of elements in this subdomain.

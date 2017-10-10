@@ -37,89 +37,102 @@
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
+using namespace Kripke;
 using namespace Kripke::Core;
+
+
+struct SweepSdom {
+
+  template<typename AL>
+  RAJA_INLINE
+  void operator()(AL, Kripke::Core::DataStore &data_store,
+                  Kripke::SdomId              sdom_id) const
+  {
+
+  
+    int num_directions = data_store.getVariable<Set>("Set/Direction").size(sdom_id);
+    int num_groups = data_store.getVariable<Set>("Set/Group").size(sdom_id);
+    int local_imax = data_store.getVariable<Set>("Set/ZoneI").size(sdom_id);
+    int local_jmax = data_store.getVariable<Set>("Set/ZoneJ").size(sdom_id);
+    int local_kmax = data_store.getVariable<Set>("Set/ZoneK").size(sdom_id);
+
+    auto xcos = data_store.getVariable<Field_Direction2Double>("quadrature/xcos").getViewAL<AL>(sdom_id);
+    auto ycos = data_store.getVariable<Field_Direction2Double>("quadrature/ycos").getViewAL<AL>(sdom_id);
+    auto zcos = data_store.getVariable<Field_Direction2Double>("quadrature/zcos").getViewAL<AL>(sdom_id);
+    auto view_id = data_store.getVariable<Field_Direction2Int>("quadrature/id").getViewAL<AL>(sdom_id);
+    auto view_jd = data_store.getVariable<Field_Direction2Int>("quadrature/jd").getViewAL<AL>(sdom_id);
+    auto view_kd = data_store.getVariable<Field_Direction2Int>("quadrature/kd").getViewAL<AL>(sdom_id);
+
+    auto dx = data_store.getVariable<Field_ZoneI2Double>("dx").getViewAL<AL>(sdom_id);
+    auto dy = data_store.getVariable<Field_ZoneJ2Double>("dy").getViewAL<AL>(sdom_id);
+    auto dz = data_store.getVariable<Field_ZoneK2Double>("dz").getViewAL<AL>(sdom_id);
+
+    auto sigt = data_store.getVariable<Kripke::Field_SigmaTZonal>("sigt_zonal").getViewAL<AL>(sdom_id);
+    auto psi = data_store.getVariable<Kripke::Field_Flux>("psi").getViewAL<AL>(sdom_id);
+    auto rhs = data_store.getVariable<Kripke::Field_Flux>("rhs").getViewAL<AL>(sdom_id);
+
+    auto psi_lf = data_store.getVariable<Field_IPlane>("i_plane").getViewAL<AL>(sdom_id);
+    auto psi_fr = data_store.getVariable<Field_JPlane>("j_plane").getViewAL<AL>(sdom_id);
+    auto psi_bo = data_store.getVariable<Field_KPlane>("k_plane").getViewAL<AL>(sdom_id);
+
+    // Assumption: all directions in this sdom have same mesh traversal
+    Direction d0{0};
+    int id = view_id(d0);
+    int jd = view_jd(d0);
+    int kd = view_kd(d0);
+
+    ZoneI start_i((id>0) ? 0 : local_imax-1);
+    ZoneJ start_j((jd>0) ? 0 : local_jmax-1);
+    ZoneK start_k((kd>0) ? 0 : local_kmax-1);
+
+    ZoneI end_i((id>0) ? local_imax : -1);
+    ZoneJ end_j((jd>0) ? local_jmax : -1);
+    ZoneK end_k((kd>0) ? local_kmax : -1);
+
+    auto zone_layout = data_store.getVariable<ProductSet<3>>("Set/Zone").getLayout(sdom_id);
+
+    RAJA::nested::forall(Kripke::Arch::Policy_SweepSubdomains{},
+        camp::make_tuple(
+            RAJA::RangeSegment(0, num_directions),
+            RAJA::RangeSegment(0, num_groups),
+            RAJA::RangeStrideSegment(*start_k, *end_k, kd),
+            RAJA::RangeStrideSegment(*start_j, *end_j, jd),
+            RAJA::RangeStrideSegment(*start_i, *end_i, id)
+
+
+    ),
+        KRIPKE_LAMBDA (Direction d, Group g, ZoneK k, ZoneJ j, ZoneI i) {
+
+            double xcos_dxi = 2.0 * xcos(d) / dx(i);
+            double ycos_dyj = 2.0 * ycos(d) / dy(j);
+            double zcos_dzk = 2.0 * zcos(d) / dz(k);
+
+            Zone z(zone_layout(*i, *j, *k));
+
+            /* Calculate new zonal flux */
+            double psi_d_g_z = (rhs(d,g,z)
+                + psi_lf(d, g, j, k) * xcos_dxi
+                + psi_fr(d, g, i, k) * ycos_dyj
+                + psi_bo(d, g, i, j) * zcos_dzk)
+                / (xcos_dxi + ycos_dyj + zcos_dzk + sigt(g, z));
+
+            psi(d, g, z) = psi_d_g_z;
+
+            /* Apply diamond-difference relationships */
+            psi_lf(d, g, j, k) = 2.0 * psi_d_g_z - psi_lf(d, g, j, k);
+            psi_fr(d, g, i, k) = 2.0 * psi_d_g_z - psi_fr(d, g, i, k);
+            psi_bo(d, g, i, j) = 2.0 * psi_d_g_z - psi_bo(d, g, i, j);
+
+        }
+    );
+  }
+};
 
 void Kripke::Kernel::sweepSubdomain(Kripke::Core::DataStore &data_store,
     Kripke::SdomId sdom_id)
 {
   KRIPKE_TIMER(data_store, SweepSubdomain);
 
-  int num_directions = data_store.getVariable<Set>("Set/Direction").size(sdom_id);
-  int num_groups = data_store.getVariable<Set>("Set/Group").size(sdom_id);
-  int local_imax = data_store.getVariable<Set>("Set/ZoneI").size(sdom_id);
-  int local_jmax = data_store.getVariable<Set>("Set/ZoneJ").size(sdom_id);
-  int local_kmax = data_store.getVariable<Set>("Set/ZoneK").size(sdom_id);
-
-  auto xcos = data_store.getVariable<Field_Direction2Double>("quadrature/xcos").getView(sdom_id);
-  auto ycos = data_store.getVariable<Field_Direction2Double>("quadrature/ycos").getView(sdom_id);
-  auto zcos = data_store.getVariable<Field_Direction2Double>("quadrature/zcos").getView(sdom_id);
-  auto view_id = data_store.getVariable<Field_Direction2Int>("quadrature/id").getView(sdom_id);
-  auto view_jd = data_store.getVariable<Field_Direction2Int>("quadrature/jd").getView(sdom_id);
-  auto view_kd = data_store.getVariable<Field_Direction2Int>("quadrature/kd").getView(sdom_id);
-
-  auto dx = data_store.getVariable<Field_ZoneI2Double>("dx").getView(sdom_id);
-  auto dy = data_store.getVariable<Field_ZoneJ2Double>("dy").getView(sdom_id);
-  auto dz = data_store.getVariable<Field_ZoneK2Double>("dz").getView(sdom_id);
-  
-  auto sigt = data_store.getVariable<Kripke::Field_SigmaTZonal>("sigt_zonal").getView(sdom_id);
-  auto psi = data_store.getVariable<Kripke::Field_Flux>("psi").getView(sdom_id);
-  auto rhs = data_store.getVariable<Kripke::Field_Flux>("rhs").getView(sdom_id);
-
-  auto psi_lf = data_store.getVariable<Field_IPlane>("i_plane").getView(sdom_id);
-  auto psi_fr = data_store.getVariable<Field_JPlane>("j_plane").getView(sdom_id);
-  auto psi_bo = data_store.getVariable<Field_KPlane>("k_plane").getView(sdom_id);
-
-  // Assumption: all directions in this sdom have same mesh traversal
-  Direction d0{0};
-  int id = view_id(d0);
-  int jd = view_jd(d0);
-  int kd = view_kd(d0);
-
-  ZoneI start_i((id>0) ? 0 : local_imax-1);
-  ZoneJ start_j((jd>0) ? 0 : local_jmax-1);
-  ZoneK start_k((kd>0) ? 0 : local_kmax-1);
-
-  ZoneI end_i((id>0) ? local_imax : -1);
-  ZoneJ end_j((jd>0) ? local_jmax : -1);
-  ZoneK end_k((kd>0) ? local_kmax : -1);
-
-  auto zone_layout = data_store.getVariable<ProductSet<3>>("Set/Zone").getLayout(sdom_id);
-
-  RAJA::nested::forall(Kripke::Arch::Policy_SweepSubdomains{},
-      camp::make_tuple(
-          RAJA::RangeSegment(0, num_directions),
-          RAJA::RangeSegment(0, num_groups),
-          RAJA::RangeStrideSegment(*start_k, *end_k, kd),
-          RAJA::RangeStrideSegment(*start_j, *end_j, jd),
-          RAJA::RangeStrideSegment(*start_i, *end_i, id)
-
-
-  ),
-      KRIPKE_LAMBDA (Direction d, Group g, ZoneK k, ZoneJ j, ZoneI i) {
-
-          double xcos_dxi = 2.0 * xcos(d) / dx(i);
-          double ycos_dyj = 2.0 * ycos(d) / dy(j);
-          double zcos_dzk = 2.0 * zcos(d) / dz(k);
-
-          Zone z(zone_layout(*i, *j, *k));
-
-          /* Calculate new zonal flux */
-          double psi_d_g_z = (rhs(d,g,z)
-              + psi_lf(d, g, j, k) * xcos_dxi
-              + psi_fr(d, g, i, k) * ycos_dyj
-              + psi_bo(d, g, i, j) * zcos_dzk)
-              / (xcos_dxi + ycos_dyj + zcos_dzk + sigt(g, z));
-
-          psi(d, g, z) = psi_d_g_z;
-
-          /* Apply diamond-difference relationships */
-          psi_lf(d, g, j, k) = 2.0 * psi_d_g_z - psi_lf(d, g, j, k);
-          psi_fr(d, g, i, k) = 2.0 * psi_d_g_z - psi_fr(d, g, i, k);
-          psi_bo(d, g, i, j) = 2.0 * psi_d_g_z - psi_bo(d, g, i, j);
-
-      }
-  );
+  Kripke::Kernel::dispatch(data_store, sdom_id, SweepSdom{});
 
 }
-
-

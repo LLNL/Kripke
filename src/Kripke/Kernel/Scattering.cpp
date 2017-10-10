@@ -38,7 +38,97 @@
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
+using namespace Kripke;
 using namespace Kripke::Core;
+
+/**
+  Compute scattering source term phi_out from flux moments in phi.
+  phi_out(gp,z,nm) = sum_g { sigs(g, n, gp) * phi(g,z,nm) }
+*/
+
+struct ScatteringSdom {
+
+  template<typename AL>
+  RAJA_INLINE
+  void operator()(AL, Kripke::Core::DataStore &,
+                  Kripke::SdomId          sdom_src,
+                  Kripke::SdomId          sdom_dst,
+                  Set const               &set_group,
+                  Set const               &set_zone,
+                  Set const               &set_moment,
+                  Field_Moments           &field_phi,
+                  Field_Moments           &field_phi_out,
+                  Field_SigmaS            &field_sigs,
+                  Field_Zone2MixElem      &field_zone_to_mixelem,
+                  Field_Zone2Int          &field_zone_to_num_mixelem,
+                  Field_MixElem2Material  &field_mixed_to_material,
+                  Field_MixElem2Double    &field_mixed_to_fraction,
+                  Field_Moment2Legendre   &field_moment_to_legendre) const
+  {
+
+
+
+
+    // Get glower for src and dst ranges (to index into sigma_s)
+    int glower_src = set_group.lower(sdom_src);
+    int glower_dst = set_group.lower(sdom_dst);
+
+
+    // get material mix information
+    auto moment_to_legendre = field_moment_to_legendre.getViewAL<AL>(sdom_src);
+
+    auto phi     = field_phi.getViewAL<AL>(sdom_src);
+    auto phi_out = field_phi_out.getViewAL<AL>(sdom_dst);
+    auto sigs    = field_sigs.getViewAL<AL>(sdom_src);
+
+
+    auto zone_to_mixelem     = field_zone_to_mixelem.getViewAL<AL>(sdom_src);
+    auto zone_to_num_mixelem = field_zone_to_num_mixelem.getViewAL<AL>(sdom_src);
+    auto mixelem_to_material = field_mixed_to_material.getViewAL<AL>(sdom_src);
+    auto mixelem_to_fraction = field_mixed_to_fraction.getViewAL<AL>(sdom_src);
+
+    // grab dimensions
+    int num_zones =      set_zone.size(sdom_src);
+    int num_groups_src = set_group.size(sdom_src);
+    int num_groups_dst = set_group.size(sdom_dst);
+    int num_moments =    set_moment.size(sdom_dst);
+
+    RAJA::nested::forall(
+        Kripke::Arch::Policy_Scattering{},
+        camp::make_tuple(
+            RAJA::RangeSegment(0, num_moments),
+            RAJA::RangeSegment(0, num_groups_dst),
+            RAJA::RangeSegment(0, num_groups_src),
+            RAJA::RangeSegment(0, num_zones) ),
+        KRIPKE_LAMBDA (Moment nm, Group g, Group gp, Zone z) {
+
+            // map nm to n
+            Legendre n = moment_to_legendre(nm);
+
+            GlobalGroup global_g{*g+glower_dst};
+            GlobalGroup global_gp{*gp+glower_src};
+
+            MixElem mix_start = zone_to_mixelem(z);
+            MixElem mix_stop = mix_start + zone_to_num_mixelem(z);
+
+            for(MixElem mix = mix_start;mix < mix_stop;++ mix){
+              Material mat = mixelem_to_material(mix);
+              double fraction = mixelem_to_fraction(mix);
+
+              phi_out(nm, g, z) +=
+                  sigs(mat, n, global_g, global_gp)
+                  * phi(nm, gp, z)
+                  * fraction;
+
+
+            }
+        }
+    );
+  }
+
+};
+
+
 
 /**
   Compute scattering source term phi_out from flux moments in phi.
@@ -66,8 +156,6 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
 
   auto &field_moment_to_legendre = data_store.getVariable<Field_Moment2Legendre>("moment_to_legendre");
 
-  // Zero out source term
-  kConst(field_phi_out, 0.0);
 
   // Loop over subdomains and compute scattering source
   for(auto sdom_src : field_phi.getWorkList()){
@@ -80,66 +168,22 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
         continue;
       }
 
-
-      // Get glower for src and dst ranges (to index into sigma_s)
-      int glower_src = set_group.lower(sdom_src);
-      int glower_dst = set_group.lower(sdom_dst);
-
-
-      // get material mix information
-      auto moment_to_legendre = field_moment_to_legendre.getView(sdom_src);
-
-      auto phi = field_phi.getView(sdom_src);
-      auto phi_out = field_phi_out.getView(sdom_dst);
-      auto sigs = field_sigs.getView(sdom_src);
+      Kripke::Kernel::dispatch(data_store, sdom_src, ScatteringSdom{},
+                               sdom_dst,
+                               set_group, set_zone, set_moment,
+                               field_phi, field_phi_out, field_sigs,
+                               field_zone_to_mixelem,
+                               field_zone_to_num_mixelem,
+                               field_mixed_to_material,
+                               field_mixed_to_fraction,
+                               field_moment_to_legendre);
 
 
-      auto zone_to_mixelem     = field_zone_to_mixelem.getView(sdom_src);
-      auto zone_to_num_mixelem = field_zone_to_num_mixelem.getView(sdom_src);
-      auto mixelem_to_material = field_mixed_to_material.getView(sdom_src);
-      auto mixelem_to_fraction = field_mixed_to_fraction.getView(sdom_src);
-
-      // grab dimensions
-      int num_zones =      set_zone.size(sdom_src);
-      int num_groups_src = set_group.size(sdom_src);
-      int num_groups_dst = set_group.size(sdom_dst);
-      int num_moments =    set_moment.size(sdom_dst);
-
-      RAJA::nested::forall(Kripke::Arch::Policy_Scattering{},
-          camp::make_tuple(
-              RAJA::RangeSegment(0, num_moments),
-              RAJA::RangeSegment(0, num_groups_dst),
-              RAJA::RangeSegment(0, num_groups_src),
-              RAJA::RangeSegment(0, num_zones) ),
-          KRIPKE_LAMBDA (Moment nm, Group g, Group gp, Zone z) {
-
-              // map nm to n
-              Legendre n = moment_to_legendre(nm);
-
-              GlobalGroup global_g{*g+glower_dst};
-              GlobalGroup global_gp{*gp+glower_src};
-
-              MixElem mix_start = zone_to_mixelem(z);
-              MixElem mix_stop = mix_start + zone_to_num_mixelem(z);
-
-              for(MixElem mix = mix_start;mix < mix_stop;++ mix){
-                Material mat = mixelem_to_material(mix);
-                double fraction = mixelem_to_fraction(mix);
-
-                phi_out(nm, g, z) +=
-                    sigs(mat, n, global_g, global_gp)
-                    * phi(nm, gp, z)
-                    * fraction;
-
-
-              }
-          }
-      );
 
     }
+
   }
 
 }
-
 
 

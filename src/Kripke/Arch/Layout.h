@@ -30,34 +30,18 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_ARCH_LTIMES
-#define KRIPKE_ARCH_LTIMES
+#ifndef KRIPKE_ARCH_FIELDLAYOUT_H__
+#define KRIPKE_ARCH_FIELDLAYOUT_H__
 
 #include <Kripke.h>
+#include <Kripke/Core/ArchLayout.h>
 #include <Kripke/VarTypes.h>
+#include <array>
 
 namespace Kripke {
-namespace Arch {
+namespace Core {
 
-#ifdef KRIPKE_ARCH_SEQUENTIAL
-  using Policy_LTimes =
-    RAJA::nested::Policy<
-      RAJA::nested::TypedFor<0, RAJA::loop_exec, Moment>,
-      RAJA::nested::TypedFor<1, RAJA::loop_exec, Direction>,
-      RAJA::nested::TypedFor<2, RAJA::loop_exec, Group>,
-      RAJA::nested::TypedFor<3, RAJA::loop_exec, Zone>
-    >;
-#endif
 
-#ifdef KRIPKE_ARCH_OPENMP
-  using Policy_LTimes =
-      RAJA::nested::Policy<
-        RAJA::nested::TypedFor<0, RAJA::loop_exec, Moment>,
-        RAJA::nested::TypedFor<1, RAJA::loop_exec, Direction>,
-        RAJA::nested::TypedFor<2, RAJA::loop_exec, Group>,
-        RAJA::nested::TypedFor<3, RAJA::loop_exec, Zone>
-      >;
-#endif
 
 
 }
