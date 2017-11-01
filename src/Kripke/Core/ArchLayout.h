@@ -33,6 +33,10 @@
 #ifndef KRIPKE_CORE_ARCH_LAYOUT_H__
 #define KRIPKE_CORE_ARCH_LAYOUT_H__
 
+#include <Kripke.h>
+#include <array>
+
+
 namespace Kripke {
 namespace Core {
 
@@ -46,37 +50,41 @@ struct Arch_OpenMP {};
 struct Arch_CUDA {};
 
 
-template<typename ARCH, typename LAYOUT>
+template<typename ARCH, typename LAYOUT_FAMILY>
 struct ArchLayout {
   using Arch = ARCH;
-  using Layout = LAYOUT;
+  using LayoutFamily = LAYOUT_FAMILY;
 };
 
 
-
-
-
-template<typename Layout, typename IdxTuple>
-struct FieldLayout;
+using AL_Default = ArchLayout<Layout_DGZ, Arch_Sequential>;
 
 /*
- * Default layouts are all defined as the default layout with
- * stride-1 access on right-most index
+ * Default layout is canonical ordering.
+ *
+ * This class is specialized for fields that needs data layouts to change.
  */
-template<typename ... IdxTypes>
-struct FieldLayout<Layout_Default,
-                   camp::tuple<IdxTypes...>>{
 
-  static constexpr size_t num_dims = sizeof...(IdxTypes);
+template<typename LAYOUT_FAMILY, typename ... IndexTypes>
+struct LayoutInfo {
+  // Default stride-one-index is the right-most index
+  constexpr static ptrdiff_t num_dims = sizeof...(IndexTypes);
+  constexpr static ptrdiff_t stride_one_dim = ((ptrdiff_t)num_dims)-1;
 
-  static constexpr ptrdiff_t stride_one_dim = (ptrdiff_t)(num_dims) - 1;
+  using LayoutFamily = LAYOUT_FAMILY;
+  using Layout = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IndexTypes...>, stride_one_dim>;
 
-  static std::array<ptrdiff_t, num_dims> getPermutation(){
-    RAJA::as_array<RAJA::MakePerm<num_dims>>::get();
+  static std::array<RAJA::Index_type, num_dims> getPermutation(){
+    return RAJA::as_array<RAJA::MakePerm<num_dims>>::get();
   }
-
-
 };
+
+
+template<typename LayoutFamily, typename ... IndexTypes>
+using LayoutType = typename LayoutInfo<LayoutFamily, IndexTypes...>::Layout;
+
+template<typename LayoutFamily, typename ElementType, typename ... IndexTypes>
+using ViewType = RAJA::View<ElementType, LayoutType<LayoutFamily, IndexTypes...>>;
 
 
 

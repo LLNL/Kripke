@@ -51,8 +51,8 @@ namespace Core {
       using ElementType = ELEMENT;
       using ElementPtr = ELEMENT*;
 
-      using Layout1dType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<RAJA::Index_type>, 0>;
-      using View1dType = RAJA::View<ElementType, Layout1dType>;
+      using Layout1dType = Kripke::Core::LayoutType<AL_Default, RAJA::Index_type>;
+      using View1dType = Kripke::Core::ViewType<AL_Default, ElementType, RAJA::Index_type>;
 
 
       explicit FieldStorage(Kripke::Core::Set const &spanned_set) :
@@ -145,29 +145,11 @@ namespace Core {
 
       static constexpr size_t NumDims = sizeof...(IDX_TYPES);
 
-      using LayoutType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>>;
-      using ViewType = RAJA::View<ElementType, LayoutType>;
+      using DefaultLayoutType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>>;
+      using DefaultViewType = RAJA::View<ElementType, DefaultLayoutType>;
 
 
-      template<ptrdiff_t StrideOneDim>
-      using LayoutTypeS1 = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>, StrideOneDim>;
-
-      template<ptrdiff_t StrideOneDim>
-      using ViewTypeS1 = RAJA::View<ElementType, LayoutTypeS1<StrideOneDim>>;
-
-
-      using LayoutFunction = std::function<
-                              std::array<ptrdiff_t, NumDims>(Kripke::SdomId)
-                             >;
-
-      static std::array<ptrdiff_t, NumDims> defaultLayout(Kripke::SdomId) {
-        //return VarOps::make_index_sequence<NumDims>::value;
-        //return camp::make_idx_seq<NumDims>::array();
-      	return RAJA::as_array<RAJA::MakePerm<NumDims>>::get();
-			}
-
-      Field(Kripke::Core::Set const &spanned_set,
-            LayoutFunction layout_fcn = defaultLayout) :
+      Field(Kripke::Core::Set const &spanned_set) :
         Parent(spanned_set)
       {
 
@@ -187,7 +169,9 @@ namespace Core {
           for(size_t dim = 0;dim < NumDims;++ dim){
             sizes[dim] = spanned_set.dimSize(sdom_id, dim);
           }
-          auto perm = layout_fcn(sdom_id);
+
+          using LInfo = LayoutInfo<Layout_Default, IDX_TYPES...>;
+          auto perm = LInfo::getPermutation();
 
           RAJA::Layout<NumDims, RAJA::Index_type> &layout =
               m_chunk_to_layout[chunk_id];
@@ -202,32 +186,32 @@ namespace Core {
 
 
       RAJA_INLINE
-      ViewType getView(Kripke::SdomId sdom_id) const {
+      DefaultViewType getView(Kripke::SdomId sdom_id) const {
 
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
 
-        ElementPtr ptr = Parent::m_chunk_to_data[chunk_id];
-        LayoutType layout = m_chunk_to_layout[chunk_id];
+        auto ptr = Parent::m_chunk_to_data[chunk_id];
+        auto layout = m_chunk_to_layout[chunk_id];
 
-        return ViewType(ptr, layout);
+        return DefaultViewType(ptr, layout);
       }
 
 
       template<typename AL>
       RAJA_INLINE
       auto getViewAL(Kripke::SdomId sdom_id) const ->
-        RAJA::View<ElementType, RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>, sizeof...(IDX_TYPES)-1>>
+        ViewType<typename AL::LayoutFamily, ElementType, IDX_TYPES...>
       {
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
 
         ElementPtr ptr = Parent::m_chunk_to_data[chunk_id];
 
-        using FL = Kripke::Core::FieldLayout<typename AL::Layout, camp::tuple<IDX_TYPES...>>;
+        using LInfo = LayoutInfo<typename AL::LayoutFamily, IDX_TYPES...>;
+        using LType = typename LInfo::Layout;
 
-        auto layout = RAJA::make_stride_one<FL::stride_one_dim>(m_chunk_to_layout[chunk_id]);
+        LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
 
-        return RAJA::View<ElementType, RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>, sizeof...(IDX_TYPES)-1>>
-            (ptr, layout);
+        return ViewType<typename AL::LayoutFamily, ElementType, IDX_TYPES...>(ptr, layout);
       }
 
 
@@ -258,7 +242,7 @@ namespace Core {
       }
 
     protected:
-      std::vector<LayoutType> m_chunk_to_layout;
+      std::vector<DefaultLayoutType> m_chunk_to_layout;
   };
 
 } } // namespace

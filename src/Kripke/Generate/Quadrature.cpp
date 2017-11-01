@@ -432,10 +432,13 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
   // Create a set to describe the L and L+ matrices
   auto &set_ell = data_store.newVariable<ProductSet<2>>("Set/Ell",
       pspace, SPACE_Q, *moment_set, *dir_set);
+  
+	auto &set_ell_plus = data_store.newVariable<ProductSet<2>>("Set/EllPlus",
+      pspace, SPACE_Q, *dir_set, *moment_set);
 
   // Allocate and initialize the L and L+ matrices
   auto &field_ell = data_store.newVariable<Field_Ell>("ell", set_ell);
-  auto &field_ell_plus = data_store.newVariable<Field_Ell>("ell_plus", set_ell);
+  auto &field_ell_plus = data_store.newVariable<Field_EllPlus>("ell_plus", set_ell_plus);
 
   for(SdomId sdom_id : field_xcos.getWorkList()){
     auto ell = field_ell.getView(sdom_id);
@@ -461,7 +464,7 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
 
           // Compute element of L and L+
           ell(nm, d) = w*ynm/SQRT4PI;
-          ell_plus(nm,d) = ynm*SQRT4PI;
+          ell_plus(d,nm) = ynm*SQRT4PI;
         }
         nm ++;
       }
@@ -487,8 +490,7 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
     // Offset local coordinate to global coordinates
     auto global_coord = pspace.coordToGlobalCoord(local_coord);
 
-
-    std::array<Field_Direction2Int::ViewType, 3> sweep_dir =
+    std::array<Field_Direction2Int::DefaultViewType, 3> sweep_dir =
         {{
           field_id.getView(sdom_id),
           field_jd.getView(sdom_id),

@@ -92,8 +92,9 @@ void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id
 
   auto global_to_rank = data_store.getVariable<Field_GlobalSdomId2Rank>("GlobalSdomId2Rank").getView(SdomId{0});
 
+#ifdef KRIPKE_USE_MPI
   auto local_to_global = data_store.getVariable<Field_SdomId2GlobalSdomId>("SdomId2GlobalSdomId").getView(SdomId{0});
-
+#endif
 
   // go thru each dimensions upwind neighbors, and add the dependencies
   int num_depends = 0;
@@ -107,9 +108,7 @@ void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id
     // If it's an on-rank communication (from another subdomain)
     GlobalSdomId upwind_sdom = upwind(dim);
     int upwind_rank = global_to_rank(upwind_sdom);
-//    printf("postRecv: rank=%d, sdom=%d, dim=%d, upwind_sdom=%d, upwind_rank=%d\n",
-//        mpi_rank, (int)*sdom_id, (int)*dim, (int)*upwind_sdom, upwind_rank);
-//    fflush(stdout);
+
     if(upwind_rank == mpi_rank){
       // skip it, but track the dependency
       num_depends ++;
@@ -198,9 +197,6 @@ void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId
     auto &plane_data = *m_plane_data[*dim];
     size_t plane_data_size = plane_data.size(sdom_id);
 
-//    printf("postSend: rank=%d, sdom=%d, dim=%d, downwind_sdom=%d, downwind_rank=%d\n",
-//            mpi_rank, (int)*sdom_id, (int)*dim, (int)*downwind_sdom, downwind_rank);
-//    fflush(stdout);
     // Post the send
     MPI_Isend(src_buffers[*dim], plane_data_size, MPI_DOUBLE, downwind_rank,
       *downwind_sdom, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);

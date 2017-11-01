@@ -51,7 +51,7 @@ struct LPlusTimesSdom {
                   Set const       &set_moment,
                   Field_Moments   &field_phi_out,
                   Field_Flux      &field_rhs,
-                  Field_Ell       &field_ell_plus) const
+                  Field_EllPlus   &field_ell_plus) const
   {
 
     // Get dimensioning
@@ -69,13 +69,13 @@ struct LPlusTimesSdom {
     RAJA::nested::forall(
         Kripke::Arch::Policy_LPlusTimes{},
         camp::make_tuple(
-            RAJA::RangeSegment(0, num_moments),
             RAJA::RangeSegment(0, num_directions),
+            RAJA::RangeSegment(0, num_moments),
             RAJA::RangeSegment(0, num_groups),
             RAJA::RangeSegment(0, num_zones) ),
-        KRIPKE_LAMBDA (Moment nm, Direction d, Group g, Zone z) {
+        KRIPKE_LAMBDA (Direction d, Moment nm, Group g, Zone z) {
 
-            rhs(d,g,z) += ell_plus(nm, d) * phi_out(nm, g, z);
+            rhs(d,g,z) += ell_plus(d, nm) * phi_out(nm, g, z);
 
         }
     );
@@ -96,7 +96,7 @@ void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)
 
   auto &field_phi_out =   data_store.getVariable<Field_Moments>("phi_out");
   auto &field_rhs =       data_store.getVariable<Field_Flux>("rhs");
-  auto &field_ell_plus =  data_store.getVariable<Field_Ell>("ell_plus");
+  auto &field_ell_plus =  data_store.getVariable<Field_EllPlus>("ell_plus");
 
   // Loop over Subdomains
   for (Kripke::SdomId sdom_id : field_rhs.getWorkList()){

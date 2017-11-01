@@ -38,12 +38,12 @@
 
 namespace Kripke {
 namespace Arch {
-
+ 
 #ifdef KRIPKE_ARCH_SEQUENTIAL
 using Policy_LPlusTimes =
     RAJA::nested::Policy<
-      RAJA::nested::TypedFor<0, RAJA::loop_exec, Moment>,
-      RAJA::nested::TypedFor<1, RAJA::loop_exec, Direction>,
+      RAJA::nested::TypedFor<1, RAJA::loop_exec, Moment>,
+      RAJA::nested::TypedFor<0, RAJA::loop_exec, Direction>,
       RAJA::nested::TypedFor<2, RAJA::loop_exec, Group>,
       RAJA::nested::TypedFor<3, RAJA::loop_exec, Zone>
     >;
@@ -52,8 +52,8 @@ using Policy_LPlusTimes =
 #ifdef KRIPKE_ARCH_OPENMP
 using Policy_LPlusTimes =
     RAJA::nested::Policy<
-      RAJA::nested::TypedFor<0, RAJA::loop_exec, Moment>,
-      RAJA::nested::TypedFor<1, RAJA::loop_exec, Direction>,
+      RAJA::nested::TypedFor<0, RAJA::loop_exec, Direction>,
+      RAJA::nested::TypedFor<1, RAJA::loop_exec, Moment>,
       RAJA::nested::TypedFor<2, RAJA::loop_exec, Group>,
       RAJA::nested::TypedFor<3, RAJA::loop_exec, Zone>
     >;

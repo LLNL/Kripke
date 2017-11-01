@@ -68,7 +68,7 @@ struct LTimesSdom {
     auto ell = field_ell.getViewAL<AL>(sdom_id);
 
     // Compute:  phi =  ell * psi
-    RAJA::nested::forall(
+		RAJA::nested::forall(
         Kripke::Arch::Policy_LTimes{},
         camp::make_tuple(
             RAJA::RangeSegment(0, num_moments),

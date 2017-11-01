@@ -34,6 +34,7 @@
 #define KRIPKE_VARTYPES_H__
 
 #include <Kripke.h>
+#include <Kripke/Core/ArchLayout.h>
 #include <Kripke/Core/Set.h>
 #include <Kripke/Core/Field.h>
 
@@ -59,7 +60,8 @@ namespace Kripke {
   using Field_JPlane = Kripke::Core::Field<double, Direction, Group, ZoneI, ZoneK>;
   using Field_KPlane = Kripke::Core::Field<double, Direction, Group, ZoneI, ZoneJ>;
 
-  using Field_Ell = Kripke::Core::Field<double, Moment, Direction>;
+  using Field_Ell     = Kripke::Core::Field<double, Moment, Direction>;
+  using Field_EllPlus = Kripke::Core::Field<double, Direction, Moment>;
 
   using Field_Speed  = Kripke::Core::Field<double, Material, GlobalGroup>;
   using Field_SigmaT = Kripke::Core::Field<double, Material, GlobalGroup>;
@@ -84,6 +86,8 @@ namespace Kripke {
   using Field_MixElem2Zone     = Kripke::Core::Field<Zone, MixElem>;
 
   using Field_SigmaTZonal = Kripke::Core::Field<double, Group, Zone>;
+
+
 }
 
 #endif
