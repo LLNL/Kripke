@@ -1,9 +1,9 @@
 KRIPKE
 ======
 
-Version 1.1
+Version 1.2.0-CORAL2
 
-Release Date 9/13/2015 
+Release Date 11/2/2017 
 
 
 Authors
@@ -17,6 +17,25 @@ Authors
 License
 =======
 See included file NOTICE.md
+
+
+Special Notice
+==============
+
+This is a special pre-release version of Kripke specifically for the CORAL2 procurement.
+
+Currently we only support one data layout (DGZ), and we optionally support OpenMP and MPI.
+
+New in the 1.2.X versions are the dependence on RAJA for on-node parallelism.
+Due to compiler languge support, we currently only support the latest bgclang compiler on the BG/Q platform.
+
+
+
+CORAL2 Problem Definitions
+==========================
+
+
+
 
 
 Overview
@@ -92,9 +111,10 @@ Kripke comes with a simple CMake based build system.
 
 Requirements
 ------------
-*  CMake 3.0 or later
+*  CMake 3.1 or later
 *  C++ Compiler (g++, icpc, etc.)
-*  MPI 1.0 or later
+*  (Optional) MPI 1.0 or later
+*  (Optional) OpenMP 3 or later
 
 
 
@@ -111,17 +131,18 @@ The easiest way to get Kripke running, is to directly invoke CMake and take what
         cd kripke
         cmake ..
 
+        For BG/Q, we have a special cache init file that makes things easier:
+
+        cd kripke
+        cmake .. -C../host-configs/bgqos.cmake
+
 *  Step 3: Now make Kripke:
          
         make -j8
   
-*  Step 4: Run the test suite to make sure it works
-   
-        make test
-  
 *  Step 5: Run Kripke's default problem:
    
-        ./kripke
+        ./bin/kripke.exe
   
 
 Running Kripke
@@ -208,23 +229,6 @@ Command line option help can also be viewed by running "./kripke --help"
     Parallel solver method. "sweep" for full up-wind sweep (wavefront algorithm). "bj" for Block Jacobi.  (Default: --pmethod sweep)
 
 
-### Output and Testing Options:
-
-*   **``--test``**
-
-    Run Kernel Test instead of solve
-
-*   **``--papi <PAPI_XXX_XXX,...>``**
-
-    Track PAPI hardware counters for each timer. (requires building with PAPI library)
-    
-
-Test Suite
-----------
-
-Running with the ``--test`` command line argument will run a unit-testing frame work that will compare each kernel, using random input data, with the same kernel from a different nesting.  This is very useful for checking correctness of kernels after modification.
-
-Running ``make test`` will use the CMake testing framework, CTest, to run a series of tests outlined in the root ``CMakeLists.txt`` file.
 
 
 Future Plans
@@ -236,7 +240,6 @@ Some ideas for future study:
 
 *   More FLOP intensive spatial discretizations such as DFEM's.
 
-*   Programming model abstractions
 
 
 Retirement
