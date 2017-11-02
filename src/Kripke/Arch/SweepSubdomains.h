@@ -53,8 +53,8 @@ namespace Arch {
 #ifdef KRIPKE_ARCH_OPENMP
   using Policy_SweepSubdomains =
     RAJA::nested::Policy<
+      RAJA::nested::TypedFor<1, RAJA::omp_parallel_for_exec, Group>,
       RAJA::nested::TypedFor<0, RAJA::loop_exec, Direction>,
-      RAJA::nested::TypedFor<1, RAJA::loop_exec, Group>,
       RAJA::nested::TypedFor<2, RAJA::loop_exec, ZoneK>,
       RAJA::nested::TypedFor<3, RAJA::loop_exec, ZoneJ>,
       RAJA::nested::TypedFor<4, RAJA::loop_exec, ZoneI>

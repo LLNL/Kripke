@@ -35,7 +35,7 @@ include_directories(${RAJA_INCLUDE_DIRS})
 
 set(${KRIPKE_ARCH_FOUND} 0)
 if(NOT KRIPKE_ARCH)
-  set(KRIPKE_ARCH "Sequential")
+  set(KRIPKE_ARCH "OpenMP")
 endif()
 
 if(${KRIPKE_ARCH} STREQUAL "Sequential")
@@ -47,12 +47,6 @@ endif()
 if(${KRIPKE_ARCH} STREQUAL "OpenMP")
   set(${KRIPKE_ARCH_FOUND} 1)
   set(KRIPKE_ARCH_OPENMP 1)
-endif()
-
-
-if(${KRIPKE_ARCH} STREQUAL "BGQ")
-  set(${KRIPKE_ARCH_FOUND} 1)
-  set(KRIPKE_ARCH_BGQ 1)
 endif()
 
 
@@ -124,7 +118,6 @@ blt_add_library(
               "src/Kripke/Core/Set.cpp"
               "src/Kripke/SteadyStateSolver.cpp"
               "src/Kripke/SweepSolver.cpp"
-              "src/Kripke/Test/TestKernels.cpp"
               "src/Kripke/Timing.cpp"
   DEPENDS_ON  ${KRIPKE_DEPENDS}
 )

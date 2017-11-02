@@ -38,7 +38,6 @@
 #include <Kripke/InputVariables.h>
 #include <Kripke/SteadyStateSolver.h>
 #include <Kripke/Timing.h>
-#include <Kripke/Test/TestKernels.h>
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
@@ -139,10 +138,6 @@ void usage(void){
     printf("                         bj: Block Jacobi\n");
     printf("                         Default: --pmethod sweep\n\n");
     
-    printf("\n");
-    printf("Output and Testing Options:\n");
-    printf("---------------------------\n");
-    printf("  --test                 Run Kernel Test instead of solver\n\n");
     printf("\n");
   }
 
@@ -304,7 +299,6 @@ int main(int argc, char **argv) {
    * Default input parameters
    */
   InputVariables vars;
-  bool test = false;
   
   /*
    * Parse command line
@@ -398,9 +392,6 @@ int main(int argc, char **argv) {
     else if(opt == "--nest"){
       vars.nesting = nestingFromString(cmd.pop());     
     }
-    else if(opt == "--test"){
-      test = true;
-    }
     else{
       printf("Unknwon options %s\n", opt.c_str());
       usage();
@@ -473,46 +464,40 @@ int main(int argc, char **argv) {
 
 
 
-  if(test){
-    // Invoke Kernel testing
-    testKernels(vars);
-  }
-  else{
-    // Allocate problem 
+  // Allocate problem
 
-    Kripke::Core::DataStore data_store;
-    Kripke::generateProblem(data_store, vars);
+  Kripke::Core::DataStore data_store;
+  Kripke::generateProblem(data_store, vars);
 
-    // Run the solver
-    Kripke::SteadyStateSolver(data_store, vars.niter, vars.parallel_method == PMETHOD_BJ);
+  // Run the solver
+  Kripke::SteadyStateSolver(data_store, vars.niter, vars.parallel_method == PMETHOD_BJ);
 
-    // Print Timing Info
-    auto &timing = data_store.getVariable<Kripke::Timing>("timing");
-		timing.print();
+  // Print Timing Info
+  auto &timing = data_store.getVariable<Kripke::Timing>("timing");
+  timing.print();
 
-		// Compute performance metrics
-		auto &set_group  = data_store.getVariable<Kripke::Core::Set>("Set/Group");
-	  auto &set_dir    = data_store.getVariable<Kripke::Core::Set>("Set/Direction");
-		auto &set_zone   = data_store.getVariable<Kripke::Core::Set>("Set/Zone");
-		
-		size_t num_unknowns = set_group.globalSize() 
-		                    * set_dir.globalSize()
-												* set_zone.globalSize();
+  // Compute performance metrics
+  auto &set_group  = data_store.getVariable<Kripke::Core::Set>("Set/Group");
+  auto &set_dir    = data_store.getVariable<Kripke::Core::Set>("Set/Direction");
+  auto &set_zone   = data_store.getVariable<Kripke::Core::Set>("Set/Zone");
 
-		size_t num_iter = timing.getCount("SweepSolver");
-		double solve_time = timing.getTotal("Solve");
-		double grind_time = solve_time / num_unknowns / num_iter;
+  size_t num_unknowns = set_group.globalSize()
+                      * set_dir.globalSize()
+                      * set_zone.globalSize();
 
-		double sweep_eff = 100.0 * timing.getTotal("SweepSubdomain") / timing.getTotal("SweepSolver");
+  size_t num_iter = timing.getCount("SweepSolver");
+  double solve_time = timing.getTotal("Solve");
+  double grind_time = solve_time / num_unknowns / num_iter;
 
-		if(myid == 0){
-      printf("\n");
-      printf("Figures of Merit\n");
-      printf("================\n");
-      printf("\n");
-      printf("  Grind time :       %e [seconds/unknown/iterations]\n", grind_time);
-      printf("  Sweep efficiency : %4.5lf [100.0 * SweepSubdomain time / SweepSolver time]\n", sweep_eff);
-		}
+  double sweep_eff = 100.0 * timing.getTotal("SweepSubdomain") / timing.getTotal("SweepSolver");
+
+  if(myid == 0){
+    printf("\n");
+    printf("Figures of Merit\n");
+    printf("================\n");
+    printf("\n");
+    printf("  Grind time :       %e [seconds/unknown/iterations]\n", grind_time);
+    printf("  Sweep efficiency : %4.5lf [100.0 * SweepSubdomain time / SweepSolver time]\n", sweep_eff);
   }
   
   // Cleanup and exit

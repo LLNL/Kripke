@@ -101,7 +101,7 @@ namespace Kripke {
       auto view_dst = field_dst.getView1d(sdom_id_dst);
       int num_elem = field_src.size(sdom_id_src);
 
-      RAJA::forall<RAJA::simd_exec>(0, num_elem, [=](RAJA::Index_type i){ 
+      RAJA::forall<RAJA::loop_exec>(0, num_elem, [=](RAJA::Index_type i){
         view_src(i) = view_dst(i);
       });
     }

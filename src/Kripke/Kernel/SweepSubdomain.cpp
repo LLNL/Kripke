@@ -41,6 +41,7 @@ using namespace Kripke;
 using namespace Kripke::Core;
 
 
+
 struct SweepSdom {
 
   template<typename AL>

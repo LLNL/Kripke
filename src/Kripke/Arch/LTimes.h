@@ -52,9 +52,9 @@ namespace Arch {
 #ifdef KRIPKE_ARCH_OPENMP
   using Policy_LTimes =
       RAJA::nested::Policy<
+        RAJA::nested::TypedFor<2, RAJA::omp_parallel_for_exec, Group>,
         RAJA::nested::TypedFor<0, RAJA::loop_exec, Moment>,
         RAJA::nested::TypedFor<1, RAJA::loop_exec, Direction>,
-        RAJA::nested::TypedFor<2, RAJA::loop_exec, Group>,
         RAJA::nested::TypedFor<3, RAJA::loop_exec, Zone>
       >;
 #endif
