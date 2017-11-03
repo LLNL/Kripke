@@ -32,7 +32,7 @@ As we explore new architectures and programming paradigms with Kripke, we will b
 
 Mini App or Proxy App?
 ----------------------
-Kripke is a Mini-App since it has a very small code base consisting of 4233 lines of C++ code (generated using David A. Wheeler's SLOCCount v2.26).
+Kripke is a Mini-App since it has a very small code base consisting of 3539 lines of C++ code (using cloc v1.67).
 
 Kripke is also a Proxy-App since it is a proxy for the LLNL transport code ARDRA.
 
