@@ -6,6 +6,11 @@ project(KRIPKE LANGUAGES CXX)
 # Initialize the BLT build system
 #
 
+set(ENABLE_GTEST Off CACHE Bool "")
+set(ENABLE_TESTS Off CACHE Bool "")
+set(ENABLE_TBB Off CACHE Bool "")
+set(ENABLE_EXAMPLES Off CACHE Bool "")
+set(ENABLE_DOCUMENTATION Off CACHE Bool "")
 
 include(blt/SetupBLT.cmake)
 
@@ -15,12 +20,8 @@ include(blt/SetupBLT.cmake)
 # Configure RAJA
 #
 
-#set(RAJA_ENABLE_OPENMP ${ENABLE_OPENMP})
-#set(RAJA_ENABLE_TESTS Off)
-#set(RAJA_ENABLE_TBB Off)
-#set(RAJA_ENABLE_EXAMPLES Off)
-#set(RAJA_ENABLE_DOCUMENTATION Off)
-add_subdirectory(tpl/raja) # EXCLUDE_FROM_ALL)
+set(RAJA_ENABLE_TESTS Off CACHE Bool "")
+add_subdirectory(tpl/raja)# EXCLUDE_FROM_ALL)
 
 get_property(RAJA_INCLUDE_DIRS TARGET RAJA PROPERTY INCLUDE_DIRECTORIES)
 include_directories(${RAJA_INCLUDE_DIRS})
@@ -79,7 +80,7 @@ set(KRIPKE_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
 set(KRIPKE_CXX_FLAGS    "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${KRIPKE_BUILD_TYPE}}")
 set(KRIPKE_LINK_FLAGS   "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_LINK_FLAGS_${CMAKE_BUILD_TYPE}}")
 
-set(KRIPKE_VERSION "1.2.0")
+set(KRIPKE_VERSION "1.2.0-CORAL2")
 
 configure_file(${PROJECT_SOURCE_DIR}/src/KripkeConfig.h.in
                ${PROJECT_BINARY_DIR}/include/KripkeConfig.h)

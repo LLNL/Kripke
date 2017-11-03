@@ -496,8 +496,9 @@ int main(int argc, char **argv) {
     printf("Figures of Merit\n");
     printf("================\n");
     printf("\n");
-    printf("  Grind time :       %e [seconds/unknown/iterations]\n", grind_time);
-    printf("  Sweep efficiency : %4.5lf [100.0 * SweepSubdomain time / SweepSolver time]\n", sweep_eff);
+    printf("  Number of unknowns: %lu\n", (unsigned long) num_unknowns);
+    printf("  Grind time :        %e [seconds/unknown/iterations]\n", grind_time);
+    printf("  Sweep efficiency :  %4.5lf [100.0 * SweepSubdomain time / SweepSolver time]\n", sweep_eff);
   }
   
   // Cleanup and exit

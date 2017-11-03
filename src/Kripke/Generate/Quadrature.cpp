@@ -125,7 +125,7 @@ namespace {
     int i, nn;
 
     if(std::abs(x) > 1.0){
-      KRIPKE_ABORT("Bad input to ardra_PnmFcn: abs(x) > 1.0, x = %e\n", x);
+      KRIPKE_ABORT("Bad input to PnmFcn: abs(x) > 1.0, x = %e\n", x);
     }
     else if((x > 1.0) && (x <= 1.0)){
       x = 1.0;

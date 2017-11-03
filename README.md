@@ -1,9 +1,9 @@
 KRIPKE
 ======
 
-Version 1.1
+Version 1.2.0-CORAL2
 
-Release Date 9/13/2015 
+Release Date 11/2/2017 
 
 
 Authors
@@ -17,6 +17,58 @@ Authors
 License
 =======
 See included file NOTICE.md
+
+
+Special Notice
+==============
+
+This is a special pre-release version of Kripke specifically for the CORAL2 procurement.
+
+Currently we only support one data layout (DGZ), and we optionally support OpenMP and MPI.
+
+New in the 1.2.X versions are the dependence on RAJA for on-node parallelism.
+Due to compiler languge support, we currently only support the latest bgclang compiler on the BG/Q platform.
+
+
+
+CORAL2 Problem Definitions
+==========================
+
+The base problem is a 1-node problem sized for a single BG/Q node, and consumes about 
+* 64 energy groups
+* 128 directions (angles)
+* 16x16x16 zones
+* 4th order scattering
+
+Here are 2 examples that run kripke, the first uses 1 MPI task with 64 threads, the second uses 16 MPI tasks with 4 threads per task:
+* OMP_NUM_THREADS=64 srun -N1 -n1  ./bin/kripke.exe --groups 64 --gset 1 --quad 128 --dset 128 --legendre 4 --zones 16,16,16 --procs 1,1,1
+* OMP_NUM_THREADS=4  srun -N1 -n16 ./bin/kripke.exe --groups 64 --gset 1 --quad 128 --dset 128 --legendre 4 --zones 16,16,16 --procs 4,2,2
+
+To scale the problem up, we weak-scale the number of zones and MPI ranks, keeping the problem size and decompostion as "cube" like as possible, so for a 64-node problem:
+* OMP_NUM_THREADS=64 srun -N64 -n64   ./bin/kripke.exe --groups 64 --gset 1 --quad 128 --dset 128 --legendre 4 --zones 64,64,64 --procs 4,4,4
+* OMP_NUM_THREADS=4  srun -N64 -n1024 ./bin/kripke.exe --groups 64 --gset 1 --quad 128 --dset 128 --legendre 4 --zones 64,64,64 --procs 16,8,8
+
+For the "1/24th of Sequoia" problem we weak scale to:
+* OMP_NUM_THREADS=64 srun -N4096 -n4096  ./bin/kripke.exe --groups 64 --gset 1 --quad 128 --dset 128 --legendre 4 --zones 256,256,256 --procs 16,16,16
+* OMP_NUM_THREADS=4  srun -N4096 -n65536 ./bin/kripke.exe --groups 64 --gset 1 --quad 128 --dset 128 --legendre 4 --zones 256,256,256 --procs 64,32,32
+
+For the "1/4 of Sequoia" problem we have:
+* OMP_NUM_THREADS=64 srun -N24576 -n24576  ./bin/kripke.exe --groups 64 --gset 1 --quad 128 --dset 128 --legendre 4 --zones 512,512,384 --procs 32,32,24
+* OMP_NUM_THREADS=4  srun -N24576 -n393216 ./bin/kripke.exe --groups 64 --gset 1 --quad 128 --dset 128 --legendre 4 --zones 512,512,384 --procs 128,64,48
+
+
+Modifications of the following parameters change the problem definition, and should be considered fixed:
+* --groups
+* --quad
+* --legendre
+
+Modifications of the following parameters just change problem decomposition, and are fair-game for tuning:
+* --gset
+* --dset
+* --procs
+* OMP_NUM_THREADS
+
+
 
 
 Overview
@@ -92,9 +144,10 @@ Kripke comes with a simple CMake based build system.
 
 Requirements
 ------------
-*  CMake 3.0 or later
+*  CMake 3.1 or later
 *  C++ Compiler (g++, icpc, etc.)
-*  MPI 1.0 or later
+*  (Optional) MPI 1.0 or later
+*  (Optional) OpenMP 3 or later
 
 
 
@@ -111,17 +164,18 @@ The easiest way to get Kripke running, is to directly invoke CMake and take what
         cd kripke
         cmake ..
 
+        For BG/Q, we have a special cache init file that makes things easier:
+
+        cd kripke
+        cmake .. -C../host-configs/bgqos.cmake
+
 *  Step 3: Now make Kripke:
          
         make -j8
   
-*  Step 4: Run the test suite to make sure it works
-   
-        make test
-  
 *  Step 5: Run Kripke's default problem:
    
-        ./kripke
+        ./bin/kripke.exe
   
 
 Running Kripke
@@ -208,23 +262,6 @@ Command line option help can also be viewed by running "./kripke --help"
     Parallel solver method. "sweep" for full up-wind sweep (wavefront algorithm). "bj" for Block Jacobi.  (Default: --pmethod sweep)
 
 
-### Output and Testing Options:
-
-*   **``--test``**
-
-    Run Kernel Test instead of solve
-
-*   **``--papi <PAPI_XXX_XXX,...>``**
-
-    Track PAPI hardware counters for each timer. (requires building with PAPI library)
-    
-
-Test Suite
-----------
-
-Running with the ``--test`` command line argument will run a unit-testing frame work that will compare each kernel, using random input data, with the same kernel from a different nesting.  This is very useful for checking correctness of kernels after modification.
-
-Running ``make test`` will use the CMake testing framework, CTest, to run a series of tests outlined in the root ``CMakeLists.txt`` file.
 
 
 Future Plans
@@ -236,7 +273,6 @@ Some ideas for future study:
 
 *   More FLOP intensive spatial discretizations such as DFEM's.
 
-*   Programming model abstractions
 
 
 Retirement
