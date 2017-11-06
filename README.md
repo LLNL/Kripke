@@ -37,8 +37,10 @@ CORAL2 Problem Definitions
 The base problem is a 1-node problem sized for a single BG/Q node, and consumes about 
 * 64 energy groups
 * 128 directions (angles)
-* 16x16x16 zones
+* 64x32x32 zones
 * 4th order scattering
+* 10 iterations
+* fully-upwinded sweeps
 
 Here are 2 examples that run kripke, the first uses 1 MPI task with 64 threads, the second uses 16 MPI tasks with 4 threads per task:
 * OMP_NUM_THREADS=64 srun -N1 -n1  ./bin/kripke.exe --groups 64 --gset 1 --quad 128 --dset 128 --legendre 4 --zones 64,32,32 --procs 1,1,1
@@ -59,8 +61,13 @@ For the "1/4 of Sequoia" problem we have:
 
 Modifications of the following parameters change the problem definition, and should be considered fixed:
 * --groups
+* --niter
+* --sigt
+* --sigs
+* --pmethod
 * --quad
 * --legendre
+* --zones
 
 Modifications of the following parameters just change problem decomposition, and are fair-game for tuning:
 * --gset
