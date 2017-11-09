@@ -65,7 +65,7 @@ namespace Kripke {
       void stop(std::string const &my_name) {
         if(started){
           timer.stop(my_name.c_str());
-					elapsed += timer.elapsed();
+          elapsed += timer.elapsed();
         }
       }
 
