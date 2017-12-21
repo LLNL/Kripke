@@ -278,8 +278,14 @@ int main(int argc, char **argv) {
       int tid = omp_get_thread_num();
 #ifdef __bgq__
       int core = Kernel_ProcessorCoreID();
-#else
+#elif defined(__linux__)
       int core = sched_getcpu();
+#elif defined (__APPLE__) && defined(__MACH__)
+      // MacOS does not give user control over thread affinity.
+      int core = -1;
+#else
+#warning Unsupported OS!
+      int core = 911;
 #endif
       thread_to_core[tid] = core;
     }
