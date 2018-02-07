@@ -71,10 +71,10 @@ struct LTimesSdom {
 		RAJA::nested::forall(
         Kripke::Arch::Policy_LTimes{},
         camp::make_tuple(
-            RAJA::RangeSegment(0, num_moments),
-            RAJA::RangeSegment(0, num_directions),
-            RAJA::RangeSegment(0, num_groups),
-            RAJA::RangeSegment(0, num_zones) ),
+            RAJA::TypedRangeSegment<Moment>(0, num_moments),
+            RAJA::TypedRangeSegment<Direction>(0, num_directions),
+            RAJA::TypedRangeSegment<Group>(0, num_groups),
+            RAJA::TypedRangeSegment<Zone>(0, num_zones) ),
         KRIPKE_LAMBDA (Moment nm, Direction d, Group g, Zone z) {
 
            phi(nm,g,z) += ell(nm, d) * psi(d, g, z);

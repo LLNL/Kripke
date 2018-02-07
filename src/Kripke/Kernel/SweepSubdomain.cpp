@@ -94,11 +94,11 @@ struct SweepSdom {
 
     RAJA::nested::forall(Kripke::Arch::Policy_SweepSubdomains{},
         camp::make_tuple(
-            RAJA::RangeSegment(0, num_directions),
-            RAJA::RangeSegment(0, num_groups),
-            RAJA::RangeStrideSegment(*start_k, *end_k, kd),
-            RAJA::RangeStrideSegment(*start_j, *end_j, jd),
-            RAJA::RangeStrideSegment(*start_i, *end_i, id)
+            RAJA::TypedRangeSegment<Direction>(0, num_directions),
+            RAJA::TypedRangeSegment<Group>(0, num_groups),
+            RAJA::TypedRangeStrideSegment<ZoneK>(*start_k, *end_k, kd),
+            RAJA::TypedRangeStrideSegment<ZoneJ>(*start_j, *end_j, jd),
+            RAJA::TypedRangeStrideSegment<ZoneI>(*start_i, *end_i, id)
 
 
     ),
