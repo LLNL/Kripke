@@ -96,10 +96,10 @@ struct ScatteringSdom {
     RAJA::nested::forall(
         Kripke::Arch::Policy_Scattering{},
         camp::make_tuple(
-            RAJA::RangeSegment(0, num_moments),
-            RAJA::RangeSegment(0, num_groups_dst),
-            RAJA::RangeSegment(0, num_groups_src),
-            RAJA::RangeSegment(0, num_zones) ),
+            RAJA::TypedRangeSegment<Moment>(0, num_moments),
+            RAJA::TypedRangeSegment<Group>(0, num_groups_dst),
+            RAJA::TypedRangeSegment<Group>(0, num_groups_src),
+            RAJA::TypedRangeSegment<Zone>(0, num_zones) ),
         KRIPKE_LAMBDA (Moment nm, Group g, Group gp, Zone z) {
 
             // map nm to n
