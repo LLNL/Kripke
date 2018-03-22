@@ -35,7 +35,6 @@
 #include <Kripke/Kernel.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
-#include "RAJA/pattern/nested.hpp"
 
 using namespace Kripke;
 using namespace Kripke::Core;
@@ -66,13 +65,12 @@ struct LPlusTimesSdom {
     auto ell_plus = field_ell_plus.getViewAL<AL>(sdom_id);
 
     // Compute:  rhs =  ell_plus * phi_out
-    RAJA::nested::forall(
-        Kripke::Arch::Policy_LPlusTimes{},
+    RAJA::kernel<Kripke::Arch::Policy_LPlusTimes>(
         camp::make_tuple(
-            RAJA::RangeSegment(0, num_directions),
-            RAJA::RangeSegment(0, num_moments),
-            RAJA::RangeSegment(0, num_groups),
-            RAJA::RangeSegment(0, num_zones) ),
+            RAJA::TypedRangeSegment<Direction>(0, num_directions),
+            RAJA::TypedRangeSegment<Moment>(0, num_moments),
+            RAJA::TypedRangeSegment<Group>(0, num_groups),
+            RAJA::TypedRangeSegment<Zone>(0, num_zones) ),
         KRIPKE_LAMBDA (Direction d, Moment nm, Group g, Zone z) {
 
             rhs(d,g,z) += ell_plus(d, nm) * phi_out(nm, g, z);
