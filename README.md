@@ -1,9 +1,9 @@
 KRIPKE
 ======
 
-Version 1.2.0-CORAL2
+Version 1.2.1-CORAL2
 
-Release Date 11/2/2017 
+Release Date 3/26/2018 
 
 
 Authors
@@ -17,6 +17,13 @@ Authors
 License
 =======
 See included file NOTICE.md
+
+
+Changes
+=======
+
+  * 11/02/2017 v1.2.0-CORAL2: Initial release for CORAL2
+	* 03/26/2017 v1.2.1-CORAL2: Updated to RAJA-0.6.0rc2, fixed FOM calcuation and updated docs
 
 
 Special Notice
