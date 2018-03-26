@@ -169,12 +169,17 @@ The easiest way to get Kripke running, is to directly invoke CMake and take what
 
 *  Step 2: Run CMake in that build space
         
-        cd kripke
-        cmake ..
+        cd build
+        cmake .. -DENABLE_OPENMP=True
+        
+        Alternatively, if you want to build without OpenMP, do this:
+        
+        cd build
+        cmake .. -DENABLE_OPENMP=False -DKRIPKE_ARCH=Sequential
 
         For BG/Q, we have a special cache init file that makes things easier:
 
-        cd kripke
+        cd build
         cmake .. -C../host-configs/bgqos.cmake
 
 *  Step 3: Now make Kripke:
