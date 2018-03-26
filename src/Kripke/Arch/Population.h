@@ -41,25 +41,33 @@ namespace Arch {
 
 #ifdef KRIPKE_ARCH_SEQUENTIAL
 
-  using Reduce_Population = RAJA::seq_reduce;
+using Reduce_Population = RAJA::seq_reduce;
 
-  using Policy_Population =
-    RAJA::nested::Policy<
-      RAJA::nested::TypedFor<0, RAJA::loop_exec, Direction>,
-      RAJA::nested::TypedFor<1, RAJA::loop_exec, Group>,
-      RAJA::nested::TypedFor<2, RAJA::loop_exec, Zone>
+using Policy_Population =
+    RAJA::KernelPolicy<
+      RAJA::statement::For<0, RAJA::loop_exec,
+        RAJA::statement::For<1, RAJA::loop_exec,
+          RAJA::statement::For<2, RAJA::loop_exec,
+            RAJA::statement::Lambda<0>
+          >
+        >
+      >
     >;
 #endif
 
 #ifdef KRIPKE_ARCH_OPENMP
 
-  using Reduce_Population = RAJA::omp_reduce;
+using Reduce_Population = RAJA::omp_reduce;
 
-  using Policy_Population =
-    RAJA::nested::Policy<
-      RAJA::nested::TypedFor<1, RAJA::omp_parallel_for_exec, Group>,
-      RAJA::nested::TypedFor<0, RAJA::loop_exec, Direction>,
-      RAJA::nested::TypedFor<2, RAJA::loop_exec, Zone>
+using Policy_Population =
+    RAJA::KernelPolicy<
+      RAJA::statement::For<1, RAJA::omp_parallel_for_exec,
+        RAJA::statement::For<0, RAJA::loop_exec,
+          RAJA::statement::For<2, RAJA::loop_exec,
+            RAJA::statement::Lambda<0>
+          >
+        >
+      >
     >;
 #endif
 

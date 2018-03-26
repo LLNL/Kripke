@@ -36,7 +36,6 @@
 #include <KripkeConfig.h>
 
 #include <RAJA/RAJA.hpp>
-#include <RAJA/pattern/nested.hpp>
 
 #include <string>
 #include <vector>

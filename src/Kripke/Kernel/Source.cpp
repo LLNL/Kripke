@@ -75,10 +75,10 @@ struct SourceSdom {
 
 
     // Compute:  phi =  ell * psi
-    RAJA::nested::forall(Kripke::Arch::Policy_Source{},
+    RAJA::kernel<Kripke::Arch::Policy_Source>(
         camp::make_tuple(
-            RAJA::RangeSegment(0, num_groups),
-            RAJA::RangeSegment(0, num_mixed) ),
+            RAJA::TypedRangeSegment<Group>(0, num_groups),
+            RAJA::TypedRangeSegment<MixElem>(0, num_mixed) ),
         KRIPKE_LAMBDA (Group g, MixElem mix) {
 
             Material material = mixelem_to_material(mix);

@@ -40,23 +40,33 @@ namespace Kripke {
 namespace Arch {
 
 #ifdef KRIPKE_ARCH_SEQUENTIAL
-  using Policy_LTimes =
-    RAJA::nested::Policy<
-      RAJA::nested::TypedFor<0, RAJA::loop_exec, Moment>,
-      RAJA::nested::TypedFor<1, RAJA::loop_exec, Direction>,
-      RAJA::nested::TypedFor<2, RAJA::loop_exec, Group>,
-      RAJA::nested::TypedFor<3, RAJA::loop_exec, Zone>
+using Policy_LTimes =
+    RAJA::KernelPolicy<
+      RAJA::statement::For<0, RAJA::loop_exec,
+        RAJA::statement::For<1, RAJA::loop_exec,
+          RAJA::statement::For<2, RAJA::loop_exec,
+            RAJA::statement::For<3, RAJA::loop_exec,
+              RAJA::statement::Lambda<0>
+            >
+          >
+        >
+      >
     >;
 #endif
 
 #ifdef KRIPKE_ARCH_OPENMP
-  using Policy_LTimes =
-      RAJA::nested::Policy<
-        RAJA::nested::TypedFor<2, RAJA::omp_parallel_for_exec, Group>,
-        RAJA::nested::TypedFor<0, RAJA::loop_exec, Moment>,
-        RAJA::nested::TypedFor<1, RAJA::loop_exec, Direction>,
-        RAJA::nested::TypedFor<3, RAJA::loop_exec, Zone>
-      >;
+using Policy_LTimes =
+    RAJA::KernelPolicy<
+      RAJA::statement::For<2, RAJA::omp_parallel_for_exec,
+        RAJA::statement::For<0, RAJA::loop_exec,
+          RAJA::statement::For<1, RAJA::loop_exec,
+            RAJA::statement::For<3, RAJA::loop_exec,
+              RAJA::statement::Lambda<0>
+            >
+          >
+        >
+      >
+    >;
 #endif
 
 

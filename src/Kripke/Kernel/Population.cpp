@@ -66,11 +66,11 @@ struct PopulationSdom {
 
     RAJA::ReduceSum<Kripke::Arch::Reduce_Population, double> part_red(0);
 
-    RAJA::nested::forall(Kripke::Arch::Policy_Population{},
+    RAJA::kernel<Kripke::Arch::Policy_Population>(
         camp::make_tuple(
-            RAJA::RangeSegment(0, num_directions),
-            RAJA::RangeSegment(0, num_groups),
-            RAJA::RangeSegment(0, num_zones) ),
+            RAJA::TypedRangeSegment<Direction>(0, num_directions),
+            RAJA::TypedRangeSegment<Group>(0, num_groups),
+            RAJA::TypedRangeSegment<Zone>(0, num_zones) ),
         KRIPKE_LAMBDA (Direction d, Group g, Zone z) {
 
           part_red += w(d) * psi(d,g,z) * volume(z);
