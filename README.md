@@ -23,7 +23,7 @@ Changes
 =======
 
   * 11/02/2017 v1.2.0-CORAL2: Initial release for CORAL2
-	* 03/26/2017 v1.2.1-CORAL2: Updated to RAJA-0.6.0rc2, fixed FOM calcuation and updated docs
+  * 03/26/2017 v1.2.1-CORAL2: Updated to RAJA-0.6.0rc2, fixed FOM calcuation and updated docs
 
 
 Special Notice
