@@ -487,7 +487,7 @@ int main(int argc, char **argv) {
 
   size_t num_iter = timing.getCount("SweepSolver");
   double solve_time = timing.getTotal("Solve");
-	double iter_time = solve_time / num_iter;
+  double iter_time = solve_time / num_iter;
   double grind_time = iter_time / num_unknowns;
   double throughput = num_unknowns / iter_time;
 
