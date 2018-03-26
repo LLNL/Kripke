@@ -493,8 +493,9 @@ int main(int argc, char **argv) {
 
   size_t num_iter = timing.getCount("SweepSolver");
   double solve_time = timing.getTotal("Solve");
-  double grind_time = solve_time / num_unknowns / num_iter;
-  double throughput = num_unknowns / solve_time / num_iter;
+  double iter_time = solve_time / num_iter;
+  double grind_time = iter_time / num_unknowns;
+  double throughput = num_unknowns / iter_time;
 
   double sweep_eff = 100.0 * timing.getTotal("SweepSubdomain") / timing.getTotal("SweepSolver");
 
@@ -503,10 +504,10 @@ int main(int argc, char **argv) {
     printf("Figures of Merit\n");
     printf("================\n");
     printf("\n");
-    printf("  Throughput:         %e [unknowns/second/iteration]\n", throughput);
-    printf("  Number of unknowns: %lu\n", (unsigned long) num_unknowns);
-    printf("  Grind time :        %e [seconds/unknown/iteration]\n", grind_time);
+    printf("  Throughput:         %e [unknowns/(second/iteration)]\n", throughput);
+    printf("  Grind time :        %e [(seconds/iteration)/unknowns]\n", grind_time);
     printf("  Sweep efficiency :  %4.5lf [100.0 * SweepSubdomain time / SweepSolver time]\n", sweep_eff);
+    printf("  Number of unknowns: %lu\n", (unsigned long) num_unknowns);
   }
   
   // Cleanup and exit
