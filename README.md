@@ -72,6 +72,7 @@ Modifications of the following parameters change the problem definition, and sho
 Modifications of the following parameters just change problem decomposition, and are fair-game for tuning:
 * --gset
 * --dset
+* --zset
 * --procs
 * OMP_NUM_THREADS
 
