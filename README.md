@@ -1,9 +1,9 @@
 KRIPKE
 ======
 
-Version 1.2.1-CORAL2
+Version 1.2.2-CORAL2
 
-Release Date 3/26/2018 
+Release Date 4/4/2018 
 
 
 Authors
@@ -22,8 +22,10 @@ See included file NOTICE.md
 Changes
 =======
 
+  * 04/04/2018 v1.2.2-CORAL2: Fixed bug in Population edit
+  * 03/26/2018 v1.2.1-CORAL2: Updated to RAJA-0.6.0rc2, fixed FOM calcuation and updated docs
   * 11/02/2017 v1.2.0-CORAL2: Initial release for CORAL2
-  * 03/26/2017 v1.2.1-CORAL2: Updated to RAJA-0.6.0rc2, fixed FOM calcuation and updated docs
+
 
 
 Special Notice
