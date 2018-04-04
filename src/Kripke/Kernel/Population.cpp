@@ -78,7 +78,7 @@ struct PopulationSdom {
         }
     );
 
-    *part_ptr = part_red;
+    *part_ptr += part_red;
   }
 
 };
