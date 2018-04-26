@@ -67,10 +67,10 @@ struct ExtractStrideOne<i, Order, camp::list<Types...>>{
   static constexpr camp::idx_t our_value = getOrder<Order, T>();
 
   static constexpr camp::idx_t value =
-    next_t::value > our_value ? next_t::value : our_value;  
+    next_t::value >= our_value ? next_t::value : our_value;  
   
   static constexpr camp::idx_t arg =
-    next_t::value > our_value ? next_t::arg : i;  
+    next_t::value >= our_value ? next_t::arg : i;  
 };
 
 template<typename Order, typename ... Types>
@@ -93,7 +93,7 @@ struct ArgsToOrder {
     ExtractStrideOne<0, Order, camp::list<T...> >::arg;    
 
   template<camp::idx_t ... RangeInts, camp::idx_t ... OrderInts>
-  static array_t toArray_expanded(camp::idx_seq<RangeInts...>, camp::idx_seq<OrderInts...>){
+  static array_t toArray_expanded(bool debug, camp::idx_seq<RangeInts...>, camp::idx_seq<OrderInts...>){
     using pair_t = std::pair<camp::idx_t, camp::idx_t>;
     using parray_t = std::array<pair_t, sizeof...(T)>;
 
@@ -104,19 +104,23 @@ struct ArgsToOrder {
         return a.second < b.second;
       });
 
-
-    array_t a{{(p[RangeInts].first)...}};
-
-    return a;
+    if(debug){
+      array_t a{{(p[RangeInts].second)...}};
+      return a;
+    }
+    else{
+      array_t a{{(p[RangeInts].first)...}};
+      return a;
+    }
   }
 
-  static array_t toArray(){
-    return toArray_expanded(camp::make_idx_seq_t<sizeof...(T)>{}, camp::idx_seq<getOrder<Order,T>()...>{});
+  static array_t toArray(bool debug = false){
+    return toArray_expanded(debug, camp::make_idx_seq_t<sizeof...(T)>{}, camp::idx_seq<getOrder<Order,T>()...>{});
   }
 
 
   static void print(){
-    array_t a = toArray();
+    array_t a = toArray(true);
 
     for(camp::idx_t i = 0;i < (camp::idx_t)sizeof...(T);++i){
       printf("%d ", (int)a[i]);

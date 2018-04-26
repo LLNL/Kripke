@@ -198,7 +198,7 @@ namespace Core {
 
       template<typename Order>
       RAJA_INLINE
-      auto getViewL(Kripke::SdomId sdom_id) const ->
+      auto getViewOrder(Kripke::SdomId sdom_id) const ->
         ViewType<Order, ElementType, IDX_TYPES...>
       {
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
@@ -209,6 +209,9 @@ namespace Core {
         using LType = typename LInfo::Layout;
 
         LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
+
+        //printf("getViewOrder: ndim=%d, stride1=%d, ", (int)NumDims, (int)LInfo::stride_one_dim);
+        //LInfo::args_to_order_t::print();
 
         return ViewType<Order, ElementType, IDX_TYPES...>(ptr, layout);
       }

@@ -117,16 +117,16 @@ namespace Kripke {
 
     template<typename FieldType>
     auto getView(FieldType &field) const ->
-      decltype(field.template getViewL<order_t>(sdom_id))
+      decltype(field.template getViewOrder<order_t>(sdom_id))
     {
-      return field.template getViewL<order_t>(sdom_id);
+      return field.template getViewOrder<order_t>(sdom_id);
     }
     
     template<typename FieldType>
     auto getView(FieldType &field, Kripke::SdomId sdom) const ->
-      decltype(field.template getViewL<order_t>(sdom))
+      decltype(field.template getViewOrder<order_t>(sdom))
     {
-      return field.template getViewL<order_t>(sdom);
+      return field.template getViewOrder<order_t>(sdom);
     }
   };
 
