@@ -135,16 +135,16 @@ void PartitionSpace::createSubdomainData(Kripke::Core::DataStore &data_store) co
   // Create a Field to store mappings from local subdomains to global
   auto &field_local_to_global =
       data_store.newVariable<Field_SdomId2GlobalSdomId>(
-          "SdomId2GlobalSdomId", set_sdomid);
+          "SdomId2GlobalSdomId", set_sdomid, camp::list<SdomId>{});
 
   auto &field_global_to_local =
        data_store.newVariable<Field_GlobalSdomId2SdomId>(
-           "GlobalSdomId2SdomId", set_global_sdomid);
+           "GlobalSdomId2SdomId", set_global_sdomid, camp::list<GlobalSdomId>{});
   Kripke::Kernel::kConst(field_global_to_local, SdomId{0});
 
   auto &field_global_to_rank =
        data_store.newVariable<Field_GlobalSdomId2Rank>(
-           "GlobalSdomId2Rank", set_global_sdomid);
+           "GlobalSdomId2Rank", set_global_sdomid, camp::list<GlobalSdomId>{});
   Kripke::Kernel::kConst(field_global_to_rank, 0);
 
 

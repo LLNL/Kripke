@@ -45,7 +45,7 @@ using namespace Kripke::Core;
 struct PopulationSdom {
 
   template<typename AL>
-  void operator()(AL, Kripke::Core::DataStore &,
+  void operator()(AL, 
                   Kripke::SdomId sdom_id,
                   Set const               &set_dir,
                   Set const               &set_group,
@@ -56,13 +56,15 @@ struct PopulationSdom {
                   double                  *part_ptr) const
   {
 
+    using order_t = typename DefaultOrder<AL>::type;
+
     int num_directions = set_dir.size(sdom_id);
     int num_groups =     set_group.size(sdom_id);
     int num_zones =      set_zone.size(sdom_id);
 
-    auto psi = field_psi.getViewAL<AL>(sdom_id);
-    auto w = field_w.getViewAL<AL>(sdom_id);
-    auto volume = field_volume.getViewAL<AL>(sdom_id);
+    auto psi = field_psi.getViewL<order_t>(sdom_id);
+    auto w = field_w.getViewL<order_t>(sdom_id);
+    auto volume = field_volume.getViewL<order_t>(sdom_id);
 
     RAJA::ReduceSum<Kripke::Arch::Reduce_Population, double> part_red(0);
 
@@ -91,6 +93,8 @@ double Kripke::Kernel::population(Kripke::Core::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, Population);
 
+  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+
   Set const &set_dir    = data_store.getVariable<Set>("Set/Direction");
   Set const &set_group  = data_store.getVariable<Set>("Set/Group");
   Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
@@ -103,10 +107,10 @@ double Kripke::Kernel::population(Kripke::Core::DataStore &data_store)
   double part = 0.0;
   for (Kripke::SdomId sdom_id : field_psi.getWorkList()){
 
-    Kripke::Kernel::dispatch(data_store, sdom_id, PopulationSdom{},
-                             set_dir, set_group, set_zone,
-                             field_psi, field_w, field_volume,
-                             &part);
+    Kripke::dispatch(al_v, PopulationSdom{}, sdom_id,
+                     set_dir, set_group, set_zone,
+                     field_psi, field_w, field_volume,
+                     &part);
   }
 
   // reduce

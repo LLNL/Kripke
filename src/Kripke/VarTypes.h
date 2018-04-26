@@ -34,7 +34,8 @@
 #define KRIPKE_VARTYPES_H__
 
 #include <Kripke.h>
-#include <Kripke/Core/ArchLayout.h>
+#include <Kripke/ArchLayout.h>
+#include <Kripke/Core/VarLayout.h>
 #include <Kripke/Core/Set.h>
 #include <Kripke/Core/Field.h>
 
@@ -88,6 +89,36 @@ namespace Kripke {
   using Field_SigmaTZonal = Kripke::Core::Field<double, Group, Zone>;
 
 
-}
+  template<typename T>
+  struct DefaultOrder{};
+
+  template<typename A, typename L>
+  struct DefaultOrder<ArchLayoutT<A, L>> : DefaultOrder<L> {};
+
+  template<>
+  struct DefaultOrder<LayoutT_DGZ>{
+    using type = camp::list<long, Dimension, Material, Direction, Legendre, Moment, GlobalGroup, Group, Zone, ZoneK, ZoneJ, ZoneI, MixElem>;
+  };
+
+
+
+
+  template<typename FieldType, typename SetType>
+  RAJA_INLINE
+  FieldType &createField(Core::DataStore &data_store, std::string const &name, ArchLayoutV al_v, SetType const &set)
+  {
+    FieldType *field = nullptr;
+    dispatchLayout(al_v.layout_v, [&](auto layout_t){
+      using order_t = typename DefaultOrder<decltype(layout_t)>::type; 
+     
+      field = new FieldType(set, order_t{});
+      data_store.addVariable(name, field);
+    });
+
+    return *field;
+  };
+
+} // namespace Kripke
+
 
 #endif

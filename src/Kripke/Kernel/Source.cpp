@@ -50,7 +50,7 @@ struct SourceSdom {
 
   template<typename AL>
   RAJA_INLINE
-  void operator()(AL, Kripke::Core::DataStore &,
+  void operator()(AL, 
                   Kripke::SdomId          sdom_id,
                   Set const               &set_group,
                   Set const               &set_mixelem,
@@ -61,14 +61,16 @@ struct SourceSdom {
                   double                  source_strength) const
   {
 
+    using order_t = typename DefaultOrder<AL>::type;
+
     // Source term is isotropic
     Moment nm{0};
 
-    auto phi_out = field_phi_out.getViewAL<AL>(sdom_id);
+    auto phi_out = field_phi_out.getViewL<order_t>(sdom_id);
 
-    auto mixelem_to_zone     = field_mixed_to_zone.getViewAL<AL>(sdom_id);
-    auto mixelem_to_material = field_mixed_to_material.getViewAL<AL>(sdom_id);
-    auto mixelem_to_fraction = field_mixed_to_fraction.getViewAL<AL>(sdom_id);
+    auto mixelem_to_zone     = field_mixed_to_zone.getViewL<order_t>(sdom_id);
+    auto mixelem_to_material = field_mixed_to_material.getViewL<order_t>(sdom_id);
+    auto mixelem_to_fraction = field_mixed_to_fraction.getViewL<order_t>(sdom_id);
 
     int num_mixed  = set_mixelem.size(sdom_id);
     int num_groups = set_group.size(sdom_id);
@@ -102,6 +104,8 @@ void Kripke::Kernel::source(DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, Source);
 
+  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+
   auto &set_group   = data_store.getVariable<Set>("Set/Group");
   auto &set_mixelem = data_store.getVariable<Set>("Set/MixElem");
 
@@ -117,13 +121,13 @@ void Kripke::Kernel::source(DataStore &data_store)
   // Loop over zoneset subdomains
   for(auto sdom_id : field_phi_out.getWorkList()){
 
-    Kripke::Kernel::dispatch(data_store, sdom_id, SourceSdom{},
-                                 set_group, set_mixelem,
-                                 field_phi_out,
-                                 field_mixed_to_zone,
-                                 field_mixed_to_material,
-                                 field_mixed_to_fraction,
-                                 source_strength);
+    Kripke::dispatch(al_v, SourceSdom{}, sdom_id,
+                     set_group, set_mixelem,
+                     field_phi_out,
+                     field_mixed_to_zone,
+                     field_mixed_to_material,
+                     field_mixed_to_fraction,
+                     source_strength);
 
   }
 

@@ -49,7 +49,8 @@ struct SweepSdom {
   void operator()(AL, Kripke::Core::DataStore &data_store,
                   Kripke::SdomId              sdom_id) const
   {
-
+  
+    using order_t = typename DefaultOrder<AL>::type;
   
     int num_directions = data_store.getVariable<Set>("Set/Direction").size(sdom_id);
     int num_groups = data_store.getVariable<Set>("Set/Group").size(sdom_id);
@@ -57,24 +58,24 @@ struct SweepSdom {
     int local_jmax = data_store.getVariable<Set>("Set/ZoneJ").size(sdom_id);
     int local_kmax = data_store.getVariable<Set>("Set/ZoneK").size(sdom_id);
 
-    auto xcos = data_store.getVariable<Field_Direction2Double>("quadrature/xcos").getViewAL<AL>(sdom_id);
-    auto ycos = data_store.getVariable<Field_Direction2Double>("quadrature/ycos").getViewAL<AL>(sdom_id);
-    auto zcos = data_store.getVariable<Field_Direction2Double>("quadrature/zcos").getViewAL<AL>(sdom_id);
-    auto view_id = data_store.getVariable<Field_Direction2Int>("quadrature/id").getViewAL<AL>(sdom_id);
-    auto view_jd = data_store.getVariable<Field_Direction2Int>("quadrature/jd").getViewAL<AL>(sdom_id);
-    auto view_kd = data_store.getVariable<Field_Direction2Int>("quadrature/kd").getViewAL<AL>(sdom_id);
+    auto xcos = data_store.getVariable<Field_Direction2Double>("quadrature/xcos").getViewL<order_t>(sdom_id);
+    auto ycos = data_store.getVariable<Field_Direction2Double>("quadrature/ycos").getViewL<order_t>(sdom_id);
+    auto zcos = data_store.getVariable<Field_Direction2Double>("quadrature/zcos").getViewL<order_t>(sdom_id);
+    auto view_id = data_store.getVariable<Field_Direction2Int>("quadrature/id").getViewL<order_t>(sdom_id);
+    auto view_jd = data_store.getVariable<Field_Direction2Int>("quadrature/jd").getViewL<order_t>(sdom_id);
+    auto view_kd = data_store.getVariable<Field_Direction2Int>("quadrature/kd").getViewL<order_t>(sdom_id);
 
-    auto dx = data_store.getVariable<Field_ZoneI2Double>("dx").getViewAL<AL>(sdom_id);
-    auto dy = data_store.getVariable<Field_ZoneJ2Double>("dy").getViewAL<AL>(sdom_id);
-    auto dz = data_store.getVariable<Field_ZoneK2Double>("dz").getViewAL<AL>(sdom_id);
+    auto dx = data_store.getVariable<Field_ZoneI2Double>("dx").getViewL<order_t>(sdom_id);
+    auto dy = data_store.getVariable<Field_ZoneJ2Double>("dy").getViewL<order_t>(sdom_id);
+    auto dz = data_store.getVariable<Field_ZoneK2Double>("dz").getViewL<order_t>(sdom_id);
 
-    auto sigt = data_store.getVariable<Kripke::Field_SigmaTZonal>("sigt_zonal").getViewAL<AL>(sdom_id);
-    auto psi = data_store.getVariable<Kripke::Field_Flux>("psi").getViewAL<AL>(sdom_id);
-    auto rhs = data_store.getVariable<Kripke::Field_Flux>("rhs").getViewAL<AL>(sdom_id);
+    auto sigt = data_store.getVariable<Kripke::Field_SigmaTZonal>("sigt_zonal").getViewL<order_t>(sdom_id);
+    auto psi = data_store.getVariable<Kripke::Field_Flux>("psi").getViewL<order_t>(sdom_id);
+    auto rhs = data_store.getVariable<Kripke::Field_Flux>("rhs").getViewL<order_t>(sdom_id);
 
-    auto psi_lf = data_store.getVariable<Field_IPlane>("i_plane").getViewAL<AL>(sdom_id);
-    auto psi_fr = data_store.getVariable<Field_JPlane>("j_plane").getViewAL<AL>(sdom_id);
-    auto psi_bo = data_store.getVariable<Field_KPlane>("k_plane").getViewAL<AL>(sdom_id);
+    auto psi_lf = data_store.getVariable<Field_IPlane>("i_plane").getViewL<order_t>(sdom_id);
+    auto psi_fr = data_store.getVariable<Field_JPlane>("j_plane").getViewL<order_t>(sdom_id);
+    auto psi_bo = data_store.getVariable<Field_KPlane>("k_plane").getViewL<order_t>(sdom_id);
 
     // Assumption: all directions in this sdom have same mesh traversal
     Direction d0{0};
@@ -134,6 +135,8 @@ void Kripke::Kernel::sweepSubdomain(Kripke::Core::DataStore &data_store,
 {
   KRIPKE_TIMER(data_store, SweepSubdomain);
 
-  Kripke::Kernel::dispatch(data_store, sdom_id, SweepSdom{});
+  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+
+  Kripke::dispatch(al_v, SweepSdom{}, data_store, sdom_id);
 
 }

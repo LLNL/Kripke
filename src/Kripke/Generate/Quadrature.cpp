@@ -343,6 +343,8 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
 
   PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");
 
+  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+
   // Create sets for angular discretization
   size_t ndir_per_sdom = input_vars.num_directions /
                         pspace.getGlobalNumSubdomains(SPACE_Q);
@@ -365,8 +367,8 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
   data_store.addVariable("Set/Legendre", legendre_set);
 
   // Create a mapping from moments to their Legendre scattering coefficients
-  auto &field_moment_to_legendre = data_store.newVariable<Field_Moment2Legendre>(
-      "moment_to_legendre", *moment_set);
+  auto &field_moment_to_legendre = createField<Field_Moment2Legendre>(
+      data_store, "moment_to_legendre", al_v, *moment_set);
 
   // create a global mapping... just easier this way
   std::vector<Legendre> moment_list(moment_set->globalSize());
@@ -393,14 +395,14 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
   auto quadrature_points = createQuadratureSet(input_vars);
 
   // Create and populate fields for quadrature set data
-  auto &field_xcos = data_store.newVariable<Field_Direction2Double>("quadrature/xcos", *dir_set);
-  auto &field_ycos = data_store.newVariable<Field_Direction2Double>("quadrature/ycos", *dir_set);
-  auto &field_zcos = data_store.newVariable<Field_Direction2Double>("quadrature/zcos", *dir_set);
-  auto &field_w = data_store.newVariable<Field_Direction2Double>("quadrature/w", *dir_set);
-  auto &field_id = data_store.newVariable<Field_Direction2Int>("quadrature/id", *dir_set);
-  auto &field_jd = data_store.newVariable<Field_Direction2Int>("quadrature/jd", *dir_set);
-  auto &field_kd = data_store.newVariable<Field_Direction2Int>("quadrature/kd", *dir_set);
-  auto &field_octant = data_store.newVariable<Field_Direction2Int>("quadrature/octant", *dir_set);
+  auto &field_xcos = createField<Field_Direction2Double>(data_store, "quadrature/xcos", al_v, *dir_set);
+  auto &field_ycos = createField<Field_Direction2Double>(data_store, "quadrature/ycos", al_v, *dir_set);
+  auto &field_zcos = createField<Field_Direction2Double>(data_store, "quadrature/zcos", al_v, *dir_set);
+  auto &field_w = createField<Field_Direction2Double>(data_store, "quadrature/w", al_v, *dir_set);
+  auto &field_id = createField<Field_Direction2Int>(data_store, "quadrature/id", al_v, *dir_set);
+  auto &field_jd = createField<Field_Direction2Int>(data_store, "quadrature/jd", al_v, *dir_set);
+  auto &field_kd = createField<Field_Direction2Int>(data_store, "quadrature/kd", al_v, *dir_set);
+  auto &field_octant = createField<Field_Direction2Int>(data_store, "quadrature/octant", al_v, *dir_set);
 
   for(SdomId sdom_id : field_xcos.getWorkList()){
     int num_directions = dir_set->size(sdom_id);
@@ -433,12 +435,12 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
   auto &set_ell = data_store.newVariable<ProductSet<2>>("Set/Ell",
       pspace, SPACE_Q, *moment_set, *dir_set);
   
-	auto &set_ell_plus = data_store.newVariable<ProductSet<2>>("Set/EllPlus",
+  auto &set_ell_plus = data_store.newVariable<ProductSet<2>>("Set/EllPlus",
       pspace, SPACE_Q, *dir_set, *moment_set);
 
   // Allocate and initialize the L and L+ matrices
-  auto &field_ell = data_store.newVariable<Field_Ell>("ell", set_ell);
-  auto &field_ell_plus = data_store.newVariable<Field_EllPlus>("ell_plus", set_ell_plus);
+  auto &field_ell = createField<Field_Ell>(data_store, "ell", al_v, set_ell);
+  auto &field_ell_plus = createField<Field_EllPlus>(data_store, "ell_plus", al_v, set_ell_plus);
 
   for(SdomId sdom_id : field_xcos.getWorkList()){
     auto ell = field_ell.getView(sdom_id);
@@ -480,8 +482,8 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
   auto &set_adjacency = data_store.newVariable<ProductSet<1>>("Set/Adjacency",
       pspace, SPACE_PQR, set_dimension);
 
-  auto &field_upwind = data_store.newVariable<Field_Adjacency>("upwind", set_adjacency);
-  auto &field_downwind = data_store.newVariable<Field_Adjacency>("downwind", set_adjacency);
+  auto &field_upwind = createField<Field_Adjacency>(data_store, "upwind", al_v, set_adjacency);
+  auto &field_downwind = createField<Field_Adjacency>(data_store, "downwind", al_v, set_adjacency);
 
   for(SdomId sdom_id : field_upwind.getWorkList()){
     // Get local subdomain coordinates

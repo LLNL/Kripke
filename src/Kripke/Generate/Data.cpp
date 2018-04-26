@@ -60,11 +60,10 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
 
   data_store.addVariable("Set/Flux", flux_set);
 
+  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
   // Create Solution and RHS fields
-  data_store.addVariable("psi", new Field_Flux(*flux_set));
-  data_store.addVariable("rhs", new Field_Flux(*flux_set));
-
-
+  createField<Field_Flux>(data_store, "psi", al_v, *flux_set);
+  createField<Field_Flux>(data_store, "rhs", al_v, *flux_set);
 
 
   // Create a set to span moments of the angular flux
@@ -76,8 +75,8 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
 
 
   // Create flux moment and source moment fields
-  data_store.addVariable("phi",     new Field_Moments(*fluxmoment_set));
-  data_store.addVariable("phi_out", new Field_Moments(*fluxmoment_set));
+  createField<Field_Moments>(data_store, "phi", al_v, *fluxmoment_set);
+  createField<Field_Moments>(data_store, "phi_out", al_v, *fluxmoment_set);
 
 
   // Create "plane data" to hold face-centered values while sweeping
@@ -87,9 +86,9 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
   Set const &iplane_set = data_store.newVariable<ProductSet<4>>("Set/IPlane", pspace, SPACE_PQR, dir_set, group_set, zonej_set, zonek_set);
   Set const &jplane_set = data_store.newVariable<ProductSet<4>>("Set/JPlane", pspace, SPACE_PQR, dir_set, group_set, zonei_set, zonek_set);
   Set const &kplane_set = data_store.newVariable<ProductSet<4>>("Set/KPlane", pspace, SPACE_PQR, dir_set, group_set, zonei_set, zonej_set);
-  data_store.newVariable<Field_IPlane>("i_plane", iplane_set);
-  data_store.newVariable<Field_JPlane>("j_plane", jplane_set);
-  data_store.newVariable<Field_KPlane>("k_plane", kplane_set);
+  createField<Field_IPlane>(data_store, "i_plane", al_v, iplane_set);
+  createField<Field_JPlane>(data_store, "j_plane", al_v, jplane_set);
+  createField<Field_KPlane>(data_store, "k_plane", al_v, kplane_set);
 
   // Create a set to span scattering transfer matrix
   Set const &material_set   = data_store.getVariable<Set>("Set/Material");
@@ -102,7 +101,7 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
 
 
   // Create storage for the scattering transfer matrix
-  data_store.addVariable("data/sigs", new Field_SigmaS(*sigs_set));
+  createField<Field_SigmaS>(data_store, "data/sigs", al_v, *sigs_set);
   auto &field_sigs = data_store.getVariable<Field_SigmaS>("data/sigs");
 
   // Assign basic diagonal data to matrix

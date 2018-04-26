@@ -42,7 +42,7 @@ using namespace Kripke::Core;
 struct LPlusTimesSdom {
 
   template<typename AL>
-  void operator()(AL, Kripke::Core::DataStore &,
+  void operator()(AL, 
                   Kripke::SdomId sdom_id,
                   Set const       &set_dir,
                   Set const       &set_group,
@@ -53,6 +53,8 @@ struct LPlusTimesSdom {
                   Field_EllPlus   &field_ell_plus) const
   {
 
+    using order_t = typename DefaultOrder<AL>::type;
+
     // Get dimensioning
     int num_directions = set_dir.size(sdom_id);
     int num_groups =     set_group.size(sdom_id);
@@ -60,9 +62,9 @@ struct LPlusTimesSdom {
     int num_zones =      set_zone.size(sdom_id);
 
     // Get views
-    auto phi_out =  field_phi_out.getViewAL<AL>(sdom_id);
-    auto rhs =      field_rhs.getViewAL<AL>(sdom_id);
-    auto ell_plus = field_ell_plus.getViewAL<AL>(sdom_id);
+    auto phi_out =  field_phi_out.getViewL<order_t>(sdom_id);
+    auto rhs =      field_rhs.getViewL<order_t>(sdom_id);
+    auto ell_plus = field_ell_plus.getViewL<order_t>(sdom_id);
 
     // Compute:  rhs =  ell_plus * phi_out
     RAJA::kernel<Kripke::Arch::Policy_LPlusTimes>(
@@ -96,12 +98,14 @@ void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)
   auto &field_rhs =       data_store.getVariable<Field_Flux>("rhs");
   auto &field_ell_plus =  data_store.getVariable<Field_EllPlus>("ell_plus");
 
+  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+
   // Loop over Subdomains
   for (Kripke::SdomId sdom_id : field_rhs.getWorkList()){
 
-    Kripke::Kernel::dispatch(data_store, sdom_id, LPlusTimesSdom{},
-                             set_dir, set_group, set_zone, set_moment,
-                             field_phi_out, field_rhs, field_ell_plus);
+    Kripke::dispatch(al_v, LPlusTimesSdom{}, sdom_id,
+                     set_dir, set_group, set_zone, set_moment,
+                     field_phi_out, field_rhs, field_ell_plus);
 
   }
 

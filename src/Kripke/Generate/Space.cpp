@@ -65,6 +65,7 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
 {
   PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");
 
+  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
 
 
   // Create set for X mesh
@@ -142,22 +143,22 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
   double const z_max = 60.0;
 
 
-  auto &field_dx = data_store.newVariable<Field_ZoneI2Double>("dx", set_zonei);
+  auto &field_dx = createField<Field_ZoneI2Double>(data_store, "dx", al_v, set_zonei);
   double dx = (x_max-x_min) / set_zonei.globalSize();
   Kripke::Kernel::kConst(field_dx, dx);
 
-  auto &field_dy = data_store.newVariable<Field_ZoneJ2Double>("dy", set_zonej);
+  auto &field_dy = createField<Field_ZoneJ2Double>(data_store, "dy", al_v, set_zonej);
   double dy = (y_max-y_min) / set_zonej.globalSize();
   Kripke::Kernel::kConst(field_dy, dy);
 
-  auto &field_dz = data_store.newVariable<Field_ZoneK2Double>("dz", set_zonek);
+  auto &field_dz = createField<Field_ZoneK2Double>(data_store, "dz", al_v, set_zonek);
   double dz = (z_max-z_min) / set_zonek.globalSize();
   Kripke::Kernel::kConst(field_dz, dz);
 
 
   // Create a zone volume field (this is simple considering our uniform grid)
   double zone_volume = dx*dy*dz;
-  auto &field_volume = data_store.newVariable<Field_Zone2Double>("volume", set_zone_linear);
+  auto &field_volume = createField<Field_Zone2Double>(data_store, "volume", al_v, set_zone_linear);
   Kripke::Kernel::kConst(field_volume, zone_volume);
 
 
@@ -278,20 +279,20 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
             "Set/MixElem", pspace, SPACE_R, sdom_to_num_mixed);
 
   // Create fields to store mixture information
-  auto &field_mixed_to_zone = data_store.newVariable<Field_MixElem2Zone>(
-      "mixelem_to_zone", set_mixelem);
+  auto &field_mixed_to_zone = createField<Field_MixElem2Zone>(
+      data_store, "mixelem_to_zone", al_v, set_mixelem);
 
-  auto &field_mixed_to_material = data_store.newVariable<Field_MixElem2Material>(
-      "mixelem_to_material", set_mixelem);
+  auto &field_mixed_to_material = createField<Field_MixElem2Material>(
+      data_store, "mixelem_to_material", al_v, set_mixelem);
 
-  auto &field_mixed_to_fraction = data_store.newVariable<Field_MixElem2Double>(
-      "mixelem_to_fraction", set_mixelem);
+  auto &field_mixed_to_fraction = createField<Field_MixElem2Double>(
+      data_store, "mixelem_to_fraction", al_v, set_mixelem);
 
-  auto &field_zone_to_num_mixelem = data_store.newVariable<Field_Zone2Int>(
-      "zone_to_num_mixelem", set_zone_linear);
+  auto &field_zone_to_num_mixelem = createField<Field_Zone2Int>(
+      data_store, "zone_to_num_mixelem", al_v, set_zone_linear);
 
-  auto &field_zone_to_mixelem = data_store.newVariable<Field_Zone2MixElem>(
-      "zone_to_mixelem", set_zone_linear);
+  auto &field_zone_to_mixelem = createField<Field_Zone2MixElem>(
+      data_store, "zone_to_mixelem", al_v, set_zone_linear);
 
 
   // Populate mixture fields with our dynamic data
@@ -350,8 +351,8 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
   auto &set_group = data_store.getVariable<Set>("Set/Group");
   auto &set_sigt_zonal = data_store.newVariable<ProductSet<2>>(
       "Set/SigmaTZonal", pspace, SPACE_PR, set_group, set_zone);
-  auto &field_sigt = data_store.newVariable<Field_SigmaTZonal>(
-      "sigt_zonal", set_sigt_zonal);
+  auto &field_sigt = createField<Field_SigmaTZonal>(
+      data_store, "sigt_zonal", al_v, set_sigt_zonal);
   Kripke::Kernel::kConst(field_sigt, 0.0);
 
   for(SdomId sdom_id : field_sigt.getWorkList()){

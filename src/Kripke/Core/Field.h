@@ -34,7 +34,7 @@
 #define KRIPKE_CORE_FIELD_H__
 
 #include <Kripke.h>
-#include <Kripke/Core/ArchLayout.h>
+#include <Kripke/Core/VarLayout.h>
 #include <Kripke/Core/DataStore.h>
 #include <Kripke/Core/DomainVar.h>
 #include <Kripke/Core/Set.h>
@@ -51,8 +51,8 @@ namespace Core {
       using ElementType = ELEMENT;
       using ElementPtr = ELEMENT*;
 
-      using Layout1dType = Kripke::Core::LayoutType<AL_Default, RAJA::Index_type>;
-      using View1dType = Kripke::Core::ViewType<AL_Default, ElementType, RAJA::Index_type>;
+      using Layout1dType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<RAJA::Index_type>>;
+      using View1dType = RAJA::View<ElementType, Layout1dType>;
 
 
       explicit FieldStorage(Kripke::Core::Set const &spanned_set) :
@@ -148,14 +148,16 @@ namespace Core {
       using DefaultLayoutType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>>;
       using DefaultViewType = RAJA::View<ElementType, DefaultLayoutType>;
 
-
-      Field(Kripke::Core::Set const &spanned_set) :
+      template<typename Order>
+      Field(Kripke::Core::Set const &spanned_set, Order) :
         Parent(spanned_set)
       {
 
         KRIPKE_ASSERT(NumDims == spanned_set.getNumDimensions(),
             "Number of dimensions must match between Field<%d> and Set<%d>\n",
             (int)NumDims, (int)spanned_set.getNumDimensions());
+
+        auto perm = LayoutInfo<Order, IDX_TYPES...>::getPermutation();
 
         // create layouts for each chunk
         size_t num_chunks = Parent::m_chunk_to_subdomain.size();
@@ -169,9 +171,6 @@ namespace Core {
           for(size_t dim = 0;dim < NumDims;++ dim){
             sizes[dim] = spanned_set.dimSize(sdom_id, dim);
           }
-
-          using LInfo = LayoutInfo<Layout_Default, IDX_TYPES...>;
-          auto perm = LInfo::getPermutation();
 
           RAJA::Layout<NumDims, RAJA::Index_type> &layout =
               m_chunk_to_layout[chunk_id];
@@ -197,21 +196,21 @@ namespace Core {
       }
 
 
-      template<typename AL>
+      template<typename Order>
       RAJA_INLINE
-      auto getViewAL(Kripke::SdomId sdom_id) const ->
-        ViewType<typename AL::LayoutFamily, ElementType, IDX_TYPES...>
+      auto getViewL(Kripke::SdomId sdom_id) const ->
+        ViewType<Order, ElementType, IDX_TYPES...>
       {
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
 
         ElementPtr ptr = Parent::m_chunk_to_data[chunk_id];
 
-        using LInfo = LayoutInfo<typename AL::LayoutFamily, IDX_TYPES...>;
+        using LInfo = LayoutInfo<Order, IDX_TYPES...>;
         using LType = typename LInfo::Layout;
 
         LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
 
-        return ViewType<typename AL::LayoutFamily, ElementType, IDX_TYPES...>(ptr, layout);
+        return ViewType<Order, ElementType, IDX_TYPES...>(ptr, layout);
       }
 
 

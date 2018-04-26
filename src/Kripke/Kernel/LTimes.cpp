@@ -32,6 +32,7 @@
 
 #include <Kripke.h>
 #include <Kripke/Arch/LTimes.h>
+#include <Kripke/Core/VarLayout.h>
 #include <Kripke/Kernel.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
@@ -46,7 +47,7 @@ struct LTimesSdom {
 
   template<typename AL>
   RAJA_INLINE
-  void operator()(AL, Kripke::Core::DataStore &,
+  void operator()(AL, 
                   Kripke::SdomId sdom_id,
                   Set const       &set_dir,
                   Set const       &set_group,
@@ -56,6 +57,9 @@ struct LTimesSdom {
                   Field_Moments   &field_phi,
                   Field_Ell       &field_ell) const
   {
+
+    using order_t = typename DefaultOrder<AL>::type;
+ 
     // Get dimensioning
     int num_directions = set_dir.size(sdom_id);
     int num_groups =     set_group.size(sdom_id);
@@ -63,12 +67,12 @@ struct LTimesSdom {
     int num_zones =      set_zone.size(sdom_id);
 
     // Get pointers
-    auto psi = field_psi.getViewAL<AL>(sdom_id);
-    auto phi = field_phi.getViewAL<AL>(sdom_id);
-    auto ell = field_ell.getViewAL<AL>(sdom_id);
+    auto psi = field_psi.getViewL<order_t>(sdom_id);
+    auto phi = field_phi.getViewL<order_t>(sdom_id);
+    auto ell = field_ell.getViewL<order_t>(sdom_id);
 
     // Compute:  phi =  ell * psi
-		RAJA::kernel<Kripke::Arch::Policy_LTimes>(
+    RAJA::kernel<Kripke::Arch::Policy_LTimes>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Moment>(0, num_moments),
             RAJA::TypedRangeSegment<Direction>(0, num_directions),
@@ -97,6 +101,8 @@ void Kripke::Kernel::LTimes(Kripke::Core::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, LTimes);
 
+  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+
   Set const &set_dir    = data_store.getVariable<Set>("Set/Direction");
   Set const &set_group  = data_store.getVariable<Set>("Set/Group");
   Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
@@ -110,9 +116,9 @@ void Kripke::Kernel::LTimes(Kripke::Core::DataStore &data_store)
   for (Kripke::SdomId sdom_id : field_psi.getWorkList()){
 
 
-    Kripke::Kernel::dispatch(data_store, sdom_id, LTimesSdom{},
-                             set_dir, set_group, set_zone, set_moment,
-                             field_psi, field_phi, field_ell);
+    Kripke::dispatch(al_v, LTimesSdom{}, sdom_id,
+                     set_dir, set_group, set_zone, set_moment,
+                     field_psi, field_phi, field_ell);
 
 
   }

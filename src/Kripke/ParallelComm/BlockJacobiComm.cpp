@@ -48,12 +48,13 @@ using namespace Kripke::Core;
 BlockJacobiComm::BlockJacobiComm(Kripke::Core::DataStore &data_store) :
 ParallelComm(data_store), posted_sends(false)
 {
+  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
   Set const &set_iplane = data_store.getVariable<Set>("Set/IPlane");
   Set const &set_jplane = data_store.getVariable<Set>("Set/JPlane");
   Set const &set_kplane = data_store.getVariable<Set>("Set/KPlane");
-  data_store.newVariable<Field_IPlane>("old_i_plane", set_iplane);
-  data_store.newVariable<Field_JPlane>("old_j_plane", set_jplane);
-  data_store.newVariable<Field_KPlane>("old_k_plane", set_kplane);
+  createField<Field_IPlane>(data_store, "old_i_plane", al_v, set_iplane);
+  createField<Field_JPlane>(data_store, "old_j_plane", al_v, set_jplane);
+  createField<Field_KPlane>(data_store, "old_k_plane", al_v, set_kplane);
 }
 
 BlockJacobiComm::~BlockJacobiComm(){

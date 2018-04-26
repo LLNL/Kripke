@@ -50,7 +50,7 @@ struct ScatteringSdom {
 
   template<typename AL>
   RAJA_INLINE
-  void operator()(AL, Kripke::Core::DataStore &,
+  void operator()(AL, 
                   Kripke::SdomId          sdom_src,
                   Kripke::SdomId          sdom_dst,
                   Set const               &set_group,
@@ -67,7 +67,7 @@ struct ScatteringSdom {
   {
 
 
-
+    using order_t = typename DefaultOrder<AL>::type;
 
     // Get glower for src and dst ranges (to index into sigma_s)
     int glower_src = set_group.lower(sdom_src);
@@ -75,17 +75,17 @@ struct ScatteringSdom {
 
 
     // get material mix information
-    auto moment_to_legendre = field_moment_to_legendre.getViewAL<AL>(sdom_src);
+    auto moment_to_legendre = field_moment_to_legendre.getViewL<order_t>(sdom_src);
 
-    auto phi     = field_phi.getViewAL<AL>(sdom_src);
-    auto phi_out = field_phi_out.getViewAL<AL>(sdom_dst);
-    auto sigs    = field_sigs.getViewAL<AL>(sdom_src);
+    auto phi     = field_phi.getViewL<order_t>(sdom_src);
+    auto phi_out = field_phi_out.getViewL<order_t>(sdom_dst);
+    auto sigs    = field_sigs.getViewL<order_t>(sdom_src);
 
 
-    auto zone_to_mixelem     = field_zone_to_mixelem.getViewAL<AL>(sdom_src);
-    auto zone_to_num_mixelem = field_zone_to_num_mixelem.getViewAL<AL>(sdom_src);
-    auto mixelem_to_material = field_mixed_to_material.getViewAL<AL>(sdom_src);
-    auto mixelem_to_fraction = field_mixed_to_fraction.getViewAL<AL>(sdom_src);
+    auto zone_to_mixelem     = field_zone_to_mixelem.getViewL<order_t>(sdom_src);
+    auto zone_to_num_mixelem = field_zone_to_num_mixelem.getViewL<order_t>(sdom_src);
+    auto mixelem_to_material = field_mixed_to_material.getViewL<order_t>(sdom_src);
+    auto mixelem_to_fraction = field_mixed_to_fraction.getViewL<order_t>(sdom_src);
 
     // grab dimensions
     int num_zones =      set_zone.size(sdom_src);
@@ -138,6 +138,8 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, Scattering);
 
+  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+
   auto &pspace = data_store.getVariable<Kripke::Core::PartitionSpace>("pspace");
 
   auto &set_group  = data_store.getVariable<Kripke::Core::Set>("Set/Group");
@@ -167,15 +169,15 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
         continue;
       }
 
-      Kripke::Kernel::dispatch(data_store, sdom_src, ScatteringSdom{},
-                               sdom_dst,
-                               set_group, set_zone, set_moment,
-                               field_phi, field_phi_out, field_sigs,
-                               field_zone_to_mixelem,
-                               field_zone_to_num_mixelem,
-                               field_mixed_to_material,
-                               field_mixed_to_fraction,
-                               field_moment_to_legendre);
+      Kripke::dispatch(al_v, ScatteringSdom{}, sdom_src,
+                       sdom_dst,
+                       set_group, set_zone, set_moment,
+                       field_phi, field_phi_out, field_sigs,
+                       field_zone_to_mixelem,
+                       field_zone_to_num_mixelem,
+                       field_mixed_to_material,
+                       field_mixed_to_fraction,
+                       field_moment_to_legendre);
 
 
 

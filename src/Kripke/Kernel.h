@@ -34,25 +34,12 @@
 #define KRIPKE_KERNEL_H__
 
 #include <Kripke.h>
-#include <Kripke/Core/ArchLayout.h>
 #include <Kripke/Core/DataStore.h>
 #include <utility>
 
 namespace Kripke {
 
   namespace Kernel {
-
-    template<typename Function, typename ... Args>
-    RAJA_INLINE
-    void dispatch(Kripke::Core::DataStore &data_store, Kripke::SdomId sdom_id,
-        Function const &fcn, Args &&... args)
-    {
-      using namespace Kripke::Core;
-      fcn(ArchLayout<Arch_Sequential,Layout_Default>{},
-          data_store, sdom_id,
-          std::forward<Args>(args)...);
-    }
-
 
     void LPlusTimes(Kripke::Core::DataStore &data_store);
 
