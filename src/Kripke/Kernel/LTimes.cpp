@@ -47,7 +47,7 @@ struct LTimesSdom {
 
   template<typename AL>
   RAJA_INLINE
-  void operator()(AL, 
+  void operator()(AL al, 
                   Kripke::SdomId sdom_id,
                   Set const       &set_dir,
                   Set const       &set_group,
@@ -58,7 +58,7 @@ struct LTimesSdom {
                   Field_Ell       &field_ell) const
   {
 
-    using order_t = typename DefaultOrder<AL>::type;
+    auto sdom_al = getSdomAL(al, sdom_id);
  
     // Get dimensioning
     int num_directions = set_dir.size(sdom_id);
@@ -67,9 +67,9 @@ struct LTimesSdom {
     int num_zones =      set_zone.size(sdom_id);
 
     // Get pointers
-    auto psi = field_psi.getViewL<order_t>(sdom_id);
-    auto phi = field_phi.getViewL<order_t>(sdom_id);
-    auto ell = field_ell.getViewL<order_t>(sdom_id);
+    auto psi = sdom_al.getView(field_psi);
+    auto phi = sdom_al.getView(field_phi);
+    auto ell = sdom_al.getView(field_ell);
 
     // Compute:  phi =  ell * psi
     RAJA::kernel<Kripke::Arch::Policy_LTimes>(

@@ -101,6 +101,39 @@ namespace Kripke {
   };
 
 
+  template<typename AL>
+  struct SdomAL;
+
+  template<typename A, typename L>
+  struct SdomAL<ArchLayoutT<A, L>>
+  {
+    using al_t = ArchLayoutT<A, L>;
+    using arch_t = A;
+    using layout_t = L;
+
+    using order_t = typename DefaultOrder<L>::type;
+
+    Kripke::SdomId sdom_id;
+
+    template<typename FieldType>
+    auto getView(FieldType &field) const ->
+      decltype(field.template getViewL<order_t>(sdom_id))
+    {
+      return field.template getViewL<order_t>(sdom_id);
+    }
+    
+    template<typename FieldType>
+    auto getView(FieldType &field, Kripke::SdomId sdom) const ->
+      decltype(field.template getViewL<order_t>(sdom))
+    {
+      return field.template getViewL<order_t>(sdom);
+    }
+  };
+
+  template<typename AL>
+  SdomAL<AL> getSdomAL(AL, Kripke::SdomId sdom_id){ 
+    return SdomAL<AL>{sdom_id};
+  }
 
 
   template<typename FieldType, typename SetType>

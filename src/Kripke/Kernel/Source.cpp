@@ -50,7 +50,7 @@ struct SourceSdom {
 
   template<typename AL>
   RAJA_INLINE
-  void operator()(AL, 
+  void operator()(AL al, 
                   Kripke::SdomId          sdom_id,
                   Set const               &set_group,
                   Set const               &set_mixelem,
@@ -61,16 +61,17 @@ struct SourceSdom {
                   double                  source_strength) const
   {
 
-    using order_t = typename DefaultOrder<AL>::type;
+
+    auto sdom_al = getSdomAL(al, sdom_id);
 
     // Source term is isotropic
     Moment nm{0};
 
-    auto phi_out = field_phi_out.getViewL<order_t>(sdom_id);
+    auto phi_out = sdom_al.getView(field_phi_out);
 
-    auto mixelem_to_zone     = field_mixed_to_zone.getViewL<order_t>(sdom_id);
-    auto mixelem_to_material = field_mixed_to_material.getViewL<order_t>(sdom_id);
-    auto mixelem_to_fraction = field_mixed_to_fraction.getViewL<order_t>(sdom_id);
+    auto mixelem_to_zone     = sdom_al.getView(field_mixed_to_zone);
+    auto mixelem_to_material = sdom_al.getView(field_mixed_to_material);
+    auto mixelem_to_fraction = sdom_al.getView(field_mixed_to_fraction);
 
     int num_mixed  = set_mixelem.size(sdom_id);
     int num_groups = set_group.size(sdom_id);

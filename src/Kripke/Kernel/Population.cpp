@@ -45,7 +45,7 @@ using namespace Kripke::Core;
 struct PopulationSdom {
 
   template<typename AL>
-  void operator()(AL, 
+  void operator()(AL al, 
                   Kripke::SdomId sdom_id,
                   Set const               &set_dir,
                   Set const               &set_group,
@@ -56,16 +56,16 @@ struct PopulationSdom {
                   double                  *part_ptr) const
   {
 
-    using order_t = typename DefaultOrder<AL>::type;
+    auto sdom_al = getSdomAL(al, sdom_id);
 
     int num_directions = set_dir.size(sdom_id);
     int num_groups =     set_group.size(sdom_id);
     int num_zones =      set_zone.size(sdom_id);
 
-    auto psi = field_psi.getViewL<order_t>(sdom_id);
-    auto w = field_w.getViewL<order_t>(sdom_id);
-    auto volume = field_volume.getViewL<order_t>(sdom_id);
-
+    auto psi    = sdom_al.getView(field_psi);
+    auto w      = sdom_al.getView(field_w);
+    auto volume = sdom_al.getView(field_volume);
+    
     RAJA::ReduceSum<Kripke::Arch::Reduce_Population, double> part_red(0);
 
     RAJA::kernel<Kripke::Arch::Policy_Population>(

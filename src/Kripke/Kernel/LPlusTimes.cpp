@@ -42,7 +42,7 @@ using namespace Kripke::Core;
 struct LPlusTimesSdom {
 
   template<typename AL>
-  void operator()(AL, 
+  void operator()(AL al, 
                   Kripke::SdomId sdom_id,
                   Set const       &set_dir,
                   Set const       &set_group,
@@ -53,7 +53,7 @@ struct LPlusTimesSdom {
                   Field_EllPlus   &field_ell_plus) const
   {
 
-    using order_t = typename DefaultOrder<AL>::type;
+    auto sdom_al = getSdomAL(al, sdom_id);
 
     // Get dimensioning
     int num_directions = set_dir.size(sdom_id);
@@ -62,9 +62,9 @@ struct LPlusTimesSdom {
     int num_zones =      set_zone.size(sdom_id);
 
     // Get views
-    auto phi_out =  field_phi_out.getViewL<order_t>(sdom_id);
-    auto rhs =      field_rhs.getViewL<order_t>(sdom_id);
-    auto ell_plus = field_ell_plus.getViewL<order_t>(sdom_id);
+    auto phi_out  = sdom_al.getView(field_phi_out);
+    auto rhs      = sdom_al.getView(field_rhs);
+    auto ell_plus = sdom_al.getView(field_ell_plus); 
 
     // Compute:  rhs =  ell_plus * phi_out
     RAJA::kernel<Kripke::Arch::Policy_LPlusTimes>(

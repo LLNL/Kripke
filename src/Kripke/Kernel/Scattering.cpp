@@ -50,7 +50,7 @@ struct ScatteringSdom {
 
   template<typename AL>
   RAJA_INLINE
-  void operator()(AL, 
+  void operator()(AL al, 
                   Kripke::SdomId          sdom_src,
                   Kripke::SdomId          sdom_dst,
                   Set const               &set_group,
@@ -61,13 +61,12 @@ struct ScatteringSdom {
                   Field_SigmaS            &field_sigs,
                   Field_Zone2MixElem      &field_zone_to_mixelem,
                   Field_Zone2Int          &field_zone_to_num_mixelem,
-                  Field_MixElem2Material  &field_mixed_to_material,
-                  Field_MixElem2Double    &field_mixed_to_fraction,
+                  Field_MixElem2Material  &field_mixelem_to_material,
+                  Field_MixElem2Double    &field_mixelem_to_fraction,
                   Field_Moment2Legendre   &field_moment_to_legendre) const
   {
 
-
-    using order_t = typename DefaultOrder<AL>::type;
+    auto sdom_al = getSdomAL(al, sdom_src);
 
     // Get glower for src and dst ranges (to index into sigma_s)
     int glower_src = set_group.lower(sdom_src);
@@ -75,18 +74,17 @@ struct ScatteringSdom {
 
 
     // get material mix information
-    auto moment_to_legendre = field_moment_to_legendre.getViewL<order_t>(sdom_src);
+    auto moment_to_legendre = sdom_al.getView(field_moment_to_legendre);
 
-    auto phi     = field_phi.getViewL<order_t>(sdom_src);
-    auto phi_out = field_phi_out.getViewL<order_t>(sdom_dst);
-    auto sigs    = field_sigs.getViewL<order_t>(sdom_src);
-
-
-    auto zone_to_mixelem     = field_zone_to_mixelem.getViewL<order_t>(sdom_src);
-    auto zone_to_num_mixelem = field_zone_to_num_mixelem.getViewL<order_t>(sdom_src);
-    auto mixelem_to_material = field_mixed_to_material.getViewL<order_t>(sdom_src);
-    auto mixelem_to_fraction = field_mixed_to_fraction.getViewL<order_t>(sdom_src);
-
+    auto phi     = sdom_al.getView(field_phi);
+    auto phi_out = sdom_al.getView(field_phi_out, sdom_dst);
+    auto sigs    = sdom_al.getView(field_sigs);
+    
+    auto zone_to_mixelem     = sdom_al.getView(field_zone_to_mixelem);
+    auto zone_to_num_mixelem = sdom_al.getView(field_zone_to_num_mixelem);
+    auto mixelem_to_material = sdom_al.getView(field_mixelem_to_material);
+    auto mixelem_to_fraction = sdom_al.getView(field_mixelem_to_fraction);
+    
     // grab dimensions
     int num_zones =      set_zone.size(sdom_src);
     int num_groups_src = set_group.size(sdom_src);
