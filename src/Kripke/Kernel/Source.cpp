@@ -105,7 +105,7 @@ void Kripke::Kernel::source(DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, Source);
 
-  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
 
   auto &set_group   = data_store.getVariable<Set>("Set/Group");
   auto &set_mixelem = data_store.getVariable<Set>("Set/MixElem");

@@ -98,21 +98,6 @@ namespace Kripke {
 
 
 /**
- * Tags for choosing which data nesting to be chosen
- */
-enum Nesting_Order {
-  // Nestings for Psi and Phi
-  // D referes to directions OR moments, depending on context
-  NEST_DGZ,
-  NEST_DZG,
-  NEST_GDZ,
-  NEST_GZD,
-  NEST_ZDG,
-  NEST_ZGD
-};
-
-
-/**
   Tags for which parallel algorithm to use.
 */
 enum ParallelMethod {
@@ -120,32 +105,6 @@ enum ParallelMethod {
   PMETHOD_BJ
 };
 
-/**
- * Converts a nesting tag to a human-readable string.
- */
-inline std::string nestingString(Nesting_Order nesting){
-  switch(nesting){
-    case NEST_DGZ: return("DGZ");
-    case NEST_DZG: return("DZG");
-    case NEST_GDZ: return("GDZ");
-    case NEST_GZD: return("GZD");
-    case NEST_ZDG: return("ZDG");
-    case NEST_ZGD: return("ZGD");
-  }
-  return("UNKNOWN");
-}
-
-/**
- * Converts a string (eg. from command line) to a nesting tag.
- */
-inline Nesting_Order nestingFromString(std::string const &str){
-  for(int i = 0;i < 6;++ i){
-    if(!strcasecmp(str.c_str(), nestingString((Nesting_Order)i).c_str())){
-      return (Nesting_Order)i;
-  }
- }
-  return (Nesting_Order)-1;
-}
 
 
 

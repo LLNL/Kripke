@@ -65,8 +65,7 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
 {
   PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");
 
-  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
-
+  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
 
   // Create set for X mesh
   size_t nx_per_sdom = input_vars.nx /

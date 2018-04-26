@@ -34,6 +34,7 @@
 #define KRIPKE_INPUT_VARIABLES_H__
 
 #include <Kripke.h>
+#include <Kripke/ArchLayout.h>
 
 /**
  * This structure defines the input parameters to setup a problem.
@@ -53,7 +54,7 @@ struct InputVariables {
   int quad_num_azimuthal;       // Number of azimuthal quadrature points (0 for dummy)
 
   // On-Node Options
-  Nesting_Order nesting;        // Data layout and loop ordering (of Psi)
+  Kripke::ArchLayoutV al_v;     // Data layout and architecture selection
   
   // Parallel Decomp
   int npx, npy, npz;            // The number of processors in x,y,z

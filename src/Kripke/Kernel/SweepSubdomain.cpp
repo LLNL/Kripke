@@ -135,7 +135,7 @@ void Kripke::Kernel::sweepSubdomain(Kripke::Core::DataStore &data_store,
 {
   KRIPKE_TIMER(data_store, SweepSubdomain);
 
-  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
 
   Kripke::dispatch(al_v, SweepSdom{}, data_store, sdom_id);
 

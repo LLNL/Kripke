@@ -48,7 +48,8 @@ using namespace Kripke::Core;
 BlockJacobiComm::BlockJacobiComm(Kripke::Core::DataStore &data_store) :
 ParallelComm(data_store), posted_sends(false)
 {
-  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
+
   Set const &set_iplane = data_store.getVariable<Set>("Set/IPlane");
   Set const &set_jplane = data_store.getVariable<Set>("Set/JPlane");
   Set const &set_kplane = data_store.getVariable<Set>("Set/KPlane");

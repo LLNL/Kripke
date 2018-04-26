@@ -34,6 +34,8 @@
 
 #include <Kripke/Core/Comm.h>
 
+using namespace Kripke;
+
 /**
 * Setup the default input choices
 */
@@ -45,7 +47,7 @@ InputVariables::InputVariables() :
   quad_num_polar(0),
   quad_num_azimuthal(0),
  
-  nesting(NEST_DGZ),
+  al_v(ArchLayoutV{ArchV_Sequential, LayoutV_DGZ}),
  
   npx(1), npy(1), npz(1),
   num_dirsets(8),
@@ -91,11 +93,11 @@ bool InputVariables::checkValues(void) const{
     return true;
   }
   
-  if(nesting < 0){
+  /*if(nesting < 0){
     if(!rank)
       printf("Invalid nesting selected\n");
     return true;
-  }
+  }*/
   
   if(num_groups < 1){
     if(!rank)

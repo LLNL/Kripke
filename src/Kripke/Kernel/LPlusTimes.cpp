@@ -98,7 +98,7 @@ void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)
   auto &field_rhs =       data_store.getVariable<Field_Flux>("rhs");
   auto &field_ell_plus =  data_store.getVariable<Field_EllPlus>("ell_plus");
 
-  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
 
   // Loop over Subdomains
   for (Kripke::SdomId sdom_id : field_rhs.getWorkList()){

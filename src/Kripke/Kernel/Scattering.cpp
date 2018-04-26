@@ -136,7 +136,7 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, Scattering);
 
-  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
 
   auto &pspace = data_store.getVariable<Kripke::Core::PartitionSpace>("pspace");
 

@@ -93,7 +93,7 @@ double Kripke::Kernel::population(Kripke::Core::DataStore &data_store)
 {
   KRIPKE_TIMER(data_store, Population);
 
-  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v; 
 
   Set const &set_dir    = data_store.getVariable<Set>("Set/Direction");
   Set const &set_group  = data_store.getVariable<Set>("Set/Group");

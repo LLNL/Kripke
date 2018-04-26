@@ -343,7 +343,7 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
 
   PartitionSpace &pspace = data_store.getVariable<PartitionSpace>("pspace");
 
-  ArchLayoutV al_v{ArchV_Sequential, LayoutV_DGZ};
+  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
 
   // Create sets for angular discretization
   size_t ndir_per_sdom = input_vars.num_directions /

@@ -34,6 +34,9 @@
 #define KRIPKE_ARCHLAYOUT_H__
 
 #include <Kripke.h>
+#include <Kripke/Core/BaseVar.h>
+
+#include <strings.h>
 
 namespace Kripke {
 
@@ -42,10 +45,34 @@ struct ArchT_OpenMP {};
 struct ArchT_CUDA {};
 
 enum ArchV {
+  ArchV_Unknown = -1,
   ArchV_Sequential,
   ArchV_OpenMP,
-  ArchV_CUDA
+  ArchV_CUDA,
+  ArchV_num_values
 };
+
+RAJA_INLINE
+std::string archToString(ArchV av){
+  switch(av){
+    case ArchV_Sequential:    return "Sequential";
+    case ArchV_OpenMP:        return "OpenMP";
+    case ArchV_CUDA:          return "CUDA";
+    case ArchV_Unknown:
+    case ArchV_num_values:
+    default:                  return "unknown";
+  }
+}
+
+RAJA_INLINE
+ArchV stringToArch(std::string const &str){
+  for(int av = 0;av < (int)ArchV_num_values;++ av){
+    if(!strcasecmp(archToString((ArchV)av).c_str(), str.c_str())){
+      return (ArchV)av;
+    }
+  }
+  return ArchV_Unknown;
+}
 
 struct LayoutT_DGZ {};
 struct LayoutT_DZG {};
@@ -55,13 +82,41 @@ struct LayoutT_ZDG {};
 struct LayoutT_ZGD {};
 
 enum LayoutV {
+  LayoutV_Unknown = -1,
   LayoutV_DGZ,
   LayoutV_DZG,
   LayoutV_GDZ,
   LayoutV_GZD,
   LayoutV_ZDG,
-  LayoutV_ZGD
+  LayoutV_ZGD,
+  LayoutV_num_values
 };
+
+RAJA_INLINE
+std::string layoutToString(LayoutV lv){
+  switch(lv){
+    case LayoutV_DGZ:    return "DGZ";
+    case LayoutV_DZG:    return "DZG";
+    case LayoutV_GDZ:    return "GDZ";
+    case LayoutV_GZD:    return "GZD";
+    case LayoutV_ZDG:    return "ZDG";
+    case LayoutV_ZGD:    return "ZGD";
+    case LayoutV_Unknown:
+    case LayoutV_num_values:
+    default:             return "unknown";
+  }
+}
+
+RAJA_INLINE
+LayoutV stringToLayout(std::string const &str){
+  for(int lv = 0;lv < (int)LayoutV_num_values;++ lv){
+    if(!strcasecmp(layoutToString((LayoutV)lv).c_str(), str.c_str())){
+      return (LayoutV)lv;
+    }
+  }
+  return LayoutV_Unknown;
+}
+
 
 template<typename ARCH, typename LAYOUT>
 struct ArchLayoutT {
@@ -74,6 +129,14 @@ struct ArchLayoutV {
   LayoutV layout_v;
 };
 
+
+class ArchLayout : public Kripke::Core::BaseVar {
+public:
+  ArchLayout() = default;
+  virtual ~ArchLayout() = default;
+
+  ArchLayoutV al_v;
+};
 
 
 template<typename Function, typename ... Args>
@@ -99,6 +162,7 @@ void dispatchArch(ArchV arch_v, Function const &fcn, Args &&... args)
     case ArchV_Sequential: fcn(ArchT_Sequential{}, std::forward<Args>(args)...); break;
     case ArchV_OpenMP: fcn(ArchT_OpenMP{}, std::forward<Args>(args)...); break;
     case ArchV_CUDA: fcn(ArchT_CUDA{}, std::forward<Args>(args)...); break;
+    default: break;
   }
 }
 

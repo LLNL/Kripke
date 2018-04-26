@@ -34,6 +34,7 @@
 #include <Kripke/Core/Comm.h>
 #include <Kripke/Core/DataStore.h>
 #include <Kripke/Core/Set.h>
+#include <Kripke/ArchLayout.h>
 #include <Kripke/Generate.h>
 #include <Kripke/InputVariables.h>
 #include <Kripke/SteadyStateSolver.h>
@@ -98,17 +99,20 @@ void usage(void){
     printf("\n");
     printf("On-Node Options:\n");
     printf("----------------\n");
-    printf("  --nest <NEST>          Loop nesting order (and data layout)\n");
+    printf("  --arch <ARCH>          Architecture selection\n");
+    printf("                         Available: Sequential, OpenMP, CUDA\n");
+    printf("                         Default:   --arch %s\n\n", archToString(def.al_v.arch_v).c_str());
+    printf("  --layout <LAYOUT>      Data layout and Loop nesting order\n");
     printf("                         Available: DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
-    printf("                         Default:   --nest %s\n\n", nestingString(def.nesting).c_str());
+    printf("                         Default:   --nest %s\n\n", layoutToString(def.al_v.layout_v).c_str());
     
     printf("\n");
     printf("Parallel Decomposition Options:\n");
     printf("-------------------------------\n");
-    printf("  --layout <lout>        Layout of spatial subdomains over mpi ranks\n");
+    printf("  --pdist <lout>         Parallel distribution of spatial subdomains over mpi ranks\n");
     printf("                         0: Blocked: local zone sets are adjacent\n");
     printf("                         1: Scattered: adjacent zone sets are distributed\n");
-    printf("                         Default: --layout %d\n\n", def.layout_pattern);
+    printf("                         Default: --pdist %d\n\n", def.layout_pattern);
     
     
     printf("  --procs <npx,npy,npz>  Number of MPI ranks in each spatial dimension\n");
@@ -321,7 +325,7 @@ int main(int argc, char **argv) {
       vars.num_zonesets_dim[1] = std::atoi(nz[1].c_str());
       vars.num_zonesets_dim[2] = std::atoi(nz[2].c_str());      
     }
-    else if(opt == "--layout"){
+    else if(opt == "--pdist"){
       vars.layout_pattern = std::atoi(cmd.pop().c_str());      
     }
     else if(opt == "--zones"){
@@ -389,8 +393,11 @@ int main(int argc, char **argv) {
     else if(opt == "--niter"){
       vars.niter = std::atoi(cmd.pop().c_str());
     }
-    else if(opt == "--nest"){
-      vars.nesting = nestingFromString(cmd.pop());     
+    else if(opt == "--arch"){
+      vars.al_v.arch_v = Kripke::stringToArch(cmd.pop());     
+    }
+    else if(opt == "--layout"){
+      vars.al_v.layout_v = Kripke::stringToLayout(cmd.pop());     
     }
     else{
       printf("Unknwon options %s\n", opt.c_str());
@@ -455,7 +462,8 @@ int main(int argc, char **argv) {
     printf("    DirSets/Directions:    %d sets, %d directions/set\n", vars.num_dirsets, vars.num_directions/vars.num_dirsets);
     printf("    GroupSet/Groups:       %d sets, %d groups/set\n", vars.num_groupsets, vars.num_groups/vars.num_groupsets);
     printf("    Zone Sets:             %d x %d x %d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
-    printf("    Loop Nesting Order     %s\n", nestingString(vars.nesting).c_str());
+    printf("    Architecture:          %s\n", archToString(vars.al_v.arch_v).c_str());
+    printf("    Data Layout:           %s\n", layoutToString(vars.al_v.layout_v).c_str());
 
 
     
