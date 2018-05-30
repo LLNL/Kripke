@@ -39,16 +39,51 @@
 namespace Kripke {
 namespace Arch {
 
-#ifdef KRIPKE_ARCH_SEQUENTIAL
-using Policy_Source =
+template<typename AL>
+struct Policy_Source;
+
+template<typename A>
+struct Policy_Source<ArchLayoutT<A, LayoutT_GDZ>> :
+  Policy_Source<ArchLayoutT<A, LayoutT_DGZ>>{};
+
+template<typename A>
+struct Policy_Source<ArchLayoutT<A, LayoutT_GZD>> :
+  Policy_Source<ArchLayoutT<A, LayoutT_DGZ>>{};
+
+template<typename A>
+struct Policy_Source<ArchLayoutT<A, LayoutT_ZDG>> :
+  Policy_Source<ArchLayoutT<A, LayoutT_DZG>>{};
+
+template<typename A>
+struct Policy_Source<ArchLayoutT<A, LayoutT_ZGD>> :
+  Policy_Source<ArchLayoutT<A, LayoutT_DZG>>{};
+
+template<>
+struct Policy_Source<ArchLayoutT<ArchT_Sequential, LayoutT_DGZ>> {
+  using ExecPolicy = 
     RAJA::KernelPolicy<
-      RAJA::statement::For<0, RAJA::loop_exec,
-        RAJA::statement::For<1, RAJA::loop_exec,
+      RAJA::statement::For<0, RAJA::loop_exec, // Group
+        RAJA::statement::For<1, RAJA::loop_exec, // MixElem
             RAJA::statement::Lambda<0>
         >
       >
     >;
-#endif
+};
+
+template<>
+struct Policy_Source<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>> {
+  using ExecPolicy = 
+    RAJA::KernelPolicy<
+      RAJA::statement::For<1, RAJA::loop_exec, // MixElem
+        RAJA::statement::For<0, RAJA::loop_exec, // Group
+            RAJA::statement::Lambda<0>
+        >
+      >
+    >;
+};
+
+
+
 
 #ifdef KRIPKE_ARCH_OPENMP
 using Policy_Source =

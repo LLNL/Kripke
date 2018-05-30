@@ -52,6 +52,8 @@ struct LPlusTimesSdom {
                   Field_Flux      &field_rhs,
                   Field_EllPlus   &field_ell_plus) const
   {
+    
+    using ExecPolicy = typename Kripke::Arch::Policy_LPlusTimes<AL>::ExecPolicy;
 
     auto sdom_al = getSdomAL(al, sdom_id);
 
@@ -67,7 +69,7 @@ struct LPlusTimesSdom {
     auto ell_plus = sdom_al.getView(field_ell_plus); 
 
     // Compute:  rhs =  ell_plus * phi_out
-    RAJA::kernel<Kripke::Arch::Policy_LPlusTimes>(
+    RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Direction>(0, num_directions),
             RAJA::TypedRangeSegment<Moment>(0, num_moments),

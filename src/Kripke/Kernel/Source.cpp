@@ -61,6 +61,7 @@ struct SourceSdom {
                   double                  source_strength) const
   {
 
+    using ExecPolicy = typename Kripke::Arch::Policy_Source<AL>::ExecPolicy;
 
     auto sdom_al = getSdomAL(al, sdom_id);
 
@@ -78,7 +79,7 @@ struct SourceSdom {
 
 
     // Compute:  phi =  ell * psi
-    RAJA::kernel<Kripke::Arch::Policy_Source>(
+    RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Group>(0, num_groups),
             RAJA::TypedRangeSegment<MixElem>(0, num_mixed) ),

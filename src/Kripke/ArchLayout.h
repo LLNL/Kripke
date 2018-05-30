@@ -145,12 +145,12 @@ void dispatchLayout(LayoutV layout_v, Function const &fcn, Args &&... args)
 {
   switch(layout_v){
     case LayoutV_DGZ: fcn(LayoutT_DGZ{}, std::forward<Args>(args)...); break;
-/*    case LayoutV_DZG: fcn(LayoutT_DZG{}, std::forward<Args>(args)...); break;
+    case LayoutV_DZG: fcn(LayoutT_DZG{}, std::forward<Args>(args)...); break;
     case LayoutV_GDZ: fcn(LayoutT_GDZ{}, std::forward<Args>(args)...); break;
     case LayoutV_GZD: fcn(LayoutT_GZD{}, std::forward<Args>(args)...); break;
     case LayoutV_ZDG: fcn(LayoutT_ZDG{}, std::forward<Args>(args)...); break;
     case LayoutV_ZGD: fcn(LayoutT_ZGD{}, std::forward<Args>(args)...); break;
-*/  default: break;
+    default: break;
   } 
 }
 
@@ -160,8 +160,13 @@ void dispatchArch(ArchV arch_v, Function const &fcn, Args &&... args)
 {
   switch(arch_v){
     case ArchV_Sequential: fcn(ArchT_Sequential{}, std::forward<Args>(args)...); break;
+#ifdef KRIPKE_USE_OPENMP
     case ArchV_OpenMP: fcn(ArchT_OpenMP{}, std::forward<Args>(args)...); break;
+#endif 
+
+#ifdef KRIPKE_USE_CUDA
     case ArchV_CUDA: fcn(ArchT_CUDA{}, std::forward<Args>(args)...); break;
+#endif
     default: break;
   }
 }

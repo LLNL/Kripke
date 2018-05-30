@@ -39,20 +39,110 @@
 namespace Kripke {
 namespace Arch {
 
-#ifdef KRIPKE_ARCH_SEQUENTIAL
-  using Policy_Scattering =
+template<typename AL>
+struct Policy_Scattering;
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_Sequential, LayoutT_DGZ>> {
+  using ExecPolicy =
       RAJA::KernelPolicy<
-        RAJA::statement::For<0, RAJA::loop_exec,
-          RAJA::statement::For<1, RAJA::loop_exec,
-            RAJA::statement::For<2, RAJA::loop_exec,
-              RAJA::statement::For<3, RAJA::loop_exec,
+        RAJA::statement::For<0, RAJA::loop_exec, // moment
+          RAJA::statement::For<1, RAJA::loop_exec, // dst group
+            RAJA::statement::For<2, RAJA::loop_exec, // src group
+              RAJA::statement::For<3, RAJA::loop_exec, // zone
                 RAJA::statement::Lambda<0>
               >
             >
           >
         >
       >;
-#endif
+};
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>> {
+  using ExecPolicy =
+      RAJA::KernelPolicy<
+        RAJA::statement::For<0, RAJA::loop_exec, // moment
+          RAJA::statement::For<3, RAJA::loop_exec, // zone
+            RAJA::statement::For<1, RAJA::loop_exec, // dst group
+              RAJA::statement::For<2, RAJA::loop_exec, // src group
+                RAJA::statement::Lambda<0>
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_Sequential, LayoutT_GDZ>> {
+  using ExecPolicy =
+      RAJA::KernelPolicy<
+        RAJA::statement::For<1, RAJA::loop_exec, // dst group
+          RAJA::statement::For<2, RAJA::loop_exec, // src group
+            RAJA::statement::For<0, RAJA::loop_exec, // moment
+              RAJA::statement::For<3, RAJA::loop_exec, // zone
+                RAJA::statement::Lambda<0>
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_Sequential, LayoutT_GZD>> {
+  using ExecPolicy =
+      RAJA::KernelPolicy<
+        RAJA::statement::For<1, RAJA::loop_exec, // dst group
+          RAJA::statement::For<2, RAJA::loop_exec, // src group
+            RAJA::statement::For<3, RAJA::loop_exec, // zone
+              RAJA::statement::For<0, RAJA::loop_exec, // moment
+                RAJA::statement::Lambda<0>
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_Sequential, LayoutT_ZDG>> {
+  using ExecPolicy =
+      RAJA::KernelPolicy<
+        RAJA::statement::For<3, RAJA::loop_exec, // zone
+          RAJA::statement::For<0, RAJA::loop_exec, // moment
+            RAJA::statement::For<1, RAJA::loop_exec, // dst group
+              RAJA::statement::For<2, RAJA::loop_exec, // src group
+                RAJA::statement::Lambda<0>
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_Sequential, LayoutT_ZGD>> {
+  using ExecPolicy =
+      RAJA::KernelPolicy<
+        RAJA::statement::For<3, RAJA::loop_exec, // zone
+          RAJA::statement::For<1, RAJA::loop_exec, // dst group
+            RAJA::statement::For<2, RAJA::loop_exec, // src group
+              RAJA::statement::For<0, RAJA::loop_exec, // moment
+                RAJA::statement::Lambda<0>
+              >
+            >
+          >
+        >
+      >;
+};
+
+
 
 #ifdef KRIPKE_ARCH_OPENMP
   using Policy_Scattering =

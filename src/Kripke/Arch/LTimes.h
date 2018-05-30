@@ -39,23 +39,112 @@
 namespace Kripke {
 namespace Arch {
 
-#ifdef KRIPKE_ARCH_SEQUENTIAL
-using Policy_LTimes =
+template<typename AL>
+struct Policy_LTimes;
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_DGZ>> {
+  using ExecPolicy = 
     RAJA::KernelPolicy<
-      RAJA::statement::For<0, RAJA::loop_exec,
-        RAJA::statement::For<1, RAJA::loop_exec,
-          RAJA::statement::For<2, RAJA::loop_exec,
-            RAJA::statement::For<3, RAJA::loop_exec,
+      RAJA::statement::For<0, RAJA::loop_exec, // moment
+        RAJA::statement::For<1, RAJA::loop_exec, // direction 
+          RAJA::statement::For<2, RAJA::loop_exec, // group
+            RAJA::statement::For<3, RAJA::loop_exec, // zone
               RAJA::statement::Lambda<0>
             >
           >
         >
       >
     >;
-#endif
+};
 
-#ifdef KRIPKE_ARCH_OPENMP
-using Policy_LTimes =
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>> {
+  using ExecPolicy = 
+    RAJA::KernelPolicy<
+      RAJA::statement::For<0, RAJA::loop_exec, // moment
+        RAJA::statement::For<1, RAJA::loop_exec, // direction 
+          RAJA::statement::For<3, RAJA::loop_exec, // zone
+            RAJA::statement::For<2, RAJA::loop_exec, // group
+              RAJA::statement::Lambda<0>
+            >
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_GDZ>> {
+  using ExecPolicy = 
+    RAJA::KernelPolicy<
+      RAJA::statement::For<2, RAJA::loop_exec, // group
+        RAJA::statement::For<0, RAJA::loop_exec, // moment
+          RAJA::statement::For<1, RAJA::loop_exec, // direction 
+            RAJA::statement::For<3, RAJA::loop_exec, // zone
+              RAJA::statement::Lambda<0>
+            >
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_GZD>> {
+  using ExecPolicy = 
+    RAJA::KernelPolicy<
+      RAJA::statement::For<2, RAJA::loop_exec, // group
+        RAJA::statement::For<3, RAJA::loop_exec, // zone
+          RAJA::statement::For<0, RAJA::loop_exec, // moment
+            RAJA::statement::For<1, RAJA::loop_exec, // direction 
+              RAJA::statement::Lambda<0>
+            >
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_ZDG>> {
+  using ExecPolicy = 
+    RAJA::KernelPolicy<
+      RAJA::statement::For<3, RAJA::loop_exec, // zone
+        RAJA::statement::For<0, RAJA::loop_exec, // moment
+          RAJA::statement::For<1, RAJA::loop_exec, // direction 
+            RAJA::statement::For<2, RAJA::loop_exec, // group
+              RAJA::statement::Lambda<0>
+            >
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_ZGD>> {
+  using ExecPolicy = 
+    RAJA::KernelPolicy<
+      RAJA::statement::For<3, RAJA::loop_exec, // zone
+        RAJA::statement::For<2, RAJA::loop_exec, // group
+          RAJA::statement::For<0, RAJA::loop_exec, // moment
+            RAJA::statement::For<1, RAJA::loop_exec, // direction 
+              RAJA::statement::Lambda<0>
+            >
+          >
+        >
+      >
+    >;
+};
+
+
+
+
+#ifdef KRIPKE_USE_OPENMP
+template<typename L>
+struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, L>> {
+  using ExecPolicy = 
     RAJA::KernelPolicy<
       RAJA::statement::For<2, RAJA::omp_parallel_for_exec,
         RAJA::statement::For<0, RAJA::loop_exec,
@@ -67,6 +156,7 @@ using Policy_LTimes =
         >
       >
     >;
+};
 #endif
 
 

@@ -58,6 +58,8 @@ struct LTimesSdom {
                   Field_Ell       &field_ell) const
   {
 
+    using ExecPolicy = typename Kripke::Arch::Policy_LTimes<AL>::ExecPolicy;
+
     auto sdom_al = getSdomAL(al, sdom_id);
  
     // Get dimensioning
@@ -72,7 +74,7 @@ struct LTimesSdom {
     auto ell = sdom_al.getView(field_ell);
 
     // Compute:  phi =  ell * psi
-    RAJA::kernel<Kripke::Arch::Policy_LTimes>(
+    RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Moment>(0, num_moments),
             RAJA::TypedRangeSegment<Direction>(0, num_directions),

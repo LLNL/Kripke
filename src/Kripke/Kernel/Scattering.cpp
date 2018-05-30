@@ -66,6 +66,8 @@ struct ScatteringSdom {
                   Field_Moment2Legendre   &field_moment_to_legendre) const
   {
 
+    using ExecPolicy = typename Kripke::Arch::Policy_Scattering<AL>::ExecPolicy;
+
     auto sdom_al = getSdomAL(al, sdom_src);
 
     // Get glower for src and dst ranges (to index into sigma_s)
@@ -91,7 +93,7 @@ struct ScatteringSdom {
     int num_groups_dst = set_group.size(sdom_dst);
     int num_moments =    set_moment.size(sdom_dst);
 
-    RAJA::kernel<Kripke::Arch::Policy_Scattering>(
+    RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Moment>(0, num_moments),
             RAJA::TypedRangeSegment<Group>(0, num_groups_dst),

@@ -100,6 +100,31 @@ namespace Kripke {
     using type = camp::list<long, Dimension, Material, Direction, Legendre, Moment, GlobalGroup, Group, Zone, ZoneK, ZoneJ, ZoneI, MixElem>;
   };
 
+  template<>
+  struct DefaultOrder<LayoutT_DZG>{
+    using type = camp::list<long, Dimension, Material, Direction, Legendre, Moment, Zone, ZoneK, ZoneJ, ZoneI, GlobalGroup, Group, MixElem>;
+  };
+
+  template<>
+  struct DefaultOrder<LayoutT_GDZ>{
+    using type = camp::list<long, Dimension, Material, GlobalGroup, Group, Direction, Legendre, Moment, Zone, ZoneK, ZoneJ, ZoneI, MixElem>;
+  };
+  
+  template<>
+  struct DefaultOrder<LayoutT_GZD>{
+    using type = camp::list<long, Dimension, Material, GlobalGroup, Group, Zone, ZoneK, ZoneJ, ZoneI, MixElem, Direction, Legendre, Moment>;
+  };
+
+  template<>
+  struct DefaultOrder<LayoutT_ZDG>{
+    using type = camp::list<long, Dimension, Material, Zone, ZoneK, ZoneJ, ZoneI, MixElem, Direction, Legendre, Moment, GlobalGroup, Group>;
+  };
+
+  template<>
+  struct DefaultOrder<LayoutT_ZGD>{
+    using type = camp::list<long, Dimension, Material, Zone, ZoneK, ZoneJ, ZoneI, MixElem, GlobalGroup, Group, Direction, Legendre, Moment>;
+  };
+
 
   template<typename AL>
   struct SdomAL;

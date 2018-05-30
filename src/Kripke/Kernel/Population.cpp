@@ -55,6 +55,9 @@ struct PopulationSdom {
                   Field_Zone2Double       &field_volume,
                   double                  *part_ptr) const
   {
+    using Policy = Kripke::Arch::Policy_Population<AL>;
+    using ReducePolicy = typename Policy::ReducePolicy;
+    using ExecPolicy = typename Policy::ExecPolicy;
 
     auto sdom_al = getSdomAL(al, sdom_id);
 
@@ -66,9 +69,9 @@ struct PopulationSdom {
     auto w      = sdom_al.getView(field_w);
     auto volume = sdom_al.getView(field_volume);
     
-    RAJA::ReduceSum<Kripke::Arch::Reduce_Population, double> part_red(0);
+    RAJA::ReduceSum<ReducePolicy, double> part_red(0);
 
-    RAJA::kernel<Kripke::Arch::Policy_Population>(
+    RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Direction>(0, num_directions),
             RAJA::TypedRangeSegment<Group>(0, num_groups),
