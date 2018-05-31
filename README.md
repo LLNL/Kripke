@@ -109,12 +109,12 @@ The easiest way to get Kripke running, is to directly invoke CMake and take what
 
 *  Step 2: Run CMake in that build space
         
-        cd kripke
+        cd build
         cmake ..
 
         For BG/Q, we have a special cache init file that makes things easier:
 
-        cd kripke
+        cd build
         cmake .. -C../host-configs/bgqos.cmake
 
 *  Step 3: Now make Kripke:
