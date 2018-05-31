@@ -45,14 +45,14 @@ struct Policy_Population;
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_Sequential, LayoutT_DGZ>>{
-  using ReducePolicy = RAJA::seq_reduce;
+  using ReducePolicy = seq_reduce;
   
   using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<0, RAJA::loop_exec, // direction
-        RAJA::statement::For<1, RAJA::loop_exec, // group
-          RAJA::statement::For<2, RAJA::loop_exec, // zone
-            RAJA::statement::Lambda<0>
+    KernelPolicy<
+      For<0, loop_exec, // direction
+        For<1, loop_exec, // group
+          For<2, loop_exec, // zone
+            Lambda<0>
           >
         >
       >
@@ -61,14 +61,14 @@ struct Policy_Population<ArchLayoutT<ArchT_Sequential, LayoutT_DGZ>>{
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>>{
-  using ReducePolicy = RAJA::seq_reduce;
+  using ReducePolicy = seq_reduce;
   
   using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<0, RAJA::loop_exec, // direction
-        RAJA::statement::For<2, RAJA::loop_exec, // zone
-          RAJA::statement::For<1, RAJA::loop_exec, // group
-            RAJA::statement::Lambda<0>
+    KernelPolicy<
+      For<0, loop_exec, // direction
+        For<2, loop_exec, // zone
+          For<1, loop_exec, // group
+            Lambda<0>
           >
         >
       >
@@ -77,14 +77,14 @@ struct Policy_Population<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>>{
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_Sequential, LayoutT_GDZ>>{
-  using ReducePolicy = RAJA::seq_reduce;
+  using ReducePolicy = seq_reduce;
   
   using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<1, RAJA::loop_exec, // group
-        RAJA::statement::For<0, RAJA::loop_exec, // direction
-          RAJA::statement::For<2, RAJA::loop_exec, // zone
-            RAJA::statement::Lambda<0>
+    KernelPolicy<
+      For<1, loop_exec, // group
+        For<0, loop_exec, // direction
+          For<2, loop_exec, // zone
+            Lambda<0>
           >
         >
       >
@@ -94,14 +94,14 @@ struct Policy_Population<ArchLayoutT<ArchT_Sequential, LayoutT_GDZ>>{
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_Sequential, LayoutT_GZD>>{
-  using ReducePolicy = RAJA::seq_reduce;
+  using ReducePolicy = seq_reduce;
   
   using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<1, RAJA::loop_exec, // group
-        RAJA::statement::For<2, RAJA::loop_exec, // zone
-          RAJA::statement::For<0, RAJA::loop_exec, // direction
-            RAJA::statement::Lambda<0>
+    KernelPolicy<
+      For<1, loop_exec, // group
+        For<2, loop_exec, // zone
+          For<0, loop_exec, // direction
+            Lambda<0>
           >
         >
       >
@@ -110,14 +110,14 @@ struct Policy_Population<ArchLayoutT<ArchT_Sequential, LayoutT_GZD>>{
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_Sequential, LayoutT_ZDG>>{
-  using ReducePolicy = RAJA::seq_reduce;
+  using ReducePolicy = seq_reduce;
   
   using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<2, RAJA::loop_exec, // zone
-        RAJA::statement::For<0, RAJA::loop_exec, // direction
-          RAJA::statement::For<1, RAJA::loop_exec, // group
-            RAJA::statement::Lambda<0>
+    KernelPolicy<
+      For<2, loop_exec, // zone
+        For<0, loop_exec, // direction
+          For<1, loop_exec, // group
+            Lambda<0>
           >
         >
       >
@@ -126,14 +126,14 @@ struct Policy_Population<ArchLayoutT<ArchT_Sequential, LayoutT_ZDG>>{
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_Sequential, LayoutT_ZGD>>{
-  using ReducePolicy = RAJA::seq_reduce;
+  using ReducePolicy = seq_reduce;
   
   using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<2, RAJA::loop_exec, // zone
-        RAJA::statement::For<1, RAJA::loop_exec, // group
-          RAJA::statement::For<0, RAJA::loop_exec, // direction
-            RAJA::statement::Lambda<0>
+    KernelPolicy<
+      For<2, loop_exec, // zone
+        For<1, loop_exec, // group
+          For<0, loop_exec, // direction
+            Lambda<0>
           >
         >
       >
@@ -142,19 +142,94 @@ struct Policy_Population<ArchLayoutT<ArchT_Sequential, LayoutT_ZGD>>{
 
 
 #ifdef KRIPKE_ARCH_OPENMP
-using Reduce_Population = RAJA::omp_reduce;
 
-using Policy_Population =
-    RAJA::KernelPolicy<
-      RAJA::statement::For<1, RAJA::omp_parallel_for_exec,
-        RAJA::statement::For<0, RAJA::loop_exec,
-          RAJA::statement::For<2, RAJA::loop_exec,
-            RAJA::statement::Lambda<0>
-          >
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_OpenMP, LayoutT_DGZ>>{
+  using ReducePolicy = omp_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<0,1>, // Direction Group
+        For<2, loop_exec, // Zone
+          Lambda<0>
         >
       >
     >;
-#endif
+};
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_OpenMP, LayoutT_DZG>>{
+  using ReducePolicy = omp_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<0,2>, // Direction Zone
+        For<1, loop_exec, // Group
+          Lambda<0>
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_OpenMP, LayoutT_GDZ>>{
+  using ReducePolicy = omp_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<1,0>, // Group Direction
+        For<2, loop_exec, // Zone
+          Lambda<0>
+        >
+      >
+    >;
+};
+
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_OpenMP, LayoutT_GZD>>{
+  using ReducePolicy = omp_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<1,2>, // Group Zone
+        For<0, loop_exec, // Direction
+          Lambda<0>
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_OpenMP, LayoutT_ZDG>>{
+  using ReducePolicy = omp_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<2,0>, // Zone Direction
+        For<1, loop_exec, // Group
+          Lambda<0>
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_OpenMP, LayoutT_ZGD>>{
+  using ReducePolicy = omp_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<2,1>, // Zone Group
+        For<0, loop_exec, // Direction
+          Lambda<0>
+        >
+      >
+    >;
+};
+
+
+#endif // KRIPKE_ARCH_OPENMP
 
 }
 }

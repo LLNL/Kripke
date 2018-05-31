@@ -39,39 +39,233 @@
 namespace Kripke {
 namespace Arch {
 
-#ifdef KRIPKE_ARCH_SEQUENTIAL
-using Policy_SweepSubdomains =
-    RAJA::KernelPolicy<
-      RAJA::statement::For<0, RAJA::loop_exec,
-        RAJA::statement::For<1, RAJA::loop_exec,
-          RAJA::statement::For<2, RAJA::loop_exec,
-            RAJA::statement::For<3, RAJA::loop_exec,
-              RAJA::statement::For<4, RAJA::loop_exec,
-                RAJA::statement::Lambda<0>
+template<typename AL>
+struct Policy_SweepSubdomains;
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_Sequential, LayoutT_DGZ>> {
+  using ExecPolicy =
+    KernelPolicy<
+      For<0, loop_exec,  // direction
+        For<1, loop_exec, // group
+          For<2, loop_exec, // k
+            For<3, loop_exec, // j
+              For<4, loop_exec, // i
+                Lambda<0>
               >
             >
           >
         >
       >
     >;
-#endif
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>> {
+  using ExecPolicy =
+    KernelPolicy<
+      For<0, loop_exec,  // direction
+        For<2, loop_exec, // k
+          For<3, loop_exec, // j
+            For<4, loop_exec, // i
+              For<1, loop_exec, // group
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_Sequential, LayoutT_GDZ>> {
+  using ExecPolicy =
+    KernelPolicy<
+      For<1, loop_exec, // group
+        For<0, loop_exec,  // direction
+          For<2, loop_exec, // k
+            For<3, loop_exec, // j
+              For<4, loop_exec, // i
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_Sequential, LayoutT_GZD>> {
+  using ExecPolicy =
+    KernelPolicy<
+      For<1, loop_exec, // group
+        For<2, loop_exec, // k
+          For<3, loop_exec, // j
+            For<4, loop_exec, // i
+              For<0, loop_exec,  // direction
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_Sequential, LayoutT_ZDG>> {
+  using ExecPolicy =
+    KernelPolicy<
+      For<2, loop_exec, // k
+        For<3, loop_exec, // j
+          For<4, loop_exec, // i
+            For<0, loop_exec,  // direction
+              For<1, loop_exec, // group
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_Sequential, LayoutT_ZGD>> {
+  using ExecPolicy =
+    KernelPolicy<
+      For<2, loop_exec, // k
+        For<3, loop_exec, // j
+          For<4, loop_exec, // i
+            For<1, loop_exec, // group
+              For<0, loop_exec,  // direction
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+};
+
+
+
 
 #ifdef KRIPKE_ARCH_OPENMP
-using Policy_SweepSubdomains =
-    RAJA::KernelPolicy<
-      RAJA::statement::For<1, RAJA::omp_parallel_for_exec,
-        RAJA::statement::For<0, RAJA::loop_exec,
-          RAJA::statement::For<2, RAJA::loop_exec,
-            RAJA::statement::For<3, RAJA::loop_exec,
-              RAJA::statement::For<4, RAJA::loop_exec,
-                RAJA::statement::Lambda<0>
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_OpenMP, LayoutT_DGZ>> {
+
+
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<0,1>, // direction, group
+        For<2, loop_exec, // k
+          For<3, loop_exec, // j
+            For<4, loop_exec, // i
+              Lambda<0>
+            >
+          >
+        >
+      >
+    >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_OpenMP, LayoutT_DZG>> {
+  using ExecPolicy =
+    KernelPolicy<
+      For<0, omp_parallel_for_exec,  // direction
+        For<2, loop_exec, // k
+          For<3, loop_exec, // j
+            For<4, loop_exec, // i
+              For<1, loop_exec, // group
+                Lambda<0>
               >
             >
           >
         >
       >
     >;
-#endif
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_OpenMP, LayoutT_GDZ>> {
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<1,0>, // group, direction
+        For<2, loop_exec, // k
+          For<3, loop_exec, // j
+            For<4, loop_exec, // i
+              Lambda<0>
+            >
+          >
+        >
+      >
+    >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_OpenMP, LayoutT_GZD>> {
+  using ExecPolicy =
+    KernelPolicy<
+      For<1, omp_parallel_for_exec, // group
+        For<2, loop_exec, // k
+          For<3, loop_exec, // j
+            For<4, loop_exec, // i
+              For<0, loop_exec,  // direction
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_OpenMP, LayoutT_ZDG>> {
+  using ExecPolicy =
+    KernelPolicy<
+      Hyperplane<2, seq_exec, ArgList<3,4>, omp_parallel_collapse_exec,
+        For<0, loop_exec,  // direction
+          For<1, loop_exec, // group
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_OpenMP, LayoutT_ZGD>> {
+  using ExecPolicy =
+    KernelPolicy<
+      Hyperplane<2, seq_exec, ArgList<3,4>, omp_parallel_collapse_exec,
+        For<1, loop_exec, // group
+          For<0, loop_exec,  // direction
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+
+#endif // KRIPKE_ARCH_OPENMP
+
 
 }
 }

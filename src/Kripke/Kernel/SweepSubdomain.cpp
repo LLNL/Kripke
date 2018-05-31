@@ -49,6 +49,8 @@ struct SweepSdom {
   void operator()(AL al, Kripke::Core::DataStore &data_store,
                   Kripke::SdomId              sdom_id) const
   {
+
+    using ExecPolicy = typename Kripke::Arch::Policy_SweepSubdomains<AL>::ExecPolicy;
   
     auto sdom_al = getSdomAL(al, sdom_id);
 
@@ -93,7 +95,7 @@ struct SweepSdom {
 
     auto zone_layout = data_store.getVariable<ProductSet<3>>("Set/Zone").getLayout(sdom_id);
 
-    RAJA::kernel<Kripke::Arch::Policy_SweepSubdomains>(
+    RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Direction>(0, num_directions),
             RAJA::TypedRangeSegment<Group>(0, num_groups),

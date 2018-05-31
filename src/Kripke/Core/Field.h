@@ -210,9 +210,6 @@ namespace Core {
 
         LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
 
-        //printf("getViewOrder: ndim=%d, stride1=%d, ", (int)NumDims, (int)LInfo::stride_one_dim);
-        //LInfo::args_to_order_t::print();
-
         return ViewType<Order, ElementType, IDX_TYPES...>(ptr, layout);
       }
 

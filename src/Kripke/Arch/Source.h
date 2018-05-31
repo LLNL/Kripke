@@ -61,11 +61,9 @@ struct Policy_Source<ArchLayoutT<A, LayoutT_ZGD>> :
 template<>
 struct Policy_Source<ArchLayoutT<ArchT_Sequential, LayoutT_DGZ>> {
   using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<0, RAJA::loop_exec, // Group
-        RAJA::statement::For<1, RAJA::loop_exec, // MixElem
-            RAJA::statement::Lambda<0>
-        >
+    KernelPolicy<
+      Collapse<loop_exec, ArgList<0,1>, // Group, MixElem
+        Lambda<0>
       >
     >;
 };
@@ -73,11 +71,9 @@ struct Policy_Source<ArchLayoutT<ArchT_Sequential, LayoutT_DGZ>> {
 template<>
 struct Policy_Source<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>> {
   using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<1, RAJA::loop_exec, // MixElem
-        RAJA::statement::For<0, RAJA::loop_exec, // Group
-            RAJA::statement::Lambda<0>
-        >
+    KernelPolicy<
+      Collapse<loop_exec, ArgList<0,1>, // MixElem, Group
+        Lambda<0>
       >
     >;
 };
@@ -86,16 +82,26 @@ struct Policy_Source<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>> {
 
 
 #ifdef KRIPKE_ARCH_OPENMP
-using Policy_Source =
-    RAJA::KernelPolicy<
-      RAJA::statement::For<0, RAJA::omp_parallel_for_exec,
-        RAJA::statement::For<1, RAJA::loop_exec,
-            RAJA::statement::Lambda<0>
-        >
+template<>
+struct Policy_Source<ArchLayoutT<ArchT_OpenMP, LayoutT_DGZ>> {
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<0,1>, // Group, MixElem
+        Lambda<0>
       >
     >;
+};
 
-#endif
+template<>
+struct Policy_Source<ArchLayoutT<ArchT_OpenMP, LayoutT_DZG>> {
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<1,0>, // MixElem, Group
+        Lambda<0>
+      >
+    >;
+};
+#endif // KRIPKE_ARCH_OPENMP
 
 }
 }

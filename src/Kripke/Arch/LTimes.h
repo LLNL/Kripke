@@ -45,12 +45,12 @@ struct Policy_LTimes;
 template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_DGZ>> {
   using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<0, RAJA::loop_exec, // moment
-        RAJA::statement::For<1, RAJA::loop_exec, // direction 
-          RAJA::statement::For<2, RAJA::loop_exec, // group
-            RAJA::statement::For<3, RAJA::loop_exec, // zone
-              RAJA::statement::Lambda<0>
+    KernelPolicy<
+      For<0, loop_exec, // moment
+        For<1, loop_exec, // direction
+          For<2, loop_exec, // group
+            For<3, loop_exec, // zone
+              Lambda<0>
             >
           >
         >
@@ -61,12 +61,12 @@ struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_DGZ>> {
 template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>> {
   using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<0, RAJA::loop_exec, // moment
-        RAJA::statement::For<1, RAJA::loop_exec, // direction 
-          RAJA::statement::For<3, RAJA::loop_exec, // zone
-            RAJA::statement::For<2, RAJA::loop_exec, // group
-              RAJA::statement::Lambda<0>
+    KernelPolicy<
+      For<0, loop_exec, // moment
+        For<1, loop_exec, // direction
+          For<3, loop_exec, // zone
+            For<2, loop_exec, // group
+              Lambda<0>
             >
           >
         >
@@ -77,12 +77,12 @@ struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>> {
 template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_GDZ>> {
   using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<2, RAJA::loop_exec, // group
-        RAJA::statement::For<0, RAJA::loop_exec, // moment
-          RAJA::statement::For<1, RAJA::loop_exec, // direction 
-            RAJA::statement::For<3, RAJA::loop_exec, // zone
-              RAJA::statement::Lambda<0>
+    KernelPolicy<
+      For<2, loop_exec, // group
+        For<0, loop_exec, // moment
+          For<1, loop_exec, // direction
+            For<3, loop_exec, // zone
+              Lambda<0>
             >
           >
         >
@@ -93,12 +93,12 @@ struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_GDZ>> {
 template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_GZD>> {
   using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<2, RAJA::loop_exec, // group
-        RAJA::statement::For<3, RAJA::loop_exec, // zone
-          RAJA::statement::For<0, RAJA::loop_exec, // moment
-            RAJA::statement::For<1, RAJA::loop_exec, // direction 
-              RAJA::statement::Lambda<0>
+    KernelPolicy<
+      For<2, loop_exec, // group
+        For<3, loop_exec, // zone
+          For<0, loop_exec, // moment
+            For<1, loop_exec, // direction
+              Lambda<0>
             >
           >
         >
@@ -109,12 +109,12 @@ struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_GZD>> {
 template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_ZDG>> {
   using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<3, RAJA::loop_exec, // zone
-        RAJA::statement::For<0, RAJA::loop_exec, // moment
-          RAJA::statement::For<1, RAJA::loop_exec, // direction 
-            RAJA::statement::For<2, RAJA::loop_exec, // group
-              RAJA::statement::Lambda<0>
+    KernelPolicy<
+      For<3, loop_exec, // zone
+        For<0, loop_exec, // moment
+          For<1, loop_exec, // direction
+            For<2, loop_exec, // group
+              Lambda<0>
             >
           >
         >
@@ -124,13 +124,13 @@ struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_ZDG>> {
 
 template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_ZGD>> {
-  using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<3, RAJA::loop_exec, // zone
-        RAJA::statement::For<2, RAJA::loop_exec, // group
-          RAJA::statement::For<0, RAJA::loop_exec, // moment
-            RAJA::statement::For<1, RAJA::loop_exec, // direction 
-              RAJA::statement::Lambda<0>
+  using ExecPolicy =
+    KernelPolicy<
+      For<3, loop_exec, // zone
+        For<2, loop_exec, // group
+          For<0, loop_exec, // moment
+            For<1, loop_exec, // direction
+              Lambda<0>
             >
           >
         >
@@ -142,22 +142,88 @@ struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_ZGD>> {
 
 
 #ifdef KRIPKE_USE_OPENMP
-template<typename L>
-struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, L>> {
-  using ExecPolicy = 
-    RAJA::KernelPolicy<
-      RAJA::statement::For<2, RAJA::omp_parallel_for_exec,
-        RAJA::statement::For<0, RAJA::loop_exec,
-          RAJA::statement::For<1, RAJA::loop_exec,
-            RAJA::statement::For<3, RAJA::loop_exec,
-              RAJA::statement::Lambda<0>
-            >
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, LayoutT_DGZ>> {
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<0,2>, // Moment Group
+        For<1, loop_exec, // Direction
+          For<3, loop_exec, // Zone
+            Lambda<0>
           >
         >
       >
     >;
 };
-#endif
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, LayoutT_DZG>> {
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<0,3>, // Moment Zone
+        For<1, loop_exec, // Direction
+          For<2, loop_exec, // Group
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, LayoutT_GDZ>> {
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<2,0>, // Group Moment
+        For<1, loop_exec, // Direction
+          For<3, loop_exec, // Zone
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, LayoutT_GZD>> {
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<2,3,0>, // Group Zone Moment
+        For<1, loop_exec, // Direection
+          Lambda<0>
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, LayoutT_ZDG>> {
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<3,0>, // Zone Moment
+        For<1, loop_exec, // Direction
+          For<2, loop_exec, // Group
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, LayoutT_ZGD>> {
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<omp_parallel_collapse_exec, ArgList<3,2>, // Zone Group
+        For<0, loop_exec, // Moment
+          For<1, loop_exec, // Direction
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+#endif // KRIPKE_ARCH_OPENMP
 
 
 }

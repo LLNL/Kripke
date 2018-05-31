@@ -107,6 +107,41 @@ enum ParallelMethod {
 
 
 
+/**
+ * Import RAJA types into Kripke::Arch to make defining policies a lot
+ * cleaner
+ */
+namespace Kripke {
+namespace Arch {
+
+  using RAJA::loop_exec;
+  using RAJA::seq_exec;
+  using RAJA::simd_exec;
+  using RAJA::seq_reduce;
+  using RAJA::atomic::auto_atomic;
+  using RAJA::atomic::seq_atomic;
+  using RAJA::ArgList;
+  using RAJA::KernelPolicy;
+  using RAJA::statement::Collapse;
+  using RAJA::statement::If;
+  using RAJA::statement::Param;
+  using RAJA::statement::Not;
+  using RAJA::statement::For;
+  using RAJA::statement::Hyperplane;
+  using RAJA::statement::Lambda;
+  using RAJA::statement::SetShmemWindow;
+  using RAJA::statement::Tile;
+  using RAJA::statement::tile_fixed;
+
+#ifdef KRIPKE_USE_OPENMP
+  using RAJA::omp_parallel_collapse_exec;
+  using RAJA::omp_parallel_for_exec;
+  using RAJA::omp_reduce;
+#endif
+
+} // namespace Arch
+} // namespace Kripke
+
 
 
 #endif
