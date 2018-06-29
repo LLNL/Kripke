@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.9)
+
+cmake_policy(SET CMP0057 NEW)
 
 project(KRIPKE LANGUAGES CXX)
 
@@ -12,16 +14,35 @@ set(ENABLE_TBB Off CACHE Bool "")
 set(ENABLE_EXAMPLES Off CACHE Bool "")
 set(ENABLE_DOCUMENTATION Off CACHE Bool "")
 
+
+set(BLT_CXX_STD c++14 CACHE STRING "")
+
 include(blt/SetupBLT.cmake)
 
 
+set(CUDA_NVCC_FLAGS --expt-extended-lambda CACHE STRING "")
+
+#
+# Configure CHAI/Umpire
+#
+
+add_subdirectory(tpl/chai)
+
+set(ENABLE_TESTS Off CACHE Bool "")
+set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} chai umpire)
+
+get_property(CHAI_INCLUDE_DIRS TARGET chai PROPERTY INCLUDE_DIRECTORIES)
+include_directories(${CHAI_INCLUDE_DIRS})
+
+get_property(UMPIRE_INCLUDE_DIRS TARGET umpire PROPERTY INCLUDE_DIRECTORIES)
+include_directories(${UMPIRE_INCLUDE_DIRS})
 
 #
 # Configure RAJA
 #
 
 set(RAJA_ENABLE_TESTS Off CACHE Bool "")
-add_subdirectory(tpl/raja)# EXCLUDE_FROM_ALL)
+add_subdirectory(tpl/raja)
 
 get_property(RAJA_INCLUDE_DIRS TARGET RAJA PROPERTY INCLUDE_DIRECTORIES)
 include_directories(${RAJA_INCLUDE_DIRS})
@@ -29,51 +50,73 @@ include_directories(${RAJA_INCLUDE_DIRS})
 
 
 
-#
-# Figure out what Arch we are selecting
-#
 
-
-set(${KRIPKE_ARCH_FOUND} 0)
-if(NOT KRIPKE_ARCH)
-  set(KRIPKE_ARCH "OpenMP")
-endif()
-
-if(${KRIPKE_ARCH} STREQUAL "Sequential")
-  set(${KRIPKE_ARCH_FOUND} 1)
-  set(KRIPKE_ARCH_SEQUENTIAL 1)
-endif()
-
-
-if(${KRIPKE_ARCH} STREQUAL "OpenMP")
-  set(${KRIPKE_ARCH_FOUND} 1)
-  set(KRIPKE_ARCH_OPENMP 1)
-endif()
-
-
-if(NOT ${KRIPKE_ARCH_FOUND})
-  error("I don't know what architecture this is:'${KRIPKE_ARCH}'")
-endif()
-
-
-message(STATUS "Kripke selected architecture '${KRIPKE_ARCH}'")
 
 
 #
-# Setup variables to pass to KripkeConfig.h
+# Detect capabilities for Kripke to use
 # 
 
-
+set(KRIPKE_ARCH_AUTO "Sequential")
 
 if(ENABLE_MPI)
 	set(KRIPKE_USE_MPI 1)
-	set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} mpi)
+	set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} mpi)	
 endif()
 
 if(ENABLE_OPENMP)
 	set(KRIPKE_USE_OPENMP 1)
 	set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} openmp)
+	set(KRIPKE_ARCH_AUTO "OpenMP")
 endif()
+
+if(ENABLE_CUDA)
+  set(KRIPKE_USE_CUDA 1)
+  set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} cuda  chai)
+  set(KRIPKE_ARCH_AUTO "CUDA")
+
+endif()
+
+
+
+#
+# Setup default Arch (specified by user, or autodetected above)
+# 
+
+
+
+if(KRIPKE_ARCH)
+
+	set(KRIPKE_ARCH_FOUND 0)
+
+	if(${KRIPKE_ARCH} STREQUAL "Sequential")
+		set(KRIPKE_ARCH_FOUND 1)
+		set(KRIPKE_ARCH_SEQUENTIAL 1)
+	endif()
+
+
+	if(${KRIPKE_ARCH} STREQUAL "OpenMP")
+		set(KRIPKE_ARCH_FOUND 1)
+		set(KRIPKE_ARCH_OPENMP 1)
+	endif()
+
+
+	if(NOT ${KRIPKE_ARCH_FOUND})
+		error("I don't know what architecture this is:'${KRIPKE_ARCH}'")
+	endif()
+
+else()
+	set(KRIPKE_ARCH_FOUND 1)
+	set(KRIPKE_ARCH ${KRIPKE_ARCH_AUTO})
+endif()
+
+
+
+message(STATUS "Kripke selected architecture '${KRIPKE_ARCH}'")
+
+
+
+
 
 string(TOUPPER ${CMAKE_BUILD_TYPE} KRIPKE_BUILD_TYPE)
 set(KRIPKE_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
@@ -123,7 +166,7 @@ blt_add_library(
   DEPENDS_ON  ${KRIPKE_DEPENDS}
 )
 
-add_dependencies(kripke RAJA)
+#add_dependencies(kripke RAJA)
 
 blt_add_executable( 
   NAME        kripke.exe
