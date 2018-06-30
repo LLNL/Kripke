@@ -158,7 +158,7 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_Sequential, LayoutT_ZGD>> {
 
 
 
-#ifdef KRIPKE_ARCH_OPENMP
+#ifdef KRIPKE_USE_OPENMP
 
 
 template<>
@@ -264,7 +264,7 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_OpenMP, LayoutT_ZGD>> {
     >;
 };
 
-#endif // KRIPKE_ARCH_OPENMP
+#endif // KRIPKE_USE_OPENMP
 
 
 }

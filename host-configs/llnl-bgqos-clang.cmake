@@ -13,11 +13,9 @@ set(CMAKE_C_COMPILER   "/usr/apps/gnu/clang/2017.06.06/llnl/bin/mpiclang" CACHE 
 set(CMAKE_CXX_COMPILER "/usr/apps/gnu/clang/2017.06.06/llnl/bin/mpiclang++" CACHE PATH "")
 set(CMAKE_LINKER       "/usr/apps/gnu/clang/2017.06.06/llnl/bin/mpiclang++" CACHE PATH "")
 
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffast-math -std=c++11 -stdlib=libc++" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -O3 -g -ffast-math -std=c++11 -stdlib=libc++" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -std=c++11 -stdlib=libc++" CACHE STRING "")
-
-set(KRIPKE_ARCH "OpenMP" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffast-math -stdlib=libc++" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -O3 -g -ffast-math -stdlib=libc++" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -stdlib=libc++" CACHE STRING "")
 
 set(ENABLE_OPENMP On CACHE BOOL "")
 set(ENABLE_MPI_WRAPPER On CACHE BOOL "")

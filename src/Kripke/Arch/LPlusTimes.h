@@ -228,7 +228,7 @@ struct Policy_LPlusTimes<ArchLayoutT<ArchT_OpenMP, LayoutT_ZGD>> {
       >
     >;
 };
-#endif // KRIPKE_ARCH_OPENMP
+#endif // KRIPKE_USE_OPENMP
 
 }
 }

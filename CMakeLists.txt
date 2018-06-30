@@ -118,9 +118,18 @@ endif()
 
 
 
-message(STATUS "Kripke selected architecture '${KRIPKE_ARCH}'")
+if(KRIPKE_LAYOUT)
+else()
+	set(KRIPKE_LAYOUT DGZ)
+endif()
 
 
+message(STATUS "Kripke selected default architecture: '${KRIPKE_ARCH}'")
+message(STATUS "Kripke selected default layout:       '${KRIPKE_LAYOUT}'")
+
+
+set(KRIPKE_ARCHV_DEFAULT ArchV_${KRIPKE_ARCH})
+set(KRIPKE_LAYOUTV_DEFAULT LayoutV_${KRIPKE_LAYOUT})
 
 
 
@@ -172,7 +181,6 @@ blt_add_library(
   DEPENDS_ON  ${KRIPKE_DEPENDS}
 )
 
-#add_dependencies(kripke RAJA)
 
 blt_add_executable( 
   NAME        kripke.exe

@@ -81,7 +81,7 @@ struct Policy_Source<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>> {
 
 
 
-#ifdef KRIPKE_ARCH_OPENMP
+#ifdef KRIPKE_USE_OPENMP
 template<>
 struct Policy_Source<ArchLayoutT<ArchT_OpenMP, LayoutT_DGZ>> {
   using ExecPolicy =
@@ -101,7 +101,7 @@ struct Policy_Source<ArchLayoutT<ArchT_OpenMP, LayoutT_DZG>> {
       >
     >;
 };
-#endif // KRIPKE_ARCH_OPENMP
+#endif // KRIPKE_USE_OPENMP
 
 }
 }

@@ -52,6 +52,7 @@ enum ArchV {
   ArchV_num_values
 };
 
+
 RAJA_INLINE
 std::string archToString(ArchV av){
   switch(av){

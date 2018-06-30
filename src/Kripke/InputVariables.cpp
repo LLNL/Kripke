@@ -47,7 +47,7 @@ InputVariables::InputVariables() :
   quad_num_polar(0),
   quad_num_azimuthal(0),
  
-  al_v(ArchLayoutV{ArchV_Sequential, LayoutV_DGZ}),
+  al_v(ArchLayoutV{KRIPKE_ARCHV_DEFAULT, KRIPKE_LAYOUTV_DEFAULT}),
  
   npx(1), npy(1), npz(1),
   num_dirsets(8),
