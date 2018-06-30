@@ -14,10 +14,9 @@ set(CMAKE_CXX_COMPILER "/usr/apps/gnu/clang/2017.06.06/llnl/bin/mpiclang++" CACH
 set(CMAKE_LINKER       "/usr/apps/gnu/clang/2017.06.06/llnl/bin/mpiclang++" CACHE PATH "")
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffast-math -std=c++11 -stdlib=libc++" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -O3 -ffast-math -std=c++11 -stdlib=libc++" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -std=c++11 -stdlib=libc++" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -O3 -g -ffast-math -std=c++11 -stdlib=libc++" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -std=c++11 -stdlib=libc++" CACHE STRING "")
 
-#set(KRIPKE_ARCH "Sequential" CACHE STRING "")
 set(KRIPKE_ARCH "OpenMP" CACHE STRING "")
 
 set(ENABLE_OPENMP On CACHE BOOL "")
