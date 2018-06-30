@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.8)
 
 cmake_policy(SET CMP0057 NEW)
 
@@ -14,7 +14,6 @@ set(ENABLE_TBB Off CACHE Bool "")
 set(ENABLE_EXAMPLES Off CACHE Bool "")
 set(ENABLE_DOCUMENTATION Off CACHE Bool "")
 
-
 set(BLT_CXX_STD c++14 CACHE STRING "")
 
 include(blt/SetupBLT.cmake)
@@ -26,17 +25,19 @@ set(CUDA_NVCC_FLAGS --expt-extended-lambda CACHE STRING "")
 # Configure CHAI/Umpire
 #
 
-add_subdirectory(tpl/chai)
+if(ENABLE_CHAI)
+	add_subdirectory(tpl/chai)
 
-set(ENABLE_TESTS Off CACHE Bool "")
-set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} chai umpire)
+	set(ENABLE_TESTS Off CACHE Bool "")
+	set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} chai umpire)
 
-get_property(CHAI_INCLUDE_DIRS TARGET chai PROPERTY INCLUDE_DIRECTORIES)
-include_directories(${CHAI_INCLUDE_DIRS})
+	get_property(CHAI_INCLUDE_DIRS TARGET chai PROPERTY INCLUDE_DIRECTORIES)
+	include_directories(${CHAI_INCLUDE_DIRS})
 
-get_property(UMPIRE_INCLUDE_DIRS TARGET umpire PROPERTY INCLUDE_DIRECTORIES)
-include_directories(${UMPIRE_INCLUDE_DIRS})
+	get_property(UMPIRE_INCLUDE_DIRS TARGET umpire PROPERTY INCLUDE_DIRECTORIES)
+	include_directories(${UMPIRE_INCLUDE_DIRS})
 
+endif()
 #
 # Configure RAJA
 #
@@ -63,6 +64,11 @@ if(ENABLE_MPI)
 	set(KRIPKE_USE_MPI 1)
 	set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} mpi)	
 endif()
+
+if(ENABLE_MPI_WRAPPER)
+	set(KRIPKE_USE_MPI 1)
+endif()
+
 
 if(ENABLE_OPENMP)
 	set(KRIPKE_USE_OPENMP 1)
