@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.8)
 
+cmake_policy(SET CMP0007 NEW)
 cmake_policy(SET CMP0057 NEW)
 
 project(KRIPKE LANGUAGES CXX)
+
+
 
 #
 # Initialize the BLT build system
@@ -16,16 +19,27 @@ set(ENABLE_DOCUMENTATION Off CACHE Bool "")
 
 set(BLT_CXX_STD c++14 CACHE STRING "")
 
+set(RAJA_CXX_STANDARD_FLAG ${BLT_CXX_STD} CACHE STRING "")
+
 include(blt/SetupBLT.cmake)
 
 
-set(CUDA_NVCC_FLAGS --expt-extended-lambda CACHE STRING "")
-
 #
-# Configure CHAI/Umpire
+# Configure RAJA
 #
 
-if(ENABLE_CHAI)
+set(RAJA_ENABLE_TESTS Off CACHE Bool "")
+add_subdirectory(tpl/raja)
+
+get_property(RAJA_INCLUDE_DIRS TARGET RAJA PROPERTY INCLUDE_DIRECTORIES)
+include_directories(${RAJA_INCLUDE_DIRS})
+
+
+#
+# Configure CHAI/Umpire if CUDA was enabled
+#
+
+if(ENABLE_CUDA)
 	add_subdirectory(tpl/chai)
 
 	set(ENABLE_TESTS Off CACHE Bool "")
@@ -36,17 +50,13 @@ if(ENABLE_CHAI)
 
 	get_property(UMPIRE_INCLUDE_DIRS TARGET umpire PROPERTY INCLUDE_DIRECTORIES)
 	include_directories(${UMPIRE_INCLUDE_DIRS})
+	
+	if(ENABLE_OPENMP)
+	 list(APPEND CUDA_NVCC_FLAGS -Xcompiler ${OpenMP_CXX_FLAGS})
+	endif()
 
 endif()
-#
-# Configure RAJA
-#
 
-set(RAJA_ENABLE_TESTS Off CACHE Bool "")
-add_subdirectory(tpl/raja)
-
-get_property(RAJA_INCLUDE_DIRS TARGET RAJA PROPERTY INCLUDE_DIRECTORIES)
-include_directories(${RAJA_INCLUDE_DIRS})
 
 
 
@@ -140,6 +150,8 @@ set(KRIPKE_LINK_FLAGS   "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_LINK_FLAGS_${CMAKE_BU
 
 set(KRIPKE_VERSION "1.2.0")
 
+
+
 configure_file(${PROJECT_SOURCE_DIR}/src/KripkeConfig.h.in
                ${PROJECT_BINARY_DIR}/include/KripkeConfig.h)
 
@@ -180,6 +192,8 @@ blt_add_library(
               "src/Kripke/Timing.cpp"
   DEPENDS_ON  ${KRIPKE_DEPENDS}
 )
+
+message(INFO, "KRIPKE_DEPENDS: ${KRIPKE_DEPENDS}")
 
 
 blt_add_executable( 
