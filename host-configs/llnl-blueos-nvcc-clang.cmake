@@ -25,6 +25,7 @@ set(CUDA_NVCC_FLAGS_RELEASE -O3 LIST "")
 set(CUDA_NVCC_FLAGS_RELWITHDEBINFO -O3; -lineinfo CACHE LIST "")
 set(CUDA_NVCC_FLAGS_DEBUG -O0;-g;-G CACHE LIST "")
 
+set(RAJA_EXTRA_NVCC_FLAGS -restrict;-gencode=arch=compute_60,code=sm_60;-std c++14;--expt-extended-lambda; -ccbin; ${CMAKE_CXX_COMPILER} CACHE LIST "")
 set(RAJA_RANGE_ALIGN 4 CACHE INT "")
 set(RAJA_RANGE_MIN_LENGTH 32 CACHE INT "")
 set(RAJA_DATA_ALIGN 64 CACHE INT "")

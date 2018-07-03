@@ -34,22 +34,22 @@ add_subdirectory(tpl/raja)
 get_property(RAJA_INCLUDE_DIRS TARGET RAJA PROPERTY INCLUDE_DIRECTORIES)
 include_directories(${RAJA_INCLUDE_DIRS})
 
+list(APPEND KRIPKE_DEPENDS RAJA)
 
 #
 # Configure CHAI/Umpire if CUDA was enabled
 #
 
 if(ENABLE_CUDA)
-	add_subdirectory(tpl/chai)
+#	add_subdirectory(tpl/chai)
 
-	set(ENABLE_TESTS Off CACHE Bool "")
-	set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} chai umpire)
+#	set(ENABLE_TESTS Off CACHE Bool "")
 
-	get_property(CHAI_INCLUDE_DIRS TARGET chai PROPERTY INCLUDE_DIRECTORIES)
-	include_directories(${CHAI_INCLUDE_DIRS})
+#	get_property(CHAI_INCLUDE_DIRS TARGET chai PROPERTY INCLUDE_DIRECTORIES)
+#	include_directories(${CHAI_INCLUDE_DIRS})
 
-	get_property(UMPIRE_INCLUDE_DIRS TARGET umpire PROPERTY INCLUDE_DIRECTORIES)
-	include_directories(${UMPIRE_INCLUDE_DIRS})
+#	get_property(UMPIRE_INCLUDE_DIRS TARGET umpire PROPERTY INCLUDE_DIRECTORIES)
+#	include_directories(${UMPIRE_INCLUDE_DIRS})
 	
 	if(ENABLE_OPENMP)
 	 list(APPEND CUDA_NVCC_FLAGS -Xcompiler ${OpenMP_CXX_FLAGS})
@@ -71,8 +71,8 @@ endif()
 set(KRIPKE_ARCH_AUTO "Sequential")
 
 if(ENABLE_MPI)
-	set(KRIPKE_USE_MPI 1)
-	set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} mpi)	
+	set(KRIPKE_USE_MPI 1)	
+	list(APPEND KRIPKE_DEPENDS mpi)
 endif()
 
 if(ENABLE_MPI_WRAPPER)
@@ -81,14 +81,15 @@ endif()
 
 
 if(ENABLE_OPENMP)
-	set(KRIPKE_USE_OPENMP 1)
-	set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} openmp)
+	set(KRIPKE_USE_OPENMP 1)	
+	list(APPEND KRIPKE_DEPENDS openmp)
 	set(KRIPKE_ARCH_AUTO "OpenMP")
 endif()
 
 if(ENABLE_CUDA)
-  set(KRIPKE_USE_CUDA 1)
-  set(KRIPKE_DEPENDS ${KRIPKE_DEPENDS} cuda  chai)
+  set(KRIPKE_USE_CUDA 1)  
+  #list(APPEND KRIPKE_DEPENDS cuda chai)
+  list(APPEND KRIPKE_DEPENDS cuda)
   set(KRIPKE_ARCH_AUTO "CUDA")
 
 endif()
