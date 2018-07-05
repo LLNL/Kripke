@@ -231,6 +231,109 @@ struct Policy_Population<ArchLayoutT<ArchT_OpenMP, LayoutT_ZGD>>{
 
 #endif // KRIPKE_USE_OPENMP
 
+
+
+#ifdef KRIPKE_USE_CUDA
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>>{
+  using ReducePolicy = seq_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      For<0, loop_exec, // direction
+        For<1, loop_exec, // group
+          For<2, loop_exec, // zone
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>>{
+  using ReducePolicy = seq_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      For<0, loop_exec, // direction
+        For<2, loop_exec, // zone
+          For<1, loop_exec, // group
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>>{
+  using ReducePolicy = seq_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      For<1, loop_exec, // group
+        For<0, loop_exec, // direction
+          For<2, loop_exec, // zone
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>>{
+  using ReducePolicy = seq_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      For<1, loop_exec, // group
+        For<2, loop_exec, // zone
+          For<0, loop_exec, // direction
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>>{
+  using ReducePolicy = seq_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      For<2, loop_exec, // zone
+        For<0, loop_exec, // direction
+          For<1, loop_exec, // group
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>>{
+  using ReducePolicy = seq_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      For<2, loop_exec, // zone
+        For<1, loop_exec, // group
+          For<0, loop_exec, // direction
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+#endif // KRIPKE_USE_CUDA
+
+
+
 }
 }
 

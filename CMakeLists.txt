@@ -25,7 +25,16 @@ include(blt/SetupBLT.cmake)
 
 
 #
-# Configure RAJA
+# Default Arch and Layout selection
+# Sequential by default, but will be overriden if OpenMP or CUDA are enabled
+#
+set(KRIPKE_ARCH "Sequential")
+set(KRIPKE_LAYOUT DGZ)
+
+
+
+#
+# Configure RAJA (REQUIRED)
 #
 
 set(RAJA_ENABLE_TESTS Off CACHE Bool "")
@@ -36,39 +45,80 @@ include_directories(${RAJA_INCLUDE_DIRS})
 
 list(APPEND KRIPKE_DEPENDS RAJA)
 
+
 #
-# Configure CHAI/Umpire if CUDA was enabled
+# Configure OpenMP (CPU threading, not target offload)
+#
+
+if(ENABLE_OPENMP)
+  set(KRIPKE_USE_OPENMP 1)  
+  list(APPEND KRIPKE_DEPENDS openmp)
+  set(KRIPKE_ARCH "OpenMP")
+endif()
+
+
+
+#
+# Configure CUDA
 #
 
 if(ENABLE_CUDA)
-#	add_subdirectory(tpl/chai)
 
-#	set(ENABLE_TESTS Off CACHE Bool "")
-
-#	get_property(CHAI_INCLUDE_DIRS TARGET chai PROPERTY INCLUDE_DIRECTORIES)
-#	include_directories(${CHAI_INCLUDE_DIRS})
-
-#	get_property(UMPIRE_INCLUDE_DIRS TARGET umpire PROPERTY INCLUDE_DIRECTORIES)
-#	include_directories(${UMPIRE_INCLUDE_DIRS})
+  set(KRIPKE_USE_CUDA 1)
+    
+  list(APPEND KRIPKE_DEPENDS cuda)
+  
+  set(KRIPKE_ARCH "CUDA")
 	
+	# Make sure that nvcc turns on the host compiler OpenMP flag	
 	if(ENABLE_OPENMP)
 	 list(APPEND CUDA_NVCC_FLAGS -Xcompiler ${OpenMP_CXX_FLAGS})
 	endif()
+	
+	# Pass on compiler info to KripkeConfig.h
+	set(KRIPKE_NVCC_COMPILER "${CUDA_NVCC_EXECUTABLE}")
+  set(KRIPKE_NVCC_FLAGS    "${CUDA_NVCC_FLAGS} ${CUDA_NVCC_FLAGS_${KRIPKE_BUILD_TYPE}}")
 
 endif()
 
 
 
+#
+# Configure CHAI/Umpire for memory management
+# 
+option(ENABLE_CHAI "Enable CHAI/Umpire memory management" Off)
+if(ENABLE_CHAI)
 
+  # Add CHAI (which brings in Umpire as a submodule)
+  add_subdirectory(tpl/chai)
+  
+  set(ENABLE_TESTS Off CACHE Bool "")
+  
+  set(KRIPKE_USE_CHAI 1)
+  
+  list(APPEND KRIPKE_DEPENDS chai)
+
+  # Bring in CHAI's include paths
+  get_property(CHAI_INCLUDE_DIRS TARGET chai PROPERTY INCLUDE_DIRECTORIES)
+  include_directories(${CHAI_INCLUDE_DIRS})
+
+  # Bring in Umpire's include paths
+  get_property(UMPIRE_INCLUDE_DIRS TARGET umpire PROPERTY INCLUDE_DIRECTORIES)
+  include_directories(${UMPIRE_INCLUDE_DIRS})
+  
+endif()
 
 
 
 
 #
-# Detect capabilities for Kripke to use
+# Configure MPI
 # 
-
-set(KRIPKE_ARCH_AUTO "Sequential")
+# Use ENABLE_MPI=On if you want CMake to automatically figure out MPI
+# using FindMPI
+#
+# Use ENABLE_MPI_WRAPPER if you want to use mpi compiler wrappers for CC/CXX 
+# 
 
 if(ENABLE_MPI)
 	set(KRIPKE_USE_MPI 1)	
@@ -80,81 +130,49 @@ if(ENABLE_MPI_WRAPPER)
 endif()
 
 
-if(ENABLE_OPENMP)
-	set(KRIPKE_USE_OPENMP 1)	
-	list(APPEND KRIPKE_DEPENDS openmp)
-	set(KRIPKE_ARCH_AUTO "OpenMP")
-endif()
 
-if(ENABLE_CUDA)
-  set(KRIPKE_USE_CUDA 1)  
-  #list(APPEND KRIPKE_DEPENDS cuda chai)
-  list(APPEND KRIPKE_DEPENDS cuda)
-  set(KRIPKE_ARCH_AUTO "CUDA")
 
-endif()
+
+
 
 
 
 #
-# Setup default Arch (specified by user, or autodetected above)
-# 
-
-
-
-if(KRIPKE_ARCH)
-
-	set(KRIPKE_ARCH_FOUND 0)
-
-	if(${KRIPKE_ARCH} STREQUAL "Sequential")
-		set(KRIPKE_ARCH_FOUND 1)
-		set(KRIPKE_ARCH_SEQUENTIAL 1)
-	endif()
-
-
-	if(${KRIPKE_ARCH} STREQUAL "OpenMP")
-		set(KRIPKE_ARCH_FOUND 1)
-		set(KRIPKE_ARCH_OPENMP 1)
-	endif()
-
-
-	if(NOT ${KRIPKE_ARCH_FOUND})
-		error("I don't know what architecture this is:'${KRIPKE_ARCH}'")
-	endif()
-
-else()
-	set(KRIPKE_ARCH_FOUND 1)
-	set(KRIPKE_ARCH ${KRIPKE_ARCH_AUTO})
-endif()
-
-
-
-if(KRIPKE_LAYOUT)
-else()
-	set(KRIPKE_LAYOUT DGZ)
-endif()
-
-
+# Display/Configure our default ArchLayout
+#
 message(STATUS "Kripke selected default architecture: '${KRIPKE_ARCH}'")
 message(STATUS "Kripke selected default layout:       '${KRIPKE_LAYOUT}'")
-
 
 set(KRIPKE_ARCHV_DEFAULT ArchV_${KRIPKE_ARCH})
 set(KRIPKE_LAYOUTV_DEFAULT LayoutV_${KRIPKE_LAYOUT})
 
 
 
+
+#
+# Pass compiler options to our KripkeConfig.h file so we can print them at
+# runtime
+#
+
 string(TOUPPER ${CMAKE_BUILD_TYPE} KRIPKE_BUILD_TYPE)
 set(KRIPKE_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
 set(KRIPKE_CXX_FLAGS    "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${KRIPKE_BUILD_TYPE}}")
 set(KRIPKE_LINK_FLAGS   "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_LINK_FLAGS_${CMAKE_BUILD_TYPE}}")
 
-set(KRIPKE_VERSION "1.2.0")
+set(KRIPKE_VERSION "1.2.3")
 
 
+
+
+
+#
+# Create KripkeConfig.h file
+#
 
 configure_file(${PROJECT_SOURCE_DIR}/src/KripkeConfig.h.in
                ${PROJECT_BINARY_DIR}/include/KripkeConfig.h)
+
+
 
 
 
@@ -194,7 +212,6 @@ blt_add_library(
   DEPENDS_ON  ${KRIPKE_DEPENDS}
 )
 
-message(INFO, "KRIPKE_DEPENDS: ${KRIPKE_DEPENDS}")
 
 
 blt_add_executable( 

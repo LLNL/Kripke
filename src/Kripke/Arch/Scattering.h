@@ -230,6 +230,110 @@ struct Policy_Scattering<ArchLayoutT<ArchT_OpenMP, LayoutT_ZGD>> {
 };
 #endif // KRIPKE_USE_OPENMP
 
+
+#ifdef KRIPKE_USE_CUDA
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
+  using ExecPolicy =
+      KernelPolicy<
+        For<0, loop_exec, // moment
+          For<1, loop_exec, // dst group
+            For<2, loop_exec, // src group
+              For<3, loop_exec, // zone
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >;
+};
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
+  using ExecPolicy =
+      KernelPolicy<
+        For<0, loop_exec, // moment
+          For<3, loop_exec, // zone
+            For<1, loop_exec, // dst group
+              For<2, loop_exec, // src group
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>> {
+  using ExecPolicy =
+      KernelPolicy<
+        For<1, loop_exec, // dst group
+          For<2, loop_exec, // src group
+            For<0, loop_exec, // moment
+              For<3, loop_exec, // zone
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>> {
+  using ExecPolicy =
+      KernelPolicy<
+        For<1, loop_exec, // dst group
+          For<2, loop_exec, // src group
+            For<3, loop_exec, // zone
+              For<0, loop_exec, // moment
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>> {
+  using ExecPolicy =
+      KernelPolicy<
+        For<3, loop_exec, // zone
+          For<0, loop_exec, // moment
+            For<1, loop_exec, // dst group
+              For<2, loop_exec, // src group
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>> {
+  using ExecPolicy =
+      KernelPolicy<
+        For<3, loop_exec, // zone
+          For<1, loop_exec, // dst group
+            For<2, loop_exec, // src group
+              For<0, loop_exec, // moment
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >;
+};
+#endif //KRIPKE_USE_CUDA
+
+
 }
 }
 

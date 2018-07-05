@@ -103,6 +103,30 @@ struct Policy_Source<ArchLayoutT<ArchT_OpenMP, LayoutT_DZG>> {
 };
 #endif // KRIPKE_USE_OPENMP
 
+
+#ifdef KRIPKE_USE_CUDA
+template<>
+struct Policy_Source<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<loop_exec, ArgList<0,1>, // Group, MixElem
+        Lambda<0>
+      >
+    >;
+};
+
+template<>
+struct Policy_Source<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
+  using ExecPolicy =
+    KernelPolicy<
+      Collapse<loop_exec, ArgList<0,1>, // MixElem, Group
+        Lambda<0>
+      >
+    >;
+};
+#endif // KRIPKE_USE_CUDA
+
+
 }
 }
 

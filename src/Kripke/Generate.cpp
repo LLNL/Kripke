@@ -92,8 +92,6 @@ void Kripke::generateProblem(Kripke::Core::DataStore &data_store,
     std::sort(field_names.begin(), field_names.end());
 
     printf("\n");
-    printf("  Generation Complete!\n");
-    printf("\n");
     printf("  Memory breakdown of Field variables:\n");
     printf("  Field Variable            Num Elements    Megabytes\n");
     printf("  --------------            ------------    ---------\n");
@@ -114,5 +112,8 @@ void Kripke::generateProblem(Kripke::Core::DataStore &data_store,
     printf("  TOTAL                     %12lu %12.3lf\n",
         total_size,
         (double)total_size*8.0/1024.0/1024.0);
+
+    printf("\n");
+    printf("  Generation Complete!\n");
   }
 }

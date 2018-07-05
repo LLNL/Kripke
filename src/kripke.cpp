@@ -54,6 +54,7 @@
 #endif
 
 
+
 void usage(void){
 
   Kripke::Core::Comm comm;
@@ -245,6 +246,8 @@ int main(int argc, char **argv) {
 
 #ifdef KRIPKE_USE_CUDA
     printf("  CUDA Enabled:           Yes\n");
+    printf("    NVCC:                 %s\n", KRIPKE_NVCC_COMPILER);
+    printf("    NVCC Flags:           \"%s\"\n", KRIPKE_NVCC_FLAGS);
 #else
     printf("  CUDA Enabled:           No\n");
 #endif
