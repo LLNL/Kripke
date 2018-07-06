@@ -271,19 +271,21 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_OpenMP, LayoutT_ZGD>> {
 template<>
 struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
   using ExecPolicy =
-    KernelPolicy<
-      For<0, loop_exec,  // direction
-        For<1, loop_exec, // group
-          For<2, loop_exec, // k
-            For<3, loop_exec, // j
-              For<4, loop_exec, // i
-                Lambda<0>
+          KernelPolicy<
+            CudaKernel<
+              For<0, cuda_block_exec,
+                For<1, cuda_block_exec,
+
+                      Hyperplane<
+                        2, cuda_seq_syncthreads_exec,
+                        ArgList<3, 4>, cuda_thread_exec,
+
+                        Lambda<0>
+                      >
+                >
               >
             >
-          >
-        >
-      >
-    >;
+          >;
 };
 
 

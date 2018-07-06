@@ -232,11 +232,13 @@ template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
   using ExecPolicy =
     KernelPolicy<
-      For<0, loop_exec, // moment
-        For<1, loop_exec, // direction
-          For<2, loop_exec, // group
-            For<3, loop_exec, // zone
-              Lambda<0>
+      CudaKernel<
+        For<2, cuda_block_exec, // group
+          For<3, cuda_thread_exec, // zone
+            For<1, seq_exec, // direction
+              For<0, seq_exec, // moment
+                Lambda<0>
+              >
             >
           >
         >

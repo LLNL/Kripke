@@ -235,17 +235,21 @@ struct Policy_Scattering<ArchLayoutT<ArchT_OpenMP, LayoutT_ZGD>> {
 template<>
 struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
   using ExecPolicy =
-      KernelPolicy<
-        For<0, loop_exec, // moment
-          For<1, loop_exec, // dst group
-            For<2, loop_exec, // src group
-              For<3, loop_exec, // zone
-                Lambda<0>
+    KernelPolicy<
+      CudaKernel<
+        For<0, cuda_block_exec, // moment
+          For<1, cuda_block_exec, // DstGrp
+            For<3, cuda_thread_exec, // zone
+              Thread<
+                For<2, seq_exec, // SrcGrp
+                  Lambda<0>
+                >
               >
             >
           >
         >
-      >;
+      >
+    >;
 };
 
 template<>

@@ -105,6 +105,10 @@ void Kripke::SweepSolver (Kripke::Core::DataStore &data_store, std::vector<SdomI
   }
 
   delete comm;
+
+//  printf("\nAfter sweep psi:\n");
+//  data_store.getVariable<Field_Flux>("psi").dump();
+
 }
 
 

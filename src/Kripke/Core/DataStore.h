@@ -87,6 +87,8 @@ class DataStore {
       return const_cast<DataStore *>(this)-> template getVariable<T>(name);
     }
     
+    std::string getVariableName(BaseVar const &var) const;
+
 
     template<typename T>
     RAJA_INLINE

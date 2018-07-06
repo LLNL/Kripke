@@ -236,14 +236,16 @@ struct Policy_Population<ArchLayoutT<ArchT_OpenMP, LayoutT_ZGD>>{
 #ifdef KRIPKE_USE_CUDA
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>>{
-  using ReducePolicy = seq_reduce;
+  using ReducePolicy = cuda_reduce<1024>;
 
   using ExecPolicy =
     KernelPolicy<
-      For<0, loop_exec, // direction
-        For<1, loop_exec, // group
-          For<2, loop_exec, // zone
-            Lambda<0>
+      CudaKernel<
+        For<0, cuda_thread_exec, // direction
+          For<1, cuda_thread_exec, // group
+            For<2, cuda_threadblock_exec<32>, // zone
+              Lambda<0>
+            >
           >
         >
       >
@@ -252,63 +254,74 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>>{
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>>{
-  using ReducePolicy = seq_reduce;
+  using ReducePolicy = cuda_reduce<1024>;
 
   using ExecPolicy =
     KernelPolicy<
-      For<0, loop_exec, // direction
-        For<2, loop_exec, // zone
-          For<1, loop_exec, // group
-            Lambda<0>
+      CudaKernel<
+        For<0, cuda_thread_exec, // direction
+          For<2, cuda_threadblock_exec<32>, // zone
+            For<1, cuda_thread_exec, // group
+              Lambda<0>
+            >
           >
         >
       >
     >;
+
 };
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>>{
-  using ReducePolicy = seq_reduce;
+  using ReducePolicy = cuda_reduce<1024>;
 
   using ExecPolicy =
     KernelPolicy<
-      For<1, loop_exec, // group
-        For<0, loop_exec, // direction
-          For<2, loop_exec, // zone
-            Lambda<0>
+      CudaKernel<
+        For<1, cuda_thread_exec, // group
+          For<0, cuda_thread_exec, // direction
+            For<2, cuda_threadblock_exec<32>, // zone
+              Lambda<0>
+            >
           >
         >
       >
     >;
+
 };
 
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>>{
-  using ReducePolicy = seq_reduce;
+  using ReducePolicy = cuda_reduce<1024>;
 
   using ExecPolicy =
     KernelPolicy<
-      For<1, loop_exec, // group
-        For<2, loop_exec, // zone
-          For<0, loop_exec, // direction
-            Lambda<0>
+      CudaKernel<
+        For<1, cuda_thread_exec, // group
+          For<2, cuda_threadblock_exec<32>, // zone
+            For<0, cuda_thread_exec, // direction
+              Lambda<0>
+            >
           >
         >
       >
     >;
+
 };
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>>{
-  using ReducePolicy = seq_reduce;
+  using ReducePolicy = cuda_reduce<1024>;
 
   using ExecPolicy =
     KernelPolicy<
-      For<2, loop_exec, // zone
-        For<0, loop_exec, // direction
-          For<1, loop_exec, // group
-            Lambda<0>
+      CudaKernel<
+        For<2, cuda_threadblock_exec<32>, // zone
+          For<0, cuda_thread_exec, // direction
+            For<1, cuda_thread_exec, // group
+              Lambda<0>
+            >
           >
         >
       >
@@ -317,18 +330,21 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>>{
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>>{
-  using ReducePolicy = seq_reduce;
+  using ReducePolicy = cuda_reduce<1024>;
 
   using ExecPolicy =
     KernelPolicy<
-      For<2, loop_exec, // zone
-        For<1, loop_exec, // group
-          For<0, loop_exec, // direction
-            Lambda<0>
+      CudaKernel<
+        For<2, cuda_threadblock_exec<32>, // zone
+          For<1, cuda_thread_exec, // group
+            For<0, cuda_thread_exec, // direction
+              Lambda<0>
+            >
           >
         >
       >
     >;
+
 };
 #endif // KRIPKE_USE_CUDA
 

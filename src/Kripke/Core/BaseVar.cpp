@@ -30,31 +30,27 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#ifndef KRIPKE_CORE_BASE_VAR_H__
-#define KRIPKE_CORE_BASE_VAR_H__
+#include<Kripke/Core/BaseVar.h>
 
-namespace Kripke {
-namespace Core {
+#include<Kripke/Core/DataStore.h>
 
-class DataStore;
+using namespace Kripke::Core;
 
-/**
- * Variable base class for DataStore class
- */
-class BaseVar {
-  public:
-    BaseVar();
-    virtual ~BaseVar() = default;
+BaseVar::BaseVar() : m_parent(nullptr){
 
-    void setParent(DataStore *parent);
+}
 
-    std::string getName() const;
+void BaseVar::setParent(DataStore *parent){
+  m_parent = parent;
+}
 
-  private:
-    DataStore *m_parent;
-};
+std::string BaseVar::getName() const {
+  if(m_parent){
+    return m_parent->getVariableName(*this);
+  }
+  else{
+    return "---";
+  }
+}
 
 
-} } // namespace
-
-#endif

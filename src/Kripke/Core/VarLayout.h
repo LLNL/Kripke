@@ -193,8 +193,8 @@ struct LayoutInfo {
 template<typename Order, typename ... IndexTypes>
 using LayoutType = typename LayoutInfo<Order, IndexTypes...>::Layout;
 
-template<typename Order, typename ElementType, typename ... IndexTypes>
-using ViewType = RAJA::View<ElementType, LayoutType<Order, IndexTypes...>>;
+template<typename Order, typename ElementType, typename ElementPtr, typename ... IndexTypes>
+using ViewType = RAJA::View<ElementType, LayoutType<Order, IndexTypes...>, ElementPtr>;
 
 
 

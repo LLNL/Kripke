@@ -4,8 +4,9 @@ cmake_policy(SET CMP0007 NEW)
 cmake_policy(SET CMP0057 NEW)
 
 project(KRIPKE LANGUAGES CXX)
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
-
+string(TOUPPER ${CMAKE_BUILD_TYPE} KRIPKE_BUILD_TYPE)
 
 #
 # Initialize the BLT build system
@@ -21,6 +22,8 @@ set(BLT_CXX_STD c++14 CACHE STRING "")
 
 set(RAJA_CXX_STANDARD_FLAG ${BLT_CXX_STD} CACHE STRING "")
 
+set(chai_DIR ${CURRENT_SOURCE_DIR}/tpl/chai)
+
 include(blt/SetupBLT.cmake)
 
 
@@ -30,57 +33,6 @@ include(blt/SetupBLT.cmake)
 #
 set(KRIPKE_ARCH "Sequential")
 set(KRIPKE_LAYOUT DGZ)
-
-
-
-#
-# Configure RAJA (REQUIRED)
-#
-
-set(RAJA_ENABLE_TESTS Off CACHE Bool "")
-add_subdirectory(tpl/raja)
-
-get_property(RAJA_INCLUDE_DIRS TARGET RAJA PROPERTY INCLUDE_DIRECTORIES)
-include_directories(${RAJA_INCLUDE_DIRS})
-
-list(APPEND KRIPKE_DEPENDS RAJA)
-
-
-#
-# Configure OpenMP (CPU threading, not target offload)
-#
-
-if(ENABLE_OPENMP)
-  set(KRIPKE_USE_OPENMP 1)  
-  list(APPEND KRIPKE_DEPENDS openmp)
-  set(KRIPKE_ARCH "OpenMP")
-endif()
-
-
-
-#
-# Configure CUDA
-#
-
-if(ENABLE_CUDA)
-
-  set(KRIPKE_USE_CUDA 1)
-    
-  list(APPEND KRIPKE_DEPENDS cuda)
-  
-  set(KRIPKE_ARCH "CUDA")
-	
-	# Make sure that nvcc turns on the host compiler OpenMP flag	
-	if(ENABLE_OPENMP)
-	 list(APPEND CUDA_NVCC_FLAGS -Xcompiler ${OpenMP_CXX_FLAGS})
-	endif()
-	
-	# Pass on compiler info to KripkeConfig.h
-	set(KRIPKE_NVCC_COMPILER "${CUDA_NVCC_EXECUTABLE}")
-  set(KRIPKE_NVCC_FLAGS    "${CUDA_NVCC_FLAGS} ${CUDA_NVCC_FLAGS_${KRIPKE_BUILD_TYPE}}")
-
-endif()
-
 
 
 #
@@ -107,6 +59,63 @@ if(ENABLE_CHAI)
   include_directories(${UMPIRE_INCLUDE_DIRS})
   
 endif()
+
+
+#
+# Configure RAJA (REQUIRED)
+#
+
+set(RAJA_ENABLE_TESTS Off CACHE Bool "")
+add_subdirectory(tpl/raja)
+
+get_property(RAJA_INCLUDE_DIRS TARGET RAJA PROPERTY INCLUDE_DIRECTORIES)
+include_directories(${RAJA_INCLUDE_DIRS})
+
+list(APPEND KRIPKE_DEPENDS RAJA)
+
+
+#
+# Configure OpenMP (CPU threading, not target offload)
+#
+
+if(ENABLE_OPENMP)
+  
+  set(KRIPKE_USE_OPENMP 1)  
+  
+  list(APPEND KRIPKE_DEPENDS openmp)
+  
+  set(KRIPKE_ARCH "OpenMP")
+  
+endif()
+
+
+
+#
+# Configure CUDA
+#
+
+if(ENABLE_CUDA)
+
+  set(KRIPKE_USE_CUDA 1)
+    
+  list(APPEND KRIPKE_DEPENDS cuda)
+  
+  set(KRIPKE_ARCH "CUDA")
+	
+	# Make sure that nvcc turns on the host compiler OpenMP flag	
+	if(ENABLE_OPENMP)
+	 list(APPEND CUDA_NVCC_FLAGS -Xcompiler ${OpenMP_CXX_FLAGS})
+	endif()
+	
+	# Pass on compiler info to KripkeConfig.h
+	set(KRIPKE_NVCC_COMPILER "${CUDA_NVCC_EXECUTABLE}")
+  set(KRIPKE_NVCC_FLAGS    "${CUDA_NVCC_FLAGS};${CUDA_NVCC_FLAGS_${KRIPKE_BUILD_TYPE}}")
+
+endif()
+
+
+
+
 
 
 
@@ -154,7 +163,7 @@ set(KRIPKE_LAYOUTV_DEFAULT LayoutV_${KRIPKE_LAYOUT})
 # runtime
 #
 
-string(TOUPPER ${CMAKE_BUILD_TYPE} KRIPKE_BUILD_TYPE)
+
 set(KRIPKE_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
 set(KRIPKE_CXX_FLAGS    "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${KRIPKE_BUILD_TYPE}}")
 set(KRIPKE_LINK_FLAGS   "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_LINK_FLAGS_${CMAKE_BUILD_TYPE}}")
@@ -186,7 +195,8 @@ include_directories(./src ${PROJECT_BINARY_DIR}/include)
 
 blt_add_library(
   NAME        kripke
-  SOURCES     "src/Kripke/Core/DataStore.cpp"
+  SOURCES     "src/Kripke/Core/BaseVar.cpp"
+              "src/Kripke/Core/DataStore.cpp"
               "src/Kripke/Core/DomainVar.cpp"
               "src/Kripke/Generate.cpp"
               "src/Kripke/Generate/Data.cpp"
@@ -217,7 +227,7 @@ blt_add_library(
 blt_add_executable( 
   NAME        kripke.exe
   SOURCES     "src/kripke.cpp"
-  DEPENDS_ON  ${KRIPKE_DEPENDS} kripke
+  DEPENDS_ON  ${KRIPKE_DEPENDS} kripke 
 )
 
 
