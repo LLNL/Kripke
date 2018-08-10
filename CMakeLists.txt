@@ -63,7 +63,25 @@ message(STATUS "Kripke selected architecture '${KRIPKE_ARCH}'")
 # Setup variables to pass to KripkeConfig.h
 # 
 
+option(ENABLE_CALIPER "Enable Caliper support" FALSE)
 
+if (ENABLE_CALIPER)
+  find_package(caliper REQUIRED)
+
+  set(KRIPKE_USE_CALIPER TRUE)
+  
+  blt_register_library(NAME caliper
+    INCLUDES ${caliper_INCLUDE_DIR}
+    LIBRARIES caliper)
+  
+  list(APPEND KRIPKE_DEPENDS caliper)
+  
+  if (ENABLE_MPI)
+    list(APPEND KRIPKE_DEPENDS caliper-mpi)
+  endif()
+endif()
+
+message(STATUS "Caliper support is ${KRIPKE_USE_CALIPER}")
 
 if(ENABLE_MPI)
 	set(KRIPKE_USE_MPI 1)

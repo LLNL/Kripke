@@ -38,6 +38,10 @@
 
 #include <RAJA/util/Timer.hpp>
 
+#ifdef KRIPKE_USE_CALIPER
+#include <caliper/cali.h>
+#endif
+
 #include <string>
 #include <map>
 
@@ -48,7 +52,7 @@ namespace Kripke {
       RAJA_INLINE
       Timer() :
         started(false),
-				elapsed(0.),
+        elapsed(0.),
         count(0)
       {}
 
@@ -80,8 +84,8 @@ namespace Kripke {
       }
 
     private:
-      bool started;
-			double elapsed;
+      bool   started;
+      double elapsed;
       size_t count;
       RAJA::Timer timer;
   };
@@ -111,6 +115,9 @@ namespace Kripke {
     inline BlockTimer(Timing &timer_obj, std::string const &timer_name) :
         timer(timer_obj),
         name(timer_name)
+#ifdef KRIPKE_USE_CALIPER
+        , cali_timer(cali_annot.begin(timer_name.c_str()))
+#endif
     {
         timer.start(name);
     }
@@ -121,12 +128,15 @@ namespace Kripke {
     private:
       Timing &timer;
       std::string name;
+#ifdef KRIPKE_USE_CALIPER
+      cali::Annotation::Guard cali_timer;
+      static cali::Annotation cali_annot;
+#endif
   };
 
 }
 
 #define KRIPKE_TIMER(DS, NAME) \
   Kripke::BlockTimer BLK_TIMER_##NAME(DS.getVariable<Kripke::Timing>("timing"), #NAME);
-
 
 #endif
