@@ -49,6 +49,10 @@
 #include <omp.h>
 #endif
 
+#ifdef KRIPKE_USE_CALIPER
+#include <caliper/cali.h>
+#endif
+
 #ifdef __bgq__
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/location.h>
 #endif
@@ -261,6 +265,11 @@ int main(int argc, char **argv) {
     printf("  OpenMP Enabled:         No\n");
 #endif
 
+#ifdef KRIPKE_USE_CALIPER
+    printf("  Caliper Enabled:        Yes\n");
+#else
+    printf("  Caliper Enabled:        No\n");
+#endif
 
 
 
@@ -470,7 +479,26 @@ int main(int argc, char **argv) {
     
   }
 
+  /*
+   * Set Caliper globals
+   */
 
+#ifdef KRIPKE_USE_CALIPER
+  cali::Annotation("kripke.nx", CALI_ATTR_GLOBAL).set(vars.nx);
+  cali::Annotation("kripke.ny", CALI_ATTR_GLOBAL).set(vars.ny);
+  cali::Annotation("kripke.nz", CALI_ATTR_GLOBAL).set(vars.nz);
+  
+  cali::Annotation("kripke.groups",         CALI_ATTR_GLOBAL).set(vars.num_groups);
+  cali::Annotation("kripke.legendre_order", CALI_ATTR_GLOBAL).set(vars.legendre_order);
+
+  if (vars.parallel_method == PMETHOD_SWEEP)
+      cali::Annotation("kripke.parallel_method", CALI_ATTR_GLOBAL).set("sweep");
+  else if (vars.parallel_method == PMETHOD_BJ)
+      cali::Annotation("kripke.parallel_method", CALI_ATTR_GLOBAL).set("block jacobi");
+
+  cali::Annotation("kripke.architecture", CALI_ATTR_GLOBAL).set(archToString(vars.al_v.arch_v).c_str());
+  cali::Annotation("kripke.layout", CALI_ATTR_GLOBAL).set(layoutToString(vars.al_v.layout_v).c_str());
+#endif
 
   // Allocate problem
 
