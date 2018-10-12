@@ -125,13 +125,6 @@ void Kripke::Kernel::LTimes(Kripke::Core::DataStore &data_store)
 
   }
 
-//  printf("\nIngoing Psi:\n");
-//  field_psi.dump();
-//  printf("\nAfter LTimes phi:\n");
-//  field_phi.dump();
-//  printf("\nL Matrix:\n");
-//  field_ell.dump();
-
 }
 
 

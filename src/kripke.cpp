@@ -103,19 +103,14 @@ void usage(void){
     printf("  --arch <ARCH>          Architecture selection\n");
     printf("                         Available: Sequential, OpenMP, CUDA\n");
     printf("                         Default:   --arch %s\n\n", archToString(def.al_v.arch_v).c_str());
-    printf("  --layout <LAYOUT>      Data layout and Loop nesting order\n");
+    printf("  --layout <LAYOUT>      Data layout and loop nesting order\n");
     printf("                         Available: DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
-    printf("                         Default:   --nest %s\n\n", layoutToString(def.al_v.layout_v).c_str());
+    printf("                         Default:   --layout %s\n\n", layoutToString(def.al_v.layout_v).c_str());
     
     printf("\n");
     printf("Parallel Decomposition Options:\n");
     printf("-------------------------------\n");
-    printf("  --pdist <lout>         Parallel distribution of spatial subdomains over mpi ranks\n");
-    printf("                         0: Blocked: local zone sets are adjacent\n");
-    printf("                         1: Scattered: adjacent zone sets are distributed\n");
-    printf("                         Default: --pdist %d\n\n", def.layout_pattern);
-    
-    
+
     printf("  --procs <npx,npy,npz>  Number of MPI ranks in each spatial dimension\n");
     printf("                         Default:  --procs %d,%d,%d\n\n", def.npx, def.npy, def.npz);
     
@@ -220,6 +215,7 @@ int main(int argc, char **argv) {
     printf("                 | |\n");                         
     printf("                 |_|        Version %s\n", KRIPKE_VERSION);        
     printf("\n");
+    printf("LLNL-CODE-658597\n");
     printf("\n");
     printf("This work was produced at the Lawrence Livermore National Laboratory\n");
     printf("(LLNL) under contract no. DE-AC-52-07NA27344 (Contract 44) between the\n");
@@ -328,9 +324,6 @@ int main(int argc, char **argv) {
       vars.num_zonesets_dim[1] = std::atoi(nz[1].c_str());
       vars.num_zonesets_dim[2] = std::atoi(nz[2].c_str());      
     }
-    else if(opt == "--pdist"){
-      vars.layout_pattern = std::atoi(cmd.pop().c_str());      
-    }
     else if(opt == "--zones"){
       std::vector<std::string> nz = split(cmd.pop(), ',');
       if(nz.size() != 3) usage();
@@ -423,7 +416,7 @@ int main(int argc, char **argv) {
 
     printf("\n");
     printf("  Problem Size:\n");
-    printf("    Zones:                 %d x %d x %d\n", vars.nx, vars.ny, vars.nz);
+    printf("    Zones:                 %d x %d x %d  (%d total)\n", vars.nx, vars.ny, vars.nz, vars.nx*vars.ny*vars.nz);
     printf("    Groups:                %d\n", vars.num_groups);
     printf("    Legendre Order:        %d\n", vars.legendre_order);
     printf("    Quadrature Set:        ");

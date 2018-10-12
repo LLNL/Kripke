@@ -133,7 +133,5 @@ void Kripke::Kernel::source(DataStore &data_store)
 
   }
 
-//  printf("\nAfter source phi_out:\n");
-//  field_phi_out.dump();
 
 }

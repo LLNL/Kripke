@@ -111,8 +111,4 @@ void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)
 
   }
 
-//  printf("\nAfter LPlusTimes rhs:\n");
-//  field_rhs.dump();
-
-
 }

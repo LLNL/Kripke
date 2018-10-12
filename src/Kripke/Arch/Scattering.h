@@ -254,13 +254,17 @@ struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
 
 template<>
 struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
-  using ExecPolicy =
+    using ExecPolicy =
       KernelPolicy<
-        For<0, loop_exec, // moment
-          For<3, loop_exec, // zone
-            For<1, loop_exec, // dst group
-              For<2, loop_exec, // src group
-                Lambda<0>
+        CudaKernel<
+          For<0, cuda_block_exec, // moment
+            For<1, cuda_block_exec, // DstGrp
+              For<3, cuda_thread_exec, // zone
+                Thread<
+                  For<2, seq_exec, // SrcGrp
+                    Lambda<0>
+                  >
+                >
               >
             >
           >
@@ -271,13 +275,17 @@ struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
 
 template<>
 struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>> {
-  using ExecPolicy =
+    using ExecPolicy =
       KernelPolicy<
-        For<1, loop_exec, // dst group
-          For<2, loop_exec, // src group
-            For<0, loop_exec, // moment
-              For<3, loop_exec, // zone
-                Lambda<0>
+        CudaKernel<
+          For<0, cuda_block_exec, // moment
+            For<1, cuda_block_exec, // DstGrp
+              For<3, cuda_thread_exec, // zone
+                Thread<
+                  For<2, seq_exec, // SrcGrp
+                    Lambda<0>
+                  >
+                >
               >
             >
           >
@@ -288,13 +296,17 @@ struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>> {
 
 template<>
 struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>> {
-  using ExecPolicy =
+    using ExecPolicy =
       KernelPolicy<
-        For<1, loop_exec, // dst group
-          For<2, loop_exec, // src group
-            For<3, loop_exec, // zone
-              For<0, loop_exec, // moment
-                Lambda<0>
+        CudaKernel<
+          For<0, cuda_block_exec, // moment
+            For<1, cuda_block_exec, // DstGrp
+              For<3, cuda_thread_exec, // zone
+                Thread<
+                  For<2, seq_exec, // SrcGrp
+                    Lambda<0>
+                  >
+                >
               >
             >
           >
@@ -305,13 +317,17 @@ struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>> {
 
 template<>
 struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>> {
-  using ExecPolicy =
+    using ExecPolicy =
       KernelPolicy<
-        For<3, loop_exec, // zone
-          For<0, loop_exec, // moment
-            For<1, loop_exec, // dst group
-              For<2, loop_exec, // src group
-                Lambda<0>
+        CudaKernel<
+          For<0, cuda_block_exec, // moment
+            For<1, cuda_block_exec, // DstGrp
+              For<3, cuda_thread_exec, // zone
+                Thread<
+                  For<2, seq_exec, // SrcGrp
+                    Lambda<0>
+                  >
+                >
               >
             >
           >
@@ -322,13 +338,17 @@ struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>> {
 
 template<>
 struct Policy_Scattering<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>> {
-  using ExecPolicy =
+    using ExecPolicy =
       KernelPolicy<
-        For<3, loop_exec, // zone
-          For<1, loop_exec, // dst group
-            For<2, loop_exec, // src group
-              For<0, loop_exec, // moment
-                Lambda<0>
+        CudaKernel<
+          For<0, cuda_block_exec, // moment
+            For<1, cuda_block_exec, // DstGrp
+              For<3, cuda_thread_exec, // zone
+                Thread<
+                  For<2, seq_exec, // SrcGrp
+                    Lambda<0>
+                  >
+                >
               >
             >
           >

@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
 
-cmake_policy(SET CMP0007 NEW)
 cmake_policy(SET CMP0057 NEW)
 
 project(KRIPKE LANGUAGES CXX)
@@ -27,6 +26,7 @@ set(chai_DIR ${CURRENT_SOURCE_DIR}/tpl/chai)
 include(blt/SetupBLT.cmake)
 
 
+
 #
 # Default Arch and Layout selection
 # Sequential by default, but will be overriden if OpenMP or CUDA are enabled
@@ -49,14 +49,6 @@ if(ENABLE_CHAI)
   set(KRIPKE_USE_CHAI 1)
   
   list(APPEND KRIPKE_DEPENDS chai)
-
-  # Bring in CHAI's include paths
-  get_property(CHAI_INCLUDE_DIRS TARGET chai PROPERTY INCLUDE_DIRECTORIES)
-  include_directories(${CHAI_INCLUDE_DIRS})
-
-  # Bring in Umpire's include paths
-  get_property(UMPIRE_INCLUDE_DIRS TARGET umpire PROPERTY INCLUDE_DIRECTORIES)
-  include_directories(${UMPIRE_INCLUDE_DIRS})
   
 endif()
 
@@ -67,9 +59,6 @@ endif()
 
 set(RAJA_ENABLE_TESTS Off CACHE Bool "")
 add_subdirectory(tpl/raja)
-
-get_property(RAJA_INCLUDE_DIRS TARGET RAJA PROPERTY INCLUDE_DIRECTORIES)
-include_directories(${RAJA_INCLUDE_DIRS})
 
 list(APPEND KRIPKE_DEPENDS RAJA)
 
@@ -83,7 +72,7 @@ if(ENABLE_OPENMP)
   set(KRIPKE_USE_OPENMP 1)  
   
   list(APPEND KRIPKE_DEPENDS openmp)
-  
+
   set(KRIPKE_ARCH "OpenMP")
   
 endif()
@@ -101,14 +90,14 @@ if(ENABLE_CUDA)
   list(APPEND KRIPKE_DEPENDS cuda)
   
   set(KRIPKE_ARCH "CUDA")
+
+  # Make sure that nvcc turns on the host compiler OpenMP flag	
+  if(ENABLE_OPENMP)
+    list(APPEND CUDA_NVCC_FLAGS -Xcompiler ${OpenMP_CXX_FLAGS})
+  endif()
 	
-	# Make sure that nvcc turns on the host compiler OpenMP flag	
-	if(ENABLE_OPENMP)
-	 list(APPEND CUDA_NVCC_FLAGS -Xcompiler ${OpenMP_CXX_FLAGS})
-	endif()
-	
-	# Pass on compiler info to KripkeConfig.h
-	set(KRIPKE_NVCC_COMPILER "${CUDA_NVCC_EXECUTABLE}")
+  # Pass on compiler info to KripkeConfig.h
+  set(KRIPKE_NVCC_COMPILER "${CUDA_NVCC_EXECUTABLE}")
   set(KRIPKE_NVCC_FLAGS    "${CUDA_NVCC_FLAGS};${CUDA_NVCC_FLAGS_${KRIPKE_BUILD_TYPE}}")
 
 endif()
@@ -168,7 +157,7 @@ set(KRIPKE_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
 set(KRIPKE_CXX_FLAGS    "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${KRIPKE_BUILD_TYPE}}")
 set(KRIPKE_LINK_FLAGS   "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_LINK_FLAGS_${CMAKE_BUILD_TYPE}}")
 
-set(KRIPKE_VERSION "1.2.3")
+set(KRIPKE_VERSION "1.2.4")
 
 
 
@@ -191,7 +180,6 @@ configure_file(${PROJECT_SOURCE_DIR}/src/KripkeConfig.h.in
 #
  
 
-include_directories(./src ${PROJECT_BINARY_DIR}/include)
 
 blt_add_library(
   NAME        kripke
@@ -223,6 +211,9 @@ blt_add_library(
 )
 
 
+target_include_directories(kripke PUBLIC 
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+	$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
 
 blt_add_executable( 
   NAME        kripke.exe

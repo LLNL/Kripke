@@ -256,85 +256,105 @@ struct Policy_LPlusTimes<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
 
 template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
-  using ExecPolicy =
-    KernelPolicy<
-      For<0, loop_exec, // Direction
-        For<1, loop_exec, // Moment
-          For<3, loop_exec, // Zone
-            For<2, loop_exec, // Group
-              Lambda<0>
+    using ExecPolicy =
+      KernelPolicy<
+        CudaKernel<
+          For<0, cuda_block_exec, // Direction
+            For<2, cuda_block_exec, // group
+              For<3, cuda_thread_exec, // zone
+                Thread<
+                  For<1, seq_exec, // Moment
+                    Lambda<0>
+                  >
+                >
+              >
             >
           >
         >
-      >
-    >;
+      >;
 };
 
 template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>> {
-  using ExecPolicy =
-    KernelPolicy<
-      For<2, loop_exec, // Group
-        For<0, loop_exec, // Direction
-          For<1, loop_exec, // Moment
-            For<3, loop_exec, // Zone
-              Lambda<0>
+    using ExecPolicy =
+      KernelPolicy<
+        CudaKernel<
+          For<0, cuda_block_exec, // Direction
+            For<2, cuda_block_exec, // group
+              For<3, cuda_thread_exec, // zone
+                Thread<
+                  For<1, seq_exec, // Moment
+                    Lambda<0>
+                  >
+                >
+              >
             >
           >
         >
-      >
-    >;
+      >;
 };
 
 
 template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>> {
-  using ExecPolicy =
-    KernelPolicy<
-      For<2, loop_exec, // Group
-        For<3, loop_exec, // Zone
-          For<0, loop_exec, // Direction
-            For<1, loop_exec, // Moment
-              Lambda<0>
+    using ExecPolicy =
+      KernelPolicy<
+        CudaKernel<
+          For<0, cuda_block_exec, // Direction
+            For<2, cuda_block_exec, // group
+              For<3, cuda_thread_exec, // zone
+                Thread<
+                  For<1, seq_exec, // Moment
+                    Lambda<0>
+                  >
+                >
+              >
             >
           >
         >
-      >
-    >;
+      >;
 };
 
 template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>> {
-  using ExecPolicy =
-    KernelPolicy<
-      For<3, loop_exec, // Zone
-        For<0, loop_exec, // Direction
-          For<1, loop_exec, // Moment
-            For<2, loop_exec, // Group
-              Lambda<0>
+    using ExecPolicy =
+      KernelPolicy<
+        CudaKernel<
+          For<0, cuda_block_exec, // Direction
+            For<2, cuda_block_exec, // group
+              For<3, cuda_thread_exec, // zone
+                Thread<
+                  For<1, seq_exec, // Moment
+                    Lambda<0>
+                  >
+                >
+              >
             >
           >
         >
-      >
-    >;
+      >;
 };
 
 
 
 template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>> {
-  using ExecPolicy =
-    KernelPolicy<
-      For<3, loop_exec, // Zone
-        For<2, loop_exec, // Group
-          For<0, loop_exec, // Direction
-            For<1, loop_exec, // Moment
-              Lambda<0>
+    using ExecPolicy =
+      KernelPolicy<
+        CudaKernel<
+          For<0, cuda_block_exec, // Direction
+            For<2, cuda_block_exec, // group
+              For<3, cuda_thread_exec, // zone
+                Thread<
+                  For<1, seq_exec, // Moment
+                    Lambda<0>
+                  >
+                >
+              >
             >
           >
         >
-      >
-    >;
+      >;
 };
 
 #endif // KRIPKE_USE_CUDA

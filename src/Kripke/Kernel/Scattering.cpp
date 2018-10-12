@@ -183,10 +183,6 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
   }
 
 
-//  printf("\nAfter scattering phi_out:\n");
-//  field_phi_out.dump();
-//
-//  field_sigs.dump();
 }
 
 
