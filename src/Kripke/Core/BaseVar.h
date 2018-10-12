@@ -33,6 +33,8 @@
 #ifndef KRIPKE_CORE_BASE_VAR_H__
 #define KRIPKE_CORE_BASE_VAR_H__
 
+#include <string>
+
 namespace Kripke {
 namespace Core {
 

@@ -229,7 +229,6 @@ int main(int argc, char **argv) {
     // Display information about how we were built
     printf("Compilation Options:\n");
     printf("  Architecture:           %s\n", KRIPKE_ARCH);
-    printf("  Build type:             %s\n", KRIPKE_BUILD_TYPE);
     printf("  Compiler:               %s\n", KRIPKE_CXX_COMPILER);
     printf("  Compiler Flags:         \"%s\"\n", KRIPKE_CXX_FLAGS);
     printf("  Linker Flags:           \"%s\"\n", KRIPKE_LINK_FLAGS);
