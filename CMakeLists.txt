@@ -6,7 +6,7 @@ cmake_policy(SET CMP0057 NEW)
 project(KRIPKE LANGUAGES CXX)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
-string(TOUPPER ${CMAKE_BUILD_TYPE} KRIPKE_BUILD_TYPE)
+set(KRIPKE_BUILD_TYPE ${CMAKE_BUILD_TYPE})
 
 #
 # Initialize the BLT build system
