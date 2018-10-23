@@ -30,81 +30,54 @@
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
 
-#include <Kripke/ParallelComm.h>
+#include <Kripke/Generate.h>
 
+#include <Kripke/Core/Comm.h>
 #include <Kripke/Core/Field.h>
+#include <Kripke/ArchLayout.h>
 #include <Kripke/Kernel.h>
+#include <Kripke/Core/PartitionSpace.h>
+#include <Kripke/Core/Set.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
-#include <fcntl.h>
-#include <unistd.h>
-#include <vector>
-#include <stdio.h>
-
 using namespace Kripke;
+using namespace Kripke::Core;
 
 
-SweepComm::SweepComm(Kripke::Core::DataStore &data_store) : ParallelComm(data_store)
+void Kripke::Generate::generateDecomp(Kripke::Core::DataStore &data_store,
+    InputVariables const &input_vars)
 {
+  // Create a "Comm World"
+  auto &comm = data_store.newVariable<Kripke::Core::Comm>("comm");
+
+  // Create our ArchLayout object to describe how we are going to 
+  // execute, and what data layouts we want
+  auto &al_var = data_store.newVariable<ArchLayout>("al");
+  al_var.al_v = input_vars.al_v;
+
+  // Create our partitioning over MPI
+  auto &pspace = data_store.newVariable<PartitionSpace>("pspace",
+      comm,
+      1,
+      1,
+      input_vars.npx,
+      input_vars.npy,
+      input_vars.npz);
+
+  // Create our local partition over subdomains
+  pspace.setup_createSubdomains(
+      input_vars.num_groupsets,
+      input_vars.num_dirsets,
+      input_vars.num_zonesets_dim[0],
+      input_vars.num_zonesets_dim[1],
+      input_vars.num_zonesets_dim[2]);
+
+  // Create utility Sets and Fields that describe our global subdomain layout
+  pspace.createSubdomainData(data_store);
+  pspace.print();
+
 
 }
 
-SweepComm::~SweepComm(){
-}
-
-/**
-  Adds a subdomain to the work queue.
-  Determines if upwind dependencies require communication, and posts appropirate Irecv's.
-*/
-void SweepComm::addSubdomain(Kripke::Core::DataStore &data_store, SdomId sdom_id){
-  // Post recieves for upwind dependencies, and add to the queue
-  postRecvs(data_store, sdom_id);
-}
-
-
-// Checks if there are any outstanding subdomains to complete
-// false indicates all work is done, and all sends have completed
-bool SweepComm::workRemaining(void){
-  // If there are outstanding subdomains to process, return true
-  if(ParallelComm::workRemaining()){
-    return true;
-  }
-
-  // No more work, so make sure all of our sends have completed
-  // before we continue
-  waitAllSends();
-
-  return false;
-}
-
-
-/**
-  Checks for incomming messages, and returns a list of ready subdomain id's
-*/
-std::vector<SdomId> SweepComm::readySubdomains(void){
-  // check for incomming messages
-  testRecieves();
-
-  // build up a list of ready subdomains
-  return getReadyList();
-}
-
-
-void SweepComm::markComplete(SdomId sdom_id){
-  // Get subdomain pointer and remove from work queue
-  dequeueSubdomain(sdom_id);
-
-  auto &i_plane = m_data_store->getVariable<Field_IPlane>("i_plane");
-  auto &j_plane = m_data_store->getVariable<Field_JPlane>("j_plane");
-  auto &k_plane = m_data_store->getVariable<Field_KPlane>("k_plane");
-
-  // Send new downwind info for sweep
-  double *buf[3] = {
-    i_plane.getData(sdom_id),
-    j_plane.getData(sdom_id),
-    k_plane.getData(sdom_id)
-  };
-  postSends(*m_data_store, sdom_id, buf);
-}
 

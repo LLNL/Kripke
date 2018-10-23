@@ -1,146 +1,246 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.8)
 
-project(KRIPKE)
+cmake_policy(SET CMP0057 NEW)
 
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules" ${CMAKE_MODULE_PATH})
-message(STATUS ${CMAKE_MODULE_PATH})
-
-
-# MPI Support (Required)
-# If the ENABLE_MPI is turned off, you must use the mpi* compiler wrappers, since
-# Kripke will not build without MPI support
-set(ENABLE_MPI On CACHE STRING "Turn this off if you are using mpi compiler wrappers")
-if(ENABLE_MPI)
-  find_package(MPI REQUIRED)
-  include_directories(${MPI_INCLUDE_PATH})
-  set(KRIPKE_LIBS ${KRIPKE_LIBS} ${MPI_LIBRARIES})
-endif()
+project(KRIPKE LANGUAGES CXX)
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
 
-# OpenMP Support (Optional)
-if(ENABLE_OPENMP)
-  find_package(OpenMP REQUIRED)
-  if(OPENMP_FOUND)
-    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS})
-    add_definitions (-DKRIPKE_USE_OPENMP)
-    message(STATUS "OpenMP Enabled")
-  else()
-    message(WARNING "OpenMP NOT FOUND")
-  endif()
-endif()
-
-
-# LLNL's Silo file support (Optional)
-if(ENABLE_SILO)
-  find_package(Silo)
-  if(Silo_FOUND)
-    add_definitions (-DKRIPKE_USE_SILO)
-    include_directories(${Silo_INCLUDE_DIRS})
-    set(KRIPKE_LIBS ${KRIPKE_LIBS} ${Silo_LIBRARIES})
-    message(STATUS "Silo Enabled")
-  else()
-    message(WARNING "Silo NOT FOUND")
-  endif()
-endif()
-
-
-# PAPI Support for Hardware Counters (Optional)
-if(ENABLE_PAPI)
-  find_package(PAPI)
-  if(PAPI_FOUND)
-    add_definitions(-DKRIPKE_USE_PAPI)
-    include_directories(${PAPI_INCLUDE_DIRS})
-    set(KRIPKE_LIBS ${KRIPKE_LIBS} ${PAPI_LIBRARIES})
-    message(STATUS "PAPI Enabled")
-  else()
-    message(WARNING "PAPI NOT FOUND")
-  endif()
-endif()
-
-
-# TCMalloc Support for better malloc/profiling (Optional)
-if(ENABLE_TCMALLOC)
-  find_package(TCMalloc)
-  if(TCMalloc_FOUND)
-    add_definitions(-DKRIPKE_USE_TCMALLOC)
-    include_directories(${TCMalloc_INCLUDE_DIRS})
-    set(KRIPKE_LIBS ${KRIPKE_LIBS} ${TCMalloc_LIBRARIES})
-    message(STATUS "TCMalloc Enabled")
-  else()
-    message(WARNING "TCMalloc NOT FOUND")
-  endif()
-endif()
-
-
-# BG/Q Performance tools (BGPM) Support (Optional, only on BG/Q)
-if(ENABLED_BGPM)
-  find_package(TCMalloc)
-  if(TCMalloc_FOUND)
-    add_definitions(-DKRIPKE_USE_TCMALLOC)
-    include_directories(${TCMalloc_INCLUDE_DIRS})
-    set(KRIPKE_LIBS ${KRIPKE_LIBS} ${TCMalloc_LIBRARIES})
-    message(STATUS "TCMalloc Enabled")
-  else()
-    message(WARNING "TCMalloc NOT FOUND")
-  endif()
-endif()
-
-
-# Tarball Creation Support
-if(ENABLE_CPACK)
-  set(CPACK_PACKAGE_VERSION_MAJOR "1")
-  set(CPACK_PACKAGE_VERSION_MINOR "1")
-  set(CPACK_PACKAGE_VERSION_PATCH "0")
-  set(CPACK_SOURCE_GENERATOR "TGZ")
-  set(CPACK_SOURCE_IGNORE_FILES "tarball.py;kripke-tarball;.git;.cproject;.project;${CPACK_SOURCE_IGNORE_FILES}")
-  include(CPack)
-endif()
-
-
-# Optional 
-#bdiv_opt_pkg(perftools 0 OFF)
+set(KRIPKE_VERSION "1.2.3")
 
 
 #
-# Other Build Options
+# Initialize the BLT build system
+#
+
+set(ENABLE_GTEST Off CACHE Bool "")
+set(ENABLE_TESTS Off CACHE Bool "")
+set(ENABLE_TBB Off CACHE Bool "")
+set(ENABLE_EXAMPLES Off CACHE Bool "")
+set(ENABLE_DOCUMENTATION Off CACHE Bool "")
+
+# Use C++14 standard
+set(BLT_CXX_STD "c++14" CACHE STRING "")
+
+set(chai_DIR ${CURRENT_SOURCE_DIR}/tpl/chai)
+
+include(blt/SetupBLT.cmake)
+
+
+
+#
+# Default Arch and Layout selection
+# Sequential by default, but will be overriden if OpenMP or CUDA are enabled
+#
+set(KRIPKE_ARCH "Sequential")
+set(KRIPKE_LAYOUT DGZ)
+
+
+#
+# Add CMake CUDA language support
+#
+if(ENABLE_CUDA)
+  # Native CMake support  
+  enable_language(CUDA)
+  
+  # Make sure we use nvcc with our selected host compiler to link executables
+  set(CMAKE_CUDA_LINK_EXECUTABLE "${CMAKE_CUDA_COMPILER} -ccbin <CMAKE_CXX_COMPILER> <CMAKE_CUDA_LINK_FLAGS>  <FLAGS>  <LINK_FLAGS>  <OBJECTS> -o <TARGET>  <LINK_LIBRARIES>")
+  # Use nvcc as the linker
+  set(CMAKE_LINKER "${CMAKE_CUDA_COMPILER}" CACHE STRING "")
+  
+  # Pass nvcc the -cubin to point at our C++ compiler  
+  set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
+
+endif()
+
+
+
+#
+# Configure CHAI/Umpire for memory management
+# 
+option(ENABLE_CHAI "Enable CHAI/Umpire memory management" Off)
+if(ENABLE_CHAI)
+
+  # Add CHAI (which brings in Umpire as a submodule)
+  add_subdirectory(tpl/chai)
+  
+  set(ENABLE_TESTS Off CACHE Bool "")
+  
+  set(KRIPKE_USE_CHAI 1)
+  
+  list(APPEND KRIPKE_DEPENDS chai)
+  
+endif()
+
+
+#
+# Configure RAJA (REQUIRED)
+#
+
+set(RAJA_ENABLE_TESTS Off CACHE Bool "")
+add_subdirectory(tpl/raja)
+
+list(APPEND KRIPKE_DEPENDS RAJA)
+
+
+#
+# Configure OpenMP (CPU threading, not target offload)
+#
+
+if(ENABLE_OPENMP)
+  
+  set(KRIPKE_USE_OPENMP 1)  
+  
+  list(APPEND KRIPKE_DEPENDS openmp)
+
+  set(KRIPKE_ARCH "OpenMP")
+  
+endif()
+
+
+
+#
+# Configure CUDA
+#
+
+if(ENABLE_CUDA)
+
+  set(KRIPKE_USE_CUDA 1)
+    
+  list(APPEND KRIPKE_DEPENDS cuda)
+  
+  set(KRIPKE_ARCH "CUDA")
+
+  # Make sure that nvcc turns on the host compiler OpenMP flag	
+  if(ENABLE_OPENMP)
+    list(APPEND CUDA_NVCC_FLAGS -Xcompiler ${OpenMP_CXX_FLAGS})
+  endif()
+	
+	
+  # Pass on compiler info to KripkeConfig.h
+  string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+  set(KRIPKE_NVCC_COMPILER "${CMAKE_CUDA_COMPILER}")
+  set(KRIPKE_NVCC_FLAGS    "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
+
+endif()
+
+
+
+
+
+
+
+
+#
+# Configure MPI
+# 
+# Use ENABLE_MPI=On if you want CMake to automatically figure out MPI
+# using FindMPI
+#
+# Use ENABLE_MPI_WRAPPER if you want to use mpi compiler wrappers for CC/CXX 
 # 
 
-# Traverse subdirectories
-include_directories(src)
-add_subdirectory(src)
+if(ENABLE_MPI)
+	set(KRIPKE_USE_MPI 1)	
+	list(APPEND KRIPKE_DEPENDS mpi)
+endif()
 
-# Setup the kripke target
-add_executable(kripke "src/kripke.cpp")
-target_link_libraries(kripke ${KRIPKE_LIBS} ${KRIPKE_LIBS})
+if(ENABLE_MPI_WRAPPER)
+	set(KRIPKE_USE_MPI 1)
+endif()
+
+
+
+
+
+
+
 
 
 #
-# Testing suite
+# Display/Configure our default ArchLayout
+#
+message(STATUS "Kripke selected default architecture: '${KRIPKE_ARCH}'")
+message(STATUS "Kripke selected default layout:       '${KRIPKE_LAYOUT}'")
+
+set(KRIPKE_ARCHV_DEFAULT ArchV_${KRIPKE_ARCH})
+set(KRIPKE_LAYOUTV_DEFAULT LayoutV_${KRIPKE_LAYOUT})
+
+
+
+
+#
+# Pass compiler options to our KripkeConfig.h file so we can print them at
+# runtime
 #
 
-enable_testing()
 
-# Use testing harness to check all kernels, all nestings, with default problem
-add_test(test_default_dgz kripke --nest dgz --test)
-add_test(test_default_dzg kripke --nest dzg --test)
-add_test(test_default_gdz kripke --nest gdz --test)
-add_test(test_default_gzd kripke --nest gzd --test)
-add_test(test_default_zdg kripke --nest zdg --test)
-add_test(test_default_zgd kripke --nest zgd --test)
+set(KRIPKE_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+set(KRIPKE_CXX_FLAGS    "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${KRIPKE_BUILD_TYPE}}")
+set(KRIPKE_LINK_FLAGS   "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_LINK_FLAGS_${CMAKE_BUILD_TYPE}}")
 
-# Use testing harness to check use of a zone sets for all nestings
-add_test(test_zset_dgz_block kripke --nest dgz --test --zset 2,3,5 --gset 3 --groups 6 --layout 0)
-add_test(test_zset_dzg_block kripke --nest dzg --test --zset 2,3,5 --gset 3 --groups 6 --layout 0)
-add_test(test_zset_gdz_block kripke --nest gdz --test --zset 2,3,5 --gset 3 --groups 6 --layout 0)
-add_test(test_zset_gzd_block kripke --nest gzd --test --zset 2,3,5 --gset 3 --groups 6 --layout 0)
-add_test(test_zset_zdg_block kripke --nest zdg --test --zset 2,3,5 --gset 3 --groups 6 --layout 0)
-add_test(test_zset_zgd_block kripke --nest zgd --test --zset 2,3,5 --gset 3 --groups 6 --layout 0)
 
-# Also check with scattered layout (just checking parallel algo, so just 1 nesting)
-add_test(test_zset_dgz_scatter kripke --nest dgz --zset 2,3,5 --gset 3 --groups 6 --layout 1)
 
-# Test the block-Jacobi parallel method
-add_test(test_bj_dgz kripke --nest dgz --pmethod bj)
 
+
+
+
+#
+# Create KripkeConfig.h file
+#
+
+configure_file(${PROJECT_SOURCE_DIR}/src/KripkeConfig.h.in
+               ${PROJECT_BINARY_DIR}/include/KripkeConfig.h)
+
+
+
+
+
+
+#
+# Define build targets for Kripke
+#
+ 
+
+
+blt_add_library(
+  NAME        kripke
+  SOURCES     "src/Kripke/Core/BaseVar.cpp"
+              "src/Kripke/Core/DataStore.cpp"
+              "src/Kripke/Core/DomainVar.cpp"
+              "src/Kripke/Generate.cpp"
+              "src/Kripke/Generate/Data.cpp"
+              "src/Kripke/Generate/Decomp.cpp"
+              "src/Kripke/Generate/Energy.cpp"
+              "src/Kripke/Generate/Quadrature.cpp"
+              "src/Kripke/Generate/Space.cpp"
+              "src/Kripke/InputVariables.cpp"
+              "src/Kripke/Kernel/LPlusTimes.cpp"
+              "src/Kripke/Kernel/LTimes.cpp"
+              "src/Kripke/Kernel/Population.cpp"
+              "src/Kripke/Kernel/Scattering.cpp"
+              "src/Kripke/Kernel/Source.cpp"
+              "src/Kripke/Kernel/SweepSubdomain.cpp"
+              "src/Kripke/ParallelComm/BlockJacobiComm.cpp"
+              "src/Kripke/ParallelComm/SweepComm.cpp"
+              "src/Kripke/ParallelComm.cpp"
+              "src/Kripke/Core/PartitionSpace.cpp"
+              "src/Kripke/Core/Set.cpp"
+              "src/Kripke/SteadyStateSolver.cpp"
+              "src/Kripke/SweepSolver.cpp"
+              "src/Kripke/Timing.cpp"
+  DEPENDS_ON  ${KRIPKE_DEPENDS}
+)
+
+
+target_include_directories(kripke PUBLIC 
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+	$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
+
+blt_add_executable( 
+  NAME        kripke.exe
+  SOURCES     "src/kripke.cpp"
+  DEPENDS_ON  ${KRIPKE_DEPENDS} kripke 
+)
 
 

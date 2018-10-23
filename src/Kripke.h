@@ -33,17 +33,26 @@
 #ifndef KRIPKE_H__
 #define KRIPKE_H__
 
-#include<string>
-#include<vector>
-#include<stdio.h>
-#include<cmath>
-#include<strings.h>
+#include <KripkeConfig.h>
+
+#include <RAJA/RAJA.hpp>
+
+#include <string>
+#include <vector>
+#include <stdio.h>
+#include <cmath>
+#include <strings.h>
+#include <stdlib.h>
 
 // Make sure that there's openmp support, otherwise error out
-#if KRIPKE_USE_OPENMP
+#ifdef KRIPKE_USE_OPENMP
 #ifndef _OPENMP
 #error "OpenMP selected for build, but OpenMP is not available"
 #endif
+#endif
+
+#ifdef KRIPKE_USE_MPI
+#include <mpi.h>
 #endif
 
 // Forward Decl
@@ -51,42 +60,41 @@ struct Grid_Data;
 
 #define KRESTRICT __restrict__
 
-
-/**
- * Un-comment ONE of the 3 MPI send methods below.
- * It decides how sweep messages are sent (intended to be Isend)
- */
-
-#define KRIPKE_SWEEP_ISEND
-//#define KRIPKE_SWEEP_SEND
-//#define KRIPKE_SWEEP_SSEND
-
-/**
- * Set to the number of extra "Testany"s that are executed during the sweep,
- * between each Sweep kernel.
- * This is intended to "help" MPI flush outgoing async messages.
- * (In an ideal world, this would be 0)
- */
-#define KRIPKE_SWEEP_EXTRA_RECV 0
+#ifdef KRIPKE_USE_MPI
+#define KRIPKE_ABORT(...) \
+  printf(__VA_ARGS__); \
+  MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+#define KRIPKE_ABORT(...) \
+  printf(__VA_ARGS__); \
+  exit(1);
+#endif
 
 
-// In Kripke/Sweep_Solver.cpp
-int SweepSolver(Grid_Data *grid_data, bool block_jacobi);
-void SweepSubdomains (std::vector<int> subdomain_list, Grid_Data *grid_data, bool block_jacobi);
+#define KRIPKE_ASSERT(EXPR, ...) \
+  if(!(EXPR)){\
+    KRIPKE_ABORT("Assertion Failed: " __VA_ARGS__); \
+  }
+   
 
-/**
- * Tags for choosing which data nesting to be chosen
- */
-enum Nesting_Order {
-  // Nestings for Psi and Phi
-  // D referes to directions OR moments, depending on context
-  NEST_DGZ,
-  NEST_DZG,
-  NEST_GDZ,
-  NEST_GZD,
-  NEST_ZDG,
-  NEST_ZGD
-};
+#define KRIPKE_LAMBDA [=] RAJA_HOST_DEVICE
+
+namespace Kripke {
+
+  /**
+   * Index used to specify a local subdomain
+   */
+  RAJA_INDEX_VALUE(SdomId, "SdomId");
+
+
+  /**
+   * Index used to specify a global subdomain
+   */
+  RAJA_INDEX_VALUE(GlobalSdomId, "GlobalSdomId");
+
+
+}
+
 
 
 /**
@@ -97,86 +105,58 @@ enum ParallelMethod {
   PMETHOD_BJ
 };
 
-/**
- * Converts a nesting tag to a human-readable string.
- */
-inline std::string nestingString(Nesting_Order nesting){
-  switch(nesting){
-    case NEST_DGZ: return("DGZ");
-    case NEST_DZG: return("DZG");
-    case NEST_GDZ: return("GDZ");
-    case NEST_GZD: return("GZD");
-    case NEST_ZDG: return("ZDG");
-    case NEST_ZGD: return("ZGD");
-  }
-  return("UNKNOWN");
-}
-
-/**
- * Converts a string (eg. from command line) to a nesting tag.
- */
-inline Nesting_Order nestingFromString(std::string const &str){
-  for(int i = 0;i < 6;++ i){
-    if(!strcasecmp(str.c_str(), nestingString((Nesting_Order)i).c_str())){
-      return (Nesting_Order)i;
-  }
- }
-  return (Nesting_Order)-1;
-}
 
 
 /**
- * Compares two vectors for differences.
- * Used in testing suite.
+ * Import RAJA types into Kripke::Arch to make defining policies a lot
+ * cleaner
  */
-inline bool compareVector(std::string const &name,
-    std::vector<double> const &a,
-    std::vector<double> const &b, double tol, bool verbose){
+namespace Kripke {
+namespace Arch {
 
-  if(a.size() != b.size()){
-    if(verbose){
-      printf("Vectors are different lengths: %ld, %ld\n",
-          (long)a.size(), (long)b.size());
-    }
-    return true;
-  }
+  using RAJA::loop_exec;
+  using RAJA::seq_exec;
+  using RAJA::simd_exec;
+  using RAJA::seq_reduce;
+  using RAJA::atomic::auto_atomic;
+  using RAJA::atomic::seq_atomic;
+  using RAJA::ArgList;
+  using RAJA::KernelPolicy;
+  using RAJA::statement::Collapse;
+  using RAJA::statement::If;
+  using RAJA::statement::Param;
+  using RAJA::statement::Not;
+  using RAJA::statement::For;
+  using RAJA::statement::Hyperplane;
+  using RAJA::statement::Lambda;
+  using RAJA::statement::SetShmemWindow;
+  using RAJA::statement::Tile;
+  using RAJA::statement::tile_fixed;
 
-  bool is_diff = false;
-  for(size_t i = 0;i < a.size();++i){
-    if(std::abs(a[i]-b[i]) > tol){
-      is_diff = true;
-      if(verbose){
-        printf("%s[%d]:%e, %e [%e]\n",
-            name.c_str(), (int)i,
-            a[i], b[i], std::abs(a[i]-b[i]));
-        is_diff = true;
-      }
-      else{
-        break;
-      }
-    }
-  }
+#ifdef KRIPKE_USE_OPENMP
+  using RAJA::omp_parallel_collapse_exec;
+  using RAJA::omp_parallel_for_exec;
+  using RAJA::omp_reduce;
+#endif
 
-  return is_diff;
-}
+#ifdef KRIPKE_USE_CUDA
+  using RAJA::cuda_exec;
+  using RAJA::cuda_block_exec;
+  using RAJA::cuda_seq_syncthreads_exec;
+  using RAJA::cuda_thread_exec;
+  using RAJA::cuda_threadblock_exec;
+  using RAJA::cuda_reduce;
+  using RAJA::atomic::cuda_atomic;
+  using RAJA::statement::CudaKernel;
+  using RAJA::statement::CudaKernelAsync;
+  using RAJA::statement::CudaSyncThreads;
+  using RAJA::statement::Thread;
+#endif
 
-/**
- * Compares two scalars for differences.
- * Used in testing suite.
- */
-inline bool compareScalar(std::string const &name,
-    double a, double b, double tol, bool verbose){
+} // namespace Arch
+} // namespace Kripke
 
-  if(std::abs(a-b) > tol){
-    if(verbose){
-      printf("%s:%e, %e [%e]\n",
-          name.c_str(),
-          a, b, std::abs(a-b));
-    }
-    return true;
-  }
-  return false;
-}
+
 
 #endif
 

@@ -29,38 +29,38 @@
  * Commercialization of this product is prohibited without notifying the
  * Department of Energy (DOE) or Lawrence Livermore National Security.
  */
-
-#include<Kripke.h>
-#include<Kripke/Input_Variables.h>
-#include<Kripke/Grid.h>
-#include<Kripke/Test/TestKernels.h>
-#include<stdio.h>
-#include<string.h>
-#include<mpi.h>
-#include<algorithm>
-#include<string>
-#include<sstream>
+  
+#include <Kripke.h>
+#include <Kripke/Core/Comm.h>
+#include <Kripke/Core/DataStore.h>
+#include <Kripke/Core/Set.h>
+#include <Kripke/ArchLayout.h>
+#include <Kripke/Generate.h>
+#include <Kripke/InputVariables.h>
+#include <Kripke/SteadyStateSolver.h>
+#include <Kripke/Timing.h>
+#include <stdio.h>
+#include <string.h>
+#include <algorithm>
+#include <string>
+#include <sstream>
 
 #ifdef KRIPKE_USE_OPENMP
-#include<omp.h>
-#endif
-
-#ifdef KRIPKE_USE_TCMALLOC
-#include<gperftools/malloc_extension.h>
+#include <omp.h>
 #endif
 
 #ifdef __bgq__
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/location.h>
-#include </bgsys/drivers/ppcfloor/spi/include/kernel/memory.h>
 #endif
 
 
+
 void usage(void){
-  int myid;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  if(myid == 0){
+
+  Kripke::Core::Comm comm;
+  if(comm.rank() == 0){
     // Get a new object with defaulted values
-    Input_Variables def;
+    InputVariables def;
     
     // Display command line
     printf("Usage:  [srun ...] kripke [options...]\n\n");
@@ -100,19 +100,17 @@ void usage(void){
     printf("\n");
     printf("On-Node Options:\n");
     printf("----------------\n");
-    printf("  --nest <NEST>          Loop nesting order (and data layout)\n");
+    printf("  --arch <ARCH>          Architecture selection\n");
+    printf("                         Available: Sequential, OpenMP, CUDA\n");
+    printf("                         Default:   --arch %s\n\n", archToString(def.al_v.arch_v).c_str());
+    printf("  --layout <LAYOUT>      Data layout and loop nesting order\n");
     printf("                         Available: DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
-    printf("                         Default:   --nest %s\n\n", nestingString(def.nesting).c_str());
+    printf("                         Default:   --layout %s\n\n", layoutToString(def.al_v.layout_v).c_str());
     
     printf("\n");
     printf("Parallel Decomposition Options:\n");
     printf("-------------------------------\n");
-    printf("  --layout <lout>        Layout of spatial subdomains over mpi ranks\n");
-    printf("                         0: Blocked: local zone sets are adjacent\n");
-    printf("                         1: Scattered: adjacent zone sets are distributed\n");
-    printf("                         Default: --layout %d\n\n", def.layout_pattern);
-    
-    
+
     printf("  --procs <npx,npy,npz>  Number of MPI ranks in each spatial dimension\n");
     printf("                         Default:  --procs %d,%d,%d\n\n", def.npx, def.npy, def.npz);
     
@@ -141,20 +139,10 @@ void usage(void){
     printf("                         Default: --pmethod sweep\n\n");
     
     printf("\n");
-    printf("Output and Testing Options:\n");
-    printf("---------------------------\n");
-    
-#ifdef KRIPKE_USE_PAPI
-    printf("  --papi <PAPI_X_X,...>  Track PAPI hardware counters for each timer\n\n");
-#endif
-#ifdef KRIPKE_USE_SILO
-    printf("  --silo <BASENAME>      Create SILO output files\n\n");
-#endif
-    printf("  --trace                Turn on sweep trace output\n\n");
-    printf("  --test                 Run Kernel Test instead of solver\n\n");
-    printf("\n");
   }
-  MPI_Finalize();
+
+  Kripke::Core::Comm::finalize();
+
   exit(1);
 }
 
@@ -208,32 +196,85 @@ int main(int argc, char **argv) {
   /*
    * Initialize MPI
    */
-  MPI_Init(&argc, &argv);
-  int myid;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  int num_tasks;
-  MPI_Comm_size(MPI_COMM_WORLD, &num_tasks);
+  Kripke::Core::Comm::init(&argc, &argv);
+
+  Kripke::Core::Comm comm;
+
+  int myid = comm.rank();
+  int num_tasks = comm.size();
 
   if (myid == 0) {
     /* Print out a banner message along with a version number. */
     printf("\n");
-    printf("----------------------------------------------------------------------\n");
-    printf("------------------------ KRIPKE VERSION 1.1 --------------------------\n");
-    printf("----------------------------------------------------------------------\n");
+    printf("   _  __       _         _\n");                   
+    printf("  | |/ /      (_)       | |\n");                  
+    printf("  | ' /  _ __  _  _ __  | | __ ___\n");           
+    printf("  |  <  | '__|| || '_ \\ | |/ // _ \\ \n");     
+    printf("  | . \\ | |   | || |_) ||   <|  __/\n");     
+    printf("  |_|\\_\\|_|   |_|| .__/ |_|\\_\\\\___|\n");          
+    printf("                 | |\n");                         
+    printf("                 |_|        Version %s\n", KRIPKE_VERSION);        
+    printf("\n");
+    printf("LLNL-CODE-658597\n");
+    printf("\n");
     printf("This work was produced at the Lawrence Livermore National Laboratory\n");
     printf("(LLNL) under contract no. DE-AC-52-07NA27344 (Contract 44) between the\n");
     printf("U.S. Department of Energy (DOE) and Lawrence Livermore National\n");
     printf("Security, LLC (LLNS) for the operation of LLNL. The rights of the\n");
     printf("Federal Government are reserved under Contract 44.\n");
     printf("\n");
-    printf("Main Contact: Adam J. Kunen <kunen1@llnl.gov>\n");
-    printf("----------------------------------------------------------------------\n");
-   
-   
+    printf("Author: Adam J. Kunen <kunen1@llnl.gov>\n");
+    printf("\n"); 
+
+    // Display information about how we were built
+    printf("Compilation Options:\n");
+    printf("  Architecture:           %s\n", KRIPKE_ARCH);
+    printf("  Compiler:               %s\n", KRIPKE_CXX_COMPILER);
+    printf("  Compiler Flags:         \"%s\"\n", KRIPKE_CXX_FLAGS);
+    printf("  Linker Flags:           \"%s\"\n", KRIPKE_LINK_FLAGS);
+
+#ifdef KRIPKE_USE_CHAI
+    printf("  CHAI Enabled:           Yes\n");
+#else
+    printf("  CHAI Enabled:           No\n");
+#endif
+
+#ifdef KRIPKE_USE_CUDA
+    printf("  CUDA Enabled:           Yes\n");
+    printf("    NVCC:                 %s\n", KRIPKE_NVCC_COMPILER);
+    printf("    NVCC Flags:           \"%s\"\n", KRIPKE_NVCC_FLAGS);
+#else
+    printf("  CUDA Enabled:           No\n");
+#endif
+
+#ifdef KRIPKE_USE_MPI
+    printf("  MPI Enabled:            Yes\n");
+#else
+    printf("  MPI Enabled:            No\n");
+#endif
+
+#ifdef KRIPKE_USE_OPENMP
+    printf("  OpenMP Enabled:         Yes\n");
+#else
+    printf("  OpenMP Enabled:         No\n");
+#endif
+
+
+
+
+
     /* Print out some information about how OpenMP threads are being mapped
      * to CPU cores.
      */
 #ifdef KRIPKE_USE_OPENMP
+
+    // Get max number of threads
+    int max_threads = omp_get_max_threads();
+
+    // Allocate an array to store which core each thread is running on
+    std::vector<int> thread_to_core(max_threads, -1);
+
+    // Collect thread->core mapping
 #pragma omp parallel
     {
       int tid = omp_get_thread_num();
@@ -242,17 +283,24 @@ int main(int argc, char **argv) {
 #else
       int core = sched_getcpu();
 #endif
-      printf("Rank: %d Thread %d: Core %d\n", myid, tid, core);
+      thread_to_core[tid] = core;
     }
+
+    printf("\nOpenMP Thread->Core mapping for %d threads on rank 0", max_threads);
+    for(int tid = 0;tid < max_threads;++ tid){
+      if(!(tid%8)){
+        printf("\n");
+      }
+      printf("  %3d->%3d", tid, thread_to_core[tid]);
+    }
+    printf("\n");
 #endif
   }
 
   /*
    * Default input parameters
    */
-  Input_Variables vars;
-  std::vector<std::string> papi_names;
-  bool test = false;
+  InputVariables vars;
   
   /*
    * Parse command line
@@ -274,9 +322,6 @@ int main(int argc, char **argv) {
       vars.num_zonesets_dim[0] = std::atoi(nz[0].c_str());
       vars.num_zonesets_dim[1] = std::atoi(nz[1].c_str());
       vars.num_zonesets_dim[2] = std::atoi(nz[2].c_str());      
-    }
-    else if(opt == "--layout"){
-      vars.layout_pattern = std::atoi(cmd.pop().c_str());      
     }
     else if(opt == "--zones"){
       std::vector<std::string> nz = split(cmd.pop(), ',');
@@ -343,24 +388,11 @@ int main(int argc, char **argv) {
     else if(opt == "--niter"){
       vars.niter = std::atoi(cmd.pop().c_str());
     }
-    else if(opt == "--nest"){
-      vars.nesting = nestingFromString(cmd.pop());     
+    else if(opt == "--arch"){
+      vars.al_v.arch_v = Kripke::stringToArch(cmd.pop());     
     }
-#ifdef KRIPKE_USE_SILO
-    else if(opt == "--silo"){
-      vars.silo_basename = cmd.pop();
-    }
-#endif
-    else if(opt == "--test"){
-      test = true;
-    }
-#ifdef KRIPKE_USE_PAPI
-    else if(opt == "--papi"){
-      papi_names = split(cmd.pop(), ',');
-    }
-#endif
-    else if(opt == "--trace"){
-      vars.sweep_trace = true;
+    else if(opt == "--layout"){
+      vars.al_v.layout_v = Kripke::stringToLayout(cmd.pop());     
     }
     else{
       printf("Unknwon options %s\n", opt.c_str());
@@ -376,129 +408,111 @@ int main(int argc, char **argv) {
   /*
    * Display Options
    */
-  int num_threads=1;
   if (myid == 0) {
-    printf("Number of MPI tasks:   %d\n", num_tasks);
-#ifdef KRIPKE_USE_OPENMP
-#pragma omp parallel
-    {
-      num_threads = omp_get_num_threads();
-      if(omp_get_thread_num() == 0){
-          printf("OpenMP threads/task:   %d\n", num_threads);
-          printf("OpenMP total threads:  %d\n", num_threads*num_tasks);
-        }
-    }
-#endif
 
-#ifdef KRIPKE_USE_PAPI
-    printf("PAPI Counters:         ");
-    if(papi_names.size() > 0){
-      for(int i = 0;i < papi_names.size();++ i){
-        printf("%s ", papi_names[i].c_str());
-      }
-    }
-    else{
-      printf("<none>");
-    }
+    printf("\nInput Parameters\n");
+    printf("================\n");
+
     printf("\n");
-#endif
-    printf("Processors:            %d x %d x %d\n", vars.npx, vars.npy, vars.npz);
-    printf("Zones:                 %d x %d x %d\n", vars.nx, vars.ny, vars.nz);
-    printf("Legendre Order:        %d\n", vars.legendre_order);
-    printf("Total X-Sec:           sigt=[%lf, %lf, %lf]\n", vars.sigt[0], vars.sigt[1], vars.sigt[2]);
-    printf("Scattering X-Sec:      sigs=[%lf, %lf, %lf]\n", vars.sigs[0], vars.sigs[1], vars.sigs[2]);
-    printf("Quadrature Set:        ");
+    printf("  Problem Size:\n");
+    printf("    Zones:                 %d x %d x %d  (%d total)\n", vars.nx, vars.ny, vars.nz, vars.nx*vars.ny*vars.nz);
+    printf("    Groups:                %d\n", vars.num_groups);
+    printf("    Legendre Order:        %d\n", vars.legendre_order);
+    printf("    Quadrature Set:        ");
     if(vars.quad_num_polar == 0){
       printf("Dummy S2 with %d points\n", vars.num_directions);
     }
     else {
       printf("Gauss-Legendre, %d polar, %d azimuthal (%d points)\n", vars.quad_num_polar, vars.quad_num_azimuthal, vars.num_directions);
     }
-    printf("Parallel method:       ");
+   
+
+    printf("\n");
+    printf("  Physical Properties:\n");
+    printf("    Total X-Sec:           sigt=[%lf, %lf, %lf]\n", vars.sigt[0], vars.sigt[1], vars.sigt[2]);
+    printf("    Scattering X-Sec:      sigs=[%lf, %lf, %lf]\n", vars.sigs[0], vars.sigs[1], vars.sigs[2]);
+
+
+    printf("\n");
+    printf("  Solver Options:\n");
+    printf("    Number iterations:     %d\n", vars.niter);
+
+    
+    
+    printf("\n");
+    printf("  MPI Decomposition Options:\n");
+    printf("    Total MPI tasks:       %d\n", num_tasks);
+    printf("    Spatial decomp:        %d x %d x %d MPI tasks\n", vars.npx, vars.npy, vars.npz);
+    printf("    Block solve method:    ");
     if(vars.parallel_method == PMETHOD_SWEEP){
       printf("Sweep\n");
     }
     else if(vars.parallel_method == PMETHOD_BJ){
       printf("Block Jacobi\n");
     }
-    printf("Loop Nesting Order     %s\n", nestingString(vars.nesting).c_str());        
-    printf("Number iterations:     %d\n", vars.niter);
+
+
+    printf("\n");
+    printf("  Per-Task Options:\n");
+    printf("    DirSets/Directions:    %d sets, %d directions/set\n", vars.num_dirsets, vars.num_directions/vars.num_dirsets);
+    printf("    GroupSet/Groups:       %d sets, %d groups/set\n", vars.num_groupsets, vars.num_groups/vars.num_groupsets);
+    printf("    Zone Sets:             %d x %d x %d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
+    printf("    Architecture:          %s\n", archToString(vars.al_v.arch_v).c_str());
+    printf("    Data Layout:           %s\n", layoutToString(vars.al_v.layout_v).c_str());
+
+
     
-    printf("GroupSet/Groups:       %d sets, %d groups/set\n", vars.num_groupsets, vars.num_groups/vars.num_groupsets);
-    printf("DirSets/Directions:    %d sets, %d directions/set\n", vars.num_dirsets, vars.num_directions/vars.num_dirsets);
-
-    printf("Zone Sets:             %d,%d,%d\n", vars.num_zonesets_dim[0], vars.num_zonesets_dim[1], vars.num_zonesets_dim[2]);
-
     
   }
-  
 
-  if(test){
-    // Invoke Kernel testing
-    testKernels(vars);
-  }
-  else{
-    // Allocate problem 
-    Grid_Data *grid_data = new Grid_Data(&vars);
 
-    grid_data->timing.setPapiEvents(papi_names);
 
-    // Run the solver
-    SweepSolver(grid_data, vars.parallel_method == PMETHOD_BJ);
+  // Allocate problem
 
-#ifdef KRIPKE_USE_SILO
-    // Output silo data
-    if(vars.silo_basename != ""){
-      grid_data->writeSilo(vars.silo_basename);
-    }
-#endif
+  Kripke::Core::DataStore data_store;
+  Kripke::generateProblem(data_store, vars);
 
-    // Print Timing Info
-    int myid;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-    if(myid == 0){
-      grid_data->timing.print();
-      printf("\n\n");
-    }
+  // Run the solver
+  Kripke::SteadyStateSolver(data_store, vars.niter, vars.parallel_method == PMETHOD_BJ);
 
-    // Cleanup 
-    delete grid_data;
-  }
+  // Print Timing Info
+  auto &timing = data_store.getVariable<Kripke::Timing>("timing");
+  timing.print();
 
-  // Gather post-point memory info
-  double heap_mb = -1.0;
-  double hwm_mb = -1.0;
-#ifdef KRIPKE_USE_TCMALLOC
-  // If we are using tcmalloc, we need to use it's interface
-  MallocExtension *mext = MallocExtension::instance();
-  size_t bytes;
+  // Compute performance metrics
+  auto &set_group  = data_store.getVariable<Kripke::Core::Set>("Set/Group");
+  auto &set_dir    = data_store.getVariable<Kripke::Core::Set>("Set/Direction");
+  auto &set_zone   = data_store.getVariable<Kripke::Core::Set>("Set/Zone");
 
-  mext->GetNumericProperty("generic.current_allocated_bytes", &bytes);
-  heap_mb = ((double)bytes)/1024.0/1024.0;
+  size_t num_unknowns = set_group.globalSize()
+                      * set_dir.globalSize()
+                      * set_zone.globalSize();
 
-  mext->GetNumericProperty("generic.heap_size", &bytes);
-  hwm_mb = ((double)bytes)/1024.0/1024.0;
-#else
-#ifdef __bgq__
-  // use BG/Q specific calls (if NOT using tcmalloc)
-  uint64_t bytes;
+  size_t num_iter = timing.getCount("SweepSolver");
+  double solve_time = timing.getTotal("Solve");
+  double iter_time = solve_time / num_iter;
+  double grind_time = iter_time / num_unknowns;
+  double throughput = num_unknowns / iter_time;
 
-  int rc = Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &bytes);
-  heap_mb = ((double)bytes)/1024.0/1024.0;
+  double sweep_eff = 100.0 * timing.getTotal("SweepSubdomain") / timing.getTotal("SweepSolver");
 
-  rc = Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAPMAX, &bytes);
-  hwm_mb = ((double)bytes)/1024.0/1024.0;
-#endif
-#endif
-  // Print memory info
-  if(myid == 0 && heap_mb >= 0.0){
-    printf("Bytes allocated: %lf MB\n", heap_mb);
-    printf("Heap Size      : %lf MB\n", hwm_mb);
-
+  if(myid == 0){
+    printf("\n");
+    printf("Figures of Merit\n");
+    printf("================\n");
+    printf("\n");
+    printf("  Throughput:         %e [unknowns/(second/iteration)]\n", throughput);
+    printf("  Grind time :        %e [(seconds/iteration)/unknowns]\n", grind_time);
+    printf("  Sweep efficiency :  %4.5lf [100.0 * SweepSubdomain time / SweepSolver time]\n", sweep_eff);
+    printf("  Number of unknowns: %lu\n", (unsigned long) num_unknowns);
   }
   
   // Cleanup and exit
-  MPI_Finalize();
+  Kripke::Core::Comm::finalize();
 
+  if(myid == 0){
+    printf("\n");
+    printf("END\n");
+  }
   return (0);
 }

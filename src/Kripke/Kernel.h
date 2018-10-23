@@ -34,35 +34,78 @@
 #define KRIPKE_KERNEL_H__
 
 #include <Kripke.h>
+#include <Kripke/Core/DataStore.h>
+#include <utility>
 
-struct Grid_Data;
-struct SubTVec;
-struct Subdomain;
+namespace Kripke {
 
-/**
- * This is the Kernel base-class and interface definition.
- * This abstracts the storage of Psi, Phi, L, L+ from the rest of the code,
- * providing data-layout specific routines.
- */
-class Kernel {
-  public:
-    virtual Nesting_Order nestingPsi(void) const = 0;
-    virtual Nesting_Order nestingPhi(void) const = 0;
-    virtual Nesting_Order nestingSigt(void) const = 0;
-    virtual Nesting_Order nestingEll(void) const = 0;
-    virtual Nesting_Order nestingEllPlus(void) const = 0;
-    virtual Nesting_Order nestingSigs(void) const = 0;
+  namespace Kernel {
 
-    // Computational Kernels
-    virtual void LTimes(Grid_Data *grid_data) = 0;
-    virtual void LPlusTimes(Grid_Data *grid_data) = 0;
-    virtual void scattering(Grid_Data *grid_data) = 0;
-    virtual void source(Grid_Data *grid_data) = 0;
-    virtual void sweep(Subdomain *ga_set) = 0;
-};
+    void LPlusTimes(Kripke::Core::DataStore &data_store);
 
 
-// Factory to create correct kernel object
-Kernel *createKernel(Nesting_Order, int num_dims);
+    void LTimes(Kripke::Core::DataStore &data_store);
+
+
+    double population(Kripke::Core::DataStore &data_store);
+
+
+    void scattering(Kripke::Core::DataStore &data_store);
+
+
+    void source(Kripke::Core::DataStore &data_store);
+
+
+    void sweepSubdomain(Kripke::Core::DataStore &data_store, Kripke::SdomId sdom_id);
+
+
+    template<typename FieldType>
+    RAJA_INLINE
+    void kConst(FieldType &field, Kripke::SdomId sdom_id, typename FieldType::ElementType value){
+      auto view1d = field.getView1d(sdom_id);
+      int num_elem = field.size(sdom_id);
+      RAJA::forall<RAJA::loop_exec>(
+        RAJA::RangeSegment(0, num_elem),
+        [=](RAJA::Index_type i){
+			 	  view1d(i) = value;
+      });
+    }
+
+    template<typename FieldType>
+    RAJA_INLINE
+    void kConst(FieldType &field, typename FieldType::ElementType value){
+      for(Kripke::SdomId sdom_id : field.getWorkList()){
+        kConst(field, sdom_id, value);
+      }
+    }
+
+
+
+
+    template<typename FieldType>
+    RAJA_INLINE
+    void kCopy(FieldType &field_dst, Kripke::SdomId sdom_id_dst,
+               FieldType &field_src, Kripke::SdomId sdom_id_src){
+      auto view_src = field_src.getView1d(sdom_id_src);
+      auto view_dst = field_dst.getView1d(sdom_id_dst);
+      int num_elem = field_src.size(sdom_id_src);
+
+      RAJA::forall<RAJA::loop_exec>(
+        RAJA::RangeSegment(0, num_elem),
+        [=](RAJA::Index_type i){
+          view_src(i) = view_dst(i);
+      });
+    }
+
+    template<typename FieldType>
+    RAJA_INLINE
+    void kCopy(FieldType &field_dst, FieldType &field_src){
+      for(Kripke::SdomId sdom_id : field_dst.getWorkList()){
+        kCopy(field_dst, sdom_id, field_src, sdom_id);
+      }
+    }
+
+  }
+}
 
 #endif

@@ -31,41 +31,60 @@
  */
 
 #include <Kripke/ParallelComm.h>
-#include <Kripke/SubTVec.h>
-#include <Kripke/Grid.h>
+
+#include <Kripke/Core/Field.h>
+#include <Kripke/Kernel.h>
+#include <Kripke/Timing.h>
+#include <Kripke/VarTypes.h>
 
 #include <fcntl.h>
 #include <unistd.h>
-#include <mpi.h>
 #include <vector>
 #include <stdio.h>
 
+using namespace Kripke;
+using namespace Kripke::Core;
 
-BlockJacobiComm::BlockJacobiComm(Grid_Data *data) : ParallelComm(data), posted_sends(false)
+BlockJacobiComm::BlockJacobiComm(Kripke::Core::DataStore &data_store) :
+ParallelComm(data_store), posted_sends(false)
 {
+  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
 
+  Set const &set_iplane = data_store.getVariable<Set>("Set/IPlane");
+  Set const &set_jplane = data_store.getVariable<Set>("Set/JPlane");
+  Set const &set_kplane = data_store.getVariable<Set>("Set/KPlane");
+  createField<Field_IPlane>(data_store, "old_i_plane", al_v, set_iplane);
+  createField<Field_JPlane>(data_store, "old_j_plane", al_v, set_jplane);
+  createField<Field_KPlane>(data_store, "old_k_plane", al_v, set_kplane);
 }
 
 BlockJacobiComm::~BlockJacobiComm(){
+  m_data_store->deleteVariable("old_i_plane");
+  m_data_store->deleteVariable("old_j_plane");
+  m_data_store->deleteVariable("old_k_plane");
 }
 
 /**
   Adds a subdomain to the work queue.
   Determines if upwind dependencies require communication, and posts appropirate Irecv's.
 */
-void BlockJacobiComm::addSubdomain(int sdom_id, Subdomain &sdom){
+void BlockJacobiComm::addSubdomain(Kripke::Core::DataStore &data_store, SdomId sdom_id){
+
   // Copy old flux data to send buffers
-  for(int dim = 0;dim < 3;++ dim){
-    int nelem = sdom.plane_data[dim]->elements;
-    double const * KRESTRICT src = sdom.plane_data[dim]->ptr();
-    double * KRESTRICT dst = sdom.old_plane_data[dim]->ptr();
-    for(int i = 0;i < nelem;++ i){
-      dst[i] = src[i];
-    }
-  }
+  auto &i_plane = m_data_store->getVariable<Field_IPlane>("i_plane");
+  auto &old_i_plane = m_data_store->getVariable<Field_IPlane>("old_i_plane");
+  Kernel::kCopy(old_i_plane, i_plane);
+
+  auto &j_plane = m_data_store->getVariable<Field_JPlane>("j_plane");
+  auto &old_j_plane = m_data_store->getVariable<Field_JPlane>("old_j_plane");
+  Kernel::kCopy(old_j_plane, j_plane);
+
+  auto &k_plane = m_data_store->getVariable<Field_KPlane>("k_plane");
+  auto &old_k_plane = m_data_store->getVariable<Field_KPlane>("old_k_plane");
+  Kernel::kCopy(old_k_plane, k_plane);
 
   // post recieves
-  postRecvs(sdom_id, sdom);
+  postRecvs(data_store, sdom_id);
 
 }
 
@@ -73,18 +92,23 @@ void BlockJacobiComm::addSubdomain(int sdom_id, Subdomain &sdom){
 // false indicates all work is done, and all sends have completed
 bool BlockJacobiComm::workRemaining(void){
   if(!posted_sends){
+
+    auto &old_i_plane = m_data_store->getVariable<Field_IPlane>("old_i_plane");
+    auto &old_j_plane = m_data_store->getVariable<Field_JPlane>("old_j_plane");
+    auto &old_k_plane = m_data_store->getVariable<Field_KPlane>("old_k_plane");
+
     // post sends for all queued subdomains
-    for(int i = 0;i < queue_subdomains.size();++ i){
-      Subdomain *sdom = queue_subdomains[i];
+    for(size_t i = 0;i < queue_sdom_ids.size();++ i){
+      SdomId sdom_id(queue_sdom_ids[i]);
 
       // Send new downwind info for sweep
       double *buf[3] = {
-        sdom->old_plane_data[0]->ptr(),
-        sdom->old_plane_data[1]->ptr(),
-        sdom->old_plane_data[2]->ptr()
+          old_i_plane.getData(sdom_id),
+          old_j_plane.getData(sdom_id),
+          old_k_plane.getData(sdom_id)
       };
 
-      postSends(sdom, buf);
+      postSends(*m_data_store, sdom_id, buf);
     }
     posted_sends = true;
   }
@@ -101,7 +125,7 @@ bool BlockJacobiComm::workRemaining(void){
 /**
   Checks for incomming messages, and returns a list of ready subdomain id's
 */
-std::vector<int> BlockJacobiComm::readySubdomains(void){
+std::vector<SdomId> BlockJacobiComm::readySubdomains(void){
   testRecieves();
 
   // return list of any ready subdomains
@@ -110,7 +134,7 @@ std::vector<int> BlockJacobiComm::readySubdomains(void){
 
 
 
-void BlockJacobiComm::markComplete(int sdom_id){
+void BlockJacobiComm::markComplete(SdomId sdom_id){
   // remove subdomain from work queue
   dequeueSubdomain(sdom_id);
 }
