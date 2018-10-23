@@ -64,8 +64,10 @@ namespace Kripke {
     void kConst(FieldType &field, Kripke::SdomId sdom_id, typename FieldType::ElementType value){
       auto view1d = field.getView1d(sdom_id);
       int num_elem = field.size(sdom_id);
-      RAJA::forall<RAJA::loop_exec>(0, num_elem, [=](RAJA::Index_type i){
-			 	view1d(i) = value;
+      RAJA::forall<RAJA::loop_exec>(
+        RAJA::RangeSegment(0, num_elem),
+        [=](RAJA::Index_type i){
+			 	  view1d(i) = value;
       });
     }
 
@@ -88,8 +90,10 @@ namespace Kripke {
       auto view_dst = field_dst.getView1d(sdom_id_dst);
       int num_elem = field_src.size(sdom_id_src);
 
-      RAJA::forall<RAJA::loop_exec>(0, num_elem, [=](RAJA::Index_type i){
-        view_src(i) = view_dst(i);
+      RAJA::forall<RAJA::loop_exec>(
+        RAJA::RangeSegment(0, num_elem),
+        [=](RAJA::Index_type i){
+          view_src(i) = view_dst(i);
       });
     }
 

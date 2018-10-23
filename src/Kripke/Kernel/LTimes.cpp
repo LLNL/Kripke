@@ -125,7 +125,6 @@ void Kripke::Kernel::LTimes(Kripke::Core::DataStore &data_store)
 
   }
 
-
 }
 
 

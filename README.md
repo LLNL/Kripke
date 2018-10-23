@@ -1,9 +1,11 @@
 KRIPKE
 ======
 
-Version 1.2.0
+Version 1.2.3
 
-Release Date 11/2/2017 
+Release Date 10/12/2018 
+
+LLNL-CODE-658597
 
 
 Authors
@@ -19,6 +21,17 @@ License
 See included file NOTICE.md
 
 
+Changes
+=======
+
+  * 10/12/2018 v1.2.3: CUDA support, updated policy selection/dispatch mechanisms, updated build system
+  * 04/04/2018 v1.2.2-CORAL2: Fixed bug in Population edit
+  * 03/26/2018 v1.2.1-CORAL2: Updated to RAJA-0.6.0rc2, fixed FOM calcuation and updated docs
+  * 11/02/2017 v1.2.0-CORAL2: Initial release for CORAL2
+
+
+
+
 Overview
 ========
 Kripke is a simple, scalable, 3D Sn deterministic particle transport code.  Its primary purpose is to research how data layout, programming paradigms and architectures effect the implementation and performance of Sn transport.  A main goal of Kripke is investigating how different data-layouts affect instruction, thread and task level parallelism, and what the implications are on overall solver performance.
@@ -32,7 +45,7 @@ As we explore new architectures and programming paradigms with Kripke, we will b
 
 Mini App or Proxy App?
 ----------------------
-Kripke is a Mini-App since it has a very small code base consisting of 3539 lines of C++ code (using cloc v1.67).
+Kripke is a Mini-App since it has a very small code base consisting of about 5000 lines of C++ code (using cloc v1.67).
 
 Kripke is also a Proxy-App since it is a proxy for the LLNL transport code ARDRA.
 
@@ -88,16 +101,56 @@ The steady-state solution method uses the source-iteration technique, where each
 Building and Running
 ====================
 
-Kripke comes with a simple CMake based build system.
+Kripke comes with a BLT(CMake) based build system based.
 
 Requirements
 ------------
-*  CMake 3.1 or later
-*  C++ Compiler (g++, icpc, etc.)
+
+Basic requirements:
+
+*  CMake 3.8 or later (3.9.2 or later for CUDA support)
+
+*  C++14 Compiler (g++, icpc, etc.)
+
 *  (Optional) MPI 1.0 or later
+
 *  (Optional) OpenMP 3 or later
 
+Submodule dependencies:
 
+*  [BLT](https://github.com/LLNL/blt) v0.1: a CMake based build system (required)
+
+*  [RAJA](https://github.com/LLNL/RAJA) v0.6.0: a loop abstraction library (required)
+
+*  [CHAI](https://github.com/LLNL/CHAI) v1.1: a copy hiding abstraction for moving data between memory spaces (optional)
+
+*  [Umpire](https://github.com/LLNL/Umpire): a memory management abstraction (required if using CHAI)
+
+*  [Cub](https://github.com/NVlabs/cub.git): algorithm primitives library for CUDA (required by RAJA if using CUDA)
+
+
+Getting Kripke
+--------------
+Two options are available:
+*  Download a released source tarball from github: https://github.com/LLNL/Kripke/releases
+*  Clone the source from github.
+
+
+The following are the instruction for cloning the tarball, and setting up your clone repository.
+
+Clone the latest released version from github:
+        
+        git clone https://github.com/LLNL/Kripke.git
+        
+Clone all of the submodules.  The Kripke build system, BLT, resides in 
+another repository on github so one must initialize and update the "git submodules"
+
+        cd Kripke
+        git submodule update --init --recursive
+
+The released source tarball on github is created with all of the submodules included already.
+
+ 
 
 Quick Start
 -----------
@@ -112,10 +165,10 @@ The easiest way to get Kripke running, is to directly invoke CMake and take what
         cd build
         cmake ..
 
-        For BG/Q, we have a special cache init file that makes things easier:
+        For a number of platforms, we have cache inits file that makes things easier:
 
         cd build
-        cmake .. -C../host-configs/bgqos.cmake
+        cmake .. -C../host-configs/llnl-bgqos-clang.cmake
 
 *  Step 3: Now make Kripke:
          
@@ -126,13 +179,33 @@ The easiest way to get Kripke running, is to directly invoke CMake and take what
         ./bin/kripke.exe
   
 
+There are a number of cache init files for LLNL machines and operating systems.  
+These might not meet your needs, but can be a very good starting point for developing your own.
+The current list of cache init files (located in the ./host-confgs/ directory) are:
+
+*  llnl-bgqos-clang.cmake
+
+*  llnl-toss3-clang4.cmake
+
+*  llnl-toss3-intel18.cmake
+
+*  llnl-toss3-gcc7.1.cmake
+
+*  llnl-toss3-gcc8.1.cmake
+
+*  llnl-blueos-P100-nvcc-clang.cmake
+
+*  llnl-blueos-V100-nvcc-clang.cmake
+
+
+
 Running Kripke
 ==============
 
 Environment Variabes
 --------------------
 
-If Kripke is build with OpenMP support, then the environment variables ``OMP_NUM_THREADS`` is used to control the number of OpenMP threads.  Kripke does not attempt to modify the OpenMP runtime in anyway, so other ``OMP_*`` environment variables should also work as well.
+If Kripke is built with OpenMP support, then the environment variables ``OMP_NUM_THREADS`` is used to control the number of OpenMP threads.  Kripke does not attempt to modify the OpenMP runtime in anyway, so other ``OMP_*`` environment variables should also work as well.
  
 
 Command Line Options
@@ -171,14 +244,18 @@ Command line option help can also be viewed by running "./kripke --help"
 
 ### On-Node Options:
 
-*   **``--nest <NEST>``**
+*   **``--arch <ARCH>``**
 
-    Loop nesting order (and data layout), available are DGZ, DZG, GDZ, GZD, ZDG, and ZGD. (Default: --nest DGZ)
+    Architecture selection.  Selects the back-end used for computation, available are Sequential, OpenMP and CUDA. The default depends on capabilities selected by the build system and is selected from list of increasing precedence: Sequential, OpenMP and CUDA. 
+
+*   **``--layout <LAYOUT>``**
+
+    Data layout selection.  This determines the data layout and kernel implementation details (such as loop nesting order).  The layouts are determined by the order of unknwons in the angular flux: Direction, Group, and Zone.  Available layouts are DGZ, DZG, GDZ, GZD, ZDG, and ZGD.  The order is specified left-to-right in longest-to-shortes stride.  For example: DGZ means that Directions are the longest stride, and Zones are stride-1.  (Default: --nest DGZ)
 
 
 ###Parallel Decomposition Options:
 
-*   **``--layout <lout>``**
+*   **``--pdist <lout>``**
     
     Layout of spatial subdomains over mpi ranks. 0 for "Blocked" where local zone sets represent adjacent regions of space. 1 for "Scattered" where adjacent regions of space are distributed to adjacent MPI ranks. (Default: --layout 0)
 
@@ -217,9 +294,11 @@ Future Plans
 
 Some ideas for future study:
 
-*   Block AMR.
+*   More tuning of CUDA implementation
 
-*   More FLOP intensive spatial discretizations such as DFEM's.
+*   Block AMR
+
+*   More FLOP intensive spatial discretizations such as DFEM's
 
 
 

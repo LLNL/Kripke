@@ -81,7 +81,7 @@ struct Policy_Source<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>> {
 
 
 
-#ifdef KRIPKE_ARCH_OPENMP
+#ifdef KRIPKE_USE_OPENMP
 template<>
 struct Policy_Source<ArchLayoutT<ArchT_OpenMP, LayoutT_DGZ>> {
   using ExecPolicy =
@@ -101,7 +101,39 @@ struct Policy_Source<ArchLayoutT<ArchT_OpenMP, LayoutT_DZG>> {
       >
     >;
 };
-#endif // KRIPKE_ARCH_OPENMP
+#endif // KRIPKE_USE_OPENMP
+
+
+#ifdef KRIPKE_USE_CUDA
+template<>
+struct Policy_Source<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
+  using ExecPolicy =
+    KernelPolicy<
+      CudaKernel<
+        For<0, cuda_thread_exec,  // Group
+          For<1, cuda_threadblock_exec<32>, // MixElem
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_Source<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
+  using ExecPolicy =
+    KernelPolicy<
+      CudaKernel<
+        For<1, cuda_threadblock_exec<32>, // MixElem
+          For<0, cuda_thread_exec,  // Group
+            Lambda<0>
+          >
+        >
+      >
+    >;
+};
+#endif // KRIPKE_USE_CUDA
+
 
 }
 }

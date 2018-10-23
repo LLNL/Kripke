@@ -139,6 +139,20 @@ namespace Arch {
   using RAJA::omp_reduce;
 #endif
 
+#ifdef KRIPKE_USE_CUDA
+  using RAJA::cuda_exec;
+  using RAJA::cuda_block_exec;
+  using RAJA::cuda_seq_syncthreads_exec;
+  using RAJA::cuda_thread_exec;
+  using RAJA::cuda_threadblock_exec;
+  using RAJA::cuda_reduce;
+  using RAJA::atomic::cuda_atomic;
+  using RAJA::statement::CudaKernel;
+  using RAJA::statement::CudaKernelAsync;
+  using RAJA::statement::CudaSyncThreads;
+  using RAJA::statement::Thread;
+#endif
+
 } // namespace Arch
 } // namespace Kripke
 
