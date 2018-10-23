@@ -6,7 +6,7 @@ project(KRIPKE LANGUAGES CXX)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
 
-set(KRIPKE_VERSION "1.2.3")
+set(KRIPKE_VERSION "1.2.4-dev")
 
 
 #

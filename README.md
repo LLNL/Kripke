@@ -1,7 +1,7 @@
 KRIPKE
 ======
 
-Version 1.2.3
+Version 1.2.4-dev
 
 Release Date 10/12/2018 
 
