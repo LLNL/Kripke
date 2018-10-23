@@ -6,7 +6,7 @@ project(KRIPKE LANGUAGES CXX)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
 
-set(KRIPKE_VERSION "1.2.3" CACHE STRING "")
+set(KRIPKE_VERSION "1.2.3")
 
 
 #
@@ -21,7 +21,6 @@ set(ENABLE_DOCUMENTATION Off CACHE Bool "")
 
 # Use C++14 standard
 set(BLT_CXX_STD "c++14" CACHE STRING "")
-set(RAJA_CXX_STANDARD_FLAG "-std=${BLT_CXX_STD}" CACHE STRING "")
 
 set(chai_DIR ${CURRENT_SOURCE_DIR}/tpl/chai)
 
@@ -35,6 +34,25 @@ include(blt/SetupBLT.cmake)
 #
 set(KRIPKE_ARCH "Sequential")
 set(KRIPKE_LAYOUT DGZ)
+
+
+#
+# Add CMake CUDA language support
+#
+if(ENABLE_CUDA)
+  # Native CMake support  
+  enable_language(CUDA)
+  
+  # Make sure we use nvcc with our selected host compiler to link executables
+  set(CMAKE_CUDA_LINK_EXECUTABLE "${CMAKE_CUDA_COMPILER} -ccbin <CMAKE_CXX_COMPILER> <CMAKE_CUDA_LINK_FLAGS>  <FLAGS>  <LINK_FLAGS>  <OBJECTS> -o <TARGET>  <LINK_LIBRARIES>")
+  # Use nvcc as the linker
+  set(CMAKE_LINKER "${CMAKE_CUDA_COMPILER}" CACHE STRING "")
+  
+  # Pass nvcc the -cubin to point at our C++ compiler  
+  set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
+
+endif()
+
 
 
 #
@@ -98,9 +116,11 @@ if(ENABLE_CUDA)
     list(APPEND CUDA_NVCC_FLAGS -Xcompiler ${OpenMP_CXX_FLAGS})
   endif()
 	
+	
   # Pass on compiler info to KripkeConfig.h
-  set(KRIPKE_NVCC_COMPILER "${CUDA_NVCC_EXECUTABLE}")
-  set(KRIPKE_NVCC_FLAGS    "${CUDA_NVCC_FLAGS};${CUDA_NVCC_FLAGS_${KRIPKE_BUILD_TYPE}}")
+  string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+  set(KRIPKE_NVCC_COMPILER "${CMAKE_CUDA_COMPILER}")
+  set(KRIPKE_NVCC_FLAGS    "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
 
 endif()
 
