@@ -158,7 +158,7 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_Sequential, LayoutT_ZGD>> {
 
 
 
-#ifdef KRIPKE_ARCH_OPENMP
+#ifdef KRIPKE_USE_OPENMP
 
 
 template<>
@@ -264,8 +264,135 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_OpenMP, LayoutT_ZGD>> {
     >;
 };
 
-#endif // KRIPKE_ARCH_OPENMP
+#endif // KRIPKE_USE_OPENMP
 
+
+#ifdef KRIPKE_USE_CUDA
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
+  using ExecPolicy =
+          KernelPolicy<
+            CudaKernel<
+              For<0, cuda_block_exec,
+                For<1, cuda_block_exec,
+
+                      Hyperplane<
+                        2, cuda_seq_syncthreads_exec,
+                        ArgList<3, 4>, cuda_thread_exec,
+
+                        Lambda<0>
+                      >
+                >
+              >
+            >
+          >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
+    using ExecPolicy =
+            KernelPolicy<
+              CudaKernel<
+                For<0, cuda_block_exec,
+                  For<1, cuda_block_exec,
+
+                        Hyperplane<
+                          2, cuda_seq_syncthreads_exec,
+                          ArgList<3, 4>, cuda_thread_exec,
+
+                          Lambda<0>
+                        >
+                  >
+                >
+              >
+            >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>> {
+    using ExecPolicy =
+            KernelPolicy<
+              CudaKernel<
+                For<0, cuda_block_exec,
+                  For<1, cuda_block_exec,
+
+                        Hyperplane<
+                          2, cuda_seq_syncthreads_exec,
+                          ArgList<3, 4>, cuda_thread_exec,
+
+                          Lambda<0>
+                        >
+                  >
+                >
+              >
+            >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>> {
+    using ExecPolicy =
+            KernelPolicy<
+              CudaKernel<
+                For<0, cuda_block_exec,
+                  For<1, cuda_block_exec,
+
+                        Hyperplane<
+                          2, cuda_seq_syncthreads_exec,
+                          ArgList<3, 4>, cuda_thread_exec,
+
+                          Lambda<0>
+                        >
+                  >
+                >
+              >
+            >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>> {
+    using ExecPolicy =
+            KernelPolicy<
+              CudaKernel<
+                For<0, cuda_block_exec,
+                  For<1, cuda_block_exec,
+
+                        Hyperplane<
+                          2, cuda_seq_syncthreads_exec,
+                          ArgList<3, 4>, cuda_thread_exec,
+
+                          Lambda<0>
+                        >
+                  >
+                >
+              >
+            >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>> {
+    using ExecPolicy =
+            KernelPolicy<
+              CudaKernel<
+                For<0, cuda_block_exec,
+                  For<1, cuda_block_exec,
+
+                        Hyperplane<
+                          2, cuda_seq_syncthreads_exec,
+                          ArgList<3, 4>, cuda_thread_exec,
+
+                          Lambda<0>
+                        >
+                  >
+                >
+              >
+            >;
+};
+#endif // KRIPKE_USE_CUDA
 
 }
 }

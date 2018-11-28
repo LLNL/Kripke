@@ -40,6 +40,12 @@
 #include <Kripke/Core/Set.h>
 #include <vector>
 
+#ifdef KRIPKE_USE_CHAI
+#define DEBUG
+#include <chai/ManagedArray.hpp>
+#undef DEBUG
+#endif
+
 namespace Kripke {
 namespace Core {
   /**
@@ -49,10 +55,15 @@ namespace Core {
   class FieldStorage : public Kripke::Core::DomainVar {
     public:
       using ElementType = ELEMENT;
+
+#ifndef KRIPKE_USE_CHAI
       using ElementPtr = ELEMENT*;
+#else
+      using ElementPtr = chai::ManagedArray<ELEMENT>;
+#endif
 
       using Layout1dType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<RAJA::Index_type>>;
-      using View1dType = RAJA::View<ElementType, Layout1dType>;
+      using View1dType = RAJA::View<ElementType, Layout1dType, ElementPtr>;
 
 
       explicit FieldStorage(Kripke::Core::Set const &spanned_set) :
@@ -65,7 +76,11 @@ namespace Core {
         // allocate all of our chunks, and create layouts for each one
         size_t num_chunks = m_chunk_to_subdomain.size();
         m_chunk_to_size.resize(num_chunks, 0);
+#ifndef KRIPKE_USE_CHAI
         m_chunk_to_data.resize(num_chunks, nullptr);
+#else
+        m_chunk_to_data.resize(num_chunks);
+#endif
 
         for(size_t chunk_id = 0;chunk_id < num_chunks;++ chunk_id){
 
@@ -74,14 +89,42 @@ namespace Core {
           size_t sdom_size = spanned_set.size(sdom_id);
 
           m_chunk_to_size[chunk_id] = sdom_size;
+#ifndef KRIPKE_USE_CHAI
           m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
+#else
+          m_chunk_to_data[chunk_id].allocate(sdom_size, chai::CPU,
+              [=](chai::Action action, chai::ExecutionSpace space, size_t bytes){
+                /*printf("CHAI[%s, %d]: ", BaseVar::getName().c_str(), (int)chunk_id);
+                switch(action){
+                case chai::ACTION_ALLOC: printf("ALLOC "); break;
+                case chai::ACTION_FREE: printf("FREE  "); break;
+                case chai::ACTION_MOVE: printf("MOVE  "); break;
+                default: printf("UNKNOWN ");
+                }
+
+                switch(space){
+                case chai::CPU: printf("CPU "); break;
+#ifdef KRIPKE_USE_CUDA
+                case chai::GPU: printf("GPU  "); break;
+#endif
+                default: printf("UNK ");
+                }
+
+                printf("%lu bytes\n", (unsigned long) bytes);
+*/
+              }
+
+          );
+#endif
         }
       }
 
       virtual ~FieldStorage(){
+#ifndef KRIPKE_USE_CHAI
         for(auto i : m_chunk_to_data){
           delete[] i;
         }
+#endif
       }
 
       // Dissallow copy construction
@@ -109,16 +152,25 @@ namespace Core {
       }
 
       RAJA_INLINE
-      ElementPtr getData(Kripke::SdomId sdom_id) const {
-
+      ElementType *getData(Kripke::SdomId sdom_id) const {
         KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
             "sdom_id(%d) >= num_subdomains(%d)",
             (int)*sdom_id,
             (int)(int)m_subdomain_to_chunk.size());
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
+#ifndef KRIPKE_USE_CHAI
         return  m_chunk_to_data[chunk_id];
+#else
+        // use pointer conversion to get host pointer
+        ElementType *ptr = m_chunk_to_data[chunk_id];
+
+        // return host pointer
+        return(ptr);
+
+#endif
       }
+
 
       RAJA_INLINE
       Kripke::Core::Set const &getSet() const {
@@ -141,12 +193,16 @@ namespace Core {
       using Parent = Kripke::Core::FieldStorage<ELEMENT>;
 
       using ElementType = ELEMENT;
+#ifndef KRIPKE_USE_CHAI
       using ElementPtr = ELEMENT*;
+#else
+      using ElementPtr = chai::ManagedArray<ELEMENT>;
+#endif
 
       static constexpr size_t NumDims = sizeof...(IDX_TYPES);
 
       using DefaultLayoutType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>>;
-      using DefaultViewType = RAJA::View<ElementType, DefaultLayoutType>;
+      using DefaultViewType = RAJA::View<ElementType, DefaultLayoutType, ElementPtr>;
 
       template<typename Order>
       Field(Kripke::Core::Set const &spanned_set, Order) :
@@ -199,7 +255,7 @@ namespace Core {
       template<typename Order>
       RAJA_INLINE
       auto getViewOrder(Kripke::SdomId sdom_id) const ->
-        ViewType<Order, ElementType, IDX_TYPES...>
+        ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>
       {
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
 
@@ -210,7 +266,7 @@ namespace Core {
 
         LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
 
-        return ViewType<Order, ElementType, IDX_TYPES...>(ptr, layout);
+        return ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>(ptr, layout);
       }
 
 
@@ -218,21 +274,28 @@ namespace Core {
       RAJA_INLINE
       void dump() const {
         printf("Field<>:\n");
+        printf("  name:  %s\n", BaseVar::getName().c_str());
         printf("  m_set: %p\n", Parent::m_set);
 
         printf("  m_chunk_to_size: ");
         for(auto x : Parent::m_chunk_to_size){printf("%lu ", (unsigned long)x);}
         printf("\n");
 
+#ifndef KRIPKE_USE_CHAI
         printf("  m_chunk_to_data: ");
         for(auto x : Parent::m_chunk_to_data){printf("%p ", x);}
         printf("\n");
+#endif
 
         for(size_t chunk_id = 0;chunk_id < Parent::m_chunk_to_data.size();++ chunk_id){
+
+          SdomId sdom_id(DomainVar::m_chunk_to_subdomain[chunk_id]);
+
+          ElementType *ptr = Parent::getData(sdom_id);
+
           printf("Chunk %d Data: ", (int)chunk_id);
           for(size_t i = 0;i < Parent::m_chunk_to_size[chunk_id];++ i){
-            //printf(" %d", RAJA::convertIndex<int>(Parent::m_chunk_to_data[chunk_id][i]));
-            printf(" %e", Parent::m_chunk_to_data[chunk_id][i]);
+            printf(" %e", ptr[i]);
           }
           printf("\n");
         }

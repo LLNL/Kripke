@@ -41,23 +41,46 @@
 namespace Kripke {
 
 struct ArchT_Sequential {};
+
+#ifdef KRIPKE_USE_OPENMP
 struct ArchT_OpenMP {};
+#endif
+
+#ifdef KRIPKE_USE_CUDA
 struct ArchT_CUDA {};
+#endif
+
+
 
 enum ArchV {
   ArchV_Unknown = -1,
   ArchV_Sequential,
+
+#ifdef KRIPKE_USE_OPENMP
   ArchV_OpenMP,
+#endif
+
+#ifdef KRIPKE_USE_CUDA
   ArchV_CUDA,
+#endif
+
   ArchV_num_values
 };
+
 
 RAJA_INLINE
 std::string archToString(ArchV av){
   switch(av){
     case ArchV_Sequential:    return "Sequential";
+
+#ifdef KRIPKE_USE_OPENMP
     case ArchV_OpenMP:        return "OpenMP";
+#endif
+
+#ifdef KRIPKE_USE_CUDA
     case ArchV_CUDA:          return "CUDA";
+#endif
+
     case ArchV_Unknown:
     case ArchV_num_values:
     default:                  return "unknown";
@@ -150,7 +173,7 @@ void dispatchLayout(LayoutV layout_v, Function const &fcn, Args &&... args)
     case LayoutV_GZD: fcn(LayoutT_GZD{}, std::forward<Args>(args)...); break;
     case LayoutV_ZDG: fcn(LayoutT_ZDG{}, std::forward<Args>(args)...); break;
     case LayoutV_ZGD: fcn(LayoutT_ZGD{}, std::forward<Args>(args)...); break;
-    default: break;
+    default: KRIPKE_ABORT("Unknown layout_v=%d\n", (int)layout_v); break;
   } 
 }
 
@@ -167,7 +190,7 @@ void dispatchArch(ArchV arch_v, Function const &fcn, Args &&... args)
 #ifdef KRIPKE_USE_CUDA
     case ArchV_CUDA: fcn(ArchT_CUDA{}, std::forward<Args>(args)...); break;
 #endif
-    default: break;
+    default: KRIPKE_ABORT("Unknown arch_v=%d\n", (int)arch_v); break;
   }
 }
 
@@ -181,6 +204,7 @@ struct DispatchHelper{
     fcn(al_t{}, std::forward<Args>(args)...);
   }
 };
+
 
 template<typename Function, typename ... Args>
 RAJA_INLINE

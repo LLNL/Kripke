@@ -61,7 +61,6 @@ struct InputVariables {
   int num_dirsets;              // Number of direction sets
   int num_groupsets;            // Number of energy group sets
   int num_zonesets_dim[3];      // Number of zoneset in x, y, z  
-  int layout_pattern;           // Which subdomain/task layout to use
   
   // Physics and Solver Options
   int niter;                    // number of solver iterations to run

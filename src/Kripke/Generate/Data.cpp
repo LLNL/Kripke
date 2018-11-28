@@ -105,15 +105,11 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
   createField<Field_SigmaS>(data_store, "data/sigs", al_v, *sigs_set);
   auto &field_sigs = data_store.getVariable<Field_SigmaS>("data/sigs");
 
+  // Zero out entire matrix
+  Kripke::Kernel::kConst(field_sigs, 0.0);
+
   // Assign basic diagonal data to matrix
   for(auto sdom_id : field_sigs.getWorkList()){
-
-    // Zero out entire matrix
-    auto sigs_ptr = field_sigs.getData(sdom_id);
-    size_t sigs_size = field_sigs.size(sdom_id);
-    for(size_t i = 0;i < sigs_size;++ i){
-      sigs_ptr[i] = 0.0;
-    }
 
     // Assign diagonal to the user input for each material
     // Assume each group has same behavior
@@ -121,9 +117,11 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
     int global_num_groups = global_group_set.size(sdom_id);
     Legendre n{0};
     for(Material mat{0};mat < 3;++ mat){
-      for(GlobalGroup g{0};g < global_num_groups;++ g){
-        sigs(mat, n, g, g) = input_vars.sigs[*mat];
-      }
+      RAJA::forall<RAJA::seq_exec>(
+        RAJA::TypedRangeSegment<GlobalGroup>(0, global_num_groups),
+        [=](GlobalGroup g){
+          sigs(mat, n, g, g) = input_vars.sigs[*mat];
+      });
     }
   }
 

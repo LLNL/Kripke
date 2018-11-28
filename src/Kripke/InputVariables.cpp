@@ -47,12 +47,11 @@ InputVariables::InputVariables() :
   quad_num_polar(0),
   quad_num_azimuthal(0),
  
-  al_v(ArchLayoutV{ArchV_Sequential, LayoutV_DGZ}),
+  al_v(ArchLayoutV{KRIPKE_ARCHV_DEFAULT, KRIPKE_LAYOUTV_DEFAULT}),
  
   npx(1), npy(1), npz(1),
   num_dirsets(8),
   num_groupsets(2),
-  layout_pattern(0),
   
   niter(10),
   parallel_method(PMETHOD_SWEEP),
@@ -86,18 +85,6 @@ bool InputVariables::checkValues(void) const{
       printf("Number of zone-sets in each dim need to be greater than or equal to 1\n");
     return true;
   }
-  
-  if(layout_pattern < 0 || layout_pattern > 1){
-    if(!rank)
-      printf("Layout(%d) must be either 0 or 1\n", layout_pattern);
-    return true;
-  }
-  
-  /*if(nesting < 0){
-    if(!rank)
-      printf("Invalid nesting selected\n");
-    return true;
-  }*/
   
   if(num_groups < 1){
     if(!rank)

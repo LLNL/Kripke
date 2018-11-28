@@ -385,9 +385,11 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
   for(SdomId sdom_id : field_moment_to_legendre.getWorkList()){
     auto moment_to_legendre = field_moment_to_legendre.getView(sdom_id);
 
-    for(Moment nm{0};nm < moment_set->size(sdom_id);++ nm){
-      moment_to_legendre(nm) = moment_list[(*nm) + moment_set->lower(sdom_id)];
-    }
+    RAJA::forall<RAJA::loop_exec>(
+      RAJA::TypedRangeSegment<Moment>(0, moment_set->size(sdom_id)),
+      [=](Moment nm){
+        moment_to_legendre(nm) = moment_list[(*nm) + moment_set->lower(sdom_id)];
+    });
   }
 
 
@@ -417,7 +419,9 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
     auto kd = field_kd.getView(sdom_id);
     auto octant = field_octant.getView(sdom_id);
 
-    for(Direction d{0};d < num_directions;++ d){
+    RAJA::forall<RAJA::seq_exec>(
+      RAJA::TypedRangeSegment<Direction>(0, num_directions),
+      [=](Direction d){
       QuadraturePoint const &point_d = quadrature_points[(*d)+direction_lower];
       xcos(d) = point_d.xcos;
       ycos(d) = point_d.ycos;
@@ -427,7 +431,7 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
       jd(d) = point_d.jd;
       kd(d) = point_d.kd;
       octant(d) = point_d.octant;
-    }
+    });
   }
 
 
@@ -453,21 +457,23 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
     Moment nm{0};
     for(int n=0; n < (int)legendre_order+1; n++){
       for(int m=-n; m<=n; m++){
-        for(Direction d{0}; d<num_directions; d++){
+        RAJA::forall<RAJA::seq_exec>(
+          RAJA::TypedRangeSegment<Direction>(0, num_directions),
+          [=](Direction d){
 
-          QuadraturePoint const &point_d = quadrature_points[(*d)+direction_lower];
-          // Get quadrature point info
-          double xcos = (point_d.id)*(point_d.xcos);
-          double ycos = (point_d.jd)*(point_d.ycos);
-          double zcos = (point_d.kd)*(point_d.zcos);
-          double w =  point_d.w;
+            QuadraturePoint const &point_d = quadrature_points[(*d)+direction_lower];
+            // Get quadrature point info
+            double xcos = (point_d.id)*(point_d.xcos);
+            double ycos = (point_d.jd)*(point_d.ycos);
+            double zcos = (point_d.kd)*(point_d.zcos);
+            double w =  point_d.w;
 
-          double ynm = YnmFcn(n, m, xcos, ycos, zcos);
+            double ynm = YnmFcn(n, m, xcos, ycos, zcos);
 
-          // Compute element of L and L+
-          ell(nm, d) = w*ynm/SQRT4PI;
-          ell_plus(d,nm) = ynm*SQRT4PI;
-        }
+            // Compute element of L and L+
+            ell(nm, d) = w*ynm/SQRT4PI;
+            ell_plus(d,nm) = ynm*SQRT4PI;
+        });
         nm ++;
       }
     }

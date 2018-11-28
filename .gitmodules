@@ -5,3 +5,7 @@
 	path = tpl/raja
 	url = https://github.com/LLNL/RAJA.git
 	branch = develop
+[submodule "tpl/chai"]
+	path = tpl/chai
+	url = https://github.com/LLNL/CHAI.git
+	branch = develop

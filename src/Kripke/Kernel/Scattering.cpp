@@ -110,17 +110,14 @@ struct ScatteringSdom {
             MixElem mix_start = zone_to_mixelem(z);
             MixElem mix_stop = mix_start + zone_to_num_mixelem(z);
 
+            double sigs_z = 0.0;
             for(MixElem mix = mix_start;mix < mix_stop;++ mix){
               Material mat = mixelem_to_material(mix);
               double fraction = mixelem_to_fraction(mix);
 
-              phi_out(nm, g, z) +=
-                  sigs(mat, n, global_g, global_gp)
-                  * phi(nm, gp, z)
-                  * fraction;
-
-
+              sigs_z += sigs(mat, n, global_g, global_gp) * fraction;
             }
+            phi_out(nm, g, z) += sigs_z * phi(nm, gp, z);
         }
     );
   }
@@ -184,6 +181,7 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
     }
 
   }
+
 
 }
 

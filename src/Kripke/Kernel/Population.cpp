@@ -69,7 +69,7 @@ struct PopulationSdom {
     auto w      = sdom_al.getView(field_w);
     auto volume = sdom_al.getView(field_volume);
     
-    RAJA::ReduceSum<ReducePolicy, double> part_red(0);
+    RAJA::ReduceSum<ReducePolicy, double> part_red(0.0);
 
     RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
@@ -83,7 +83,7 @@ struct PopulationSdom {
         }
     );
 
-    *part_ptr += part_red;
+    *part_ptr += (double)part_red;
   }
 
 };
