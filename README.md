@@ -116,6 +116,9 @@ Basic requirements:
 
 *  (Optional) OpenMP 3 or later
 
+*  (Optional) [Caliper](https://github.com/LLNL/Caliper): a performance profiling/analysis library.
+
+
 Submodule dependencies:
 
 *  [BLT](https://github.com/LLNL/blt) v0.1: a CMake based build system (required)
@@ -206,7 +209,12 @@ Environment Variables
 --------------------
 
 If Kripke is built with OpenMP support, then the environment variables ``OMP_NUM_THREADS`` is used to control the number of OpenMP threads.  Kripke does not attempt to modify the OpenMP runtime in any way, so other ``OMP_*`` environment variables should also work as well.
- 
+
+If Kripke is built with Caliper support, Caliper performance measurements can be configured through Caliper environment variables. For example,
+
+    CALI_CONFIG_PROFILE=runtime-report ./kripke ...
+
+will print a time profile of annotated code regions in Kripke. For more information, see https://llln.github.io/Caliper.
 
 Command Line Options
 --------------------

@@ -479,20 +479,20 @@ int main(int argc, char **argv) {
    */
 
 #ifdef KRIPKE_USE_CALIPER
-  cali::Annotation("kripke.nx", CALI_ATTR_GLOBAL).set(vars.nx);
-  cali::Annotation("kripke.ny", CALI_ATTR_GLOBAL).set(vars.ny);
-  cali::Annotation("kripke.nz", CALI_ATTR_GLOBAL).set(vars.nz);
+  cali_set_global_int_byname("kripke.nx", vars.nx);
+  cali_set_global_int_byname("kripke.ny", vars.ny);
+  cali_set_global_int_byname("kripke.nz", vars.nz);
   
-  cali::Annotation("kripke.groups",         CALI_ATTR_GLOBAL).set(vars.num_groups);
-  cali::Annotation("kripke.legendre_order", CALI_ATTR_GLOBAL).set(vars.legendre_order);
+  cali_set_global_int_byname("kripke.groups",         vars.num_groups);
+  cali_set_global_int_byname("kripke.legendre_order", vars.legendre_order);
 
   if (vars.parallel_method == PMETHOD_SWEEP)
-      cali::Annotation("kripke.parallel_method", CALI_ATTR_GLOBAL).set("sweep");
+      cali_set_global_string_byname("kripke.parallel_method", "sweep");
   else if (vars.parallel_method == PMETHOD_BJ)
-      cali::Annotation("kripke.parallel_method", CALI_ATTR_GLOBAL).set("block jacobi");
+      cali_set_global_string_byname("kripke.parallel_method", "block jacobi");
 
-  cali::Annotation("kripke.architecture", CALI_ATTR_GLOBAL).set(archToString(vars.al_v.arch_v).c_str());
-  cali::Annotation("kripke.layout", CALI_ATTR_GLOBAL).set(layoutToString(vars.al_v.layout_v).c_str());
+  cali_set_global_string_byname("kripke.architecture", archToString(vars.al_v.arch_v).c_str());
+  cali_set_global_string_byname("kripke.layout", layoutToString(vars.al_v.layout_v).c_str());
 #endif
 
   // Allocate problem
