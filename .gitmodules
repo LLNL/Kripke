@@ -9,3 +9,6 @@
 	path = tpl/chai
 	url = https://github.com/LLNL/CHAI.git
 	branch = develop
+[submodule "tpl/zfp"]
+	path = tpl/zfp
+	url = https://github.com/LLNL/zfp.git

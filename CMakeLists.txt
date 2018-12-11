@@ -24,6 +24,8 @@ set(BLT_CXX_STD "c++14" CACHE STRING "")
 
 set(chai_DIR ${CURRENT_SOURCE_DIR}/tpl/chai)
 
+set(zfp_DIR ${CURRENT_SOURCE_DIR}/tpl/zfp)
+
 include(blt/SetupBLT.cmake)
 
 
@@ -72,6 +74,20 @@ if(ENABLE_CHAI)
   
 endif()
 
+#
+# Configure ZFP
+#
+
+option(ENABLE_ZFP "Enable ZFP compressed arrays" Off)
+if(ENABLE_ZFP)
+
+  add_subdirectory(tpl/zfp)
+
+  set(KRIPKE_USE_ZFP 1)
+
+  list(APPEND KRIPKE_DEPENDS zfp)
+
+endif()
 
 #
 # Configure RAJA (REQUIRED)

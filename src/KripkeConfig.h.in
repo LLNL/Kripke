@@ -11,6 +11,7 @@
 #cmakedefine KRIPKE_USE_OPENMP
 #cmakedefine KRIPKE_USE_CUDA
 #cmakedefine KRIPKE_USE_CHAI
+#cmakedefine KRIPKE_USE_ZFP
 
 #cmakedefine KRIPKE_ARCH "@KRIPKE_ARCH@"
 

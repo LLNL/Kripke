@@ -33,6 +33,10 @@
 #ifndef KRIPKE_CORE_VARLAYOUT_H__
 #define KRIPKE_CORE_VARLAYOUT_H__
 
+#if defined(KRIPKE_USE_ZFP)
+#include "zfparray1.h"
+#endif
+
 namespace Kripke {
 namespace Core {
 
@@ -193,8 +197,13 @@ struct LayoutInfo {
 template<typename Order, typename ... IndexTypes>
 using LayoutType = typename LayoutInfo<Order, IndexTypes...>::Layout;
 
+#if defined(KRIPKE_USE_ZFP)
 template<typename Order, typename ElementType, typename ElementPtr, typename ... IndexTypes>
 using ViewType = RAJA::View<ElementType, LayoutType<Order, IndexTypes...>, ElementPtr>;
+#else
+template<typename Order, typename ElementType, typename ElementPtr, typename ... IndexTypes>
+using ViewType = RAJA::CompressedView<ElementType, LayoutType<Order, IndexTypes...>, ElementPtr>;
+#endif
 
 
 

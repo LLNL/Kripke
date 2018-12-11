@@ -46,6 +46,10 @@
 #undef DEBUG
 #endif
 
+#if defined(KRIPKE_USE_ZFP)
+#include "zfparray1.h"
+#endif
+
 namespace Kripke {
 namespace Core {
   /**
@@ -56,10 +60,16 @@ namespace Core {
     public:
       using ElementType = ELEMENT;
 
-#ifndef KRIPKE_USE_CHAI
-      using ElementPtr = ELEMENT*;
+#if defined(KRIPKE_USE_CHAI)
+      using ElementPtr = chai::ManagedArray<ElementType>;
+      using StoragePtr = ElementType *;
+#elif defined(KRIPKE_USE_ZFP)
+      using StorageType = zfp::array1<ElementType>;
+      using StoragePtr = StorageType *;
+      using ElementPtr = StorageType::pointer;
 #else
-      using ElementPtr = chai::ManagedArray<ELEMENT>;
+      using ElementPtr = ElementType *;
+      using StoragePtr = ElementPtr;
 #endif
 
       using Layout1dType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<RAJA::Index_type>>;
@@ -76,10 +86,10 @@ namespace Core {
         // allocate all of our chunks, and create layouts for each one
         size_t num_chunks = m_chunk_to_subdomain.size();
         m_chunk_to_size.resize(num_chunks, 0);
-#ifndef KRIPKE_USE_CHAI
-        m_chunk_to_data.resize(num_chunks, nullptr);
-#else
+#if defined(KRIPKE_USE_CHAI)
         m_chunk_to_data.resize(num_chunks);
+#else
+        m_chunk_to_data.resize(num_chunks, nullptr);
 #endif
 
         for(size_t chunk_id = 0;chunk_id < num_chunks;++ chunk_id){
@@ -89,9 +99,7 @@ namespace Core {
           size_t sdom_size = spanned_set.size(sdom_id);
 
           m_chunk_to_size[chunk_id] = sdom_size;
-#ifndef KRIPKE_USE_CHAI
-          m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
-#else
+#if defined(KRIPKE_USE_CHAI)
           m_chunk_to_data[chunk_id].allocate(sdom_size, chai::CPU,
               [=](chai::Action action, chai::ExecutionSpace space, size_t bytes){
                 /*printf("CHAI[%s, %d]: ", BaseVar::getName().c_str(), (int)chunk_id);
@@ -115,12 +123,21 @@ namespace Core {
               }
 
           );
+#elif defined(KRIPKE_USE_ZFP)
+          m_chunk_to_data[chunk_id] = new StorageType(sdom_size);
+#else
+          m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
 #endif
         }
       }
 
       virtual ~FieldStorage(){
-#ifndef KRIPKE_USE_CHAI
+#if definde(KRIPKE_USE_CHAI)
+#elif defined(KRIPKE_USE_ZFP)
+        for(auto i : m_chunk_to_data){
+          delete i;
+        }
+#else
         for(auto i : m_chunk_to_data){
           delete[] i;
         }
@@ -152,22 +169,21 @@ namespace Core {
       }
 
       RAJA_INLINE
-      ElementType *getData(Kripke::SdomId sdom_id) const {
+      StoragePtr *getData(Kripke::SdomId sdom_id) const {
         KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
             "sdom_id(%d) >= num_subdomains(%d)",
             (int)*sdom_id,
             (int)(int)m_subdomain_to_chunk.size());
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
-#ifndef KRIPKE_USE_CHAI
-        return  m_chunk_to_data[chunk_id];
-#else
+
+#if defined(KRIPKE_USE_CHAI)
         // use pointer conversion to get host pointer
         ElementType *ptr = m_chunk_to_data[chunk_id];
-
         // return host pointer
         return(ptr);
-
+#else
+        return  m_chunk_to_data[chunk_id];
 #endif
       }
 
@@ -193,16 +209,23 @@ namespace Core {
       using Parent = Kripke::Core::FieldStorage<ELEMENT>;
 
       using ElementType = ELEMENT;
-#ifndef KRIPKE_USE_CHAI
-      using ElementPtr = ELEMENT*;
-#else
+#if defined(KRIPKE_USE_CHAI)
       using ElementPtr = chai::ManagedArray<ELEMENT>;
+#elif defined(KRIPKE_USE_ZFP)
+      using ElementPtr = zfp::array1<ELEMENT>::pointer;
+#else
+      using ElementPtr = ELEMENT*;
 #endif
 
       static constexpr size_t NumDims = sizeof...(IDX_TYPES);
 
       using DefaultLayoutType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>>;
+
+#if defined(KRIPKE_USE_ZFP)
+      using DefaultViewType = RAJA::CompressedView<ElementType, DefaultLayoutType, ElementPtr>;
+#else
       using DefaultViewType = RAJA::View<ElementType, DefaultLayoutType, ElementPtr>;
+#endif
 
       template<typename Order>
       Field(Kripke::Core::Set const &spanned_set, Order) :
@@ -281,7 +304,7 @@ namespace Core {
         for(auto x : Parent::m_chunk_to_size){printf("%lu ", (unsigned long)x);}
         printf("\n");
 
-#ifndef KRIPKE_USE_CHAI
+#if !defined(KRIPKE_USE_CHAI)
         printf("  m_chunk_to_data: ");
         for(auto x : Parent::m_chunk_to_data){printf("%p ", x);}
         printf("\n");
