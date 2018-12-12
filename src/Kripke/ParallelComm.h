@@ -36,16 +36,22 @@
 #include <Kripke.h>
 #include <vector>
 
+#if defined(KRIPKE_USE_ZFP)
+#  include <Kripke/Core/Field.h>
+#endif
+
 struct Grid_Data;
 
 namespace Kripke {
 
+#if !defined(KRIPKE_USE_ZFP)
 namespace Core {
   class DataStore;
 
   template<typename T>
   class FieldStorage;
 }
+#endif
 
 class ParallelComm {
   public:

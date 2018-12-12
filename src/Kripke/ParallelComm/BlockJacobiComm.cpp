@@ -101,6 +101,8 @@ bool BlockJacobiComm::workRemaining(void){
     for(size_t i = 0;i < queue_sdom_ids.size();++ i){
       SdomId sdom_id(queue_sdom_ids[i]);
 
+      // Following code is still an issue with ZFP (these *might* be ZFP array).
+#if !defined(KRIPKE_USE_ZFP)
       // Send new downwind info for sweep
       double *buf[3] = {
           old_i_plane.getData(sdom_id),
@@ -109,6 +111,9 @@ bool BlockJacobiComm::workRemaining(void){
       };
 
       postSends(*m_data_store, sdom_id, buf);
+#else
+      assert("NIY!");
+#endif
     }
     posted_sends = true;
   }

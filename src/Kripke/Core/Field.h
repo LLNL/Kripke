@@ -52,29 +52,90 @@
 
 namespace Kripke {
 namespace Core {
+
+#if defined(KRIPKE_USE_ZFP)
+  // These sub-type are provided by ZFP arrays
+  template <typename ELEMENT, bool use_zfp>
+  struct StorageTypeHelper;
+
+  template <typename ELEMENT>
+  struct StorageTypeHelper<ELEMENT, false> {
+    using element_type = ELEMENT;
+
+    using storage_type = void; // only used with ZFP
+    using storage_pointer = element_type *;
+    using element_pointer = element_type *;
+    using element_reference = element_type &;
+
+    static inline storage_pointer alloc(size_t size) {
+      return new element_type[size];
+    }
+
+    static inline void free(storage_pointer store) {
+      delete [] store;
+    }
+
+    static inline element_pointer get_data(storage_pointer store) {
+      return store;
+    }
+  };
+
+  template <typename ELEMENT>
+  struct StorageTypeHelper<ELEMENT, true> {
+    using element_type = ELEMENT;
+
+    using storage_type = zfp::array1<element_type>; // only used with ZFP
+    using storage_pointer = storage_type *;
+    using element_pointer = typename storage_type::pointer;
+    using element_reference = typename storage_type::reference;
+
+    static inline storage_pointer alloc(size_t size) {
+      return new storage_type(size, 1.);
+    }
+
+    static inline void free(storage_pointer store) {
+      delete store;
+    }
+
+    static inline element_pointer get_data(storage_pointer store) {
+      return element_pointer(store, 0);
+    }
+  };
+#endif
+
   /**
    * Base class for Field which provides storage allocation
    */
+#if defined(KRIPKE_USE_ZFP)
+  template<typename ELEMENT, bool use_zfp__=std::is_floating_point<ELEMENT>::value>
+#else
   template<typename ELEMENT>
+#endif
   class FieldStorage : public Kripke::Core::DomainVar {
     public:
       using ElementType = ELEMENT;
 
+#if defined(RAJA_ENABLE_ZFP)
+      constexpr static bool use_zfp = use_zfp__;
+#endif
+
 #if defined(KRIPKE_USE_CHAI)
       using ElementPtr = chai::ManagedArray<ElementType>;
       using StoragePtr = ElementType *;
+      using ElementRef = ElementType;
 #elif defined(KRIPKE_USE_ZFP)
-      using StorageType = zfp::array1<ElementType>;
-      using StoragePtr = StorageType *;
-      using ElementPtr = StorageType::pointer;
+      using StorageType = StorageTypeHelper<ElementType, use_zfp>;
+      using StoragePtr = typename StorageType::storage_pointer;
+      using ElementPtr = typename StorageType::element_pointer;
+      using ElementRef = typename StorageType::element_reference;
 #else
       using ElementPtr = ElementType *;
       using StoragePtr = ElementPtr;
+      using ElementRef = ElementType;
 #endif
 
       using Layout1dType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<RAJA::Index_type>>;
       using View1dType = RAJA::View<ElementType, Layout1dType, ElementPtr>;
-
 
       explicit FieldStorage(Kripke::Core::Set const &spanned_set) :
         m_set(&spanned_set)
@@ -124,7 +185,7 @@ namespace Core {
 
           );
 #elif defined(KRIPKE_USE_ZFP)
-          m_chunk_to_data[chunk_id] = new StorageType(sdom_size);
+          m_chunk_to_data[chunk_id] = StorageType::alloc(sdom_size);
 #else
           m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
 #endif
@@ -132,10 +193,10 @@ namespace Core {
       }
 
       virtual ~FieldStorage(){
-#if definde(KRIPKE_USE_CHAI)
+#if defined(KRIPKE_USE_CHAI)
 #elif defined(KRIPKE_USE_ZFP)
         for(auto i : m_chunk_to_data){
-          delete i;
+          StorageType::free(i);
         }
 #else
         for(auto i : m_chunk_to_data){
@@ -162,14 +223,18 @@ namespace Core {
 
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
+#if defined(KRIPKE_USE_ZFP)
+        ElementPtr ptr = StorageType::get_data(m_chunk_to_data[chunk_id]);
+#else
         ElementPtr ptr = m_chunk_to_data[chunk_id];
+#endif
         size_t sdom_size = m_chunk_to_size[chunk_id];
 
         return View1dType(ptr, Layout1dType(sdom_size));
       }
 
       RAJA_INLINE
-      StoragePtr *getData(Kripke::SdomId sdom_id) const {
+      StoragePtr getData(Kripke::SdomId sdom_id) const {
         KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
             "sdom_id(%d) >= num_subdomains(%d)",
             (int)*sdom_id,
@@ -196,7 +261,11 @@ namespace Core {
     protected:
       Kripke::Core::Set const *m_set;
       std::vector<size_t> m_chunk_to_size;
+#if defined(KRIPKE_USE_ZFP)
+      std::vector<StoragePtr> m_chunk_to_data;
+#else
       std::vector<ElementPtr> m_chunk_to_data;
+#endif
   };
 
   /**
@@ -208,24 +277,23 @@ namespace Core {
 
       using Parent = Kripke::Core::FieldStorage<ELEMENT>;
 
-      using ElementType = ELEMENT;
+      using ElementType = typename Parent::ElementType;
 #if defined(KRIPKE_USE_CHAI)
       using ElementPtr = chai::ManagedArray<ELEMENT>;
 #elif defined(KRIPKE_USE_ZFP)
-      using ElementPtr = zfp::array1<ELEMENT>::pointer;
+      using StorageType = typename Parent::StorageType;
+      using ElementPtr = typename Parent::ElementPtr;
+      using ElementRef = typename Parent::ElementRef;
 #else
       using ElementPtr = ELEMENT*;
+      using ElementRef = ELEMENT;
 #endif
 
       static constexpr size_t NumDims = sizeof...(IDX_TYPES);
 
       using DefaultLayoutType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>>;
 
-#if defined(KRIPKE_USE_ZFP)
-      using DefaultViewType = RAJA::CompressedView<ElementType, DefaultLayoutType, ElementPtr>;
-#else
       using DefaultViewType = RAJA::View<ElementType, DefaultLayoutType, ElementPtr>;
-#endif
 
       template<typename Order>
       Field(Kripke::Core::Set const &spanned_set, Order) :
@@ -268,7 +336,11 @@ namespace Core {
 
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
 
-        auto ptr = Parent::m_chunk_to_data[chunk_id];
+#if defined(KRIPKE_USE_ZFP)
+        ElementPtr ptr = StorageType::get_data(Parent::m_chunk_to_data[chunk_id]);
+#else
+        ElementPtr ptr = Parent::m_chunk_to_data[chunk_id];
+#endif
         auto layout = m_chunk_to_layout[chunk_id];
 
         return DefaultViewType(ptr, layout);
@@ -282,7 +354,11 @@ namespace Core {
       {
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
 
+#if defined(KRIPKE_USE_ZFP)
+        ElementPtr ptr = StorageType::get_data(Parent::m_chunk_to_data[chunk_id]);
+#else
         ElementPtr ptr = Parent::m_chunk_to_data[chunk_id];
+#endif
 
         using LInfo = LayoutInfo<Order, IDX_TYPES...>;
         using LType = typename LInfo::Layout;

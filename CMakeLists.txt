@@ -24,8 +24,8 @@ set(BLT_CXX_STD "c++14" CACHE STRING "")
 
 set(chai_DIR ${CURRENT_SOURCE_DIR}/tpl/chai)
 
-set(zfp_DIR ${CURRENT_SOURCE_DIR}/tpl/zfp)
-
+set(zfp_DIR ${PROJECT_BINARY_DIR}/tpl/zfp)
+ 
 include(blt/SetupBLT.cmake)
 
 

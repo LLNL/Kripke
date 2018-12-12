@@ -197,13 +197,8 @@ struct LayoutInfo {
 template<typename Order, typename ... IndexTypes>
 using LayoutType = typename LayoutInfo<Order, IndexTypes...>::Layout;
 
-#if defined(KRIPKE_USE_ZFP)
 template<typename Order, typename ElementType, typename ElementPtr, typename ... IndexTypes>
 using ViewType = RAJA::View<ElementType, LayoutType<Order, IndexTypes...>, ElementPtr>;
-#else
-template<typename Order, typename ElementType, typename ElementPtr, typename ... IndexTypes>
-using ViewType = RAJA::CompressedView<ElementType, LayoutType<Order, IndexTypes...>, ElementPtr>;
-#endif
 
 
 
