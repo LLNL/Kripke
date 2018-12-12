@@ -3,7 +3,7 @@
 	url = https://github.com/LLNL/blt.git
 [submodule "tpl/raja"]
 	path = tpl/raja
-	url = https://github.com/LLNL/RAJA.git
+	url = https://github.com/tristanvdb/RAJA.git
 	branch = develop
 [submodule "tpl/chai"]
 	path = tpl/chai
@@ -11,4 +11,4 @@
 	branch = develop
 [submodule "tpl/zfp"]
 	path = tpl/zfp
-	url = https://github.com/LLNL/zfp.git
+	url = https://github.com/tristanvdb/zfp.git
