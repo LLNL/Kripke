@@ -41,10 +41,13 @@ using namespace Kripke;
 ParallelComm::ParallelComm(Kripke::Core::DataStore &data_store) :
   m_data_store(&data_store)
 {
+#if !defined(KRIPKE_USE_ZFP)
   m_plane_data[0] = &m_data_store->getVariable<Field_IPlane>("i_plane");
   m_plane_data[1] = &m_data_store->getVariable<Field_JPlane>("j_plane");
   m_plane_data[2] = &m_data_store->getVariable<Field_KPlane>("k_plane");
-
+#else
+  KRIPKE_ASSERT("TODO m_plane_data with ZFP!");
+#endif
 }
 
 
@@ -121,6 +124,7 @@ void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id
     recv_requests.push_back(MPI_Request());
     recv_subdomains.push_back(*sdom_id);
 
+#if !defined(KRIPKE_USE_ZFP)
     auto &plane_data = *m_plane_data[*dim];
     double *plane_data_ptr = plane_data.getData(sdom_id);
     size_t plane_data_size = plane_data.size(sdom_id);
@@ -130,6 +134,9 @@ void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id
     // Post the recieve
     MPI_Irecv(plane_data_ptr, plane_data_size, MPI_DOUBLE, upwind_rank,
       *global_sdom_id, MPI_COMM_WORLD, &recv_requests[recv_requests.size()-1]);
+#else
+    KRIPKE_ASSERT("TODO m_plane_data with ZFP!");
+#endif
 
     // increment number of dependencies
     num_depends ++;
@@ -178,12 +185,16 @@ void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId
         }
       }
 
+#if !defined(KRIPKE_USE_ZFP)
       // copy the boundary condition data into the downwinds plane data
       auto dst_plane = m_plane_data[*dim]->getView1d(sdom_id_downwind);
       int num_elem = m_plane_data[*dim]->size(sdom_id_downwind);
       for(int i = 0;i < num_elem;++ i){
         dst_plane(i) = src_buffers[*dim][i];
       }
+#else
+      KRIPKE_ASSERT("TODO m_plane_data with ZFP!");
+#endif
       continue;
     }
 
@@ -193,6 +204,7 @@ void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId
     // Add request to send queue
     send_requests.push_back(MPI_Request());
 
+#if !defined(KRIPKE_USE_ZFP)
     // Get size of outgoing boudnary data
     auto &plane_data = *m_plane_data[*dim];
     size_t plane_data_size = plane_data.size(sdom_id);
@@ -200,6 +212,9 @@ void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId
     // Post the send
     MPI_Isend(src_buffers[*dim], plane_data_size, MPI_DOUBLE, downwind_rank,
       *downwind_sdom, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
+#else
+    KRIPKE_ASSERT("TODO m_plane_data with ZFP!");
+#endif
 
 #else
     // We cannot SEND anything without MPI, so fail

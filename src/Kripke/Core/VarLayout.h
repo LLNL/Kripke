@@ -33,10 +33,6 @@
 #ifndef KRIPKE_CORE_VARLAYOUT_H__
 #define KRIPKE_CORE_VARLAYOUT_H__
 
-#if defined(KRIPKE_USE_ZFP)
-#include "zfparray1.h"
-#endif
-
 namespace Kripke {
 namespace Core {
 

@@ -84,11 +84,20 @@ void Kripke::generateProblem(Kripke::Core::DataStore &data_store,
 
     // Collect variables that are Fields of doubles
     std::vector<std::string> field_names;
+#if !defined(KRIPKE_USE_ZFP)
     for(auto const &var_name : data_store.getVariableList()){
       if(data_store.isVariableType<FieldStorage<double>>(var_name)){
         field_names.push_back(var_name);
       }
     }
+#else
+    // TODO FieldStorage<double> is not defined when ZFP is enable.
+    //       Can we replace that by something like:
+    //          data_store.isFieldOfType<double>(var_name)
+    //       Or better (maybe):
+    //          data_store.isFloatingPointField(var_name)
+#endif
+
     std::sort(field_names.begin(), field_names.end());
 
     printf("\n");
@@ -99,6 +108,7 @@ void Kripke::generateProblem(Kripke::Core::DataStore &data_store,
     unsigned long total_size = 0;
     for(auto const &field_name : field_names){
 
+#if !defined(KRIPKE_USE_ZFP)
       unsigned long field_size = data_store.getVariable<FieldStorage<double>>(field_name).getSet().globalSize();
       total_size += field_size;
 
@@ -106,6 +116,11 @@ void Kripke::generateProblem(Kripke::Core::DataStore &data_store,
           field_name.c_str(),
           field_size,
           (double)field_size*8.0/1024.0/1024.0);
+#else
+    // TODO FieldStorage<double> is not defined when ZFP is enable.
+    //       Can we replace that by something like:
+    //          data_store.getStorageSize(field_name)
+#endif
     }
 
     printf("  --------                  ------------    ---------\n");

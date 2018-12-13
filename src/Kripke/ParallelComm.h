@@ -82,7 +82,9 @@ class ParallelComm {
 
     Kripke::Core::DataStore *m_data_store;
 
+#if !defined(KRIPKE_USE_ZFP)
     Kripke::Core::FieldStorage<double> *m_plane_data[3];
+#endif
 
     // These vectors contian the recieve requests
 #ifdef KRIPKE_USE_MPI

@@ -54,6 +54,46 @@ namespace Kripke {
   RAJA_INDEX_VALUE(ZoneJ, "ZoneJ");
   RAJA_INDEX_VALUE(ZoneK, "ZoneK");
 
+#if defined(KRIPKE_USE_ZFP)
+  struct double_with_zfp_16 : public Kripke::Core::field_storage_config {
+    using type = double;
+    constexpr static double zfp_rate = 16.;
+  };
+
+  using Field_Flux = Kripke::Core::Field<double_with_zfp_16, Direction, Group, Zone>;
+  using Field_Moments = Kripke::Core::Field<double_with_zfp_16, Moment, Group, Zone>;
+
+  using Field_IPlane = Kripke::Core::Field<double_with_zfp_16, Direction, Group, ZoneJ, ZoneK>;
+  using Field_JPlane = Kripke::Core::Field<double_with_zfp_16, Direction, Group, ZoneI, ZoneK>;
+  using Field_KPlane = Kripke::Core::Field<double_with_zfp_16, Direction, Group, ZoneI, ZoneJ>;
+
+  using Field_Ell     = Kripke::Core::Field<double_with_zfp_16, Moment, Direction>;
+  using Field_EllPlus = Kripke::Core::Field<double_with_zfp_16, Direction, Moment>;
+
+  using Field_Speed  = Kripke::Core::Field<double_with_zfp_16, Material, GlobalGroup>;
+  using Field_SigmaT = Kripke::Core::Field<double_with_zfp_16, Material, GlobalGroup>;
+  using Field_SigmaS = Kripke::Core::Field<double_with_zfp_16, Material, Legendre, GlobalGroup, GlobalGroup>;
+
+  using Field_Direction2Double = Kripke::Core::Field<double_with_zfp_16, Direction>;
+  using Field_Direction2Int    = Kripke::Core::Field<int, Direction>;
+
+  using Field_Adjacency        = Kripke::Core::Field<GlobalSdomId, Dimension>;
+
+  using Field_Moment2Legendre  = Kripke::Core::Field<Legendre, Moment>;
+
+  using Field_ZoneI2Double  = Kripke::Core::Field<double_with_zfp_16, ZoneI>;
+  using Field_ZoneJ2Double  = Kripke::Core::Field<double_with_zfp_16, ZoneJ>;
+  using Field_ZoneK2Double  = Kripke::Core::Field<double_with_zfp_16, ZoneK>;
+  using Field_Zone2Double   = Kripke::Core::Field<double_with_zfp_16, Zone>;
+  using Field_Zone2Int      = Kripke::Core::Field<int, Zone>;
+  using Field_Zone2MixElem  = Kripke::Core::Field<MixElem, Zone>;
+
+  using Field_MixElem2Double   = Kripke::Core::Field<double_with_zfp_16, MixElem>;
+  using Field_MixElem2Material = Kripke::Core::Field<Material, MixElem>;
+  using Field_MixElem2Zone     = Kripke::Core::Field<Zone, MixElem>;
+
+  using Field_SigmaTZonal = Kripke::Core::Field<double_with_zfp_16, Group, Zone>;
+#else
   using Field_Flux = Kripke::Core::Field<double, Direction, Group, Zone>;
   using Field_Moments = Kripke::Core::Field<double, Moment, Group, Zone>;
 
@@ -87,6 +127,7 @@ namespace Kripke {
   using Field_MixElem2Zone     = Kripke::Core::Field<Zone, MixElem>;
 
   using Field_SigmaTZonal = Kripke::Core::Field<double, Group, Zone>;
+#endif
 
 
   template<typename T>
