@@ -48,12 +48,16 @@
 
 #if defined(KRIPKE_USE_ZFP)
 #include "zfparray1.h"
+#include "zfparray2.h"
+#include "zfparray3.h"
 #endif
 
 namespace Kripke {
 namespace Core {
 
 #if defined(KRIPKE_USE_ZFP)
+
+#define DEBUG_ZFP_WITH_PRINTF 0
 
   template <typename CONFIG, typename ELEMENT>
   struct BasicStorageTypeHelper {
@@ -76,6 +80,11 @@ namespace Core {
     static inline element_pointer get_data(storage_pointer store) {
       return store;
     }
+
+    template <typename LayoutT>
+    static inline void layout(storage_pointer store, LayoutT & layout) {
+      // TODO
+    }
   };
 
   struct field_storage_config {};
@@ -92,33 +101,109 @@ namespace Core {
   template<typename T>
   struct has_zfp_rate<T, decltype(std::declval<T>().zfp_rate, void())> : std::true_type { };
 
-  template <
-    typename ELEMENT,
-    unsigned int N,
-    bool = std::conditional< std::is_base_of<field_storage_config, ELEMENT>::value, has_type<ELEMENT>, std::false_type >::type::value,
-    bool = has_zfp_rate<ELEMENT>::value
-  >
-  struct StorageTypeHelper;
+  template<typename T, typename = void>
+  struct has_exclude : std::false_type { };
 
-  template <typename ELEMENT, unsigned int N>
-  struct StorageTypeHelper<ELEMENT, N, false, false> : BasicStorageTypeHelper<ELEMENT, ELEMENT> {};
+  template<typename T>
+  struct has_exclude<T, decltype(std::declval<T>().exclude, void())> : std::true_type { };
 
-  template <typename ELEMENT, unsigned int N>
-  struct StorageTypeHelper<ELEMENT, N, true, false> : BasicStorageTypeHelper<ELEMENT, typename ELEMENT::type> {};
+  template <typename ELEMENT, size_t N>
+  struct zfp_array_selector;
 
-  template <typename ELEMENT, unsigned int N>
-  struct StorageTypeHelper<ELEMENT, N, true, true> {
-    using config_type = ELEMENT;
+  template <typename ELEMENT>
+  struct zfp_array_selector<ELEMENT, 1>{
+    using type = zfp::array1<ELEMENT>;
+
+    static inline type * alloc(size_t size, double rate) {
+#if DEBUG_ZFP_WITH_PRINTF
+      printf("  Alloc ZFP 1D array of size %zu with rate %f\n", size, rate);
+#endif
+      return new type(size, rate);
+    }
+
+    static inline typename type::pointer get_data(type * store) {
+      return typename type::pointer(store, 0);
+    }
+
+    template <typename LayoutT>
+    static inline void layout(type * & store, LayoutT & layout) {
+#if DEBUG_ZFP_WITH_PRINTF
+      printf("  Layout ZFP 1D array to [%lu]\n", layout.sizes[0]);
+#endif
+      store->resize(layout.sizes[0]);
+    }
+  };
+  template <typename ELEMENT>
+  struct zfp_array_selector<ELEMENT, 2>{
+    using type = zfp::array2<ELEMENT>;
+
+    static inline type * alloc(size_t size, double rate) {
+#if DEBUG_ZFP_WITH_PRINTF
+      printf("  Alloc ZFP 2D array of size %zu with rate %f\n", size, rate);
+#endif
+      return new type(size, 1, rate);
+    }
+
+    static inline typename type::pointer get_data(type * store) {
+      return typename type::pointer(store, 0, 0);
+    }
+
+    template <typename LayoutT>
+    static inline void layout(type * & store, LayoutT & layout) {
+#if DEBUG_ZFP_WITH_PRINTF
+      printf("  Layout ZFP 2D array to [%lux%lu]\n", layout.sizes[0], layout.sizes[1]);
+#endif
+      store->resize(layout.sizes[0], layout.sizes[1]);
+    }
+  };
+  template <typename ELEMENT>
+  struct zfp_array_selector<ELEMENT, 3>{
+    using type = zfp::array3<ELEMENT>;
+
+    static inline type * alloc(size_t size, double rate) {
+#if DEBUG_ZFP_WITH_PRINTF
+      printf("  Alloc ZFP 3D array of size %zu with rate %f\n", size, rate);
+#endif
+      return new type(size, 1, 1, rate);
+    }
+
+    static inline typename type::pointer get_data(type * store) {
+      return typename type::pointer(store, 0, 0, 0);
+    }
+
+    template <typename LayoutT>
+    static inline void layout(type * & store, LayoutT & layout) {
+#if DEBUG_ZFP_WITH_PRINTF
+      printf("  Layout ZFP 3D array to [%lux%lux%lu]\n", layout.sizes[0], layout.sizes[1], layout.sizes[2]);
+#endif
+      store->resize(layout.sizes[0], layout.sizes[1], layout.sizes[2]);
+    }
+  };
+
+  template <typename ConfigT, size_t N, bool Hexclude>
+  struct ZFPStorageTypeHelper;
+
+  template <typename ConfigT, size_t N>
+  struct ZFPStorageTypeHelper<ConfigT, N, false> {
+
+    static_assert( N > 0 && N < 4 , "Invalid number of dimensions requested for a pure ZFP array.");
+
+    using config_type = ConfigT;
 
     using element_type = typename config_type::type;
 
-    using storage_type = zfp::array1<element_type>;
+    using array_selector = zfp_array_selector<element_type, N>;
+
+    using storage_type = typename array_selector::type;
     using storage_pointer = storage_type *;
     using element_pointer = typename storage_type::pointer;
     using element_reference = typename storage_type::reference;
 
     static inline storage_pointer alloc(size_t size) {
-      return new storage_type(size, config_type::zfp_rate);
+#if DEBUG_ZFP_WITH_PRINTF
+      printf("Alloc ZFP array of size %zu with rate %f\n", size, config_type::zfp_rate);
+#endif
+      return array_selector::alloc(size, config_type::zfp_rate);
     }
 
     static inline void free(storage_pointer store) {
@@ -126,9 +211,50 @@ namespace Core {
     }
 
     static inline element_pointer get_data(storage_pointer store) {
-      return element_pointer(store, 0);
+      return array_selector::get_data(store);
+    }
+
+    template <typename LayoutT>
+    static inline void layout(storage_pointer & store, LayoutT & layout) {
+#if DEBUG_ZFP_WITH_PRINTF
+      printf("Layout ZFP array\n");
+#endif
+      static_assert(LayoutT::n_dims == N, "Sizes of the layout and storage do not match.");
+      array_selector::layout(store,layout);
     }
   };
+
+  template <typename ConfigT, size_t N>
+  struct ZFPStorageTypeHelper<ConfigT, N, true> {
+
+    constexpr static size_t zfp_dims = N - ConfigT::exclude;
+
+    static_assert( zfp_dims > 0 && zfp_dims < 4 , "Invalid number of ZFP dimensions requested for a mixed ZFP array.");
+
+    static_assert( "Array of ZFP array not implemented yet!" );
+  };
+
+  template <
+    typename ConfigT,
+    size_t N,
+    bool = std::is_base_of<field_storage_config, ConfigT>::value,
+    bool = has_zfp_rate<ConfigT>::value
+  >
+  struct StorageTypeHelper;
+
+  template <typename ErrorT, size_t N>
+  struct StorageTypeHelper<ErrorT, N, false, true> {
+    static_assert("Does not make sense!");
+  };
+
+  template <typename ElementT, size_t N>
+  struct StorageTypeHelper<ElementT, N, false, false> : BasicStorageTypeHelper<ElementT, ElementT> {};
+
+  template <typename ConfigT, size_t N>
+  struct StorageTypeHelper<ConfigT, N, true, false> : BasicStorageTypeHelper<ConfigT, typename ConfigT::type> {};
+
+  template <typename ConfigT, size_t N>
+  struct StorageTypeHelper<ConfigT, N, true, true> : ZFPStorageTypeHelper<ConfigT, N, has_exclude<ConfigT>::value> {};
 
 #endif
 
@@ -136,7 +262,7 @@ namespace Core {
    * Base class for Field which provides storage allocation
    */
 #if defined(KRIPKE_USE_ZFP)
-  template<typename ELEMENT, unsigned int N>
+  template<typename ConfigT, unsigned int N>
 #else
   template<typename ELEMENT>
 #endif
@@ -144,7 +270,7 @@ namespace Core {
     public:
 
 #if defined(KRIPKE_USE_ZFP)
-      using StorageHelper = StorageTypeHelper<ELEMENT, N>;
+      using StorageHelper = StorageTypeHelper<ConfigT, N>;
       using ConfigType = typename StorageHelper::config_type;
       using StoragePtr = typename StorageHelper::storage_pointer;
       using ElementType = typename StorageHelper::element_type;
@@ -362,6 +488,10 @@ namespace Core {
           RAJA::Layout<NumDims, RAJA::Index_type> &layout =
               m_chunk_to_layout[chunk_id];
           layout = RAJA::make_permuted_layout<NumDims,RAJA::Index_type>(sizes, perm);
+
+#if defined(KRIPKE_USE_ZFP)
+          StorageHelper::layout(Parent::m_chunk_to_data[chunk_id], layout);
+#endif
         }
       }
 
