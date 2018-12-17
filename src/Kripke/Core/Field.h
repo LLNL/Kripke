@@ -69,21 +69,19 @@ namespace Core {
     using element_pointer = element_type *;
     using element_reference = element_type &;
 
+    using view_pointer_type = element_type *;
+
     static inline storage_pointer alloc(size_t size) {
       return new element_type[size];
     }
 
-    static inline void free(storage_pointer store) {
+    static inline void free(storage_pointer & store, element_pointer & baseptr) {
       delete [] store;
     }
 
-    static inline element_pointer get_data(storage_pointer store) {
-      return store;
-    }
-
     template <typename LayoutT>
-    static inline void layout(storage_pointer store, LayoutT & layout) {
-      // TODO
+    static inline void layout(storage_pointer & store, element_pointer & baseptr, LayoutT const & layout) {
+      baseptr = store;
     }
   };
 
@@ -121,16 +119,13 @@ namespace Core {
       return new type(size, rate);
     }
 
-    static inline typename type::pointer get_data(type * store) {
-      return typename type::pointer(store, 0);
-    }
-
     template <typename LayoutT>
-    static inline void layout(type * & store, LayoutT & layout) {
+    static inline void layout(type * & store, typename type::pointer & baseptr, LayoutT const & layout) {
 #if DEBUG_ZFP_WITH_PRINTF
       printf("  Layout ZFP 1D array to [%lu]\n", layout.sizes[0]);
 #endif
       store->resize(layout.sizes[0]);
+      baseptr = typename type::pointer(store, 0);
     }
   };
   template <typename ELEMENT>
@@ -144,16 +139,13 @@ namespace Core {
       return new type(size, 1, rate);
     }
 
-    static inline typename type::pointer get_data(type * store) {
-      return typename type::pointer(store, 0, 0);
-    }
-
     template <typename LayoutT>
-    static inline void layout(type * & store, LayoutT & layout) {
+    static inline void layout(type * & store, typename type::pointer & baseptr, LayoutT const & layout) {
 #if DEBUG_ZFP_WITH_PRINTF
       printf("  Layout ZFP 2D array to [%lux%lu]\n", layout.sizes[0], layout.sizes[1]);
 #endif
       store->resize(layout.sizes[0], layout.sizes[1]);
+      baseptr = typename type::pointer(store, 0, 0);
     }
   };
   template <typename ELEMENT>
@@ -167,16 +159,13 @@ namespace Core {
       return new type(size, 1, 1, rate);
     }
 
-    static inline typename type::pointer get_data(type * store) {
-      return typename type::pointer(store, 0, 0, 0);
-    }
-
     template <typename LayoutT>
-    static inline void layout(type * & store, LayoutT & layout) {
+    static inline void layout(type * & store, typename type::pointer & baseptr, LayoutT const & layout) {
 #if DEBUG_ZFP_WITH_PRINTF
       printf("  Layout ZFP 3D array to [%lux%lux%lu]\n", layout.sizes[0], layout.sizes[1], layout.sizes[2]);
 #endif
       store->resize(layout.sizes[0], layout.sizes[1], layout.sizes[2]);
+      baseptr = typename type::pointer(store, 0, 0, 0);
     }
   };
 
@@ -199,6 +188,10 @@ namespace Core {
     using element_pointer = typename storage_type::pointer;
     using element_reference = typename storage_type::reference;
 
+    struct view_pointer_type : public RAJA::view_config_user_defined_array {
+      using array_type = storage_type;
+    };
+
     static inline storage_pointer alloc(size_t size) {
 #if DEBUG_ZFP_WITH_PRINTF
       printf("Alloc ZFP array of size %zu with rate %f\n", size, config_type::zfp_rate);
@@ -206,32 +199,124 @@ namespace Core {
       return array_selector::alloc(size, config_type::zfp_rate);
     }
 
-    static inline void free(storage_pointer store) {
+    static inline void free(storage_pointer & store, element_pointer & baseptr) {
       delete store;
     }
 
-    static inline element_pointer get_data(storage_pointer store) {
-      return array_selector::get_data(store);
-    }
-
     template <typename LayoutT>
-    static inline void layout(storage_pointer & store, LayoutT & layout) {
+    static inline void layout(storage_pointer & store, element_pointer & baseptr, LayoutT const & layout) {
 #if DEBUG_ZFP_WITH_PRINTF
       printf("Layout ZFP array\n");
 #endif
       static_assert(LayoutT::n_dims == N, "Sizes of the layout and storage do not match.");
-      array_selector::layout(store,layout);
+      array_selector::layout(store, baseptr, layout);
     }
+  };
+
+  template <size_t N, size_t exclude, bool zfp_fast_dims>
+  struct array_of_zfp_array_view_pointer_type;
+
+  template <size_t N, size_t exclude>
+  struct array_of_zfp_array_view_pointer_type<N, exclude, true> : public RAJA::view_config_array_of_user_defined_array {
+      constexpr static bool user_array_on_fast_dims = true;
+      constexpr static size_t num_slow_dims = exclude;
+  };
+
+  template <size_t N, size_t exclude>
+  struct array_of_zfp_array_view_pointer_type<N, exclude, false> : public RAJA::view_config_array_of_user_defined_array {
+      constexpr static bool user_array_on_fast_dims = false;
+      constexpr static size_t num_slow_dims = N - exclude;
+  };
+
+  struct tmp_split_layout {
+    std::vector<size_t> sizes;
   };
 
   template <typename ConfigT, size_t N>
   struct ZFPStorageTypeHelper<ConfigT, N, true> {
 
-    constexpr static size_t zfp_dims = N - ConfigT::exclude;
+    using config_type = ConfigT;
 
+    using element_type = typename config_type::type;
+
+    constexpr static size_t zfp_dims = N - config_type::exclude;
+
+    using array_selector = zfp_array_selector<element_type, zfp_dims>;
     static_assert( zfp_dims > 0 && zfp_dims < 4 , "Invalid number of ZFP dimensions requested for a mixed ZFP array.");
 
-    static_assert( "Array of ZFP array not implemented yet!" );
+    using storage_type = typename array_selector::type;
+    using storage_pointer = storage_type **;
+    using element_pointer = typename storage_type::pointer *;
+    using element_reference = typename storage_type::reference;
+
+    struct view_pointer_type : public array_of_zfp_array_view_pointer_type<N, config_type::exclude, config_type::zfp_fast_dims> {
+      using array_type = storage_type;
+    };
+
+    static inline storage_pointer alloc(size_t size) {
+#if DEBUG_ZFP_WITH_PRINTF
+      printf("Alloc array of ZFP array of size %zu with rate %f\n", size, config_type::zfp_rate);
+#endif
+      return nullptr;
+    }
+
+    static inline void free(storage_pointer & store, element_pointer & baseptr) {
+      delete [] store;   // FIXME leaking ZFP arrays
+      delete [] baseptr; // FIXME leaking ZFP pointers
+      // TODO need to know the save of the array of array
+    }
+
+    static inline element_pointer get_pointer(storage_pointer store) {
+#if DEBUG_ZFP_WITH_PRINTF
+      printf("  ZFPStorageTypeHelper<array of ZFP array>::get_pointer\n");
+#endif
+      return store;
+    }
+
+    template <typename LayoutT>
+    static inline void layout(storage_pointer & store, element_pointer & baseptr, LayoutT const & layout) {
+#if DEBUG_ZFP_WITH_PRINTF
+      printf("Layout array of ZFP array:\n");
+      printf(" -- LayoutT::n_dims = %d\n", LayoutT::n_dims);
+#endif
+      static_assert(LayoutT::n_dims == N, "Sizes of the layout and storage do not match.");
+
+      tmp_split_layout slow_layout, fast_layout;
+
+      size_t slow_size = 1;
+      size_t fast_size = 1;
+      for (size_t i = 0; i < N; i++) {
+#if DEBUG_ZFP_WITH_PRINTF
+        printf(" -- layout.sizes[%zu] = %zu\n", i, layout.sizes[i]);
+#endif
+        if (i < view_pointer_type::num_slow_dims) {
+          slow_size *= layout.sizes[i];
+          slow_layout.sizes.push_back(layout.sizes[i]);
+        } else {
+          fast_size *= layout.sizes[i];
+          fast_layout.sizes.push_back(layout.sizes[i]);
+        }
+      }
+#if DEBUG_ZFP_WITH_PRINTF
+      printf(" - slow_size = %d\n", slow_size);
+      printf(" - fast_size = %d\n", fast_size);
+#endif
+      if (config_type::zfp_fast_dims) {
+        store = new storage_type*[slow_size];
+        baseptr = new typename storage_type::pointer[slow_size];
+        for (size_t i = 0; i < slow_size; i++) {
+          store[i] = array_selector::alloc(fast_size, config_type::zfp_rate);
+          array_selector::layout(store[i], baseptr[i], fast_layout);
+        }
+      } else {
+        store = new storage_type*[fast_size];
+        baseptr = new typename storage_type::pointer[fast_size];
+        for (size_t i = 0; i < fast_size; i++) {
+          store[i] = array_selector::alloc(slow_size, config_type::zfp_rate);
+          array_selector::layout(store[i], baseptr[i], slow_layout);
+        }
+      }
+    }
   };
 
   template <
@@ -248,13 +333,13 @@ namespace Core {
   };
 
   template <typename ElementT, size_t N>
-  struct StorageTypeHelper<ElementT, N, false, false> : BasicStorageTypeHelper<ElementT, ElementT> {};
+  struct StorageTypeHelper<ElementT, N, false, false> : public BasicStorageTypeHelper<ElementT, ElementT> {};
 
   template <typename ConfigT, size_t N>
-  struct StorageTypeHelper<ConfigT, N, true, false> : BasicStorageTypeHelper<ConfigT, typename ConfigT::type> {};
+  struct StorageTypeHelper<ConfigT, N, true, false> : public BasicStorageTypeHelper<ConfigT, typename ConfigT::type> {};
 
   template <typename ConfigT, size_t N>
-  struct StorageTypeHelper<ConfigT, N, true, true> : ZFPStorageTypeHelper<ConfigT, N, has_exclude<ConfigT>::value> {};
+  struct StorageTypeHelper<ConfigT, N, true, true> : public ZFPStorageTypeHelper<ConfigT, N, has_exclude<ConfigT>::value> {};
 
 #endif
 
@@ -276,6 +361,7 @@ namespace Core {
       using ElementType = typename StorageHelper::element_type;
       using ElementPtr = typename StorageHelper::element_pointer;
       using ElementRef = typename StorageHelper::element_reference;
+      using ViewPtr = typename StorageHelper::view_pointer_type;
 #else
       using ElementType = ELEMENT;
       using StoragePtr = ElementType *;
@@ -285,10 +371,11 @@ namespace Core {
 #else
       using ElementPtr = ElementType *;
 #endif
+      using ViewPtr = ElementPtr;
 #endif
 
       using Layout1dType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<RAJA::Index_type>>;
-      using View1dType = RAJA::View<ElementType, Layout1dType, ElementPtr>;
+      using View1dType = RAJA::View<ElementType, Layout1dType, ViewPtr>;
 
       explicit FieldStorage(Kripke::Core::Set const &spanned_set) :
         m_set(&spanned_set)
@@ -304,6 +391,9 @@ namespace Core {
         m_chunk_to_data.resize(num_chunks);
 #else
         m_chunk_to_data.resize(num_chunks, nullptr);
+#if defined(KRIPKE_USE_ZFP)
+        m_chunk_to_base_ptr.resize(num_chunks, nullptr);
+#endif
 #endif
 
         for(size_t chunk_id = 0;chunk_id < num_chunks;++ chunk_id){
@@ -348,8 +438,8 @@ namespace Core {
       virtual ~FieldStorage(){
 #if defined(KRIPKE_USE_CHAI)
 #elif defined(KRIPKE_USE_ZFP)
-        for(auto i : m_chunk_to_data){
-          StorageHelper::free(i);
+        for(size_t i = 0; i < m_chunk_to_data.size(); i++) {
+          StorageHelper::free(m_chunk_to_data[i], m_chunk_to_base_ptr[i]);
         }
 #else
         for(auto i : m_chunk_to_data){
@@ -378,10 +468,14 @@ namespace Core {
       RAJA_INLINE
       View1dType getView1d(Kripke::SdomId sdom_id) const {
 
+#if DEBUG_ZFP_WITH_PRINTF
+        printf("In FieldStorage::getView1d()\n");
+#endif
+
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
 #if defined(KRIPKE_USE_ZFP)
-        ElementPtr ptr = StorageHelper::get_data(m_chunk_to_data[chunk_id]);
+        ElementPtr ptr = m_chunk_to_base_ptr[chunk_id];
 #else
         ElementPtr ptr = m_chunk_to_data[chunk_id];
 #endif
@@ -392,6 +486,11 @@ namespace Core {
 
       RAJA_INLINE
       StoragePtr getData(Kripke::SdomId sdom_id) const {
+
+#if DEBUG_ZFP_WITH_PRINTF
+        printf("In FieldStorage::getData()\n");
+#endif
+
         KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
             "sdom_id(%d) >= num_subdomains(%d)",
             (int)*sdom_id,
@@ -420,6 +519,7 @@ namespace Core {
       std::vector<size_t> m_chunk_to_size;
 #if defined(KRIPKE_USE_ZFP)
       std::vector<StoragePtr> m_chunk_to_data;
+      std::vector<ElementPtr> m_chunk_to_base_ptr;
 #else
       std::vector<ElementPtr> m_chunk_to_data;
 #endif
@@ -442,24 +542,21 @@ namespace Core {
       using Parent = Kripke::Core::FieldStorage<ELEMENT>;
 #endif
 
+      using ElementType = typename Parent::ElementType;
+      using ElementPtr = typename Parent::ElementPtr;
+      using ElementRef = typename Parent::ElementRef;
+      using ViewPtr = typename Parent::ViewPtr;
 #if defined(KRIPKE_USE_ZFP)
       using StorageHelper = typename Parent::StorageHelper;
-      using ElementType = typename Parent::ElementType;
       using ConfigType = typename Parent::ConfigType;
       using StoragePtr = typename Parent::StoragePtr;
-      using ElementPtr = typename Parent::ElementPtr;
-      using ElementRef = typename Parent::ElementRef;
-#else
-      using ElementType = typename Parent::ElementType;
-      using ElementPtr = typename Parent::ElementPtr;
-      using ElementRef = typename Parent::ElementRef;
 #endif
 
       static constexpr size_t NumDims = sizeof...(IDX_TYPES);
 
       using DefaultLayoutType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>>;
 
-      using DefaultViewType = RAJA::View<ElementType, DefaultLayoutType, ElementPtr>;
+      using DefaultViewType = RAJA::View<ElementType, DefaultLayoutType, ViewPtr>;
 
       template<typename Order>
       Field(Kripke::Core::Set const &spanned_set, Order) :
@@ -490,7 +587,7 @@ namespace Core {
           layout = RAJA::make_permuted_layout<NumDims,RAJA::Index_type>(sizes, perm);
 
 #if defined(KRIPKE_USE_ZFP)
-          StorageHelper::layout(Parent::m_chunk_to_data[chunk_id], layout);
+          StorageHelper::layout(Parent::m_chunk_to_data[chunk_id], Parent::m_chunk_to_base_ptr[chunk_id], layout);
 #endif
         }
       }
@@ -504,10 +601,14 @@ namespace Core {
       RAJA_INLINE
       DefaultViewType getView(Kripke::SdomId sdom_id) const {
 
+#if DEBUG_ZFP_WITH_PRINTF
+        printf("In Field::getView()\n");
+#endif
+
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
 
 #if defined(KRIPKE_USE_ZFP)
-        ElementPtr ptr = StorageHelper::get_data(Parent::m_chunk_to_data[chunk_id]);
+        ElementPtr ptr = Parent::m_chunk_to_base_ptr[chunk_id];
 #else
         ElementPtr ptr = Parent::m_chunk_to_data[chunk_id];
 #endif
@@ -520,12 +621,17 @@ namespace Core {
       template<typename Order>
       RAJA_INLINE
       auto getViewOrder(Kripke::SdomId sdom_id) const ->
-        ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>
+        ViewType<Order, ElementType, ViewPtr, IDX_TYPES...>
       {
+
+#if DEBUG_ZFP_WITH_PRINTF
+        printf("In Field::getViewOrder()\n");
+#endif
+
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
 
 #if defined(KRIPKE_USE_ZFP)
-        ElementPtr ptr = StorageHelper::get_data(Parent::m_chunk_to_data[chunk_id]);
+        ElementPtr ptr = Parent::m_chunk_to_base_ptr[chunk_id];
 #else
         ElementPtr ptr = Parent::m_chunk_to_data[chunk_id];
 #endif
@@ -535,7 +641,7 @@ namespace Core {
 
         LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
 
-        return ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>(ptr, layout);
+        return ViewType<Order, ElementType, ViewPtr, IDX_TYPES...>(ptr, layout);
       }
 
 

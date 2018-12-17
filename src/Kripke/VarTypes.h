@@ -55,22 +55,43 @@ namespace Kripke {
   RAJA_INDEX_VALUE(ZoneK, "ZoneK");
 
 #if defined(KRIPKE_USE_ZFP)
+
+
   struct double_zfp_rate_16 : public Kripke::Core::field_storage_config {
     using type = double;
     constexpr static double zfp_rate = 16.;
   };
 
-  // Following descriptor are not used they illustrate the desired designed for array of zfp array
-  struct double_zfp_rate_16_exclude_1st : public Kripke::Core::field_storage_config {
+#define TEST_ZFP_ARRAY_OF_ARRAY 1
+#if TEST_ZFP_ARRAY_OF_ARRAY
+  // Descriptors for array of zfp array
+  //    - `exclude` refers to the number of dimension being excluded from the ZFP array
+  //         -> we exclude dimension *after* the layout is applied
+  //    - `zfp_fast_dims` refers to whether we put the faster or upper dimensions form the ZFP array
+  //         -> `zfp_fast_dims == true` => the faster dimension are used
+  struct double_zfp_rate_16_exclude_1_fast : public Kripke::Core::field_storage_config {
     using type = double;
     constexpr static double zfp_rate = 16.;
-    constexpr static size_t exclude[1] = {1};
+    constexpr static size_t exclude = 1;
+    constexpr static size_t zfp_fast_dims = true;
   };
-  struct double_zfp_rate_16_exclude_1st_3rd : public Kripke::Core::field_storage_config {
+#endif
+
+#define TEST_MORE_ZFP_ARRAY_OF_ARRAY 0
+#if TEST_MORE_ZFP_ARRAY_OF_ARRAY
+  struct double_zfp_rate_16_exclude_2_fast : public Kripke::Core::field_storage_config {
     using type = double;
     constexpr static double zfp_rate = 16.;
-    constexpr static size_t exclude[2] = {1, 3};
+    constexpr static size_t exclude = 2;
+    constexpr static bool zfp_fast_dims = true;
   };
+  struct double_zfp_rate_16_exclude_2_slow : public Kripke::Core::field_storage_config {
+    using type = double;
+    constexpr static double zfp_rate = 16.;
+    constexpr static size_t exclude = 2;
+    constexpr static bool zfp_fast_dims = false;
+  };
+#endif
 
   using Field_Flux = Kripke::Core::Field<double_zfp_rate_16, Direction, Group, Zone>;
 //using Field_Flux_psi = Field_Flux; // updates in: SweepSubdomain
@@ -80,13 +101,33 @@ namespace Kripke {
 //using Field_Moments_phi = Field_Moments; // updates in: LTimes
 //using Field_Moments_phi_out = Field_Moments; // updates in: Scattering, Source
 
-  using Field_IPlane = Kripke::Core::Field<double, Direction, Group, ZoneJ, ZoneK>; // updates in: SweepSubdomain
+#if TEST_ZFP_ARRAY_OF_ARRAY
+  using type_for_Field_IPlane = double_zfp_rate_16_exclude_1_fast;
+#else
+  using type_for_Field_IPlane = double;
+#endif
+
+  using Field_IPlane = Kripke::Core::Field<type_for_Field_IPlane, Direction, Group, ZoneJ, ZoneK>; // updates in: SweepSubdomain
 //using Field_IPlane_old = Field_IPlane; // for comms, problably easier if they are the same
 
-  using Field_JPlane = Kripke::Core::Field<double, Direction, Group, ZoneI, ZoneK>; // updates in: SweepSubdomain
+#if TEST_MORE_ZFP_ARRAY_OF_ARRAY
+  using type_for_Field_JPlane = double_zfp_rate_16_exclude_2_fast;
+#elif TEST_ZFP_ARRAY_OF_ARRAY
+  using type_for_Field_JPlane = double_zfp_rate_16_exclude_1_fast;
+#else
+  using type_for_Field_JPlane = double;
+#endif
+  using Field_JPlane = Kripke::Core::Field<type_for_Field_JPlane, Direction, Group, ZoneI, ZoneK>; // updates in: SweepSubdomain
 //using Field_JPlane_old = Field_JPlane; // for comms, problably easier if they are the same
 
-  using Field_KPlane = Kripke::Core::Field<double, Direction, Group, ZoneI, ZoneJ>; // updates in: SweepSubdomain
+#if TEST_MORE_ZFP_ARRAY_OF_ARRAY
+  using type_for_Field_KPlane = double_zfp_rate_16_exclude_2_slow;
+#elif TEST_ZFP_ARRAY_OF_ARRAY
+  using type_for_Field_KPlane = double_zfp_rate_16_exclude_1_fast;
+#else
+  using type_for_Field_KPlane = double;
+#endif
+  using Field_KPlane = Kripke::Core::Field<type_for_Field_KPlane, Direction, Group, ZoneI, ZoneJ>; // updates in: SweepSubdomain
 //using Field_KPlane_old = Field_KPlane; // for comms, problably easier if they are the same
 
   using Field_Ell     = Kripke::Core::Field<double, Moment, Direction>;
