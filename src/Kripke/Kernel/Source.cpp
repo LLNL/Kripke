@@ -48,6 +48,8 @@ using namespace Kripke::Core;
  */
 struct SourceSdom {
 
+  static const std::string KernelName;
+
   template<typename AL>
   RAJA_INLINE
   void operator()(AL al, 
@@ -100,6 +102,7 @@ struct SourceSdom {
   }
 };
 
+const std::string SourceSdom::KernelName = "Source";
 
 
 void Kripke::Kernel::source(DataStore &data_store)

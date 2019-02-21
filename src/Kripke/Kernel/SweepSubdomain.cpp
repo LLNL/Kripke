@@ -44,6 +44,8 @@ using namespace Kripke::Core;
 
 struct SweepSdom {
 
+  static const std::string KernelName;
+
   template<typename AL>
   RAJA_INLINE
   void operator()(AL al, Kripke::Core::DataStore &data_store,
@@ -131,6 +133,8 @@ struct SweepSdom {
     );
   }
 };
+
+const std::string SweepSdom::KernelName = "sweepSubdomain";
 
 void Kripke::Kernel::sweepSubdomain(Kripke::Core::DataStore &data_store,
     Kripke::SdomId sdom_id)

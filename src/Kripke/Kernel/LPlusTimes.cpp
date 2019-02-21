@@ -41,6 +41,8 @@ using namespace Kripke::Core;
 
 struct LPlusTimesSdom {
 
+  static const std::string KernelName;
+
   template<typename AL>
   void operator()(AL al, 
                   Kripke::SdomId sdom_id,
@@ -85,6 +87,7 @@ struct LPlusTimesSdom {
 
 };
 
+const std::string LPlusTimesSdom::KernelName =  "LPlusTimes";
 
 
 void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)

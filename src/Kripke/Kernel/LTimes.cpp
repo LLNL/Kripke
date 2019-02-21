@@ -45,6 +45,8 @@ using namespace Kripke::Core;
 
 struct LTimesSdom {
 
+  static const std::string KernelName;
+
   template<typename AL>
   RAJA_INLINE
   void operator()(AL al, 
@@ -92,7 +94,7 @@ struct LTimesSdom {
 
 };
 
-
+const std::string LTimesSdom::KernelName = "LTimes";
 
 
 
