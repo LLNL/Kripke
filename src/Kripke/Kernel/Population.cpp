@@ -44,6 +44,8 @@ using namespace Kripke::Core;
 
 struct PopulationSdom {
 
+  static const std::string KernelName;
+
   template<typename AL>
   void operator()(AL al, 
                   Kripke::SdomId sdom_id,
@@ -87,6 +89,8 @@ struct PopulationSdom {
   }
 
 };
+
+const std::string PopulationSdom::KernelName = "Population";
 
 
 /**

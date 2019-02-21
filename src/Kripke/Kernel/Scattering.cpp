@@ -48,6 +48,8 @@ using namespace Kripke::Core;
 
 struct ScatteringSdom {
 
+  static const std::string KernelName;
+
   template<typename AL>
   RAJA_INLINE
   void operator()(AL al, 
@@ -124,6 +126,7 @@ struct ScatteringSdom {
 
 };
 
+const std::string ScatteringSdom::KernelName = "Scattering";
 
 
 /**
