@@ -137,3 +137,6 @@ size_t Timing::getCount(std::string const &name) const{
   return i->second.getCount();
 }
 
+#ifdef KRIPKE_USE_CALIPER
+cali::Annotation BlockTimer::cali_annot("kripke", CALI_ATTR_SCOPE_PROCESS | CALI_ATTR_NESTED);
+#endif

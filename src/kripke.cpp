@@ -49,6 +49,10 @@
 #include <omp.h>
 #endif
 
+#ifdef KRIPKE_USE_CALIPER
+#include <caliper/cali.h>
+#endif
+
 #ifdef __bgq__
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/location.h>
 #endif
@@ -259,6 +263,11 @@ int main(int argc, char **argv) {
     printf("  OpenMP Enabled:         No\n");
 #endif
 
+#ifdef KRIPKE_USE_CALIPER
+    printf("  Caliper Enabled:        Yes\n");
+#else
+    printf("  Caliper Enabled:        No\n");
+#endif
 
 
 
@@ -465,7 +474,26 @@ int main(int argc, char **argv) {
     
   }
 
+  /*
+   * Set Caliper globals
+   */
 
+#ifdef KRIPKE_USE_CALIPER
+  cali_set_global_int_byname("kripke.nx", vars.nx);
+  cali_set_global_int_byname("kripke.ny", vars.ny);
+  cali_set_global_int_byname("kripke.nz", vars.nz);
+  
+  cali_set_global_int_byname("kripke.groups",         vars.num_groups);
+  cali_set_global_int_byname("kripke.legendre_order", vars.legendre_order);
+
+  if (vars.parallel_method == PMETHOD_SWEEP)
+      cali_set_global_string_byname("kripke.parallel_method", "sweep");
+  else if (vars.parallel_method == PMETHOD_BJ)
+      cali_set_global_string_byname("kripke.parallel_method", "block jacobi");
+
+  cali_set_global_string_byname("kripke.architecture", archToString(vars.al_v.arch_v).c_str());
+  cali_set_global_string_byname("kripke.layout", layoutToString(vars.al_v.layout_v).c_str());
+#endif
 
   // Allocate problem
 
