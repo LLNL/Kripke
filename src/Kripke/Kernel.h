@@ -46,6 +46,8 @@ namespace Kripke {
 
     void LTimes(Kripke::Core::DataStore &data_store);
 
+    template<typename AL>
+    [[clang::jit]] void LTimesJit(Kripke::Core::DataStore &data_store);
 
     double population(Kripke::Core::DataStore &data_store);
 

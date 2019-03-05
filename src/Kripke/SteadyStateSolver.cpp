@@ -76,7 +76,9 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
 
     // Discrete to Moments transformation (phi = L*psi)
     Kripke::Kernel::kConst(data_store.getVariable<Field_Moments>("phi"), 0.0);
-    Kripke::Kernel::LTimes(data_store);
+    
+    //Kripke::Kernel::LTimes(data_store);
+    Kripke::Kernel::LTimesJit<std::string("Kripke::ArchLayout")>(data_store);
 
 
 
