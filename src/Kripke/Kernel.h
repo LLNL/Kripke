@@ -41,7 +41,7 @@
 #include <Kripke/Kernel.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
-
+#include <Kripke/Arch/LTimes.h>
 
 namespace Kripke {
 
@@ -51,7 +51,7 @@ namespace Kripke {
 
 
     void LTimes(Kripke::Core::DataStore &data_store);
-
+    
     template<typename AL>
     [[clang::jit]] void LTimesJit(Kripke::Core::DataStore &data_store){
         using namespace Kripke;
