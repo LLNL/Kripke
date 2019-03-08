@@ -132,6 +132,8 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
 
   }
 
+  Kripke::Kernel::error_norms(data_store);
+  
   if(comm.rank() == 0){
     printf("  Solver terminated\n");
   }

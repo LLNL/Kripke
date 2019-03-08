@@ -237,6 +237,7 @@ blt_add_library(
               "src/Kripke/Kernel/Scattering.cpp"
               "src/Kripke/Kernel/Source.cpp"
               "src/Kripke/Kernel/SweepSubdomain.cpp"
+              "src/Kripke/Kernel/ErrorNorms.cpp"
               "src/Kripke/ParallelComm/BlockJacobiComm.cpp"
               "src/Kripke/ParallelComm/SweepComm.cpp"
               "src/Kripke/ParallelComm.cpp"

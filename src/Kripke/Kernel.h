@@ -58,6 +58,7 @@ namespace Kripke {
 
     void sweepSubdomain(Kripke::Core::DataStore &data_store, Kripke::SdomId sdom_id);
 
+    void error_norms(Kripke::Core::DataStore &data_store);
 
     template<typename FieldType>
     RAJA_INLINE
