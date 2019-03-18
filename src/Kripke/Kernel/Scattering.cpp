@@ -131,58 +131,5 @@ struct ScatteringSdom {
   phi_out(gp,z,nm) = sum_g { sigs(g, n, gp) * phi(g,z,nm) }
 */
 
-void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
-{
-  KRIPKE_TIMER(data_store, Scattering);
-
-  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
-
-  auto &pspace = data_store.getVariable<Kripke::Core::PartitionSpace>("pspace");
-
-  auto &set_group  = data_store.getVariable<Kripke::Core::Set>("Set/Group");
-  auto &set_moment = data_store.getVariable<Kripke::Core::Set>("Set/Moment");
-  auto &set_zone   = data_store.getVariable<Kripke::Core::Set>("Set/Zone");
-
-  auto &field_phi     = data_store.getVariable<Kripke::Field_Moments>("phi");
-  auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
-  auto &field_sigs    = data_store.getVariable<Field_SigmaS>("data/sigs");
-
-  auto &field_zone_to_mixelem     = data_store.getVariable<Field_Zone2MixElem>("zone_to_mixelem");
-  auto &field_zone_to_num_mixelem = data_store.getVariable<Field_Zone2Int>("zone_to_num_mixelem");
-  auto &field_mixed_to_material = data_store.getVariable<Field_MixElem2Material>("mixelem_to_material");
-  auto &field_mixed_to_fraction = data_store.getVariable<Field_MixElem2Double>("mixelem_to_fraction");
-
-  auto &field_moment_to_legendre = data_store.getVariable<Field_Moment2Legendre>("moment_to_legendre");
-
-
-  // Loop over subdomains and compute scattering source
-  for(auto sdom_src : field_phi.getWorkList()){
-    for(auto sdom_dst : field_phi_out.getWorkList()){
-
-      // Only work on subdomains where src and dst are on the same R subdomain
-      size_t r_src = pspace.subdomainToSpace(SPACE_R, sdom_src);
-      size_t r_dst = pspace.subdomainToSpace(SPACE_R, sdom_dst);
-      if(r_src != r_dst){
-        continue;
-      }
-
-      Kripke::dispatch(al_v, ScatteringSdom{}, sdom_src,
-                       sdom_dst,
-                       set_group, set_zone, set_moment,
-                       field_phi, field_phi_out, field_sigs,
-                       field_zone_to_mixelem,
-                       field_zone_to_num_mixelem,
-                       field_mixed_to_material,
-                       field_mixed_to_fraction,
-                       field_moment_to_legendre);
-
-
-
-    }
-
-  }
-
-
-}
 
 

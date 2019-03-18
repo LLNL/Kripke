@@ -43,6 +43,12 @@
 
 using namespace Kripke::Core;
 
+
+template<typename Body>
+void launcher(Body && body){
+  body(std::string("Kripke::ArchLayoutT<Kripke::ArchT_Sequential,Kripke::LayoutT_DGZ>"));
+}
+
 /**
   Run solver iterations.
 */
@@ -78,25 +84,31 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
     Kripke::Kernel::kConst(data_store.getVariable<Field_Moments>("phi"), 0.0);
     
     //Kripke::Kernel::LTimes(data_store);
-    Kripke::Kernel::template LTimesJit<std::string("Kripke::ArchLayoutT<Kripke::ArchT_Sequential,Kripke::LayoutT_DGZ>")>(data_store);
+    launcher([&](const std::string& ArchitectureLayout){
+      Kripke::Kernel::template LTimes<ArchitectureLayout>(data_store);
+    });   
 
 
 
     // Compute Scattering Source Term (psi_out = S*phi)
     Kripke::Kernel::kConst(data_store.getVariable<Kripke::Field_Moments>("phi_out"), 0.0);
-    Kripke::Kernel::scattering(data_store);
+    launcher([&](const std::string& ArchitectureLayout){
+      Kripke::Kernel::template scattering<ArchitectureLayout>(data_store);
+    });
 
 
 
     // Compute External Source Term (psi_out = psi_out + Q)
-    Kripke::Kernel::source(data_store);
-
+    launcher([&](const std::string& ArchitectureLayout){
+      Kripke::Kernel::template source<ArchitectureLayout>(data_store);
+    });
 
 
     // Moments to Discrete transformation (rhs = LPlus*psi_out)
     Kripke::Kernel::kConst(data_store.getVariable<Kripke::Field_Flux>("rhs"), 0.0);
-    Kripke::Kernel::LPlusTimes(data_store);
-
+    launcher([&](const std::string& ArchitectureLayout){
+      Kripke::Kernel::template LPlusTimes<ArchitectureLayout>(data_store);
+    });
 
 
 

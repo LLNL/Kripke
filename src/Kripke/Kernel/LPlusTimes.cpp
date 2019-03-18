@@ -87,28 +87,28 @@ struct LPlusTimesSdom {
 
 
 
-void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)
-{
-  KRIPKE_TIMER(data_store, LPlusTimes);
-
-  Set const &set_dir    = data_store.getVariable<Set>("Set/Direction");
-  Set const &set_group  = data_store.getVariable<Set>("Set/Group");
-  Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
-  Set const &set_moment = data_store.getVariable<Set>("Set/Moment");
-
-  auto &field_phi_out =   data_store.getVariable<Field_Moments>("phi_out");
-  auto &field_rhs =       data_store.getVariable<Field_Flux>("rhs");
-  auto &field_ell_plus =  data_store.getVariable<Field_EllPlus>("ell_plus");
-
-  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
-
-  // Loop over Subdomains
-  for (Kripke::SdomId sdom_id : field_rhs.getWorkList()){
-
-    Kripke::dispatch(al_v, LPlusTimesSdom{}, sdom_id,
-                     set_dir, set_group, set_zone, set_moment,
-                     field_phi_out, field_rhs, field_ell_plus);
-
-  }
-
-}
+//void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)
+//{
+//  KRIPKE_TIMER(data_store, LPlusTimes);
+//
+//  Set const &set_dir    = data_store.getVariable<Set>("Set/Direction");
+//  Set const &set_group  = data_store.getVariable<Set>("Set/Group");
+//  Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
+//  Set const &set_moment = data_store.getVariable<Set>("Set/Moment");
+//
+//  auto &field_phi_out =   data_store.getVariable<Field_Moments>("phi_out");
+//  auto &field_rhs =       data_store.getVariable<Field_Flux>("rhs");
+//  auto &field_ell_plus =  data_store.getVariable<Field_EllPlus>("ell_plus");
+//
+//  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
+//
+//  // Loop over Subdomains
+//  for (Kripke::SdomId sdom_id : field_rhs.getWorkList()){
+//
+//    Kripke::dispatch(al_v, LPlusTimesSdom{}, sdom_id,
+//                     set_dir, set_group, set_zone, set_moment,
+//                     field_phi_out, field_rhs, field_ell_plus);
+//
+//  }
+//
+//}

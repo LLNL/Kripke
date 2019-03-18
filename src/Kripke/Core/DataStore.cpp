@@ -21,7 +21,7 @@ void DataStore::addVariable(std::string const &name,
   Kripke::Core::BaseVar *var)
 {
   if(m_vars.find(name) != m_vars.end()){
-    throw std::domain_error("Variable '" + name + "' already exists");
+    //throw std::domain_error("Variable '" + name + "' already exists");
   }
 
   m_vars[name] = var;
@@ -33,7 +33,7 @@ void DataStore::addVariable(std::string const &name,
 void DataStore::deleteVariable(std::string const &name){
   auto it = m_vars.find(name);
   if(it == m_vars.end()){
-    throw std::domain_error("Variable '" + name + "' does not exist");
+    //throw std::domain_error("Variable '" + name + "' does not exist");
   }
 
   // destroy object

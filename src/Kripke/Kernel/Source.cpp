@@ -102,36 +102,36 @@ struct SourceSdom {
 
 
 
-void Kripke::Kernel::source(DataStore &data_store)
-{
-  KRIPKE_TIMER(data_store, Source);
-
-  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
-
-  auto &set_group   = data_store.getVariable<Set>("Set/Group");
-  auto &set_mixelem = data_store.getVariable<Set>("Set/MixElem");
-
-  auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
-
-  auto &field_mixed_to_zone     = data_store.getVariable<Field_MixElem2Zone>("mixelem_to_zone");
-  auto &field_mixed_to_material = data_store.getVariable<Field_MixElem2Material>("mixelem_to_material");
-  auto &field_mixed_to_fraction = data_store.getVariable<Field_MixElem2Double>("mixelem_to_fraction");
-
-  double source_strength = 1.0;
-
-
-  // Loop over zoneset subdomains
-  for(auto sdom_id : field_phi_out.getWorkList()){
-
-    Kripke::dispatch(al_v, SourceSdom{}, sdom_id,
-                     set_group, set_mixelem,
-                     field_phi_out,
-                     field_mixed_to_zone,
-                     field_mixed_to_material,
-                     field_mixed_to_fraction,
-                     source_strength);
-
-  }
-
-
-}
+//void Kripke::Kernel::source(DataStore &data_store)
+//{
+//  KRIPKE_TIMER(data_store, Source);
+//
+//  ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
+//
+//  auto &set_group   = data_store.getVariable<Set>("Set/Group");
+//  auto &set_mixelem = data_store.getVariable<Set>("Set/MixElem");
+//
+//  auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
+//
+//  auto &field_mixed_to_zone     = data_store.getVariable<Field_MixElem2Zone>("mixelem_to_zone");
+//  auto &field_mixed_to_material = data_store.getVariable<Field_MixElem2Material>("mixelem_to_material");
+//  auto &field_mixed_to_fraction = data_store.getVariable<Field_MixElem2Double>("mixelem_to_fraction");
+//
+//  double source_strength = 1.0;
+//
+//
+//  // Loop over zoneset subdomains
+//  for(auto sdom_id : field_phi_out.getWorkList()){
+//
+//    Kripke::dispatch(al_v, SourceSdom{}, sdom_id,
+//                     set_group, set_mixelem,
+//                     field_phi_out,
+//                     field_mixed_to_zone,
+//                     field_mixed_to_material,
+//                     field_mixed_to_fraction,
+//                     source_strength);
+//
+//  }
+//
+//
+//}

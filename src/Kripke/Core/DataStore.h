@@ -71,7 +71,7 @@ class DataStore {
       // Perform lookup by name
       auto it = m_vars.find(name);
       if(it == m_vars.end()){
-        throw std::domain_error("Cannot find '" + name + "' in DataStore");
+        //throw std::domain_error("Cannot find '" + name + "' in DataStore");
       }
 
       // Cast from BaseVar* and check for correctness
