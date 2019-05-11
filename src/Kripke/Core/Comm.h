@@ -217,6 +217,18 @@ class Comm : public Kripke::Core::BaseVar {
       return value;
     }
 
+    /**
+     * Allreduce MAX a single value.
+     * Without MPI, this is a NOP returning the value passed in
+     */
+    RAJA_INLINE
+    double allReduceMaxDouble(double value) const {
+#ifdef KRIPKE_USE_MPI
+      MPI_Allreduce(MPI_IN_PLACE, &value, 1, MPI_DOUBLE, MPI_MAX, m_comm);
+#endif
+      return value;
+    }
+    
   private:
 #ifdef KRIPKE_USE_MPI
     MPI_Comm m_comm;

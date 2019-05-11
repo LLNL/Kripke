@@ -71,6 +71,7 @@ struct InputVariables {
   
   // Output Options
   std::string run_name;         // Name to use when generating output files
+  bool compute_errors;          // compute error and solution norms for the no-scattering (type i) problem
 };
 
 #endif
