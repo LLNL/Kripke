@@ -198,14 +198,16 @@ void Kripke::Kernel::error_norms(Kripke::Core::DataStore &data_store)
 
   // reduce
   auto const &comm = data_store.getVariable<Kripke::Core::Comm>("comm");
+
+  double vol = comm.allReduceSumDouble(vol_grp);
   double g_max_norm = comm.allReduceMaxDouble(max_norm);
   double g_max_sol_norm = comm.allReduceMaxDouble(max_sol_norm);
 
-  double g_l1_norm = comm.allReduceSumDouble(l1_norm)/vol_grp;
-  double g_l2_norm = std::sqrt(comm.allReduceSumDouble(l2_norm)/vol_grp);
+  double g_l1_norm = comm.allReduceSumDouble(l1_norm)/vol;
+  double g_l2_norm = std::sqrt(comm.allReduceSumDouble(l2_norm)/vol);
 
-  double g_l1_sol_norm = comm.allReduceSumDouble(l1_sol_norm)/vol_grp;
-  double g_l2_sol_norm = std::sqrt(comm.allReduceSumDouble(l2_sol_norm)/vol_grp);
+  double g_l1_sol_norm = comm.allReduceSumDouble(l1_sol_norm)/vol;
+  double g_l2_sol_norm = std::sqrt(comm.allReduceSumDouble(l2_sol_norm)/vol);
 
   if(comm.rank() == 0){
     printf("  errors(max, l2, l1) : %18.12e, %18.12e, %18.12e\n", g_max_norm, g_l2_norm, g_l1_norm);
