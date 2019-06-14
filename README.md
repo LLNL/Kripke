@@ -1,39 +1,6 @@
 KRIPKE
 ======
 
-Version 1.2.4-dev
-
-Release Date 10/12/2018 
-
-LLNL-CODE-658597
-
-
-Authors
-=======
-  * Adam J. Kunen [kunen1@llnl.gov](mailto:kunen1@llnl.gov) (Primary point of contact)
-  * Peter N. Brown [brown42@llnl.gov](mailto:brown42@llnl.gov)
-  * Teresa S. Bailey [bailey42@llnl.gov](mailto:bailey42@llnl.gov)
-  * Peter G. Maginot [maginot1@llnl.gov](mailto:maginot1@llnl.gov)
-
-
-License
-=======
-See included file NOTICE.md
-
-
-Changes
-=======
-
-  * 10/12/2018 v1.2.3: CUDA support, updated policy selection/dispatch mechanisms, updated build system
-  * 04/04/2018 v1.2.2-CORAL2: Fixed bug in Population edit
-  * 03/26/2018 v1.2.1-CORAL2: Updated to RAJA-0.6.0rc2, fixed FOM calculation and updated docs
-  * 11/02/2017 v1.2.0-CORAL2: Initial release for CORAL2
-
-
-
-
-Overview
-========
 Kripke is a simple, scalable, 3D Sn deterministic particle transport code.  Its primary purpose is to research how data layout, programming paradigms and architectures effect the implementation and performance of Sn transport.  A main goal of Kripke is investigating how different data-layouts affect instruction, thread and task level parallelism, and what the implications are on overall solver performance.
 
 Kripke supports storage of angular fluxes (Psi) using all six striding orders (or "nestings") of Directions (D), Groups (G), and Zones (Z), and provides computational kernels specifically written for each of these nestings. Most Sn transport codes are designed around one of these nestings, which is an inflexibility that leads to software engineering compromises when porting to new architectures and programming paradigms.
@@ -310,12 +277,6 @@ Some ideas for future study:
 
 
 
-Retirement
-==========
-
-Retirement of this Mini-App should be considered when it is no longer a representative of state-of-the-art transport codes, or when it becomes too cumbersome to adapt to advanced architectures. Also, at the point of retirement it should be clear how to design its successor.
-
-
 Links
 =====
 
@@ -324,4 +285,20 @@ Links
 
 Release
 =======
-LLNL-CODE-658597
+
+Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+
+Produced at the Lawrence Livermore National Laboratory.
+
+All rights reserved.
+
+`LLNL-CODE-775068`  
+
+Unlimited Open Source - BSD Distribution
+
+For release details and restrictions, please read the COPYRIGHT, LICENSE,
+and NOTICE files, also linked here:
+- [RELEASE](./RELEASE)
+- [COPYRIGHT](./COPYRIGHT)
+- [LICENSE](./LICENSE)
+- [NOTICE](./NOTICE)
