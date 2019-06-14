@@ -1,34 +1,9 @@
-/*
- * NOTICE
- *
- * This work was produced at the Lawrence Livermore National Laboratory (LLNL)
- * under contract no. DE-AC-52-07NA27344 (Contract 44) between the U.S.
- * Department of Energy (DOE) and Lawrence Livermore National Security, LLC
- * (LLNS) for the operation of LLNL. The rights of the Federal Government are
- * reserved under Contract 44.
- *
- * DISCLAIMER
- *
- * This work was prepared as an account of work sponsored by an agency of the
- * United States Government. Neither the United States Government nor Lawrence
- * Livermore National Security, LLC nor any of their employees, makes any
- * warranty, express or implied, or assumes any liability or responsibility
- * for the accuracy, completeness, or usefulness of any information, apparatus,
- * product, or process disclosed, or represents that its use would not infringe
- * privately-owned rights. Reference herein to any specific commercial products,
- * process, or service by trade name, trademark, manufacturer or otherwise does
- * not necessarily constitute or imply its endorsement, recommendation, or
- * favoring by the United States Government or Lawrence Livermore National
- * Security, LLC. The views and opinions of authors expressed herein do not
- * necessarily state or reflect those of the United States Government or
- * Lawrence Livermore National Security, LLC, and shall not be used for
- * advertising or product endorsement purposes.
- *
- * NOTIFICATION OF COMMERCIAL USE
- *
- * Commercialization of this product is prohibited without notifying the
- * Department of Energy (DOE) or Lawrence Livermore National Security.
- */
+//
+// Copyright (c) 2014-19, Lawrence Livermore National Security, LLC
+// and Kripke project contributors. See the COPYRIGHT file for details.
+//
+// SPDX-License-Identifier: (BSD-3-Clause)
+//
   
 #include <Kripke.h>
 #include <Kripke/Core/Comm.h>
@@ -47,6 +22,10 @@
 
 #ifdef KRIPKE_USE_OPENMP
 #include <omp.h>
+#endif
+
+#ifdef KRIPKE_USE_CALIPER
+#include <caliper/cali.h>
 #endif
 
 #ifdef __bgq__
@@ -259,6 +238,11 @@ int main(int argc, char **argv) {
     printf("  OpenMP Enabled:         No\n");
 #endif
 
+#ifdef KRIPKE_USE_CALIPER
+    printf("  Caliper Enabled:        Yes\n");
+#else
+    printf("  Caliper Enabled:        No\n");
+#endif
 
 
 
@@ -465,7 +449,26 @@ int main(int argc, char **argv) {
     
   }
 
+  /*
+   * Set Caliper globals
+   */
 
+#ifdef KRIPKE_USE_CALIPER
+  cali_set_global_int_byname("kripke.nx", vars.nx);
+  cali_set_global_int_byname("kripke.ny", vars.ny);
+  cali_set_global_int_byname("kripke.nz", vars.nz);
+  
+  cali_set_global_int_byname("kripke.groups",         vars.num_groups);
+  cali_set_global_int_byname("kripke.legendre_order", vars.legendre_order);
+
+  if (vars.parallel_method == PMETHOD_SWEEP)
+      cali_set_global_string_byname("kripke.parallel_method", "sweep");
+  else if (vars.parallel_method == PMETHOD_BJ)
+      cali_set_global_string_byname("kripke.parallel_method", "block jacobi");
+
+  cali_set_global_string_byname("kripke.architecture", archToString(vars.al_v.arch_v).c_str());
+  cali_set_global_string_byname("kripke.layout", layoutToString(vars.al_v.layout_v).c_str());
+#endif
 
   // Allocate problem
 
