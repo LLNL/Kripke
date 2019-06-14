@@ -1,0 +1,10 @@
+07/14/2019 v1.2.4: Updated to BSD-3-Clause license, Caliper support
+
+10/12/2018 v1.2.3: CUDA support, updated policy selection/dispatch mechanisms, updated build system
+
+04/04/2018 v1.2.2-CORAL2: Fixed bug in Population edit
+
+03/26/2018 v1.2.1-CORAL2: Updated to RAJA-0.6.0rc2, fixed FOM calculation and updated docs
+
+11/02/2017 v1.2.0-CORAL2: Initial release for CORAL2
+

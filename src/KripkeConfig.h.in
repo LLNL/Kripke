@@ -12,6 +12,8 @@
 #cmakedefine KRIPKE_USE_CUDA
 #cmakedefine KRIPKE_USE_CHAI
 
+#cmakedefine KRIPKE_USE_CALIPER
+
 #cmakedefine KRIPKE_ARCH "@KRIPKE_ARCH@"
 
 #cmakedefine KRIPKE_ARCHV_DEFAULT @KRIPKE_ARCHV_DEFAULT@

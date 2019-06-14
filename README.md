@@ -1,42 +1,9 @@
 KRIPKE
 ======
 
-Version 1.2.3
-
-Release Date 10/12/2018 
-
-LLNL-CODE-658597
-
-
-Authors
-=======
-  * Adam J. Kunen [kunen1@llnl.gov](mailto:kunen1@llnl.gov) (Primary point of contact)
-  * Peter N. Brown [brown42@llnl.gov](mailto:brown42@llnl.gov)
-  * Teresa S. Bailey [bailey42@llnl.gov](mailto:bailey42@llnl.gov)
-  * Peter G. Maginot [maginot1@llnl.gov](mailto:maginot1@llnl.gov)
-
-
-License
-=======
-See included file NOTICE.md
-
-
-Changes
-=======
-
-  * 10/12/2018 v1.2.3: CUDA support, updated policy selection/dispatch mechanisms, updated build system
-  * 04/04/2018 v1.2.2-CORAL2: Fixed bug in Population edit
-  * 03/26/2018 v1.2.1-CORAL2: Updated to RAJA-0.6.0rc2, fixed FOM calcuation and updated docs
-  * 11/02/2017 v1.2.0-CORAL2: Initial release for CORAL2
-
-
-
-
-Overview
-========
 Kripke is a simple, scalable, 3D Sn deterministic particle transport code.  Its primary purpose is to research how data layout, programming paradigms and architectures effect the implementation and performance of Sn transport.  A main goal of Kripke is investigating how different data-layouts affect instruction, thread and task level parallelism, and what the implications are on overall solver performance.
 
-Kripkie supports storage of angular fluxes (Psi) using all six striding orders (or "nestings") of Directions (D), Groups (G), and Zones (Z), and provides computational kernels specifically written for each of these nestings. Most Sn transport codes are designed around one of these nestings, which is an inflexibility that leads to software engineering compromises when porting to new architectures and programming paradigms.
+Kripke supports storage of angular fluxes (Psi) using all six striding orders (or "nestings") of Directions (D), Groups (G), and Zones (Z), and provides computational kernels specifically written for each of these nestings. Most Sn transport codes are designed around one of these nestings, which is an inflexibility that leads to software engineering compromises when porting to new architectures and programming paradigms.
 
 Early research has found that the problem dimensions (zones, groups, directions, scattering order) and the scaling (number of threads and MPI tasks), can make a profound difference in the performance of each of these nestings. To our knowledge this is a capability unique to Kripke, and should provide key insight into how data-layout effects Sn solver performance. An asynchronous MPI-based parallel sweep algorithm is provided, which employs the concepts of Group Sets (GS) Zone Sets (ZS), and Direction Sets (DS), borrowed from the [Texas A&M code PDT](https://parasol.tamu.edu/asci/).
 
@@ -56,7 +23,7 @@ A major challenge of achieving high-performance in an Sn transport (or any physi
 
 Parallel sweep algorithms can be explored with Kripke in multiple ways. The core MPI algorithm could be modified or rewritten to explore other approaches, domain overloading, or alternate programming models (such as Charm++). The effect of load-imbalance is an understudied aspect of Sn transport sweeps, and could easily be studied with Kripke by artificially adding more work (ie unknowns) to a subset of MPI tasks. Block-AMR could be added to Kripke, which would be a useful way to explore the cost-benefit analysis of adding AMR to an Sn code, and would be a way to further study load imbalances and AMR effects on sweeps.
 
-The coupling of on-node sweep kernel, the parallel sweep algorithm, and the choices of decomposing the problem phase space into GS's, ZS's and DS's impact the performance of the overall sweep. The tradeoff between large and small "units of work" can be studied. Larger "units of work" provide more opportunity for on-node parallelism, while creating larger messages, less "sends", and less efficient parallel sweeps. Smaller "units of work" make for less efficient on-node kernels, but more efficient parallel sweeps. 
+The coupling of on-node sweep kernel, the parallel sweep algorithm, and the choices of decomposing the problem phase space into GS's, ZS's and DS's impact the performance of the overall sweep. The trade off between large and small "units of work" can be studied. Larger "units of work" provide more opportunity for on-node parallelism, while creating larger messages, less "sends", and less efficient parallel sweeps. Smaller "units of work" make for less efficient on-node kernels, but more efficient parallel sweeps. 
 
 We can also study trading MPI tasks for threads, and the effects this has on our programming models and cache efficiency.
 
@@ -116,6 +83,9 @@ Basic requirements:
 
 *  (Optional) OpenMP 3 or later
 
+*  (Optional) [Caliper](https://github.com/LLNL/Caliper): a performance profiling/analysis library.
+
+
 Submodule dependencies:
 
 *  [BLT](https://github.com/LLNL/blt) v0.1: a CMake based build system (required)
@@ -165,7 +135,7 @@ The easiest way to get Kripke running, is to directly invoke CMake and take what
         cd build
         cmake ..
 
-        For a number of platforms, we have cache inits file that makes things easier:
+        For a number of platforms, we have CMake cache files that make things easier:
 
         cd build
         cmake .. -C../host-configs/llnl-bgqos-clang.cmake
@@ -181,7 +151,7 @@ The easiest way to get Kripke running, is to directly invoke CMake and take what
 
 There are a number of cache init files for LLNL machines and operating systems.  
 These might not meet your needs, but can be a very good starting point for developing your own.
-The current list of cache init files (located in the ./host-confgs/ directory) are:
+The current list of cache init files (located in the ./host-configs/ directory) are:
 
 *  llnl-bgqos-clang.cmake
 
@@ -202,11 +172,16 @@ The current list of cache init files (located in the ./host-confgs/ directory) a
 Running Kripke
 ==============
 
-Environment Variabes
+Environment Variables
 --------------------
 
-If Kripke is built with OpenMP support, then the environment variables ``OMP_NUM_THREADS`` is used to control the number of OpenMP threads.  Kripke does not attempt to modify the OpenMP runtime in anyway, so other ``OMP_*`` environment variables should also work as well.
- 
+If Kripke is built with OpenMP support, then the environment variables ``OMP_NUM_THREADS`` is used to control the number of OpenMP threads.  Kripke does not attempt to modify the OpenMP runtime in any way, so other ``OMP_*`` environment variables should also work as well.
+
+If Kripke is built with Caliper support, Caliper performance measurements can be configured through Caliper environment variables. For example,
+
+    CALI_CONFIG_PROFILE=runtime-report ./kripke ...
+
+will print a time profile of annotated code regions in Kripke. For more information, see https://llln.github.io/Caliper.
 
 Command Line Options
 --------------------
@@ -250,10 +225,10 @@ Command line option help can also be viewed by running "./kripke --help"
 
 *   **``--layout <LAYOUT>``**
 
-    Data layout selection.  This determines the data layout and kernel implementation details (such as loop nesting order).  The layouts are determined by the order of unknwons in the angular flux: Direction, Group, and Zone.  Available layouts are DGZ, DZG, GDZ, GZD, ZDG, and ZGD.  The order is specified left-to-right in longest-to-shortes stride.  For example: DGZ means that Directions are the longest stride, and Zones are stride-1.  (Default: --nest DGZ)
+    Data layout selection.  This determines the data layout and kernel implementation details (such as loop nesting order).  The layouts are determined by the order of unknowns in the angular flux: Direction, Group, and Zone.  Available layouts are DGZ, DZG, GDZ, GZD, ZDG, and ZGD.  The order is specified left-to-right in longest-to-shortest stride.  For example: DGZ means that Directions are the longest stride, and Zones are stride-1.  (Default: --nest DGZ)
 
 
-###Parallel Decomposition Options:
+### Parallel Decomposition Options:
 
 *   **``--pdist <lout>``**
     
@@ -276,7 +251,7 @@ Command line option help can also be viewed by running "./kripke --help"
     Number of zone-sets in x, y, and z.  (Default:  --zset 1:1:1)
 
 
-###Solver Options:
+### Solver Options:
 
 *   **``--niter <NITER>``**
 
@@ -302,12 +277,6 @@ Some ideas for future study:
 
 
 
-Retirement
-==========
-
-Retirement of this Mini-App should be considered when it is no longer a representative of state-of-the-art transport codes, or when it becomes too cumbersome to adapt to advanced architectures. Also, at the point of retirement it should be clear how to design its successor.
-
-
 Links
 =====
 
@@ -316,4 +285,20 @@ Links
 
 Release
 =======
-LLNL-CODE-658597
+
+Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+
+Produced at the Lawrence Livermore National Laboratory.
+
+All rights reserved.
+
+`LLNL-CODE-775068`  
+
+Unlimited Open Source - BSD Distribution
+
+For release details and restrictions, please read the COPYRIGHT, LICENSE,
+and NOTICE files, also linked here:
+- [RELEASE](./RELEASE)
+- [COPYRIGHT](./COPYRIGHT)
+- [LICENSE](./LICENSE)
+- [NOTICE](./NOTICE)

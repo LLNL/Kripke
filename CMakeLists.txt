@@ -1,3 +1,10 @@
+#
+# Copyright (c) 2014-19, Lawrence Livermore National Security, LLC
+# and Kripke project contributors. See the COPYRIGHT file for details.
+# 
+# SPDX-License-Identifier: (BSD-3-Clause)
+#
+
 cmake_minimum_required(VERSION 3.8)
 
 cmake_policy(SET CMP0057 NEW)
@@ -6,7 +13,7 @@ project(KRIPKE LANGUAGES CXX)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
 
-set(KRIPKE_VERSION "1.2.3")
+set(KRIPKE_VERSION "1.2.4")
 
 
 #
@@ -128,7 +135,25 @@ endif()
 
 
 
+option(ENABLE_CALIPER "Enable Caliper support" FALSE)
 
+if (ENABLE_CALIPER)
+  find_package(caliper REQUIRED)
+
+  set(KRIPKE_USE_CALIPER TRUE)
+  
+  blt_register_library(NAME caliper
+    INCLUDES ${caliper_INCLUDE_DIR}
+    LIBRARIES caliper)
+  
+  list(APPEND KRIPKE_DEPENDS caliper)
+  
+  if (ENABLE_MPI)
+    list(APPEND KRIPKE_DEPENDS caliper-mpi)
+  endif()
+endif()
+
+message(STATUS "Caliper support is ${KRIPKE_USE_CALIPER}")
 
 
 #
