@@ -137,6 +137,9 @@ void usage(void){
     printf("                         sweep: Full up-wind sweep (wavefront algorithm)\n");
     printf("                         bj: Block Jacobi\n");
     printf("                         Default: --pmethod sweep\n\n");
+    printf("  --compute_errors       compute and report error norms for the no-scattering problem\n");
+    printf("                         Currently this only makes sense when using --sigs 0,0,0\n");
+    printf("                         Default: no errors are computed\n\n");
     
     printf("\n");
   }
