@@ -85,9 +85,11 @@ struct Policy_Source<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        For<0, cuda_thread_exec,  // Group
-          For<1, cuda_threadblock_exec<32>, // MixElem
-            Lambda<0>
+        Tile<1, tile_fixed<32>, cuda_block_x_loop,
+          For<1, cuda_thread_x_direct, // MixElem
+            For<0, cuda_thread_y_loop,  // Group
+              Lambda<0>
+            >
           >
         >
       >
@@ -99,9 +101,11 @@ struct Policy_Source<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        For<1, cuda_threadblock_exec<32>, // MixElem
-          For<0, cuda_thread_exec,  // Group
-            Lambda<0>
+        Tile<1, tile_fixed<32>, cuda_block_x_loop,
+          For<1, cuda_thread_x_direct, // MixElem
+            For<0, cuda_thread_y_loop,  // Group
+              Lambda<0>
+            >
           >
         >
       >
@@ -109,6 +113,40 @@ struct Policy_Source<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
 };
 #endif // KRIPKE_USE_CUDA
 
+
+#ifdef KRIPKE_USE_HIP
+template<>
+struct Policy_Source<ArchLayoutT<ArchT_HIP, LayoutT_DGZ>> {
+  using ExecPolicy =
+    KernelPolicy<
+      HipKernel<
+        Tile<1, tile_fixed<64>, hip_block_x_loop,
+          For<1, hip_thread_x_direct, // MixElem
+            For<0, hip_thread_y_loop,  // Group
+              Lambda<0>
+            >
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_Source<ArchLayoutT<ArchT_HIP, LayoutT_DZG>> {
+  using ExecPolicy =
+    KernelPolicy<
+      HipKernel<
+        Tile<1, tile_fixed<64>, hip_block_x_loop,
+          For<1, hip_thread_x_direct, // MixElem
+            For<0, hip_thread_y_loop,  // Group
+              Lambda<0>
+            >
+          >
+        >
+      >
+    >;
+};
+#endif // KRIPKE_USE_HIP
 
 }
 }
