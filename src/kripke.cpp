@@ -80,7 +80,7 @@ void usage(void){
     printf("On-Node Options:\n");
     printf("----------------\n");
     printf("  --arch <ARCH>          Architecture selection\n");
-    printf("                         Available: Sequential, OpenMP, CUDA\n");
+    printf("                         Available: Sequential, OpenMP, CUDA, HIP\n");
     printf("                         Default:   --arch %s\n\n", archToString(def.al_v.arch_v).c_str());
     printf("  --layout <LAYOUT>      Data layout and loop nesting order\n");
     printf("                         Available: DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
@@ -227,6 +227,14 @@ int main(int argc, char **argv) {
     printf("    NVCC Flags:           \"%s\"\n", KRIPKE_NVCC_FLAGS);
 #else
     printf("  CUDA Enabled:           No\n");
+#endif
+
+#ifdef KRIPKE_USE_HIP
+    printf("  HIP Enabled:            Yes\n");
+    printf("    HIPCC:                 %s\n", KRIPKE_HIPCC_COMPILER);
+    printf("    HIPCC Flags:           \"%s\"\n", KRIPKE_HIPCC_FLAGS);
+#else
+    printf("  HIP Enabled:            No\n");
 #endif
 
 #ifdef KRIPKE_USE_MPI

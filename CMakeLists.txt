@@ -24,6 +24,7 @@ set(ENABLE_GTEST Off CACHE Bool "")
 set(ENABLE_TESTS Off CACHE Bool "")
 set(ENABLE_TBB Off CACHE Bool "")
 set(ENABLE_EXAMPLES Off CACHE Bool "")
+set(ENABLE_EXERCISES Off CACHE Bool "")
 set(ENABLE_DOCUMENTATION Off CACHE Bool "")
 
 # Use C++14 standard
@@ -37,7 +38,7 @@ include(blt/SetupBLT.cmake)
 
 #
 # Default Arch and Layout selection
-# Sequential by default, but will be overriden if OpenMP or CUDA are enabled
+# Sequential by default, but will be overriden if OpenMP, CUDA, or HIP are enabled
 #
 set(KRIPKE_ARCH "Sequential")
 set(KRIPKE_LAYOUT DGZ)
@@ -131,7 +132,32 @@ if(ENABLE_CUDA)
 
 endif()
 
+#
+# Configure HIP
+#
 
+if(ENABLE_HIP)
+
+  set(KRIPKE_USE_HIP 1)
+    
+  list(APPEND KRIPKE_DEPENDS hip)
+  
+  set(KRIPKE_ARCH "HIP")
+
+  list(APPEND HIP_HIPCC_FLAGS "-std=c++14 -Wno-inconsistent-missing-override -Wno-invalid-noreturn")
+
+  # Make sure that hipcc turns on the OpenMP flag  
+  if(ENABLE_OPENMP)
+    list(APPEND HIP_HIPCC_FLAGS ${OpenMP_CXX_FLAGS})
+  endif()
+  
+  
+  # Pass on compiler info to KripkeConfig.h
+  string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+  set(KRIPKE_HIPCC_COMPILER "hipcc")
+  set(KRIPKE_HIPCC_FLAGS    "${CMAKE_HIP_FLAGS} ${CMAKE_HIP_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
+
+endif()
 
 
 

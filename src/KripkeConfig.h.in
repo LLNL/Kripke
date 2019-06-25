@@ -10,6 +10,7 @@
 #cmakedefine KRIPKE_USE_MPI
 #cmakedefine KRIPKE_USE_OPENMP
 #cmakedefine KRIPKE_USE_CUDA
+#cmakedefine KRIPKE_USE_HIP
 #cmakedefine KRIPKE_USE_CHAI
 
 #cmakedefine KRIPKE_USE_CALIPER
@@ -21,5 +22,8 @@
 
 #cmakedefine KRIPKE_NVCC_COMPILER "@KRIPKE_NVCC_COMPILER@"
 #cmakedefine KRIPKE_NVCC_FLAGS "@KRIPKE_NVCC_FLAGS@"
+
+#cmakedefine KRIPKE_HIPCC_COMPILER "@KRIPKE_HIPCC_COMPILER@"
+#cmakedefine KRIPKE_HIPCC_FLAGS "@KRIPKE_HIPCC_FLAGS@"
 
 #endif
