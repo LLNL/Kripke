@@ -129,8 +129,7 @@ struct ErrorNormsSdom {
 					      
 
 					      ),
-			     [=,&ksn_problem] (Direction d, Group g, ZoneK k, ZoneJ j, ZoneI i) {
-			       //  			     KRIPKE_LAMBDA (Direction d, Group g, ZoneK k, ZoneJ j, ZoneI i) {
+			     [=,&ksn_problem] (Direction d, Group g, ZoneK k, ZoneJ j, ZoneI i) { // don't use KRIPKE_LAMBDA here because we won't (can't) execute this on a GPU
 
 
 			       double xz = -60  + dx(i)*global_i0 + dx(i)*(double(*i)+0.5);
@@ -192,10 +191,7 @@ void Kripke::Kernel::error_norms(Kripke::Core::DataStore &data_store)
   auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
     
   for (Kripke::SdomId sdom_id : field_psi.getWorkList()){
-    ArchLayoutV al_v_tmp;
-    al_v_tmp.layout_v = al_v.layout_v;
-    al_v_tmp.arch_v = ArchV_Sequential;
-    Kripke::dispatch(al_v_tmp, ErrorNormsSdom{}, sdom_id,
+    Kripke::dispatch(al_v, ErrorNormsSdom{}, sdom_id,
 		     data_store,
                      &max_norm, &l1_norm, &l2_norm, &max_sol_norm, &l1_sol_norm, &l2_sol_norm, &vol_grp);
   }
