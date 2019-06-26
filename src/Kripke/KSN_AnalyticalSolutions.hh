@@ -564,6 +564,7 @@ namespace KSN_AnalyticalSolutions {
   }
 
   template<typename T>
+  inline
   auto
   compute_exact_solution(const T &x_start, const T &y_start, const T &z_start, //input: x,y,z coordinates to compute the solution at
 			 const T &theta, const T&phi,        //input: azimuthal and polar coordinates (in radians) for the direction to compute the solution with

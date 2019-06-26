@@ -33,8 +33,7 @@
 #include <Kripke/Kernel.h>
 
 #include <Kripke.h>
-#include <Kripke/Arch/SweepSubdomains.h>
-#include <Kripke/Arch/Population.h>
+#include <Kripke/Arch/ErrorNorms.h>
 #include <Kripke/Core/Comm.h>
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
@@ -61,10 +60,10 @@ struct ErrorNormsSdom {
 		  double                  *vol_grp) const
   {
 
-    using PopulationPolicy = Kripke::Arch::Policy_Population<AL>; // use population's policy to only to grab the reduction policy, avoids needing new policy for errornorms
-    using ReducePolicy = typename PopulationPolicy::ReducePolicy; 
+    using ErrorNormsPolicy = Kripke::Arch::Policy_ErrorNorms<AL>; // use population's policy to only to grab the reduction policy, avoids needing new policy for errornorms
+    using ReducePolicy = typename ErrorNormsPolicy::ReducePolicy; 
 
-    using ExecPolicy = typename Kripke::Arch::Policy_SweepSubdomains<AL>::ExecPolicy; // we can re-use this policy because this uses a similar loop structure
+    using ExecPolicy = typename ErrorNormsPolicy::ExecPolicy; // we can re-use this policy because this uses a similar loop structure
 
     auto sdom_al = getSdomAL(al, sdom_id);
 
@@ -115,7 +114,7 @@ struct ErrorNormsSdom {
     RAJA::ReduceSum<ReducePolicy, double> vol_grp_red(0.0);
 
     Problem_3<double> ksn_problem;
-    Direction d0{0};
+    //    Direction d0{0};
     //int id = view_id(d0);
     //int jd = view_jd(d0);
     //int kd = view_kd(d0);
@@ -130,7 +129,8 @@ struct ErrorNormsSdom {
 					      
 
 					      ),
-			     KRIPKE_LAMBDA (Direction d, Group g, ZoneK k, ZoneJ j, ZoneI i) {
+			     [=,&ksn_problem] (Direction d, Group g, ZoneK k, ZoneJ j, ZoneI i) {
+			       //  			     KRIPKE_LAMBDA (Direction d, Group g, ZoneK k, ZoneJ j, ZoneI i) {
 
 
 			       double xz = -60  + dx(i)*global_i0 + dx(i)*(double(*i)+0.5);
@@ -138,9 +138,11 @@ struct ErrorNormsSdom {
 			       double zz = -60  + dz(k)*global_k0 + dz(k)*(double(*k)+0.5);
 
 			       Zone z(zone_layout(*i, *j, *k));
+
 			       double psi_exact = compute_exact_solution<double>(xz,yz,zz,
 										 view_id(d)*xcos(d),view_jd(d)*ycos(d),view_kd(d)*zcos(d),
 										 ksn_problem);
+
 			       double err = std::abs(psi(d,g,z) - psi_exact);
 
 						     
@@ -179,7 +181,7 @@ void Kripke::Kernel::error_norms(Kripke::Core::DataStore &data_store)
 
   ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v; 
 
-  // sum up particles for psi and rhs
+  // compute errors and solution norms for psi
   double max_norm = 0.0;
   double l1_norm = 0.0;
   double l2_norm = 0.0;
@@ -190,8 +192,10 @@ void Kripke::Kernel::error_norms(Kripke::Core::DataStore &data_store)
   auto &field_psi = data_store.getVariable<Kripke::Field_Flux>("psi");
     
   for (Kripke::SdomId sdom_id : field_psi.getWorkList()){
-
-    Kripke::dispatch(al_v, ErrorNormsSdom{}, sdom_id,
+    ArchLayoutV al_v_tmp;
+    al_v_tmp.layout_v = al_v.layout_v;
+    al_v_tmp.arch_v = ArchV_Sequential;
+    Kripke::dispatch(al_v_tmp, ErrorNormsSdom{}, sdom_id,
 		     data_store,
                      &max_norm, &l1_norm, &l2_norm, &max_sol_norm, &l1_sol_norm, &l2_sol_norm, &vol_grp);
   }
