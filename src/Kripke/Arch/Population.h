@@ -211,15 +211,17 @@ struct Policy_Population<ArchLayoutT<ArchT_OpenMP, LayoutT_ZGD>>{
 #ifdef KRIPKE_USE_CUDA
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>>{
-  using ReducePolicy = cuda_reduce<1024>;
+  using ReducePolicy = cuda_reduce;
 
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        For<0, cuda_thread_exec, // direction
-          For<1, cuda_thread_exec, // group
-            For<2, cuda_threadblock_exec<32>, // zone
-              Lambda<0>
+        Tile<2, tile_fixed<32>, cuda_block_x_loop, // blocks of 32 zones
+          For<0, cuda_thread_z_loop, // direction
+            For<1, cuda_thread_y_loop, // group
+              For<2, cuda_thread_x_direct, // zone
+                Lambda<0>
+              >
             >
           >
         >
@@ -229,15 +231,17 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>>{
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>>{
-  using ReducePolicy = cuda_reduce<1024>;
+  using ReducePolicy = cuda_reduce;
 
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        For<0, cuda_thread_exec, // direction
-          For<2, cuda_threadblock_exec<32>, // zone
-            For<1, cuda_thread_exec, // group
-              Lambda<0>
+        Tile<2, tile_fixed<32>, cuda_block_x_loop, // blocks of 32 zones
+          For<0, cuda_thread_z_loop, // direction
+            For<2, cuda_thread_y_direct, // zone
+              For<1, cuda_thread_x_loop, // group
+                Lambda<0>
+              >
             >
           >
         >
@@ -248,15 +252,17 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>>{
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>>{
-  using ReducePolicy = cuda_reduce<1024>;
+  using ReducePolicy = cuda_reduce;
 
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        For<1, cuda_thread_exec, // group
-          For<0, cuda_thread_exec, // direction
-            For<2, cuda_threadblock_exec<32>, // zone
-              Lambda<0>
+        Tile<2, tile_fixed<32>, cuda_block_x_loop, // blocks of 32 zones
+          For<1, cuda_thread_z_loop, // group
+            For<0, cuda_thread_y_loop, // direction
+              For<2, cuda_thread_x_direct, // zone
+                Lambda<0>
+              >
             >
           >
         >
@@ -268,15 +274,17 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>>{
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>>{
-  using ReducePolicy = cuda_reduce<1024>;
+  using ReducePolicy = cuda_reduce;
 
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        For<1, cuda_thread_exec, // group
-          For<2, cuda_threadblock_exec<32>, // zone
-            For<0, cuda_thread_exec, // direction
-              Lambda<0>
+        Tile<2, tile_fixed<32>, cuda_block_x_loop, // blocks of 32 zones
+          For<1, cuda_thread_z_loop, // group
+            For<2, cuda_thread_y_direct, // zone
+              For<0, cuda_thread_x_loop, // direction
+                Lambda<0>
+              >
             >
           >
         >
@@ -287,15 +295,17 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>>{
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>>{
-  using ReducePolicy = cuda_reduce<1024>;
+  using ReducePolicy = cuda_reduce;
 
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        For<2, cuda_threadblock_exec<32>, // zone
-          For<0, cuda_thread_exec, // direction
-            For<1, cuda_thread_exec, // group
-              Lambda<0>
+        Tile<2, tile_fixed<32>, cuda_block_x_loop, // blocks of 32 zones
+          For<2, cuda_thread_z_direct, // zone
+            For<0, cuda_thread_y_loop, // direction
+              For<1, cuda_thread_x_loop, // group
+                Lambda<0>
+              >
             >
           >
         >
@@ -305,15 +315,17 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>>{
 
 template<>
 struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>>{
-  using ReducePolicy = cuda_reduce<1024>;
+  using ReducePolicy = cuda_reduce;
 
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        For<2, cuda_threadblock_exec<32>, // zone
-          For<1, cuda_thread_exec, // group
-            For<0, cuda_thread_exec, // direction
-              Lambda<0>
+        Tile<2, tile_fixed<32>, cuda_block_x_loop, // blocks of 32 zones
+          For<2, cuda_thread_z_direct, // zone
+            For<1, cuda_thread_y_loop, // group
+              For<0, cuda_thread_x_loop, // direction
+                Lambda<0>
+              >
             >
           >
         >

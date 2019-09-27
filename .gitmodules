@@ -9,3 +9,9 @@
 	path = tpl/chai
 	url = https://github.com/LLNL/CHAI.git
 	branch = develop
+[submodule "tpl/umpire"]
+	path = tpl/umpire
+	url = https://github.com/LLNL/Umpire.git
+[submodule "tpl/googletest"]
+	path = tpl/googletest
+	url = https://github.com/google/googletest.git

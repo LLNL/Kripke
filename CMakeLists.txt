@@ -13,7 +13,7 @@ project(KRIPKE LANGUAGES CXX)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
 
-set(KRIPKE_VERSION "1.2.4-dev")
+set(KRIPKE_VERSION "1.2.5-dev")
 
 
 #
@@ -60,6 +60,10 @@ if(ENABLE_CUDA)
 
 endif()
 
+#
+# Add googletest (needed by RAJA, etc)
+# 
+add_subdirectory(tpl/googletest)
 
 
 #
@@ -68,7 +72,10 @@ endif()
 option(ENABLE_CHAI "Enable CHAI/Umpire memory management" Off)
 if(ENABLE_CHAI)
 
-  # Add CHAI (which brings in Umpire as a submodule)
+	# Bring in Umpire, which CHAI depends on for memory management
+	add_subdirectory(tpl/umpire)
+
+  # Add CHAI
   add_subdirectory(tpl/chai)
   
   set(ENABLE_TESTS Off CACHE Bool "")
@@ -84,7 +91,8 @@ endif()
 # Configure RAJA (REQUIRED)
 #
 
-set(RAJA_ENABLE_TESTS Off CACHE Bool "")
+set(ENABLE_EXAMPLES Off CACHE Bool "")
+set(ENABLE_EXERCISES Off CACHE Bool "")
 add_subdirectory(tpl/raja)
 
 list(APPEND KRIPKE_DEPENDS RAJA)

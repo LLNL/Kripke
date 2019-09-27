@@ -94,8 +94,8 @@ namespace Arch {
   using RAJA::seq_exec;
   using RAJA::simd_exec;
   using RAJA::seq_reduce;
-  using RAJA::atomic::auto_atomic;
-  using RAJA::atomic::seq_atomic;
+  using RAJA::auto_atomic;
+  using RAJA::seq_atomic;
   using RAJA::ArgList;
   using RAJA::KernelPolicy;
   using RAJA::statement::Collapse;
@@ -105,7 +105,6 @@ namespace Arch {
   using RAJA::statement::For;
   using RAJA::statement::Hyperplane;
   using RAJA::statement::Lambda;
-  using RAJA::statement::SetShmemWindow;
   using RAJA::statement::Tile;
   using RAJA::statement::tile_fixed;
 
@@ -117,16 +116,20 @@ namespace Arch {
 
 #ifdef KRIPKE_USE_CUDA
   using RAJA::cuda_exec;
-  using RAJA::cuda_block_exec;
-  using RAJA::cuda_seq_syncthreads_exec;
-  using RAJA::cuda_thread_exec;
-  using RAJA::cuda_threadblock_exec;
+  using RAJA::cuda_block_x_loop;
+  using RAJA::cuda_block_y_loop;
+  using RAJA::cuda_block_z_loop;
+  using RAJA::cuda_thread_x_direct;
+  using RAJA::cuda_thread_y_direct;
+  using RAJA::cuda_thread_z_direct;
+  using RAJA::cuda_thread_x_loop;
+  using RAJA::cuda_thread_y_loop;
+  using RAJA::cuda_thread_z_loop;
   using RAJA::cuda_reduce;
-  using RAJA::atomic::cuda_atomic;
+  using RAJA::cuda_atomic;
   using RAJA::statement::CudaKernel;
   using RAJA::statement::CudaKernelAsync;
   using RAJA::statement::CudaSyncThreads;
-  using RAJA::statement::Thread;
 #endif
 
 } // namespace Arch
