@@ -146,13 +146,20 @@ endif()
 option(ENABLE_CALIPER "Enable Caliper support" FALSE)
 
 if (ENABLE_CALIPER)
-  find_package(caliper REQUIRED)
+	if(EXISTS "${PROJECT_SOURCE_DIR}/tpl/caliper/CMakeLists.txt")
+		set(BUILD_SHARED_LIBS False CACHE BOOL "")
+    add_subdirectory(tpl/caliper)	
+		include_directories(tpl/caliper/include)
+	else()
+    find_package(caliper REQUIRED)
+	
+ 	endif()
 
-  set(KRIPKE_USE_CALIPER TRUE)
-  
-  blt_register_library(NAME caliper
-    INCLUDES ${caliper_INCLUDE_DIR}
-    LIBRARIES caliper)
+    blt_register_library(NAME caliper
+      INCLUDES ${caliper_INCLUDE_DIR}
+      LIBRARIES caliper)
+
+	set(KRIPKE_USE_CALIPER TRUE)
   
   list(APPEND KRIPKE_DEPENDS caliper)
   
