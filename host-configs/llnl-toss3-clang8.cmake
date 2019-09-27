@@ -9,11 +9,11 @@
 
 set(RAJA_COMPILER "RAJA_COMPILER_CLANG" CACHE STRING "")
 
-set(CMAKE_C_COMPILER   "/usr/tce/bin/clang-4.0.0" CACHE PATH "")
-set(CMAKE_CXX_COMPILER "/usr/tce/bin/clang++-4.0.0" CACHE PATH "")
-set(CMAKE_LINKER       "/usr/tce/bin/clang++-4.0.0" CACHE PATH "")
+set(CMAKE_C_COMPILER   "/usr/tce/bin/clang-8.0.0" CACHE PATH "")
+set(CMAKE_CXX_COMPILER "/usr/tce/bin/clang++-8.0.0" CACHE PATH "")
+set(CMAKE_LINKER       "/usr/tce/bin/clang++-8.0.0" CACHE PATH "")
 
-set(CMAKE_CXX_FLAGS "-stdlib=libc++" CACHE STRING "")
+set(CMAKE_CXX_FLAGS "" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -ffast-math" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g" CACHE STRING "")
