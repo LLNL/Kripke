@@ -82,12 +82,14 @@ struct Policy_Source<ArchLayoutT<ArchT_OpenMP, LayoutT_DZG>> {
 #ifdef KRIPKE_USE_CUDA
 template<>
 struct Policy_Source<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
-  using ExecPolicy =
+  using ExecPolicy = 
     KernelPolicy<
       CudaKernel<
-        For<0, cuda_thread_exec,  // Group
-          For<1, cuda_threadblock_exec<32>, // MixElem
-            Lambda<0>
+        Tile<1, tile_fixed<32>, cuda_block_x_loop,
+          For<1, cuda_thread_x_direct, // MixElem
+            For<0, cuda_thread_y_loop, // Group
+              Lambda<0>
+            >
           >
         >
       >
@@ -96,12 +98,14 @@ struct Policy_Source<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
 
 template<>
 struct Policy_Source<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
-  using ExecPolicy =
+  using ExecPolicy = 
     KernelPolicy<
       CudaKernel<
-        For<1, cuda_threadblock_exec<32>, // MixElem
-          For<0, cuda_thread_exec,  // Group
-            Lambda<0>
+        Tile<1, tile_fixed<32>, cuda_block_x_loop,
+          For<1, cuda_thread_x_direct, // MixElem
+            For<0, cuda_thread_y_loop, // Group
+              Lambda<0>
+            >
           >
         >
       >
