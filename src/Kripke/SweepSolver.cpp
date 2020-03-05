@@ -61,13 +61,13 @@ void Kripke::SweepSolver (Kripke::Core::DataStore &data_store, std::vector<SdomI
       auto upwind = field_upwind.getView(sdom_id);
 
       // Clear boundary conditions
-      if(upwind(Direction{0}) == -1){
+      if(upwind(Dimension{0}) == -1){
         Kripke::Kernel::kConst(data_store.getVariable<Field_IPlane>("i_plane"), sdom_id, 0.0);
       }
-      if(upwind(Direction{1}) == -1){
+      if(upwind(Dimension{1}) == -1){
         Kripke::Kernel::kConst(data_store.getVariable<Field_JPlane>("j_plane"), sdom_id, 0.0);
       }
-      if(upwind(Direction{2}) == -1){
+      if(upwind(Dimension{2}) == -1){
         Kripke::Kernel::kConst(data_store.getVariable<Field_KPlane>("k_plane"), sdom_id, 0.0);
       }
 
