@@ -267,6 +267,8 @@ int main(int argc, char **argv) {
       int tid = omp_get_thread_num();
 #ifdef __bgq__
       int core = Kernel_ProcessorCoreID();
+#elif __APPLE__
+      int core = -1;
 #else
       int core = sched_getcpu();
 #endif
