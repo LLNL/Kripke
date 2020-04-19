@@ -55,7 +55,7 @@ struct SourceSdom {
     int num_groups = set_group.size(sdom_id);
 
 
-    // Compute:  phi =  ell * psi
+    // Compute:  phi_out =  phi_out + source
     RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Group>(0, num_groups),
