@@ -68,7 +68,7 @@ namespace Core {
           m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
 #else
           m_chunk_to_data[chunk_id].allocate(sdom_size, chai::CPU,
-              [=](chai::Action action, chai::ExecutionSpace space, size_t bytes){
+              [=](const chai::PointerRecord* record, chai::Action action, chai::ExecutionSpace space){
                 /*printf("CHAI[%s, %d]: ", BaseVar::getName().c_str(), (int)chunk_id);
                 switch(action){
                 case chai::ACTION_ALLOC: printf("ALLOC "); break;
