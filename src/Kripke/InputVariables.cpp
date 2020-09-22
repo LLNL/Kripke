@@ -31,7 +31,8 @@ InputVariables::InputVariables() :
   niter(10),
   parallel_method(PMETHOD_SWEEP),
   num_material_subsamples(4),
-  run_name("kripke")
+  run_name("kripke"),
+  compute_errors(false)
 {
   num_zonesets_dim[0] = 1; 
   num_zonesets_dim[1] = 1;

@@ -65,7 +65,7 @@ The steady-state solution method uses the source-iteration technique, where each
 4.  Rhs = LPlusTimes(PhiOut)
 5.  Psi = Sweep(Rhs, Psi)  which is solving Psi=(Hinverse * Rhs) a.k.a _"Inverting H"_
 
-
+Kripke can compute error norms for the type 3i problem by passing the "--compute_errors" flag on the command line.  Problem 3i does not have scattering, so the scattering terms should be turned off by passing Kripke "--sigs 0,0,0".  In the future we may add comparisons to the 3ii benchmark points given in the original paper for specific scattering coefficients.
 
 Building and Running
 ====================

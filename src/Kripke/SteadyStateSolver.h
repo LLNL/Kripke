@@ -15,7 +15,7 @@ namespace Kripke {
 
   class DataStore;
 
-  int SteadyStateSolver(Kripke::Core::DataStore &data_store, size_t max_iter, bool block_jacobi);
+  int SteadyStateSolver(Kripke::Core::DataStore &data_store, size_t max_iter, bool block_jacobi, bool compute_errors);
 
 
 } // namespace

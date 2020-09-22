@@ -21,7 +21,7 @@ using namespace Kripke::Core;
 /**
   Run solver iterations.
 */
-int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_iter, bool block_jacobi)
+int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_iter, bool block_jacobi, bool compute_errors)
 {
   KRIPKE_TIMER(data_store, Solve);
 
@@ -106,6 +106,9 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
 
 
   }
+
+  if (compute_errors)
+    Kripke::Kernel::error_norms(data_store);
 
   if(comm.rank() == 0){
     printf("  Solver terminated\n");

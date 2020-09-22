@@ -116,6 +116,9 @@ void usage(void){
     printf("                         sweep: Full up-wind sweep (wavefront algorithm)\n");
     printf("                         bj: Block Jacobi\n");
     printf("                         Default: --pmethod sweep\n\n");
+    printf("  --compute_errors       compute and report error norms for the no-scattering problem\n");
+    printf("                         Currently this only makes sense when using --sigs 0,0,0\n");
+    printf("                         Default: no errors are computed\n\n");
     
     printf("\n");
   }
@@ -381,6 +384,9 @@ int main(int argc, char **argv) {
     else if(opt == "--layout"){
       vars.al_v.layout_v = Kripke::stringToLayout(cmd.pop());     
     }
+    else if(opt == "--compute_errors"){
+       vars.compute_errors = true;
+    }
     else{
       printf("Unknwon options %s\n", opt.c_str());
       usage();
@@ -479,7 +485,7 @@ int main(int argc, char **argv) {
   Kripke::generateProblem(data_store, vars);
 
   // Run the solver
-  Kripke::SteadyStateSolver(data_store, vars.niter, vars.parallel_method == PMETHOD_BJ);
+  Kripke::SteadyStateSolver(data_store, vars.niter, vars.parallel_method == PMETHOD_BJ, vars.compute_errors);
 
   // Print Timing Info
   auto &timing = data_store.getVariable<Kripke::Timing>("timing");
