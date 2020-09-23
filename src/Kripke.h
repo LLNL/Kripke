@@ -106,7 +106,7 @@ namespace Arch {
   using RAJA::statement::Hyperplane;
   using RAJA::statement::Lambda;
   using RAJA::statement::Tile;
-  using RAJA::statement::tile_fixed;
+  using RAJA::tile_fixed;
 
 #ifdef KRIPKE_USE_OPENMP
   using RAJA::omp_parallel_collapse_exec;
