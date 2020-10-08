@@ -252,7 +252,7 @@ class Kripke(CMakePackage, CudaPackage):
             cfg.write(cmake_cache_entry("CMAKE_CUDA_COMPILER",
                                         cudacompiler))
 
-            cuda_flags = []
+            cuda_flags = ['--expt-extended-lambda']
 
             if not spec.satisfies('cuda_arch=none'):
                 cuda_arch = spec.variants['cuda_arch'].value
