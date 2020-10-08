@@ -10,8 +10,6 @@ cmake_minimum_required(VERSION 3.8)
 cmake_policy(SET CMP0057 NEW)
 
 project(KRIPKE LANGUAGES CXX)
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
-
 
 set(KRIPKE_VERSION "1.2.5-dev")
 
@@ -28,8 +26,6 @@ set(ENABLE_DOCUMENTATION Off CACHE Bool "")
 
 # Use C++14 standard
 set(BLT_CXX_STD "c++14" CACHE STRING "")
-
-set(chai_DIR ${CURRENT_SOURCE_DIR}/tpl/chai)
 
 include(blt/SetupBLT.cmake)
 
@@ -71,30 +67,63 @@ add_subdirectory(tpl/googletest)
 # 
 option(ENABLE_CHAI "Enable CHAI/Umpire memory management" Off)
 if(ENABLE_CHAI)
+  if (DEFINED umpire_DIR)
+    find_package(umpire REQUIRED)
+    
+    if (ENABLE_MPI)
+      set(UMPIRE_DEPENDS mpi)
+    else()
+      set(UMPIRE_DEPENDS)
+    endif()
 
-	# Bring in Umpire, which CHAI depends on for memory management
-	add_subdirectory(tpl/umpire)
+    blt_register_library(
+      NAME umpire
+      INCLUDES ${UMPIRE_INCLUDE_DIRS}
+      LIBRARIES umpire
+      DEPENDS_ON ${UMPIRE_DEPENDS})
+  else ()
+    add_subdirectory(tpl/umpire)
+  endif()
 
-  # Add CHAI
-  add_subdirectory(tpl/chai)
-  
+    # Umpire depends on camp
+    #  if (NOT TARGET camp)
+    #    if (DEFINED camp_DIR)
+    #      find_package(camp REQUIRED)
+    #      set_target_properties(camp PROPERTIES IMPORTED_GLOBAL TRUE)
+    #    else ()
+    #      message(FATAL_ERROR "camp is required. Please set camp_DIR")
+    #    endif()
+    #
+    #    if(ENABLE_CUDA)
+    #      blt_add_target_definitions(
+    #        TO camp
+    #        SCOPE INTERFACE
+    #        TARGET_DEFINITIONS CAMP_HAVE_CUDA)
+    #    endif()
+    #  endif ()
+
+  if (DEFINED chai_DIR)
+    find_package(chai REQUIRED)
+  else ()
+    add_subdirectory(tpl/chai)
+  endif ()
+
   set(ENABLE_TESTS Off CACHE Bool "")
-  
   set(KRIPKE_USE_CHAI 1)
-  
   list(APPEND KRIPKE_DEPENDS chai)
-  
 endif()
 
 
 #
 # Configure RAJA (REQUIRED)
 #
-
-set(ENABLE_EXAMPLES Off CACHE Bool "")
-set(ENABLE_EXERCISES Off CACHE Bool "")
-add_subdirectory(tpl/raja)
-
+if (DEFINED RAJA_DIR)
+  find_package(RAJA REQUIRED)
+else ()
+  set(ENABLE_EXAMPLES Off CACHE Bool "")
+  set(ENABLE_EXERCISES Off CACHE Bool "")
+  add_subdirectory(tpl/raja)
+endif ()
 list(APPEND KRIPKE_DEPENDS RAJA)
 
 
