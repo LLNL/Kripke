@@ -60,7 +60,7 @@
 
 gcc_8_3_1_cuda:
   variables:
-    SPEC: "+cuda cuda_arch=sm_70 %gcc@8.3.1 ^cuda@10.1.168"
+    SPEC: "+cuda cuda_arch=70 %gcc@8.3.1 ^cuda@10.1.168"
   extends: .build_and_test_on_lassen
 
   # pgi_19_10_cuda:
