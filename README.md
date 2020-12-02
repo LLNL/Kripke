@@ -21,7 +21,7 @@ Kripke is also a Proxy-App since it is a proxy for the LLNL transport code ARDRA
 
 Analysis
 --------
-A major challenge of achieving high-performance in an Sn transport (or any physics) code is choosing a data-layout and a parallel decomposition that lends itself to the targeted architecture. Often the data-layout determines the most efficient nesting of loops in computational kernels, which then determines how well your inner-most-loop SIMDizes, how you add threading (pthreads, OpenMP, etc.), and the efficiency and design of your parallel algorithms. Therefore, each nesting produces different loop nesting orders, which provides substantially different performance characteristics. We want to explore how easily and efficiently these different nestings map to different architectures. In particular, we are interested in how we can achieve good parallel efficiency while also achieving efficient use of node resources (such as SIMD units, memory systems, and accelerators).
+A major challenge of achieving high-performance in an Sn transport (or any physics) code is choosing a data-layout and a parallel decomposition that lends itself to the targeted architecture. Often the data-layout determines the most efficient nesting of loops in computational kernels, which then determines how well your inner-most-loop SIMD vectorizes, how you add threading (pthreads, OpenMP, etc.), and the efficiency and design of your parallel algorithms. Therefore, each nesting produces different loop nesting orders, which provides substantially different performance characteristics. We want to explore how easily and efficiently these different nestings map to different architectures. In particular, we are interested in how we can achieve good parallel efficiency while also achieving efficient use of node resources (such as SIMD units, memory systems, and accelerators).
 
 Parallel sweep algorithms can be explored with Kripke in multiple ways. The core MPI algorithm could be modified or rewritten to explore other approaches, domain overloading, or alternate programming models (such as Charm++). The effect of load-imbalance is an understudied aspect of Sn transport sweeps, and could easily be studied with Kripke by artificially adding more work (ie unknowns) to a subset of MPI tasks. Block-AMR could be added to Kripke, which would be a useful way to explore the cost-benefit analysis of adding AMR to an Sn code, and would be a way to further study load imbalances and AMR effects on sweeps.
 
@@ -70,14 +70,14 @@ The steady-state solution method uses the source-iteration technique, where each
 Building and Running
 ====================
 
-Kripke comes with a BLT(CMake) based build system based.
+Kripke comes with a BLT CMake-based build system based.
 
 Requirements
 ------------
 
 Basic requirements:
 
-*  CMake 3.8 or later (3.9.2 or later for CUDA support)
+*  CMake 3.9 or later (minimum CMake version required by RAJA)
 
 *  C++14 Compiler (g++, icpc, etc.)
 
@@ -90,9 +90,9 @@ Basic requirements:
 
 Submodule dependencies:
 
-*  [BLT](https://github.com/LLNL/blt) v0.1: a CMake based build system (required)
+*  [BLT](https://github.com/LLNL/blt) v0.3.0: a CMake based build system (required)
 
-*  [RAJA](https://github.com/LLNL/RAJA) v0.6.0: a loop abstraction library (required)
+*  [RAJA](https://github.com/LLNL/RAJA) v0.11.0: a loop abstraction library (required)
 
 *  [CHAI](https://github.com/LLNL/CHAI) v1.1: a copy hiding abstraction for moving data between memory spaces (optional)
 
