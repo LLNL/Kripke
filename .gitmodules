@@ -18,3 +18,6 @@
 [submodule "tpl/caliper"]
 	path = tpl/caliper
 	url = https://github.com/LLNL/Caliper.git
+[submodule "scripts/radiuss-spack-configs"]
+	path = scripts/radiuss-spack-configs
+	url = https://github.com/LLNL/radiuss-spack-configs.git
