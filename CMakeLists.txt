@@ -113,6 +113,17 @@ if(ENABLE_CHAI)
   list(APPEND KRIPKE_DEPENDS chai)
 endif()
 
+#
+# Configure RAJA (REQUIRED)
+#
+if (DEFINED camp_DIR)
+  find_package(camp REQUIRED)
+else ()
+  add_subdirectory(tpl/camp)
+endif ()
+list(APPEND KRIPKE_DEPENDS camp)
+
+
 
 #
 # Configure RAJA (REQUIRED)
