@@ -88,7 +88,7 @@ struct SweepSdom {
             double ycos_dyj = 2.0 * ycos(d) / dy(j);
             double zcos_dzk = 2.0 * zcos(d) / dz(k);
 
-            Zone z(zone_layout(*i, *j, *k));
+            Zone z(zone_layout(*k, *j, *i));
 
             /* Calculate new zonal flux */
             double psi_d_g_z = (rhs(d,g,z)

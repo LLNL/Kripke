@@ -90,7 +90,7 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
 
   // Create a total set of zones in the problem
   auto &set_zone = data_store.newVariable<ProductSet<3>>("Set/Zone",
-      pspace, SPACE_R, set_zonei, set_zonej, set_zonek);
+      pspace, SPACE_R, set_zonek, set_zonej, set_zonei);
 
 
   // Create a 1d linearized set of zones
@@ -201,13 +201,14 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
     std::vector<ZoneMixture> sdom_mix(set_zone.size(sdom_id));
     auto zone_layout = set_zone.getLayout(sdom_id);
 
+
     // iterate over the zones, assume uniform mesh for our coordinate
     // calculations
-    for (int i = 0; i < (int)set_zonei.size(sdom_id); i ++) {
+    for (int k = 0; k < (int)set_zonek.size(sdom_id); k ++) {
       for (int j = 0; j < (int)set_zonej.size(sdom_id); j ++) {
-        for (int k = 0; k < (int)set_zonek.size(sdom_id); k ++) {
+        for (int i = 0; i < (int)set_zonei.size(sdom_id); i ++) {
 
-          int zone = zone_layout(i,j,k);
+          int zone = zone_layout(k,j,i);
 
           double xi = x0 + dx*i;
           double yi = y0 + dy*j;
