@@ -60,6 +60,7 @@ class Chai(CMakePackage, CudaPackage):
 
     version('develop', branch='develop', submodules='True')
     version('master', branch='main', submodules='True')
+    version('2.3.0', tag='v2.3.0', submodules='True')
     version('2.2.1', tag='v2.2.1', submodules='True')
     version('2.1.1', tag='v2.1.1', submodules='True')
     version('2.1.0', tag='v2.1.0', submodules='True')
