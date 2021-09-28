@@ -22,10 +22,11 @@ set(ENABLE_CUDA On CACHE BOOL "")
 set(ENABLE_OPENMP Off CACHE BOOL "")
 set(ENABLE_MPI_WRAPPER On CACHE BOOL "")
 
-set(CMAKE_CUDA_FLAGS "-restrict -gencode=arch=compute_60,code=sm_60 " CACHE STRING "")
+set(CMAKE_CUDA_FLAGS "-restrict -gencode=arch=compute_70,code=sm_70 " CACHE STRING "")
 set(CMAKE_CUDA_FLAGS_RELEASE "-O3 --expt-extended-lambda" CACHE STRING "")
 set(CMAKE_CUDA_FLAGS_RELWITHDEBINFO "-O3 -lineinfo --expt-extended-lambda" CACHE STRING "")
 set(CMAKE_CUDA_FLAGS_DEBUG "-O0 -g -G --expt-extended-lambda" CACHE STRING "")
 set(CMAKE_CUDA_HOST_COMPILER "${CMAKE_CXX_COMPILER}" CACHE STRING "")
 
+set(CUDA_ARCH "sm_70" CACHE STRING "")
 
