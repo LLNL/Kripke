@@ -414,7 +414,7 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_DGZ>> {
                         2, seq_exec, ArgList<3, 4>,
 
                         Lambda<0>,
-                        HipyncThreads
+                        HipSyncThreads
                       >
                     >
                   >

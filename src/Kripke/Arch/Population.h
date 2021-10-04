@@ -407,7 +407,7 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_GZD>>{
   using ExecPolicy =
     KernelPolicy<
       HipKernel<
-        Tile<2, tile_fixed<32>, cuda_block_x_loop, // blocks of 32 zones
+        Tile<2, tile_fixed<32>, hip_block_x_loop, // blocks of 32 zones
           For<1, hip_thread_z_loop, // group
             For<2, hip_thread_y_direct, // zone
               For<0, hip_thread_x_loop, // direction
@@ -422,7 +422,7 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_GZD>>{
 };
 
 template<>
-struct Policy_Population<ArchLayoutT<ArchT_hip, LayoutT_ZDG>>{
+struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_ZDG>>{
   using ReducePolicy = hip_reduce;
 
   using ExecPolicy =
