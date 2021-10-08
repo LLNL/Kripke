@@ -69,7 +69,7 @@ namespace Core {
 #else
           m_chunk_to_data[chunk_id].allocate(sdom_size, chai::CPU,
               [=](const chai::PointerRecord* record, chai::Action action, chai::ExecutionSpace space){
-                /*printf("CHAI[%s, %d]: ", BaseVar::getName().c_str(), (int)chunk_id);
+                /**/printf("CHAI[%s, %d]: ", BaseVar::getName().c_str(), (int)chunk_id);
                 switch(action){
                 case chai::ACTION_ALLOC: printf("ALLOC "); break;
                 case chai::ACTION_FREE: printf("FREE  "); break;
@@ -85,11 +85,18 @@ namespace Core {
                 default: printf("UNK ");
                 }
 
-                printf("%lu bytes\n", (unsigned long) bytes);
-*/
+                printf("\n");
+                //printf("%lu bytes\n", (unsigned long) bytes);
+/**/
               }
 
           );
+
+#ifdef KRIPKE_USE_CUDA
+          m_chunk_to_data[chunk_id].move(chai::GPU);
+          m_chunk_to_data[chunk_id].registerTouch(chai::GPU);
+          printf( "RCC move to device!\n" );
+#endif
 #endif
         }
       }
@@ -225,6 +232,66 @@ namespace Core {
 
         return DefaultViewType(ptr, layout);
       }
+
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+      template<typename Order>
+      RAJA_INLINE
+      auto getDeviceViewOrder(Kripke::SdomId sdom_id) const ->
+        ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>
+      {
+        printf( "RCC CDP 1\n" );
+        size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
+        printf( "RCC CDP 2\n" );
+
+        //ElementPtr ptr = Parent::m_chunk_to_data[chunk_id].getPointer(chai::GPU);
+        printf( "RCC CDP 3\n" );
+
+        using LInfo = LayoutInfo<Order, IDX_TYPES...>;
+        printf( "RCC CDP 4\n" );
+        using LType = typename LInfo::Layout;
+        printf( "RCC CDP 5\n" );
+
+        LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
+        printf( "RCC CDP 6\n" );
+
+        return ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].getPointer(chai::GPU), layout);
+        //return ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>(ptr, layout);
+      }
+
+#endif
+#endif
+
+
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+      RAJA_INLINE
+      void moveHtoD(Kripke::SdomId sdom_id) {
+        // for loop here
+        size_t num_chunks = Parent::m_chunk_to_subdomain.size();
+
+        printf( "moveHtoD 1\n" );
+        for ( size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id]; chunk_id < num_chunks; ++chunk_id )
+        {
+          Parent::m_chunk_to_data[chunk_id].move(chai::GPU);
+          Parent::m_chunk_to_data[chunk_id].registerTouch(chai::GPU);
+        }
+        printf( "moveHtoD 2\n" );
+      }
+
+      RAJA_INLINE
+      void moveDtoH(Kripke::SdomId sdom_id) {
+        size_t num_chunks = Parent::m_chunk_to_subdomain.size();
+
+        //size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
+        for ( size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id]; chunk_id < num_chunks; ++chunk_id )
+        {
+          Parent::m_chunk_to_data[chunk_id].move(chai::CPU);
+          Parent::m_chunk_to_data[chunk_id].registerTouch(chai::CPU);
+        }
+      }
+#endif
+#endif
 
 
       template<typename Order>

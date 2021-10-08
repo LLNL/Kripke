@@ -128,6 +128,39 @@ namespace Kripke {
     {
       return field.template getViewOrder<order_t>(sdom);
     }
+
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    template<typename FieldType>
+    auto getDeviceView(FieldType &field) const ->
+      decltype(field.template getDeviceViewOrder<order_t>(sdom_id))
+    {
+      return field.template getDeviceViewOrder<order_t>(sdom_id);
+    }
+    
+    template<typename FieldType>
+    auto getDeviceView(FieldType &field, Kripke::SdomId sdom) const ->
+      decltype(field.template getDeviceViewOrder<order_t>(sdom))
+    {
+      return field.template getDeviceViewOrder<order_t>(sdom);
+    }
+
+    template<typename FieldType>
+    void moveHtoD(FieldType &field) const //->
+      //decltype(field.template moveHtoD(sdom_id))
+    {
+      printf( "RCC INSIDE move H to D\n" );
+      field.template moveHtoD(sdom_id);
+    }
+    
+    template<typename FieldType>
+    void moveDtoH(FieldType &field) const //->
+      //decltype(field.template moveDtoH(sdom_id))
+    {
+      field.template moveDtoH(sdom_id);
+    }
+#endif
+#endif
   };
 
   template<typename AL>

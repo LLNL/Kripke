@@ -40,10 +40,23 @@ struct LPlusTimesSdom {
     int num_moments =    set_moment.size(sdom_id);
     int num_zones =      set_zone.size(sdom_id);
 
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    // Move data to GPU
+    sdom_al.moveHtoD(field_phi_out);
+    sdom_al.moveHtoD(field_rhs);
+    sdom_al.moveHtoD(field_ell_plus);
+    // Get views
+    auto phi_out  = sdom_al.getDeviceView(field_phi_out);
+    auto rhs      = sdom_al.getDeviceView(field_rhs);
+    auto ell_plus = sdom_al.getDeviceView(field_ell_plus); 
+#endif
+#else
     // Get views
     auto phi_out  = sdom_al.getView(field_phi_out);
     auto rhs      = sdom_al.getView(field_rhs);
     auto ell_plus = sdom_al.getView(field_ell_plus); 
+#endif
 
     // Compute:  rhs =  ell_plus * phi_out
     RAJA::kernel<ExecPolicy>(
@@ -58,6 +71,15 @@ struct LPlusTimesSdom {
 
         }
     );
+
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    // Move data to GPU
+    sdom_al.moveDtoH(field_phi_out);
+    sdom_al.moveDtoH(field_rhs);
+    sdom_al.moveDtoH(field_ell_plus);
+#endif
+#endif
   }
 
 };

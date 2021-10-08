@@ -45,10 +45,38 @@ struct LTimesSdom {
     int num_moments =    set_moment.size(sdom_id);
     int num_zones =      set_zone.size(sdom_id);
 
+//#ifdef KRIPKE_USE_CHAI
+//#ifdef KRIPKE_USE_CUDA
+//    // Move data to GPU
+//    sdom_al.moveHtoD(field_psi);
+//    sdom_al.moveHtoD(field_phi);
+//    sdom_al.moveHtoD(field_ell);
+//    printf( "RCC try move H to D\n" );
+//#endif
+//#endif
+
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    // Move data to GPU
+    sdom_al.moveHtoD(field_psi);
+    sdom_al.moveHtoD(field_phi);
+    sdom_al.moveHtoD(field_ell);
+    printf( "RCC AGAIN try move H to D\n" );
+
+    // Get pointers
+    auto psi = sdom_al.getDeviceView(field_psi);
+    auto phi = sdom_al.getDeviceView(field_phi);
+    auto ell = sdom_al.getDeviceView(field_ell);
+    printf( "RCC device views\n" );
+#endif
+
+#else
     // Get pointers
     auto psi = sdom_al.getView(field_psi);
     auto phi = sdom_al.getView(field_phi);
     auto ell = sdom_al.getView(field_ell);
+
+#endif
 
     // Compute:  phi =  ell * psi
     RAJA::kernel<ExecPolicy>(
@@ -60,9 +88,19 @@ struct LTimesSdom {
         KRIPKE_LAMBDA (Moment nm, Direction d, Group g, Zone z) {
 
            phi(nm,g,z) += ell(nm, d) * psi(d, g, z);
+           //ell(nm,d) *= 2;
 
         }
     );
+
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    // Move data to CPU
+    sdom_al.moveDtoH(field_psi);
+    sdom_al.moveDtoH(field_phi);
+    sdom_al.moveDtoH(field_ell);
+#endif
+#endif
 
 
   }

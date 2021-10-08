@@ -45,11 +45,27 @@ struct SourceSdom {
     // Source term is isotropic
     Moment nm{0};
 
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    // Move data to GPU
+    sdom_al.moveHtoD(field_phi_out);
+    sdom_al.moveHtoD(field_mixed_to_zone);
+    sdom_al.moveHtoD(field_mixed_to_material);
+    sdom_al.moveHtoD(field_mixed_to_fraction);
+
+    auto phi_out = sdom_al.getDeviceView(field_phi_out);
+
+    auto mixelem_to_zone     = sdom_al.getDeviceView(field_mixed_to_zone);
+    auto mixelem_to_material = sdom_al.getDeviceView(field_mixed_to_material);
+    auto mixelem_to_fraction = sdom_al.getDeviceView(field_mixed_to_fraction);
+#endif
+#else
     auto phi_out = sdom_al.getView(field_phi_out);
 
     auto mixelem_to_zone     = sdom_al.getView(field_mixed_to_zone);
     auto mixelem_to_material = sdom_al.getView(field_mixed_to_material);
     auto mixelem_to_fraction = sdom_al.getView(field_mixed_to_fraction);
+#endif
 
     int num_mixed  = set_mixelem.size(sdom_id);
     int num_groups = set_group.size(sdom_id);
@@ -74,6 +90,15 @@ struct SourceSdom {
         }
     );
 
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    // Move data to GPU
+    sdom_al.moveDtoH(field_phi_out);
+    sdom_al.moveDtoH(field_mixed_to_zone);
+    sdom_al.moveDtoH(field_mixed_to_material);
+    sdom_al.moveDtoH(field_mixed_to_fraction);
+#endif
+#endif
   }
 };
 

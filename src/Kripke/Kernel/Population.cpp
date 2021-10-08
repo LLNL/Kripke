@@ -42,9 +42,21 @@ struct PopulationSdom {
     int num_groups =     set_group.size(sdom_id);
     int num_zones =      set_zone.size(sdom_id);
 
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    // Move data to GPU
+    sdom_al.moveHtoD(field_psi);
+    sdom_al.moveHtoD(field_w);
+    sdom_al.moveHtoD(field_volume);
+    auto psi    = sdom_al.getDeviceView(field_psi);
+    auto w      = sdom_al.getDeviceView(field_w);
+    auto volume = sdom_al.getDeviceView(field_volume);
+#endif
+#else
     auto psi    = sdom_al.getView(field_psi);
     auto w      = sdom_al.getView(field_w);
     auto volume = sdom_al.getView(field_volume);
+#endif
     
     RAJA::ReduceSum<ReducePolicy, double> part_red(0.0);
 
@@ -59,6 +71,15 @@ struct PopulationSdom {
 
         }
     );
+
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    // Move data to GPU
+    sdom_al.moveDtoH(field_psi);
+    sdom_al.moveDtoH(field_w);
+    sdom_al.moveDtoH(field_volume);
+#endif
+#endif
 
     *part_ptr += (double)part_red;
   }

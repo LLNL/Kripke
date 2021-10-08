@@ -37,30 +37,69 @@ struct SweepSdom {
     int local_jmax = data_store.getVariable<Set>("Set/ZoneJ").size(sdom_id);
     int local_kmax = data_store.getVariable<Set>("Set/ZoneK").size(sdom_id);
 
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    // Move data to GPU
+    sdom_al.moveHtoD(data_store.getVariable<Field_Direction2Double>("quadrature/xcos"));
+    sdom_al.moveHtoD(data_store.getVariable<Field_Direction2Double>("quadrature/ycos"));
+    sdom_al.moveHtoD(data_store.getVariable<Field_Direction2Double>("quadrature/zcos"));
+    //sdom_al.moveHtoD(data_store.getVariable<Field_Direction2Int>("quadrature/id"));
+    //sdom_al.moveHtoD(data_store.getVariable<Field_Direction2Int>("quadrature/jd"));
+    //sdom_al.moveHtoD(data_store.getVariable<Field_Direction2Int>("quadrature/kd"));
+    sdom_al.moveHtoD(data_store.getVariable<Field_ZoneI2Double>("dx"));
+    sdom_al.moveHtoD(data_store.getVariable<Field_ZoneJ2Double>("dy"));
+    sdom_al.moveHtoD(data_store.getVariable<Field_ZoneK2Double>("dz"));
+    sdom_al.moveHtoD(data_store.getVariable<Kripke::Field_SigmaTZonal>("sigt_zonal"));
+    sdom_al.moveHtoD(data_store.getVariable<Kripke::Field_Flux>("psi"));
+    sdom_al.moveHtoD(data_store.getVariable<Kripke::Field_Flux>("rhs"));
+    sdom_al.moveHtoD(data_store.getVariable<Field_IPlane>("i_plane"));
+    sdom_al.moveHtoD(data_store.getVariable<Field_JPlane>("j_plane"));
+    sdom_al.moveHtoD(data_store.getVariable<Field_KPlane>("k_plane"));
+    auto xcos = sdom_al.getDeviceView(data_store.getVariable<Field_Direction2Double>("quadrature/xcos"));
+    auto ycos = sdom_al.getDeviceView(data_store.getVariable<Field_Direction2Double>("quadrature/ycos"));
+    auto zcos = sdom_al.getDeviceView(data_store.getVariable<Field_Direction2Double>("quadrature/zcos"));
+    auto cpuview_id = sdom_al.getView(data_store.getVariable<Field_Direction2Int>("quadrature/id"));
+    auto cpuview_jd = sdom_al.getView(data_store.getVariable<Field_Direction2Int>("quadrature/jd"));
+    auto cpuview_kd = sdom_al.getView(data_store.getVariable<Field_Direction2Int>("quadrature/kd"));
+
+    auto dx = sdom_al.getDeviceView(data_store.getVariable<Field_ZoneI2Double>("dx"));
+    auto dy = sdom_al.getDeviceView(data_store.getVariable<Field_ZoneJ2Double>("dy"));
+    auto dz = sdom_al.getDeviceView(data_store.getVariable<Field_ZoneK2Double>("dz"));
+
+    auto sigt = sdom_al.getDeviceView(data_store.getVariable<Kripke::Field_SigmaTZonal>("sigt_zonal"));
+    auto psi =  sdom_al.getDeviceView(data_store.getVariable<Kripke::Field_Flux>("psi"));
+    auto rhs =  sdom_al.getDeviceView(data_store.getVariable<Kripke::Field_Flux>("rhs"));
+
+    auto psi_lf = sdom_al.getDeviceView(data_store.getVariable<Field_IPlane>("i_plane"));
+    auto psi_fr = sdom_al.getDeviceView(data_store.getVariable<Field_JPlane>("j_plane"));
+    auto psi_bo = sdom_al.getDeviceView(data_store.getVariable<Field_KPlane>("k_plane"));
+#endif
+#else
     auto xcos = sdom_al.getView(data_store.getVariable<Field_Direction2Double>("quadrature/xcos"));
     auto ycos = sdom_al.getView(data_store.getVariable<Field_Direction2Double>("quadrature/ycos"));
     auto zcos = sdom_al.getView(data_store.getVariable<Field_Direction2Double>("quadrature/zcos"));
-    auto view_id = sdom_al.getView(data_store.getVariable<Field_Direction2Int>("quadrature/id"));
-    auto view_jd = sdom_al.getView(data_store.getVariable<Field_Direction2Int>("quadrature/jd"));
-    auto view_kd = sdom_al.getView(data_store.getVariable<Field_Direction2Int>("quadrature/kd"));
+    auto cpuview_id = sdom_al.getView(data_store.getVariable<Field_Direction2Int>("quadrature/id"));
+    auto cpuview_jd = sdom_al.getView(data_store.getVariable<Field_Direction2Int>("quadrature/jd"));
+    auto cpuview_kd = sdom_al.getView(data_store.getVariable<Field_Direction2Int>("quadrature/kd"));
 
     auto dx = sdom_al.getView(data_store.getVariable<Field_ZoneI2Double>("dx"));
     auto dy = sdom_al.getView(data_store.getVariable<Field_ZoneJ2Double>("dy"));
     auto dz = sdom_al.getView(data_store.getVariable<Field_ZoneK2Double>("dz"));
 
     auto sigt = sdom_al.getView(data_store.getVariable<Kripke::Field_SigmaTZonal>("sigt_zonal"));
-    auto psi = sdom_al.getView(data_store.getVariable<Kripke::Field_Flux>("psi"));
-    auto rhs = sdom_al.getView(data_store.getVariable<Kripke::Field_Flux>("rhs"));
+    auto psi =  sdom_al.getView(data_store.getVariable<Kripke::Field_Flux>("psi"));
+    auto rhs =  sdom_al.getView(data_store.getVariable<Kripke::Field_Flux>("rhs"));
 
     auto psi_lf = sdom_al.getView(data_store.getVariable<Field_IPlane>("i_plane"));
     auto psi_fr = sdom_al.getView(data_store.getVariable<Field_JPlane>("j_plane"));
     auto psi_bo = sdom_al.getView(data_store.getVariable<Field_KPlane>("k_plane"));
+#endif
 
     // Assumption: all directions in this sdom have same mesh traversal
     Direction d0{0};
-    int id = view_id(d0);
-    int jd = view_jd(d0);
-    int kd = view_kd(d0);
+    int id = cpuview_id(d0);
+    int jd = cpuview_jd(d0);
+    int kd = cpuview_kd(d0);
 
     ZoneI start_i((id>0) ? 0 : local_imax-1);
     ZoneJ start_j((jd>0) ? 0 : local_jmax-1);
@@ -71,6 +110,17 @@ struct SweepSdom {
     ZoneK end_k((kd>0) ? local_kmax : -1);
 
     auto zone_layout = data_store.getVariable<ProductSet<3>>("Set/Zone").getLayout(sdom_id);
+
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    sdom_al.moveHtoD(data_store.getVariable<Field_Direction2Int>("quadrature/id"));
+    sdom_al.moveHtoD(data_store.getVariable<Field_Direction2Int>("quadrature/jd"));
+    sdom_al.moveHtoD(data_store.getVariable<Field_Direction2Int>("quadrature/kd"));
+    auto view_id = sdom_al.getDeviceView(data_store.getVariable<Field_Direction2Int>("quadrature/id"));
+    auto view_jd = sdom_al.getDeviceView(data_store.getVariable<Field_Direction2Int>("quadrature/jd"));
+    auto view_kd = sdom_al.getDeviceView(data_store.getVariable<Field_Direction2Int>("quadrature/kd"));
+#endif
+#endif
 
     RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
@@ -106,6 +156,27 @@ struct SweepSdom {
 
         }
     );
+
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    // Move data to CPU
+    sdom_al.moveDtoH(data_store.getVariable<Field_Direction2Double>("quadrature/xcos"));
+    sdom_al.moveDtoH(data_store.getVariable<Field_Direction2Double>("quadrature/ycos"));
+    sdom_al.moveDtoH(data_store.getVariable<Field_Direction2Double>("quadrature/zcos"));
+    sdom_al.moveDtoH(data_store.getVariable<Field_Direction2Int>("quadrature/id"));
+    sdom_al.moveDtoH(data_store.getVariable<Field_Direction2Int>("quadrature/jd"));
+    sdom_al.moveDtoH(data_store.getVariable<Field_Direction2Int>("quadrature/kd"));
+    sdom_al.moveDtoH(data_store.getVariable<Field_ZoneI2Double>("dx"));
+    sdom_al.moveDtoH(data_store.getVariable<Field_ZoneJ2Double>("dy"));
+    sdom_al.moveDtoH(data_store.getVariable<Field_ZoneK2Double>("dz"));
+    sdom_al.moveDtoH(data_store.getVariable<Kripke::Field_SigmaTZonal>("sigt_zonal"));
+    sdom_al.moveDtoH(data_store.getVariable<Kripke::Field_Flux>("psi"));
+    sdom_al.moveDtoH(data_store.getVariable<Kripke::Field_Flux>("rhs"));
+    sdom_al.moveDtoH(data_store.getVariable<Field_IPlane>("i_plane"));
+    sdom_al.moveDtoH(data_store.getVariable<Field_JPlane>("j_plane"));
+    sdom_al.moveDtoH(data_store.getVariable<Field_KPlane>("k_plane"));
+#endif
+#endif
   }
 };
 

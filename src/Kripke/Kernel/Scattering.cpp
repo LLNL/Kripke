@@ -52,6 +52,33 @@ struct ScatteringSdom {
     int glower_dst = set_group.lower(sdom_dst);
 
 
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    // Move data to GPU
+    sdom_al.moveHtoD(field_moment_to_legendre);
+    sdom_al.moveHtoD(field_phi);
+    sdom_al.moveHtoD(field_phi_out);
+    sdom_al.moveHtoD(field_sigs);
+
+    sdom_al.moveHtoD(field_zone_to_mixelem);
+    sdom_al.moveHtoD(field_zone_to_num_mixelem);
+    sdom_al.moveHtoD(field_mixelem_to_material);
+    sdom_al.moveHtoD(field_mixelem_to_fraction);
+
+    // get material mix information
+    auto moment_to_legendre = sdom_al.getDeviceView(field_moment_to_legendre);
+
+    auto phi     = sdom_al.getDeviceView(field_phi);
+    auto phi_out = sdom_al.getDeviceView(field_phi_out, sdom_dst);
+    auto sigs    = sdom_al.getDeviceView(field_sigs);
+    
+    auto zone_to_mixelem     = sdom_al.getDeviceView(field_zone_to_mixelem);
+    auto zone_to_num_mixelem = sdom_al.getDeviceView(field_zone_to_num_mixelem);
+    auto mixelem_to_material = sdom_al.getDeviceView(field_mixelem_to_material);
+    auto mixelem_to_fraction = sdom_al.getDeviceView(field_mixelem_to_fraction);
+#endif
+
+#else
     // get material mix information
     auto moment_to_legendre = sdom_al.getView(field_moment_to_legendre);
 
@@ -63,6 +90,7 @@ struct ScatteringSdom {
     auto zone_to_num_mixelem = sdom_al.getView(field_zone_to_num_mixelem);
     auto mixelem_to_material = sdom_al.getView(field_mixelem_to_material);
     auto mixelem_to_fraction = sdom_al.getView(field_mixelem_to_fraction);
+#endif
     
     // grab dimensions
     int num_zones =      set_zone.size(sdom_src);
@@ -97,6 +125,21 @@ struct ScatteringSdom {
             phi_out(nm, g, z) += sigs_z * phi(nm, gp, z);
         }
     );
+
+#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CUDA
+    // Move data to CPU
+    sdom_al.moveDtoH(field_moment_to_legendre);
+    sdom_al.moveDtoH(field_phi);
+    sdom_al.moveDtoH(field_phi_out);
+    sdom_al.moveDtoH(field_sigs);
+
+    sdom_al.moveDtoH(field_zone_to_mixelem);
+    sdom_al.moveDtoH(field_zone_to_num_mixelem);
+    sdom_al.moveDtoH(field_mixelem_to_material);
+    sdom_al.moveDtoH(field_mixelem_to_fraction);
+#endif
+#endif
   }
 
 };
