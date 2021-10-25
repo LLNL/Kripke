@@ -7,6 +7,8 @@
 ##
 ##
 
+#Load ROCM/4.4.0 on RZWHAMO
+
 set(RAJA_COMPILER "RAJA_COMPILER_CLANG" CACHE STRING "")
 
 set(CMAKE_C_COMPILER   "amdclang" CACHE PATH "")
