@@ -88,11 +88,11 @@ Basic requirements:
 
 Submodule dependencies:
 
-*  [BLT](https://github.com/LLNL/blt) v0.1: a CMake based build system (required)
+*  [BLT](https://github.com/LLNL/blt) v0.4.1: a CMake based build system (required)
 
-*  [RAJA](https://github.com/LLNL/RAJA) v0.6.0: a loop abstraction library (required)
+*  [RAJA](https://github.com/LLNL/RAJA) v0.14.0: a loop abstraction library (required)
 
-*  [CHAI](https://github.com/LLNL/CHAI) v1.1: a copy hiding abstraction for moving data between memory spaces (optional)
+*  [CHAI](https://github.com/LLNL/CHAI) v2.4: a copy hiding abstraction for moving data between memory spaces (optional)
 
 *  [Umpire](https://github.com/LLNL/Umpire): a memory management abstraction (required if using CHAI)
 

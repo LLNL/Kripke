@@ -109,34 +109,10 @@ if(ENABLE_CHAI)
   endif ()
 
   set(ENABLE_TESTS Off CACHE Bool "")
+  option(ENABLE_RAJA_PLUGIN "Turn on CHAI RAJA_PLUGIN" On)
   set(KRIPKE_USE_CHAI 1)
   list(APPEND KRIPKE_DEPENDS chai)
 endif()
-
-#
-# Configure RAJA (REQUIRED)
-#
-#if (DEFINED camp_DIR)
-#  find_package(camp REQUIRED)
-#else ()
-#  add_subdirectory(tpl/camp)
-#endif ()
-#list(APPEND KRIPKE_DEPENDS camp)
-
-
-
-#
-# Configure RAJA (REQUIRED)
-#
-if (DEFINED RAJA_DIR)
-  find_package(RAJA REQUIRED)
-else ()
-  set(ENABLE_EXAMPLES Off CACHE Bool "")
-  set(ENABLE_EXERCISES Off CACHE Bool "")
-  add_subdirectory(tpl/raja)
-endif ()
-list(APPEND KRIPKE_DEPENDS RAJA)
-
 
 #
 # Configure OpenMP (CPU threading, not target offload)
