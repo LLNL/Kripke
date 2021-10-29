@@ -247,7 +247,7 @@ namespace Core {
 #if defined(KRIPKE_USE_HIP) || defined(KRIPKE_USE_CUDA)
         return ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].getPointer(chai::GPU), layout);
 #else
-        return ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].getPointer(chai::CPU), layout);
+        return ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id], layout);
 #endif
       }
 

@@ -1,0 +1,1 @@
+/opt/rocm-4.2.0/llvm/bin/clang++       -Wall -Wextra  -std=c++14 -O3 -ffast-math   CMakeFiles/ex4_atomic-histogram.dir/ex4_atomic-histogram.cpp.o  -o ../../../../bin/ex4_atomic-histogram ../../../../lib/libRAJA.a -ldl 

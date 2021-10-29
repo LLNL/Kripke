@@ -1,0 +1,1 @@
+/opt/rocm-4.2.0/llvm/bin/clang++       -Wall -Wextra  -std=c++14 -O3 -ffast-math   CMakeFiles/ex1_vector-addition_solution.dir/ex1_vector-addition_solution.cpp.o  -o ../../../../bin/ex1_vector-addition_solution ../../../../lib/libRAJA.a -ldl 

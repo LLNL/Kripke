@@ -1,0 +1,1 @@
+/opt/rocm-4.2.0/llvm/bin/clang++       -Wall -Wextra  -std=c++14 -O3 -ffast-math   CMakeFiles/ex8_tiled-matrix-transpose.dir/ex8_tiled-matrix-transpose.cpp.o  -o ../../../../bin/ex8_tiled-matrix-transpose ../../../../lib/libRAJA.a -ldl 

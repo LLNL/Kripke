@@ -1,0 +1,1 @@
+/opt/rocm-4.2.0/llvm/bin/clang++       -Wall -Wextra  -std=c++14 -O3 -ffast-math   CMakeFiles/ex7_nested-loop-reorder.dir/ex7_nested-loop-reorder.cpp.o  -o ../../../../bin/ex7_nested-loop-reorder ../../../../lib/libRAJA.a -ldl 

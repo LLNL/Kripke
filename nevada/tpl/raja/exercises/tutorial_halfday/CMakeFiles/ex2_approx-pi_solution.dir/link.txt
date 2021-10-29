@@ -1,0 +1,1 @@
+/opt/rocm-4.2.0/llvm/bin/clang++       -Wall -Wextra  -std=c++14 -O3 -ffast-math   CMakeFiles/ex2_approx-pi_solution.dir/ex2_approx-pi_solution.cpp.o  -o ../../../../bin/ex2_approx-pi_solution ../../../../lib/libRAJA.a -ldl 

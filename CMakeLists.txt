@@ -112,6 +112,19 @@ if(ENABLE_CHAI)
   option(ENABLE_RAJA_PLUGIN "Turn on CHAI RAJA_PLUGIN" On)
   set(KRIPKE_USE_CHAI 1)
   list(APPEND KRIPKE_DEPENDS chai)
+else ()
+  #
+  # Configure RAJA (REQUIRED)
+  #
+  set(ENABLE_RAJA_PLUGIN Off CACHE BOOL "")
+  if (DEFINED RAJA_DIR)
+    find_package(RAJA REQUIRED)
+  else ()
+    set(ENABLE_EXAMPLES Off CACHE Bool "")
+    set(ENABLE_EXERCISES Off CACHE Bool "")
+    add_subdirectory(tpl/raja)
+  endif ()
+  list(APPEND KRIPKE_DEPENDS RAJA)
 endif()
 
 #
@@ -228,13 +241,6 @@ endif()
 if(ENABLE_MPI_WRAPPER)
 	set(KRIPKE_USE_MPI 1)
 endif()
-
-
-
-
-
-
-
 
 
 #
