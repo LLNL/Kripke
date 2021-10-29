@@ -1,1 +1,0 @@
-/opt/rocm-4.2.0/llvm/bin/clang++       -Wall -Wextra  -std=c++14 -O3 -ffast-math   CMakeFiles/ex9_matrix-transpose-local-array_solution.dir/ex9_matrix-transpose-local-array_solution.cpp.o  -o ../../../../bin/ex9_matrix-transpose-local-array_solution ../../../../lib/libRAJA.a -ldl 

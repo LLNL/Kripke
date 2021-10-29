@@ -1,1 +1,0 @@
-/opt/rocm-4.2.0/llvm/bin/clang++       -Wall -Wextra  -std=c++14 -O3 -ffast-math   CMakeFiles/ex5_line-of-sight_solution.dir/ex5_line-of-sight_solution.cpp.o  -o ../../../../bin/ex5_line-of-sight_solution ../../../../lib/libRAJA.a -ldl 

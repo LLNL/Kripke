@@ -1,8 +1,0 @@
-libdir=/usr/local/lib
-includedir=/usr/local/include
-
-Name: KRIPKE
-Description: RAJA Portability Layer
-Version: 0.14.0
-Libs: -rdynamic ${libdir}/libRAJA.a   -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc
-Cflags:  -std=c++14 -O3 -ffast-math      -Wall -Wextra  -I${includedir}
