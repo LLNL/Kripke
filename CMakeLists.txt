@@ -109,34 +109,23 @@ if(ENABLE_CHAI)
   endif ()
 
   set(ENABLE_TESTS Off CACHE Bool "")
+  option(ENABLE_RAJA_PLUGIN "Turn on CHAI RAJA_PLUGIN" On)
   set(KRIPKE_USE_CHAI 1)
   list(APPEND KRIPKE_DEPENDS chai)
+else ()
+  #
+  # Configure RAJA (REQUIRED)
+  #
+  set(ENABLE_RAJA_PLUGIN Off CACHE BOOL "")
+  if (DEFINED RAJA_DIR)
+    find_package(RAJA REQUIRED)
+  else ()
+    set(ENABLE_EXAMPLES Off CACHE Bool "")
+    set(ENABLE_EXERCISES Off CACHE Bool "")
+    add_subdirectory(tpl/raja)
+  endif ()
+  list(APPEND KRIPKE_DEPENDS RAJA)
 endif()
-
-#
-# Configure RAJA (REQUIRED)
-#
-if (DEFINED camp_DIR)
-  find_package(camp REQUIRED)
-else ()
-  add_subdirectory(tpl/camp)
-endif ()
-list(APPEND KRIPKE_DEPENDS camp)
-
-
-
-#
-# Configure RAJA (REQUIRED)
-#
-if (DEFINED RAJA_DIR)
-  find_package(RAJA REQUIRED)
-else ()
-  set(ENABLE_EXAMPLES Off CACHE Bool "")
-  set(ENABLE_EXERCISES Off CACHE Bool "")
-  add_subdirectory(tpl/raja)
-endif ()
-list(APPEND KRIPKE_DEPENDS RAJA)
-
 
 #
 # Configure OpenMP (CPU threading, not target offload)
@@ -180,6 +169,30 @@ if(ENABLE_CUDA)
 endif()
 
 
+#
+# Configure HIP
+#
+
+if(ENABLE_HIP)
+
+  set(KRIPKE_USE_HIP 1)
+    
+  list(APPEND KRIPKE_DEPENDS hip)
+  
+  set(KRIPKE_ARCH "HIP")
+
+  # Make sure that nvcc turns on the host compiler OpenMP flag	
+  #if(ENABLE_OPENMP)
+  #  list(APPEND CUDA_NVCC_FLAGS -Xcompiler ${OpenMP_CXX_FLAGS})
+  #endif()
+  #  
+  #  
+  ## Pass on compiler info to KripkeConfig.h
+  string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+  #set(KRIPKE_NVCC_COMPILER "${CMAKE_CUDA_COMPILER}")
+  #set(KRIPKE_NVCC_FLAGS    "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
+
+endif()
 
 
 
@@ -230,13 +243,6 @@ if(ENABLE_MPI_WRAPPER)
 endif()
 
 
-
-
-
-
-
-
-
 #
 # Display/Configure our default ArchLayout
 #
@@ -258,8 +264,6 @@ set(KRIPKE_LAYOUTV_DEFAULT LayoutV_${KRIPKE_LAYOUT})
 set(KRIPKE_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
 set(KRIPKE_CXX_FLAGS    "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${KRIPKE_BUILD_TYPE}}")
 set(KRIPKE_LINK_FLAGS   "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_LINK_FLAGS_${CMAKE_BUILD_TYPE}}")
-
-
 
 
 

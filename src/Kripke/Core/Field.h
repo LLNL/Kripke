@@ -38,7 +38,8 @@ namespace Core {
 #endif
 
       using Layout1dType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<RAJA::Index_type>>;
-      using View1dType = RAJA::View<ElementType, Layout1dType, ElementPtr>;
+      //FIXME: Remove the internal namespace when new RAJA release is out
+      using View1dType = RAJA::internal::ViewBase<ElementType, ElementPtr, Layout1dType>;
 
 
       explicit FieldStorage(Kripke::Core::Set const &spanned_set) :
@@ -177,7 +178,9 @@ namespace Core {
       static constexpr size_t NumDims = sizeof...(IDX_TYPES);
 
       using DefaultLayoutType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>>;
-      using DefaultViewType = RAJA::View<ElementType, DefaultLayoutType, ElementPtr>;
+
+      //FIXME: Remove the internal namespace when new RAJA release is out
+      using DefaultViewType = RAJA::internal::ViewBase<ElementType, ElementPtr, DefaultLayoutType>;
 
       template<typename Order>
       Field(Kripke::Core::Set const &spanned_set, Order) :
@@ -241,7 +244,11 @@ namespace Core {
 
         LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
 
-        return ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>(ptr, layout);
+#if (defined(KRIPKE_USE_HIP) || defined(KRIPKE_USE_CUDA)) && defined(KRIPKE_USE_CHAI)
+        return ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].getPointer(chai::GPU), layout);
+#else
+        return ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id], layout);
+#endif
       }
 
 

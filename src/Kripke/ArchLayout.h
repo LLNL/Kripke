@@ -25,7 +25,9 @@ struct ArchT_OpenMP {};
 struct ArchT_CUDA {};
 #endif
 
-
+#ifdef KRIPKE_USE_HIP
+struct ArchT_HIP {};
+#endif
 
 enum ArchV {
   ArchV_Unknown = -1,
@@ -37,6 +39,10 @@ enum ArchV {
 
 #ifdef KRIPKE_USE_CUDA
   ArchV_CUDA,
+#endif
+
+#ifdef KRIPKE_USE_HIP
+  ArchV_HIP,
 #endif
 
   ArchV_num_values
@@ -54,6 +60,10 @@ std::string archToString(ArchV av){
 
 #ifdef KRIPKE_USE_CUDA
     case ArchV_CUDA:          return "CUDA";
+#endif
+
+#ifdef KRIPKE_USE_HIP
+    case ArchV_HIP:          return "HIP";
 #endif
 
     case ArchV_Unknown:
@@ -164,6 +174,10 @@ void dispatchArch(ArchV arch_v, Function const &fcn, Args &&... args)
 
 #ifdef KRIPKE_USE_CUDA
     case ArchV_CUDA: fcn(ArchT_CUDA{}, std::forward<Args>(args)...); break;
+#endif
+
+#ifdef KRIPKE_USE_HIP
+    case ArchV_HIP: fcn(ArchT_HIP{}, std::forward<Args>(args)...); break;
 #endif
     default: KRIPKE_ABORT("Unknown arch_v=%d\n", (int)arch_v); break;
   }

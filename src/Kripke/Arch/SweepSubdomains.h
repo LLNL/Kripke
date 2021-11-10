@@ -399,6 +399,162 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>> {
 };
 #endif // KRIPKE_USE_CUDA
 
+#ifdef KRIPKE_USE_HIP
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_DGZ>> {
+  using ExecPolicy =
+          KernelPolicy<
+            HipKernel<
+              For<0, hip_block_x_loop,
+                For<1, hip_block_y_loop,
+
+                  For<3, hip_thread_y_loop,
+                    For<4, hip_thread_x_loop,
+                      Hyperplane<
+                        2, seq_exec, ArgList<3, 4>,
+
+                        Lambda<0>,
+                        HipSyncThreads
+                      >
+                    >
+                  >
+
+                >
+              >
+            >
+          >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_DZG>> {
+    using ExecPolicy =
+            KernelPolicy<
+              HipKernel<
+                For<0, hip_block_x_loop,
+                  For<1, hip_block_y_loop,
+
+                    For<3, hip_thread_y_loop,
+                      For<4, hip_thread_x_loop,
+                        Hyperplane<
+                          2, seq_exec, ArgList<3, 4>,
+
+                          Lambda<0>,
+                          HipSyncThreads
+                        >
+                      >
+                    >
+
+                  >
+                >
+              >
+            >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_GDZ>> {
+    using ExecPolicy =
+            KernelPolicy<
+              HipKernel<
+                For<0, hip_block_x_loop,
+                  For<1, hip_block_y_loop,
+
+                    For<3, hip_thread_y_loop,
+                      For<4, hip_thread_x_loop,
+                        Hyperplane<
+                          2, seq_exec, ArgList<3, 4>,
+
+                          Lambda<0>,
+                          HipSyncThreads
+                        >
+                      >
+                    >
+
+                  >
+                >
+              >
+            >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_GZD>> {
+    using ExecPolicy =
+            KernelPolicy<
+              HipKernel<
+                For<0, hip_block_x_loop,
+                  For<1, hip_block_y_loop,
+
+                    For<3, hip_thread_y_loop,
+                      For<4, hip_thread_x_loop,
+                        Hyperplane<
+                          2, seq_exec, ArgList<3, 4>,
+
+                          Lambda<0>,
+                          HipSyncThreads
+                        >
+                      >
+                    >
+
+                  >
+                >
+              >
+            >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_ZDG>> {
+    using ExecPolicy =
+            KernelPolicy<
+              HipKernel<
+                For<0, hip_block_x_loop,
+                  For<1, hip_block_y_loop,
+
+                    For<3, hip_thread_y_loop,
+                      For<4, hip_thread_x_loop,
+                        Hyperplane<
+                          2, seq_exec, ArgList<3, 4>,
+
+                          Lambda<0>,
+                          HipSyncThreads
+                        >
+                      >
+                    >
+
+                  >
+                >
+              >
+            >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>> {
+    using ExecPolicy =
+            KernelPolicy<
+              HipKernel<
+                For<0, hip_block_x_loop,
+                  For<1, hip_block_y_loop,
+
+                    For<3, hip_thread_y_loop,
+                      For<4, hip_thread_x_loop,
+                        Hyperplane<
+                          2, seq_exec, ArgList<3, 4>,
+
+                          Lambda<0>,
+                          HipSyncThreads
+                        >
+                      >
+                    >
+
+                  >
+                >
+              >
+            >;
+};
+#endif // KRIPKE_USE_HIP
 }
 }
 
