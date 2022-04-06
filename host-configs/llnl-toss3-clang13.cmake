@@ -1,5 +1,5 @@
 ##
-## Copyright (c) 2016, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2016-22, Lawrence Livermore National Security, LLC.
 ##
 ## Produced at the Lawrence Livermore National Laboratory.
 ##
@@ -9,9 +9,9 @@
 
 set(RAJA_COMPILER "RAJA_COMPILER_CLANG" CACHE STRING "")
 
-set(CMAKE_C_COMPILER   "/usr/tce/bin/clang-8.0.0" CACHE PATH "")
-set(CMAKE_CXX_COMPILER "/usr/tce/bin/clang++-8.0.0" CACHE PATH "")
-set(CMAKE_LINKER       "/usr/tce/bin/clang++-8.0.0" CACHE PATH "")
+set(CMAKE_C_COMPILER   "/usr/tce/bin/clang-13.0.0" CACHE PATH "")
+set(CMAKE_CXX_COMPILER "/usr/tce/bin/clang++-13.0.0" CACHE PATH "")
+set(CMAKE_LINKER       "/usr/tce/bin/clang++-13.0.0" CACHE PATH "")
 
 set(CMAKE_CXX_FLAGS "" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math" CACHE STRING "")
