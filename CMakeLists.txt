@@ -327,4 +327,3 @@ blt_add_executable(
   DEPENDS_ON  ${KRIPKE_DEPENDS} kripke 
 )
 
-
