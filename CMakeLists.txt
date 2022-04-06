@@ -112,8 +112,6 @@ if(ENABLE_CHAI)
   option(ENABLE_RAJA_PLUGIN "Turn on CHAI RAJA_PLUGIN" On)
   set(KRIPKE_USE_CHAI 1)
   list(APPEND KRIPKE_DEPENDS chai)
-#endif ()
-
 else ()
   #
   # Configure RAJA (REQUIRED)
