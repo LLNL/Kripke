@@ -1,5 +1,5 @@
 ##
-## Copyright (c) 2016, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2016-22, Lawrence Livermore National Security, LLC.
 ##
 ## Produced at the Lawrence Livermore National Laboratory.
 ##
@@ -18,6 +18,7 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -ffast-math" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g" CACHE STRING "")
 
 set(ENABLE_CHAI On CACHE BOOL "")
+set(CHAI_ENABLE_RAJA_PLUGIN On CACHE BOOL "")
 set(ENABLE_RAJA_PLUGIN On CACHE BOOL "")
 set(ENABLE_CUDA On CACHE BOOL "")
 set(ENABLE_OPENMP Off CACHE BOOL "")

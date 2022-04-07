@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014-19, Lawrence Livermore National Security, LLC
+# Copyright (c) 2014-22, Lawrence Livermore National Security, LLC
 # and Kripke project contributors. See the COPYRIGHT file for details.
 # 
 # SPDX-License-Identifier: (BSD-3-Clause)
@@ -108,7 +108,7 @@ if(ENABLE_CHAI)
     add_subdirectory(tpl/chai)
   endif ()
 
-  set(ENABLE_TESTS Off CACHE Bool "")
+  set(ENABLE_TESTS Off CACHE BOOL "")
   option(ENABLE_RAJA_PLUGIN "Turn on CHAI RAJA_PLUGIN" On)
   set(KRIPKE_USE_CHAI 1)
   list(APPEND KRIPKE_DEPENDS chai)
@@ -120,12 +120,12 @@ else ()
   if (DEFINED RAJA_DIR)
     find_package(RAJA REQUIRED)
   else ()
-    set(ENABLE_EXAMPLES Off CACHE Bool "")
-    set(ENABLE_EXERCISES Off CACHE Bool "")
+    set(ENABLE_EXAMPLES Off CACHE BOOL "")
+    set(ENABLE_EXERCISES Off CACHE BOOL "")
     add_subdirectory(tpl/raja)
   endif ()
   list(APPEND KRIPKE_DEPENDS RAJA)
-endif()
+endif ()
 
 #
 # Configure OpenMP (CPU threading, not target offload)
@@ -326,5 +326,4 @@ blt_add_executable(
   SOURCES     "src/kripke.cpp"
   DEPENDS_ON  ${KRIPKE_DEPENDS} kripke 
 )
-
 

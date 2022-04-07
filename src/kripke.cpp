@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2014-19, Lawrence Livermore National Security, LLC
+// Copyright (c) 2014-22, Lawrence Livermore National Security, LLC
 // and Kripke project contributors. See the COPYRIGHT file for details.
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
     printf("\n");
     printf("LLNL-CODE-775068\n");
     printf("\n");
-    printf("Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC\n");
+    printf("Copyright (c) 2014-22, Lawrence Livermore National Security, LLC\n");
     printf("\n");
     printf("Kripke is released under the BSD 3-Clause License, please see the\n");
     printf("LICENSE file for the full license\n");

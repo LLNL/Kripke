@@ -1,5 +1,5 @@
 ##
-## Copyright (c) 2016, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2016-22, Lawrence Livermore National Security, LLC.
 ##
 ## Produced at the Lawrence Livermore National Laboratory.
 ##
@@ -7,12 +7,12 @@
 ##
 ##
 
-#Load ROCM/4.4.0 on RZWHAMO
+#module load rocm/4.5.2
 
 set(RAJA_COMPILER "RAJA_COMPILER_CLANG" CACHE STRING "")
 
-set(CMAKE_C_COMPILER   "/opt/rocm-4.2.0/llvm/bin/clang" CACHE PATH "")
-set(CMAKE_CXX_COMPILER "/opt/rocm-4.2.0/llvm/bin/clang++" CACHE PATH "")
+set(CMAKE_C_COMPILER   "/opt/rocm-4.5.2/llvm/bin/clang" CACHE PATH "")
+set(CMAKE_CXX_COMPILER "/opt/rocm-4.5.2/llvm/bin/clang++" CACHE PATH "")
 
 set(CMAKE_CXX_FLAGS "" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_RELEASE "-std=c++14 -O3 -ffast-math" CACHE STRING "")
@@ -20,6 +20,7 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-std=c++14 -O3 -g -ffast-math" CACHE STRING 
 set(CMAKE_CXX_FLAGS_DEBUG "-std=c++14 -O0 -g" CACHE STRING "")
 
 set(ENABLE_CHAI On CACHE BOOL "")
+set(CHAI_ENABLE_RAJA_PLUGIN On CACHE BOOL "")
 set(ENABLE_RAJA_PLUGIN On CACHE BOOL "")
 set(ENABLE_HIP On CACHE BOOL "")
 set(ENABLE_OPENMP Off CACHE BOOL "")
