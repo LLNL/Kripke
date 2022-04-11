@@ -24,6 +24,11 @@ set(ENABLE_TBB Off CACHE Bool "")
 set(ENABLE_EXAMPLES Off CACHE Bool "")
 set(ENABLE_DOCUMENTATION Off CACHE Bool "")
 
+if (ENABLE_CHAI)
+  set(ENABLE_RAJA_PLUGIN On CACHE BOOL "")
+  set(CHAI_ENABLE_RAJA_PLUGIN On CACHE BOOL "")
+endif ()
+
 # Use C++14 standard
 set(BLT_CXX_STD "c++14" CACHE STRING "")
 
@@ -109,7 +114,6 @@ if(ENABLE_CHAI)
   endif ()
 
   set(ENABLE_TESTS Off CACHE BOOL "")
-  option(ENABLE_RAJA_PLUGIN "Turn on CHAI RAJA_PLUGIN" On)
   set(KRIPKE_USE_CHAI 1)
   list(APPEND KRIPKE_DEPENDS chai)
 else ()
