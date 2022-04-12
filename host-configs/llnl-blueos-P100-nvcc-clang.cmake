@@ -20,7 +20,10 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g" CACHE STRING "")
 set(ENABLE_CHAI On CACHE BOOL "")
 set(ENABLE_CUDA On CACHE BOOL "")
 set(ENABLE_OPENMP Off CACHE BOOL "")
-set(ENABLE_MPI_WRAPPER On CACHE BOOL "")
+set(ENABLE_MPI On CACHE BOOL "")
+
+# For LLNL TCE packages
+set(ENABLE_MPI_WRAPPER Off CACHE BOOL "")
 
 set(CMAKE_CUDA_FLAGS "-restrict -gencode=arch=compute_60,code=sm_60 " CACHE STRING "")
 set(CMAKE_CUDA_FLAGS_RELEASE "-O3 --expt-extended-lambda" CACHE STRING "")
