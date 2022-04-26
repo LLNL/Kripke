@@ -1,3 +1,5 @@
+04/26/2022 v1.2.5: Update RAJA, CHAI (v2022.03.0), Umpire (v2022.03.1), and BLT (v0.5.1). Added HIP support.
+
 07/14/2019 v1.2.4: Updated to BSD-3-Clause license, Caliper support
 
 10/12/2018 v1.2.3: CUDA support, updated policy selection/dispatch mechanisms, updated build system
