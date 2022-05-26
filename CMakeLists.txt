@@ -124,23 +124,6 @@ if(ENABLE_CHAI)
     add_subdirectory(tpl/umpire)
   endif()
 
-    # Umpire depends on camp
-    #  if (NOT TARGET camp)
-    #    if (DEFINED camp_DIR)
-    #      find_package(camp REQUIRED)
-    #      set_target_properties(camp PROPERTIES IMPORTED_GLOBAL TRUE)
-    #    else ()
-    #      message(FATAL_ERROR "camp is required. Please set camp_DIR")
-    #    endif()
-    #
-    #    if(ENABLE_CUDA)
-    #      blt_add_target_definitions(
-    #        TO camp
-    #        SCOPE INTERFACE
-    #        TARGET_DEFINITIONS CAMP_HAVE_CUDA)
-    #    endif()
-    #  endif ()
-
   if (DEFINED chai_DIR)
     find_package(chai REQUIRED)
   else ()
