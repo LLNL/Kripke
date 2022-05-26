@@ -18,11 +18,11 @@ set(KRIPKE_VERSION "1.2.5-dev")
 # Initialize the BLT build system
 #
 
-set(ENABLE_GTEST Off CACHE Bool "")
-set(ENABLE_TESTS Off CACHE Bool "")
-set(ENABLE_TBB Off CACHE Bool "")
-set(ENABLE_EXAMPLES Off CACHE Bool "")
-set(ENABLE_DOCUMENTATION Off CACHE Bool "")
+set(ENABLE_GTEST Off CACHE BOOL "")
+set(ENABLE_TESTS Off CACHE BOOL "")
+set(ENABLE_TBB Off CACHE BOOL "")
+set(ENABLE_EXAMPLES Off CACHE BOOL "")
+set(ENABLE_DOCUMENTATION Off CACHE BOOL "")
 
 if (ENABLE_CHAI)
   set(ENABLE_RAJA_PLUGIN On CACHE BOOL "")
@@ -72,13 +72,47 @@ add_subdirectory(tpl/googletest)
 # 
 option(ENABLE_CHAI "Enable CHAI/Umpire memory management" Off)
 if(ENABLE_CHAI)
+  # Find camp
+  if (NOT TARGET camp)
+    find_package(camp QUIET NO_DEFAULT_PATH HINTS ${CAMP_DIR} ${camp_DIR})
+
+    if (camp_FOUND)
+      message(STATUS "Kripke: Using external CAMP")
+      set_target_properties(camp PROPERTIES IMPORTED_GLOBAL TRUE)
+    else ()
+      message(STATUS "Kripke: Using CAMP submodule")
+
+      if (NOT EXISTS ${PROJECT_SOURCE_DIR}/tpl/raja/tpl/camp/CMakeLists.txt)
+        message(FATAL_ERROR "Kripke: CAMP submodule not initialized. Run 'git submodule update --init' in the git repository or set camp_DIR or CAMP_DIR to use an external build of CAMP.")
+      else ()
+        message(STATUS "Kripke: Using CAMP in Kripke TPL")
+        add_subdirectory(${PROJECT_SOURCE_DIR}/tpl/raja/tpl/camp)
+      endif ()
+    endif()
+  endif()
+
+  # Set camp backends
+  if (ENABLE_CUDA)
+    message(STATUS "Kripke: Setting CAMP_HAVE_CUDA")
+    blt_add_target_definitions(TO camp
+                               SCOPE INTERFACE
+                               TARGET_DEFINITIONS CAMP_HAVE_CUDA)
+  endif ()
+
+  if (ENABLE_HIP)
+    message(STATUS "Kripke: Setting CAMP_HAVE_HIP")
+    blt_add_target_definitions(TO camp
+                               SCOPE INTERFACE
+                               TARGET_DEFINITIONS CAMP_HAVE_HIP)
+  endif ()
+
+  set(UMPIRE_DEPENDS camp)
+
   if (DEFINED umpire_DIR)
     find_package(umpire REQUIRED)
     
     if (ENABLE_MPI)
-      set(UMPIRE_DEPENDS mpi)
-    else()
-      set(UMPIRE_DEPENDS)
+      set(UMPIRE_DEPENDS "${UMPIRE_DEPENDS} mpi")
     endif()
 
     blt_register_library(
