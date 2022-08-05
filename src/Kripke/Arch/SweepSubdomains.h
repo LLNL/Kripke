@@ -555,6 +555,33 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>> {
             >;
 };
 #endif // KRIPKE_USE_HIP
+
+#ifdef KRIPKE_USE_SYCL 
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_SYCL, LayoutT_DGZ>> {
+  using ExecPolicy =
+          KernelPolicy<
+            SyclKernel<
+              For<0, sycl_group_0_loop,
+                For<1, sycl_group_1_loop,
+
+                  For<3, sycl_local_1_loop,
+                    For<4, sycl_local_0_loop,
+                      Hyperplane<
+                        2, seq_exec, ArgList<3, 4>,
+
+                        Lambda<0>
+                        //HipSyncThreads
+                      >
+                    >
+                  >
+
+                >
+              >
+            >
+          >;
+};
+#endif
 }
 }
 

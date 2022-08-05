@@ -422,6 +422,26 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>> {
       >;
 };
 #endif // KRIPKE_USE_HIP
+
+#ifdef KRIPKE_USE_SYCL
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_SYCL, LayoutT_DGZ>> {
+  using ExecPolicy =
+    KernelPolicy<
+      SyclKernel<
+        For<2, sycl_group_0_loop, // group
+          For<0, sycl_group_1_loop, // moment
+            For<3, sycl_local_0_loop, // zone
+              For<1, seq_exec, // direction
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+};
+#endif
 }
 }
 

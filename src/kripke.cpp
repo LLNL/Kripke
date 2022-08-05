@@ -178,6 +178,14 @@ int main(int argc, char **argv) {
   Kripke::Core::Comm::init(&argc, &argv);
 
   Kripke::Core::Comm comm;
+    auto const& gpu_devices = sycl::device::get_devices(sycl::info::device_type::gpu);
+
+  std::cout << "Number of GPUs: " << gpu_devices.size() << std::endl;
+
+  for(const auto& d : gpu_devices)
+    std::cout << "Found device: " << d.get_info<sycl::info::device::name>() << std::endl;
+
+  sycl::queue Queue(sycl::gpu_selector{});
 
   int myid = comm.rank();
   int num_tasks = comm.size();

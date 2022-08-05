@@ -434,6 +434,26 @@ struct Policy_Scattering<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>> {
       >;
 };
 #endif //KRIPKE_USE_HIP
+
+#ifdef KRIPKE_USE_SYCL
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_SYCL, LayoutT_DGZ>> {
+  using ExecPolicy =
+    KernelPolicy<
+      SyclKernel<
+        For<0, sycl_group_0_loop, // moment
+          For<1, sycl_group_1_loop, // DstGrp
+            For<3, sycl_local_0_loop, // zone
+              For<2, seq_exec, // SrcGrp
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+};
+#endif
 }
 }
 

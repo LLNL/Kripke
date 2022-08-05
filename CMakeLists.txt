@@ -64,7 +64,7 @@ endif()
 #
 # Add googletest (needed by RAJA, etc)
 # 
-add_subdirectory(tpl/googletest)
+#add_subdirectory(tpl/googletest)
 
 
 #
@@ -104,6 +104,13 @@ if(ENABLE_CHAI)
     blt_add_target_definitions(TO camp
                                SCOPE INTERFACE
                                TARGET_DEFINITIONS CAMP_HAVE_HIP)
+  endif ()
+
+  if (ENABLE_SYCL)
+	  message(STATUS "Kripke: Setting CAMP_HAVE_SYCL")
+    blt_add_target_definitions(TO camp
+                               SCOPE INTERFACE
+			       TARGET_DEFINITIONS CAMP_HAVE_SYCL)
   endif ()
 
   set(UMPIRE_DEPENDS camp)

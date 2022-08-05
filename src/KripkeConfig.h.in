@@ -12,6 +12,7 @@
 #cmakedefine KRIPKE_USE_CUDA
 #cmakedefine KRIPKE_USE_CHAI
 #cmakedefine KRIPKE_USE_HIP
+#cmakedefine KRIPKE_USE_SYCL
 
 #cmakedefine KRIPKE_USE_CALIPER
 

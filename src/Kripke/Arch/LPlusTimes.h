@@ -437,6 +437,26 @@ struct Policy_LPlusTimes<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>> {
 };
 
 #endif // KRIPKE_USE_HIP
+
+#ifdef KRIPKE_USE_SYCL
+template<>
+struct Policy_LPlusTimes<ArchLayoutT<ArchT_SYCL, LayoutT_DGZ>> {
+  using ExecPolicy =
+    KernelPolicy<
+      SyclKernel<
+        For<0, sycl_group_0_loop, // Direction
+          For<2, sycl_group_1_loop, // group
+            For<3, sycl_local_0_loop, // zone
+              For<1, seq_exec, // Moment
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+};
+#endif
 }
 }
 #endif

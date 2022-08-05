@@ -463,6 +463,27 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>>{
 };
 #endif // KRIPKE_USE_HIP
 
+#ifdef KRIPKE_USE_SYCL
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_SYCL, LayoutT_DGZ>>{
+  using ReducePolicy = sycl_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      SyclKernel<
+        Tile<2, tile_fixed<32>, sycl_group_0_loop, // blocks of 32 zones
+          For<0, sycl_local_2_loop, // direction
+            For<1, sycl_local_1_loop, // group
+              For<2, sycl_local_0_direct, // zone
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+};
+#endif
 }
 }
 
