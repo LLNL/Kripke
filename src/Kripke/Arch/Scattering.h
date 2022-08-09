@@ -453,6 +453,100 @@ struct Policy_Scattering<ArchLayoutT<ArchT_SYCL, LayoutT_DGZ>> {
       >
     >;
 };
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_SYCL, LayoutT_DZG>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<0, sycl_group_0_loop, // moment
+            For<1, sycl_group_1_loop, // DstGrp
+              For<3, sycl_local_0_loop, // zone
+                For<2, seq_exec, // SrcGrp
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_SYCL, LayoutT_GDZ>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<0, sycl_group_0_loop, // moment
+            For<1, sycl_group_1_loop, // DstGrp
+              For<3, sycl_local_0_loop, // zone
+                For<2, seq_exec, // SrcGrp
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_SYCL, LayoutT_GZD>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<0, sycl_group_0_loop, // moment
+            For<1, sycl_group_1_loop, // DstGrp
+              For<3, sycl_local_0_loop, // zone
+                For<2, seq_exec, // SrcGrp
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_SYCL, LayoutT_ZDG>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<0, sycl_group_0_loop, // moment
+            For<1, sycl_group_1_loop, // DstGrp
+              For<3, sycl_local_0_loop, // zone
+                For<2, seq_exec, // SrcGrp
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_Scattering<ArchLayoutT<ArchT_SYCL, LayoutT_ZGD>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<0, sycl_group_0_loop, // moment
+            For<1, sycl_group_1_loop, // DstGrp
+              For<3, sycl_local_0_loop, // zone
+                For<2, seq_exec, // SrcGrp
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
 #endif
 }
 }

@@ -570,8 +570,8 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_SYCL, LayoutT_DGZ>> {
                       Hyperplane<
                         2, seq_exec, ArgList<3, 4>,
 
-                        Lambda<0>
-                        //HipSyncThreads
+                        Lambda<0>,
+			SyclSyncThreads
                       >
                     >
                   >
@@ -580,6 +580,135 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_SYCL, LayoutT_DGZ>> {
               >
             >
           >;
+};
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_SYCL, LayoutT_DZG>> {
+    using ExecPolicy =
+            KernelPolicy<
+              SyclKernel<
+                For<0, sycl_group_0_loop,
+                  For<1, sycl_group_1_loop,
+
+                    For<3, sycl_local_1_loop,
+                      For<4, sycl_local_0_loop,
+                        Hyperplane<
+                          2, seq_exec, ArgList<3, 4>,
+
+                          Lambda<0>,
+                          SyclSyncThreads
+                        >
+                      >
+                    >
+
+                  >
+                >
+              >
+            >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_SYCL, LayoutT_GDZ>> {
+    using ExecPolicy =
+            KernelPolicy<
+              SyclKernel<
+                For<0, sycl_group_0_loop,
+                  For<1, sycl_group_1_loop,
+
+                    For<3, sycl_local_1_loop,
+                      For<4, sycl_local_0_loop,
+                        Hyperplane<
+                          2, seq_exec, ArgList<3, 4>,
+
+                          Lambda<0>,
+                          SyclSyncThreads
+                        >
+                      >
+                    >
+
+                  >
+                >
+              >
+            >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_SYCL, LayoutT_GZD>> {
+    using ExecPolicy =
+            KernelPolicy<
+              SyclKernel<
+                For<0, sycl_group_0_loop,
+                  For<1, sycl_group_1_loop,
+
+                    For<3, sycl_local_1_loop,
+                      For<4, sycl_local_0_loop,
+                        Hyperplane<
+                          2, seq_exec, ArgList<3, 4>,
+
+                          Lambda<0>,
+                          SyclSyncThreads
+                        >
+                      >
+                    >
+
+                  >
+                >
+              >
+            >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_SYCL, LayoutT_ZDG>> {
+    using ExecPolicy =
+            KernelPolicy<
+              SyclKernel<
+                For<0, sycl_group_0_loop,
+                  For<1, sycl_group_1_loop,
+
+                    For<3, sycl_local_1_loop,
+                      For<4, sycl_local_0_loop,
+                        Hyperplane<
+                          2, seq_exec, ArgList<3, 4>,
+
+                          Lambda<0>,
+                          SyclSyncThreads
+                        >
+                      >
+                    >
+
+                  >
+                >
+              >
+            >;
+};
+
+
+template<>
+struct Policy_SweepSubdomains<ArchLayoutT<ArchT_SYCL, LayoutT_ZGD>> {
+    using ExecPolicy =
+            KernelPolicy<
+              SyclKernel<
+                For<0, sycl_group_0_loop,
+                  For<1, sycl_group_1_loop,
+
+                    For<3, sycl_local_1_loop,
+                      For<4, sycl_local_0_loop,
+                        Hyperplane<
+                          2, seq_exec, ArgList<3, 4>,
+
+                          Lambda<0>,
+                          SyclSyncThreads
+                        >
+                      >
+                    >
+
+                  >
+                >
+              >
+            >;
 };
 #endif
 }

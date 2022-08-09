@@ -29,6 +29,10 @@ struct ArchT_CUDA {};
 struct ArchT_HIP {};
 #endif
 
+#ifdef KRIPKE_USE_SYCL
+struct ArchT_SYCL {};
+#endif
+
 enum ArchV {
   ArchV_Unknown = -1,
   ArchV_Sequential,
@@ -43,6 +47,10 @@ enum ArchV {
 
 #ifdef KRIPKE_USE_HIP
   ArchV_HIP,
+#endif
+
+#ifdef KRIPKE_USE_SYCL
+  ArchV_SYCL,
 #endif
 
   ArchV_num_values
@@ -64,6 +72,10 @@ std::string archToString(ArchV av){
 
 #ifdef KRIPKE_USE_HIP
     case ArchV_HIP:          return "HIP";
+#endif
+
+#ifdef KRIPKE_USE_SYCL
+    case ArchV_SYCL:          return "SYCL";
 #endif
 
     case ArchV_Unknown:
@@ -178,6 +190,10 @@ void dispatchArch(ArchV arch_v, Function const &fcn, Args &&... args)
 
 #ifdef KRIPKE_USE_HIP
     case ArchV_HIP: fcn(ArchT_HIP{}, std::forward<Args>(args)...); break;
+#endif
+
+#ifdef KRIPKE_USE_SYCL
+    case ArchV_SYCL: fcn(ArchT_SYCL{}, std::forward<Args>(args)...); break;
 #endif
     default: KRIPKE_ABORT("Unknown arch_v=%d\n", (int)arch_v); break;
   }

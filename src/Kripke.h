@@ -152,20 +152,20 @@ namespace Arch {
 
 #ifdef KRIPKE_USE_SYCL
   using RAJA::sycl_exec;
-  using RAJA::hip_block_x_loop;
-  using RAJA::hip_block_y_loop;
-  using RAJA::hip_block_z_loop;
-  using RAJA::hip_thread_x_direct;
-  using RAJA::hip_thread_y_direct;
-  using RAJA::hip_thread_z_direct;
-  using RAJA::hip_thread_x_loop;
-  using RAJA::hip_thread_y_loop;
-  using RAJA::hip_thread_z_loop;
+  using RAJA::sycl_local_0_loop;
+  using RAJA::sycl_local_1_loop;
+  using RAJA::sycl_local_2_loop;
+  using RAJA::sycl_group_0_direct;
+  using RAJA::sycl_group_1_direct;
+  using RAJA::sycl_group_2_direct;
+  using RAJA::sycl_group_0_loop;
+  using RAJA::sycl_group_1_loop;
+  using RAJA::sycl_group_2_loop;
   using RAJA::sycl_reduce;
-  using RAJA::hip_atomic;
-  using RAJA::statement::HipKernel;
-  using RAJA::statement::HipKernelAsync;
-  using RAJA::statement::HipSyncThreads;
+  using RAJA::auto_atomic;
+  using RAJA::statement::SyclKernel;
+  using RAJA::statement::SyclKernelAsync;
+  using RAJA::statement::SyclSyncThreads;
 #endif
 } // namespace Arch
 } // namespace Kripke

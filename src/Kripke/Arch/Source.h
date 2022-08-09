@@ -156,7 +156,23 @@ struct Policy_Source<ArchLayoutT<ArchT_SYCL, LayoutT_DGZ>> {
       SyclKernel<
         Tile<1, tile_fixed<32>, sycl_group_0_loop, // blocks of 32 MixElem
           For<0, sycl_local_1_loop,  // Group
-            For<1, sycl_local_0_direct, // MixElem
+            For<1, RAJA::sycl_local_0_direct, // MixElem
+              Lambda<0>
+            >
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_Source<ArchLayoutT<ArchT_SYCL, LayoutT_DZG>> {
+  using ExecPolicy =
+    KernelPolicy<
+      SyclKernel<
+        Tile<1, tile_fixed<32>, sycl_group_1_loop, // blocks of 32 MixElem
+          For<1, RAJA::sycl_local_1_direct, // MixElem
+            For<0, sycl_local_0_loop,  // Group
               Lambda<0>
             >
           >

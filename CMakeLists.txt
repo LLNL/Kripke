@@ -223,6 +223,26 @@ if(ENABLE_HIP)
 endif()
 
 
+if(ENABLE_SYCL)
+
+  set(KRIPKE_USE_SYCL 1)
+    
+  list(APPEND KRIPKE_DEPENDS sycl)
+  
+  set(KRIPKE_ARCH "SYCL")
+
+  # Make sure that nvcc turns on the host compiler OpenMP flag	
+  #if(ENABLE_OPENMP)
+  #  list(APPEND CUDA_NVCC_FLAGS -Xcompiler ${OpenMP_CXX_FLAGS})
+  #endif()
+  #  
+  #  
+  ## Pass on compiler info to KripkeConfig.h
+  string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+  #set(KRIPKE_NVCC_COMPILER "${CMAKE_CUDA_COMPILER}")
+  #set(KRIPKE_NVCC_FLAGS    "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
+
+endif()
 
 option(ENABLE_CALIPER "Enable Caliper support" FALSE)
 

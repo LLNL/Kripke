@@ -377,6 +377,97 @@ struct Policy_LPlusTimes<ArchLayoutT<ArchT_HIP, LayoutT_GDZ>> {
           >
         >
       >;
+template<>
+struct Policy_LPlusTimes<ArchLayoutT<ArchT_HIP, LayoutT_DZG>> {
+    using ExecPolicy =
+      KernelPolicy<
+        HipKernel<
+          For<0, hip_block_x_loop, // Direction
+            For<2, hip_block_y_loop, // group
+              For<3, hip_thread_x_loop, // zone
+                For<1, seq_exec, // Moment
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+template<>
+struct Policy_LPlusTimes<ArchLayoutT<ArchT_HIP, LayoutT_GDZ>> {
+    using ExecPolicy =
+      KernelPolicy<
+        HipKernel<
+          For<0, hip_block_x_loop, // Direction
+            For<2, hip_block_y_loop, // group
+              For<3, hip_thread_x_loop, // zone
+                For<1, seq_exec, // Moment
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_LPlusTimes<ArchLayoutT<ArchT_HIP, LayoutT_GZD>> {
+    using ExecPolicy =
+      KernelPolicy<
+        HipKernel<
+          For<0, hip_block_x_loop, // Direction
+            For<2, hip_block_y_loop, // group
+              For<3, hip_thread_x_loop, // zone
+                For<1, seq_exec, // Moment
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+template<>
+struct Policy_LPlusTimes<ArchLayoutT<ArchT_HIP, LayoutT_ZDG>> {
+    using ExecPolicy =
+      KernelPolicy<
+        HipKernel<
+          For<0, hip_block_x_loop, // Direction
+            For<2, hip_block_y_loop, // group
+              For<3, hip_thread_x_loop, // zone
+                For<1, seq_exec, // Moment
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+
+template<>
+struct Policy_LPlusTimes<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>> {
+    using ExecPolicy =
+      KernelPolicy<
+        HipKernel<
+          For<0, hip_block_x_loop, // Direction
+            For<2, hip_block_y_loop, // group
+              For<3, hip_thread_x_loop, // zone
+                For<1, seq_exec, // Moment
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
 };
 
 
@@ -455,6 +546,99 @@ struct Policy_LPlusTimes<ArchLayoutT<ArchT_SYCL, LayoutT_DGZ>> {
         >
       >
     >;
+};
+
+template<>
+struct Policy_LPlusTimes<ArchLayoutT<ArchT_SYCL, LayoutT_DZG>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<0, sycl_group_0_loop, // Direction
+            For<2, sycl_group_1_loop, // group
+              For<3, sycl_local_0_loop, // zone
+                For<1, seq_exec, // Moment
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+template<>
+struct Policy_LPlusTimes<ArchLayoutT<ArchT_SYCL, LayoutT_GDZ>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<0, sycl_group_0_loop, // Direction
+            For<2, sycl_group_1_loop, // group
+              For<3, sycl_local_0_loop, // zone
+                For<1, seq_exec, // Moment
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+template<>
+struct Policy_LPlusTimes<ArchLayoutT<ArchT_SYCL, LayoutT_GZD>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<0, sycl_group_0_loop, // Direction
+            For<2, sycl_group_1_loop, // group
+              For<3, sycl_local_0_loop, // zone
+                For<1, seq_exec, // Moment
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+template<>
+struct Policy_LPlusTimes<ArchLayoutT<ArchT_SYCL, LayoutT_ZDG>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<0, sycl_group_0_loop, // Direction
+            For<2, sycl_group_1_loop, // group
+              For<3, sycl_local_0_loop, // zone
+                For<1, seq_exec, // Moment
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+
+
+template<>
+struct Policy_LPlusTimes<ArchLayoutT<ArchT_SYCL, LayoutT_ZGD>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<0, sycl_group_0_loop, // Direction
+            For<2, sycl_group_1_loop, // group
+              For<3, sycl_local_0_loop, // zone
+                For<1, seq_exec, // Moment
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
 };
 #endif
 }

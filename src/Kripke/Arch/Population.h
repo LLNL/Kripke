@@ -474,7 +474,7 @@ struct Policy_Population<ArchLayoutT<ArchT_SYCL, LayoutT_DGZ>>{
         Tile<2, tile_fixed<32>, sycl_group_0_loop, // blocks of 32 zones
           For<0, sycl_local_2_loop, // direction
             For<1, sycl_local_1_loop, // group
-              For<2, sycl_local_0_direct, // zone
+              For<2, RAJA::sycl_local_0_direct, // zone
                 Lambda<0>
               >
             >
@@ -482,6 +482,111 @@ struct Policy_Population<ArchLayoutT<ArchT_SYCL, LayoutT_DGZ>>{
         >
       >
     >;
+};
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_SYCL, LayoutT_DZG>>{
+  using ReducePolicy = sycl_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      SyclKernel<
+        Tile<2, tile_fixed<32>, sycl_group_0_loop, // blocks of 32 zones
+          For<0, sycl_local_2_loop, // direction
+            For<2, RAJA::sycl_local_1_direct, // zone
+              For<1, sycl_local_0_loop, // group
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+
+};
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_SYCL, LayoutT_GDZ>>{
+  using ReducePolicy = sycl_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      SyclKernel<
+        Tile<2, tile_fixed<32>, sycl_group_0_loop, // blocks of 32 zones
+          For<1, sycl_local_2_loop, // group
+            For<0, sycl_local_1_loop, // direction
+              For<2, RAJA::sycl_local_0_direct, // zone
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+
+};
+
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_SYCL, LayoutT_GZD>>{
+  using ReducePolicy = sycl_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      SyclKernel<
+        Tile<2, tile_fixed<32>, sycl_group_0_loop, // blocks of 32 zones
+          For<1, sycl_local_2_loop, // group
+            For<2, RAJA::sycl_local_1_direct, // zone
+              For<0, sycl_local_0_loop, // direction
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+
+};
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_SYCL, LayoutT_ZDG>>{
+  using ReducePolicy = sycl_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      SyclKernel<
+        Tile<2, tile_fixed<32>, sycl_group_0_loop, // blocks of 32 zones
+          For<2, RAJA::sycl_local_2_direct, // zone
+            For<0, sycl_local_1_loop, // direction
+              For<1, sycl_local_0_loop, // group
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+};
+
+template<>
+struct Policy_Population<ArchLayoutT<ArchT_SYCL, LayoutT_ZGD>>{
+  using ReducePolicy = sycl_reduce;
+
+  using ExecPolicy =
+    KernelPolicy<
+      SyclKernel<
+        Tile<2, tile_fixed<32>, sycl_group_0_loop, // blocks of 32 zones
+          For<2, RAJA::sycl_local_2_direct, // zone
+            For<1, sycl_local_1_loop, // group
+              For<0, sycl_local_0_loop, // direction
+                Lambda<0>
+              >
+            >
+          >
+        >
+      >
+    >;
+
 };
 #endif
 }

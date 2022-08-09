@@ -441,6 +441,96 @@ struct Policy_LTimes<ArchLayoutT<ArchT_SYCL, LayoutT_DGZ>> {
       >
     >;
 };
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_SYCL, LayoutT_DZG>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<2, sycl_group_0_loop, // group
+            For<0, sycl_group_1_loop, // moment
+              For<3, sycl_local_0_loop, // zone
+                For<1, seq_exec, // direction
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_SYCL, LayoutT_GDZ>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<2, sycl_group_0_loop, // group
+            For<0, sycl_group_1_loop, // moment
+              For<3, sycl_local_0_loop, // zone
+                For<1, seq_exec, // direction
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_SYCL, LayoutT_GZD>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<2, sycl_group_0_loop, // group
+            For<0, sycl_group_1_loop, // moment
+              For<3, sycl_local_0_loop, // zone
+                For<1, seq_exec, // direction
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_SYCL, LayoutT_ZDG>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<2, sycl_group_0_loop, // group
+            For<0, sycl_group_1_loop, // moment
+              For<3, sycl_local_0_loop, // zone
+                For<1, seq_exec, // direction
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
+
+template<>
+struct Policy_LTimes<ArchLayoutT<ArchT_SYCL, LayoutT_ZGD>> {
+    using ExecPolicy =
+      KernelPolicy<
+        SyclKernel<
+          For<2, sycl_group_0_loop, // group
+            For<0, sycl_group_1_loop, // moment
+              For<3, sycl_group_0_loop, // zone
+                For<1, seq_exec, // direction
+                  Lambda<0>
+                >
+              >
+            >
+          >
+        >
+      >;
+};
 #endif
 }
 }
