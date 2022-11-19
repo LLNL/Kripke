@@ -115,6 +115,7 @@ if(ENABLE_CHAI)
       set_target_properties(camp PROPERTIES IMPORTED_GLOBAL TRUE)
       if (DEFINED RAJA_DIR)
         find_package(RAJA REQUIRED)
+      endif()
 
       list(APPEND KRIPKE_DEPENDS RAJA)
     else ()
