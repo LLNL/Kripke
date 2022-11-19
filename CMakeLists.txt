@@ -113,6 +113,10 @@ if(ENABLE_CHAI)
     if (camp_FOUND)
       message(STATUS "Kripke: Using external CAMP")
       set_target_properties(camp PROPERTIES IMPORTED_GLOBAL TRUE)
+      if (DEFINED RAJA_DIR)
+        find_package(RAJA REQUIRED)
+
+      list(APPEND KRIPKE_DEPENDS RAJA)
     else ()
       message(STATUS "Kripke: Using CAMP submodule")
 
