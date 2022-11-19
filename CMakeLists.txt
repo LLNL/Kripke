@@ -30,9 +30,43 @@ if (ENABLE_CHAI)
 endif ()
 
 # Use C++14 standard
-set(BLT_CXX_STD "c++14" CACHE STRING "")
+set(BLT_CXX_STD "c++17" CACHE STRING "")
 
-include(blt/SetupBLT.cmake)
+if (NOT BLT_LOADED)
+  if (DEFINED BLT_SOURCE_DIR)
+    message(${BLT_SOURCE_DIR})
+    if (NOT EXISTS ${BLT_SOURCE_DIR}/SetupBLT.cmake)
+      message(FATAL_ERROR "Given BLT_SOURCE_DIR does not contain SetupBLT.cmake")
+    endif()
+  else ()
+    set (BLT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/TPL/blt" CACHE PATH "")
+
+    if (NOT EXISTS ${BLT_SOURCE_DIR}/SetupBLT.cmake)
+      message(FATAL_ERROR "The BLT submodule is not present.")
+    endif ()
+ endif ()
+
+  set(BLT_CXX_STD "c++17" CACHE STRING "BLT requires C++14")
+  set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
+  set(ENABLE_ASTYLE OFF CACHE BOOL "")
+  set(ENABLE_CLANGFORMAT OFF CACHE BOOL "")
+  set(ENABLE_UNCRUSTIFY OFF CACHE BOOL "")
+  set(ENABLE_CPPCHECK OFF CACHE BOOL "")
+  set(ENABLE_CLANGQUERY OFF CACHE BOOL "")
+  set(ENABLE_GTEST ON CACHE BOOL "")
+  set(ENABLE_TESTS ON CACHE BOOL "")
+  set(ENABLE_FRUIT OFF CACHE BOOL "")
+  set(ENABLE_FIND_MPI OFF CACHE BOOL "")
+  set(BLT_DOCS_TARGET_NAME "docsBLT" CACHE STRING "")
+
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR} CACHE PATH "")
+    set(TEST_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR} CACHE PATH "")
+
+  include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
+
+endif()
+
+#include(blt/SetupBLT.cmake)
 
 
 
@@ -64,7 +98,7 @@ endif()
 #
 # Add googletest (needed by RAJA, etc)
 # 
-add_subdirectory(tpl/googletest)
+#add_subdirectory(tpl/googletest)
 
 
 #
