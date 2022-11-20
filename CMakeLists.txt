@@ -30,7 +30,10 @@ if (ENABLE_CHAI)
 endif ()
 
 # Use C++14 standard
-set(BLT_CXX_STD "c++17" CACHE STRING "")
+set(BLT_CXX_STD "c++14" CACHE STRING "")
+
+#include(blt/SetupBLT.cmake)
+
 
 if (NOT BLT_LOADED)
   if (DEFINED BLT_SOURCE_DIR)
@@ -46,7 +49,7 @@ if (NOT BLT_LOADED)
     endif ()
  endif ()
 
-  set(BLT_CXX_STD "c++17" CACHE STRING "BLT requires C++14")
+  set(BLT_CXX_STD "c++14" CACHE STRING "BLT requires C++14")
   set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
   set(ENABLE_ASTYLE OFF CACHE BOOL "")
   set(ENABLE_CLANGFORMAT OFF CACHE BOOL "")
@@ -65,9 +68,6 @@ if (NOT BLT_LOADED)
   include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 
 endif()
-
-#include(blt/SetupBLT.cmake)
-
 
 
 #
