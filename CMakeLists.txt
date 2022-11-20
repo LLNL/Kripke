@@ -83,7 +83,7 @@ set(KRIPKE_LAYOUT DGZ)
 #
 if(ENABLE_CUDA)
   # Native CMake support  
-  enable_language(CUDA)
+  #enable_language(CUDA)
   
   # Make sure we use nvcc with our selected host compiler to link executables
   set(CMAKE_CUDA_LINK_EXECUTABLE "${CMAKE_CUDA_COMPILER} -ccbin <CMAKE_CXX_COMPILER> <CMAKE_CUDA_LINK_FLAGS>  <FLAGS>  <LINK_FLAGS>  <OBJECTS> -o <TARGET>  <LINK_LIBRARIES>")
