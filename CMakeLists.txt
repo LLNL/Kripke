@@ -32,9 +32,6 @@ endif ()
 # Use C++14 standard
 set(BLT_CXX_STD "c++14" CACHE STRING "")
 
-#include(blt/SetupBLT.cmake)
-
-
 if (NOT BLT_LOADED)
   if (DEFINED BLT_SOURCE_DIR)
     message(${BLT_SOURCE_DIR})
@@ -42,7 +39,7 @@ if (NOT BLT_LOADED)
       message(FATAL_ERROR "Given BLT_SOURCE_DIR does not contain SetupBLT.cmake")
     endif()
   else ()
-    set (BLT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/TPL/blt" CACHE PATH "")
+    set (BLT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/blt" CACHE PATH "")
 
     if (NOT EXISTS ${BLT_SOURCE_DIR}/SetupBLT.cmake)
       message(FATAL_ERROR "The BLT submodule is not present.")
@@ -59,7 +56,7 @@ if (NOT BLT_LOADED)
   set(ENABLE_GTEST ON CACHE BOOL "")
   set(ENABLE_TESTS ON CACHE BOOL "")
   set(ENABLE_FRUIT OFF CACHE BOOL "")
-  set(ENABLE_FIND_MPI OFF CACHE BOOL "")
+  set(ENABLE_FIND_MPI ON CACHE BOOL "")
   set(BLT_DOCS_TARGET_NAME "docsBLT" CACHE STRING "")
 
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR} CACHE PATH "")
