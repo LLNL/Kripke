@@ -138,7 +138,7 @@ The easiest way to get Kripke running, is to directly invoke CMake and take what
         For a number of platforms, we have CMake cache files that make things easier:
 
         cd build
-        cmake .. -C../host-configs/llnl-bgqos-clang.cmake -DCMAKE_BUILD_TYPE=Release
+        cmake .. -C ../host-configs/llnl-bgqos-clang.cmake -DCMAKE_BUILD_TYPE=Release
 
 *  Step 3: Now make Kripke:
          
