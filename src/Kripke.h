@@ -125,6 +125,9 @@ namespace Arch {
   using RAJA::cuda_thread_x_loop;
   using RAJA::cuda_thread_y_loop;
   using RAJA::cuda_thread_z_loop;
+  using cuda_thread_syncable_x_loop = RAJA::cuda_thread_syncable_loop<RAJA::named_dim::x>;
+  using cuda_thread_syncable_y_loop = RAJA::cuda_thread_syncable_loop<RAJA::named_dim::y>;
+  using cuda_thread_syncable_z_loop = RAJA::cuda_thread_syncable_loop<RAJA::named_dim::z>;
   using RAJA::cuda_reduce;
   using RAJA::cuda_atomic;
   using RAJA::statement::CudaKernel;
@@ -143,6 +146,9 @@ namespace Arch {
   using RAJA::hip_thread_x_loop;
   using RAJA::hip_thread_y_loop;
   using RAJA::hip_thread_z_loop;
+  using hip_thread_syncable_x_loop = RAJA::hip_thread_syncable_loop<RAJA::named_dim::x>;
+  using hip_thread_syncable_y_loop = RAJA::hip_thread_syncable_loop<RAJA::named_dim::y>;
+  using hip_thread_syncable_z_loop = RAJA::hip_thread_syncable_loop<RAJA::named_dim::z>;
   using RAJA::hip_reduce;
   using RAJA::hip_atomic;
   using RAJA::statement::HipKernel;
