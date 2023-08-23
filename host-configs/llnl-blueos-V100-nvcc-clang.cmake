@@ -9,23 +9,23 @@
 
 set(RAJA_COMPILER "RAJA_COMPILER_CLANG" CACHE STRING "")
 
-set(CMAKE_C_COMPILER   "mpiclang" CACHE PATH "")
-set(CMAKE_CXX_COMPILER "mpiclang++" CACHE PATH "")
+set(CMAKE_C_COMPILER   "/usr/tce/packages/clang/clang-12.0.1-gcc-8.3.1/bin/clang" CACHE PATH "")
+set(CMAKE_CXX_COMPILER "/usr/tce/packages/clang/clang-12.0.1-gcc-8.3.1/bin/clang++" CACHE PATH "")
 
 set(CMAKE_CXX_FLAGS "" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -ffast-math" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math --gcc-toolchain=/usr/tce/packages/gcc/gcc-8.3.1" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -ffast-math --gcc-toolchain=/usr/tce/packages/gcc/gcc-8.3.1" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g --gcc-toolchain=/usr/tce/packages/gcc/gcc-8.3.1" CACHE STRING "")
 
 set(ENABLE_CHAI On CACHE BOOL "")
 set(ENABLE_CUDA On CACHE BOOL "")
 set(ENABLE_OPENMP Off CACHE BOOL "")
 set(ENABLE_MPI On CACHE BOOL "")
 
-set(CMAKE_CUDA_FLAGS "-restrict -gencode=arch=compute_70,code=sm_70 " CACHE STRING "")
-set(CMAKE_CUDA_FLAGS_RELEASE "-O3 --expt-extended-lambda" CACHE STRING "")
-set(CMAKE_CUDA_FLAGS_RELWITHDEBINFO "-O3 -lineinfo --expt-extended-lambda" CACHE STRING "")
-set(CMAKE_CUDA_FLAGS_DEBUG "-O0 -g -G --expt-extended-lambda" CACHE STRING "")
+set(CMAKE_CUDA_FLAGS "-restrict -gencode=arch=compute_70,code=sm_70 -Xcompiler=--gcc-toolchain=/usr/tce/packages/gcc/gcc-8.3.1" CACHE STRING "")
+set(CMAKE_CUDA_FLAGS_RELEASE "-O3 --expt-extended-lambda -Xcompiler=--gcc-toolchain=/usr/tce/packages/gcc/gcc-8.3.1" CACHE STRING "")
+set(CMAKE_CUDA_FLAGS_RELWITHDEBINFO "-O3 -lineinfo --expt-extended-lambda -Xcompiler=--gcc-toolchain=/usr/tce/packages/gcc/gcc-8.3.1" CACHE STRING "")
+set(CMAKE_CUDA_FLAGS_DEBUG "-O0 -g -G --expt-extended-lambda -Xcompiler=--gcc-toolchain=/usr/tce/packages/gcc/gcc-8.3.1" CACHE STRING "")
 set(CMAKE_CUDA_HOST_COMPILER "${CMAKE_CXX_COMPILER}" CACHE STRING "")
 
 
