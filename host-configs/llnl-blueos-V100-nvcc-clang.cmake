@@ -9,8 +9,8 @@
 
 set(RAJA_COMPILER "RAJA_COMPILER_CLANG" CACHE STRING "")
 
-set(CMAKE_C_COMPILER   "mpiclang" CACHE PATH "")
-set(CMAKE_CXX_COMPILER "mpiclang++" CACHE PATH "")
+set(CMAKE_C_COMPILER   "/usr/tce/packages/clang/clang-12.0.1-gcc-8.3.1/bin/clang" CACHE PATH "")
+set(CMAKE_CXX_COMPILER "/usr/tce/packages/clang/clang-12.0.1-gcc-8.3.1/bin/clang++" CACHE PATH "")
 
 set(CMAKE_CXX_FLAGS "" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math" CACHE STRING "")
