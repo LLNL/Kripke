@@ -119,9 +119,9 @@ namespace Arch {
   using RAJA::cuda_block_x_loop;
   using RAJA::cuda_block_y_loop;
   using RAJA::cuda_block_z_loop;
-  using RAJA::cuda_thread_x_direct;
-  using RAJA::cuda_thread_y_direct;
-  using RAJA::cuda_thread_z_direct;
+  using cuda_threadblock_x_direct = RAJA::cuda_global_size_x_direct<32>;  // blocks of 32 threads
+  using cuda_threadblock_y_direct = RAJA::cuda_global_size_y_direct<32>;  // blocks of 32 threads
+  using cuda_threadblock_z_direct = RAJA::cuda_global_size_z_direct<32>;  // blocks of 32 threads
   using RAJA::cuda_thread_x_loop;
   using RAJA::cuda_thread_y_loop;
   using RAJA::cuda_thread_z_loop;
@@ -140,9 +140,9 @@ namespace Arch {
   using RAJA::hip_block_x_loop;
   using RAJA::hip_block_y_loop;
   using RAJA::hip_block_z_loop;
-  using RAJA::hip_thread_x_direct;
-  using RAJA::hip_thread_y_direct;
-  using RAJA::hip_thread_z_direct;
+  using hip_threadblock_x_direct = RAJA::hip_global_size_x_direct<32>;  // blocks of 32 threads
+  using hip_threadblock_y_direct = RAJA::hip_global_size_y_direct<32>;  // blocks of 32 threads
+  using hip_threadblock_z_direct = RAJA::hip_global_size_z_direct<32>;  // blocks of 32 threads
   using RAJA::hip_thread_x_loop;
   using RAJA::hip_thread_y_loop;
   using RAJA::hip_thread_z_loop;
