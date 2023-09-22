@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# Copyright (c) 2014-19, Lawrence Livermore National Security, LLC
+# Copyright (c) 2014-23, Lawrence Livermore National Security, LLC
 # and Kripke project contributors. See the Kripke/COPYRIGHT file for details.
 # 
 # SPDX-License-Identifier: (BSD-3-Clause)
