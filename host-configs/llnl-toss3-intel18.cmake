@@ -1,11 +1,9 @@
-##
-## Copyright (c) 2016-22, Lawrence Livermore National Security, LLC.
-##
-## Produced at the Lawrence Livermore National Laboratory.
-##
-## All rights reserved.
-##
-##
+#
+# Copyright (c) 2014-23, Lawrence Livermore National Security, LLC
+# and Kripke project contributors. See the Kripke/COPYRIGHT file for details.
+# 
+# SPDX-License-Identifier: (BSD-3-Clause)
+#
 
 set(RAJA_COMPILER "RAJA_COMPILER_INTEL" CACHE STRING "")
 
