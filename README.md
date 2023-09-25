@@ -167,7 +167,9 @@ The current list of cache init files (located in the ./host-configs/ directory) 
 
 *  llnl-blueos-V100-nvcc-clang.cmake
 
+*  llnl-toss4-MI250X-rocm5-vernal.cmake
 
+*  llnl-toss4-intel22.cmake
 
 Running Kripke
 ==============
@@ -182,6 +184,9 @@ If Kripke is built with Caliper support, Caliper performance measurements can be
     CALI_CONFIG_PROFILE=runtime-report ./kripke ...
 
 will print a time profile of annotated code regions in Kripke. For more information, see https://llln.github.io/Caliper.
+
+
+If building Kripke on RZVernal, then the rocm and cmake/3.24.2 modules need to be loaded.
 
 Command Line Options
 --------------------
