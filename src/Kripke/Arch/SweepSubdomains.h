@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2014-22, Lawrence Livermore National Security, LLC
-// and Kripke project contributors. See the COPYRIGHT file for details.
+// Copyright (c) 2014-23, Lawrence Livermore National Security, LLC
+// and Kripke project contributors. See the Kripke/COPYRIGHT file for details.
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
 //
@@ -251,8 +251,8 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
               For<0, cuda_block_x_loop,
                 For<1, cuda_block_y_loop,
 
-                  For<3, cuda_thread_y_loop,
-                    For<4, cuda_thread_x_loop,
+                  For<3, cuda_thread_syncable_y_loop,
+                    For<4, cuda_thread_syncable_x_loop,
                       Hyperplane<
                         2, seq_exec, ArgList<3, 4>,
 
@@ -277,8 +277,8 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
                 For<0, cuda_block_x_loop,
                   For<1, cuda_block_y_loop,
 
-                    For<3, cuda_thread_y_loop,
-                      For<4, cuda_thread_x_loop,
+                    For<3, cuda_thread_syncable_y_loop,
+                      For<4, cuda_thread_syncable_x_loop,
                         Hyperplane<
                           2, seq_exec, ArgList<3, 4>,
 
@@ -303,8 +303,8 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>> {
                 For<0, cuda_block_x_loop,
                   For<1, cuda_block_y_loop,
 
-                    For<3, cuda_thread_y_loop,
-                      For<4, cuda_thread_x_loop,
+                    For<3, cuda_thread_syncable_y_loop,
+                      For<4, cuda_thread_syncable_x_loop,
                         Hyperplane<
                           2, seq_exec, ArgList<3, 4>,
 
@@ -329,8 +329,8 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>> {
                 For<0, cuda_block_x_loop,
                   For<1, cuda_block_y_loop,
 
-                    For<3, cuda_thread_y_loop,
-                      For<4, cuda_thread_x_loop,
+                    For<3, cuda_thread_syncable_y_loop,
+                      For<4, cuda_thread_syncable_x_loop,
                         Hyperplane<
                           2, seq_exec, ArgList<3, 4>,
 
@@ -355,8 +355,8 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>> {
                 For<0, cuda_block_x_loop,
                   For<1, cuda_block_y_loop,
 
-                    For<3, cuda_thread_y_loop,
-                      For<4, cuda_thread_x_loop,
+                    For<3, cuda_thread_syncable_y_loop,
+                      For<4, cuda_thread_syncable_x_loop,
                         Hyperplane<
                           2, seq_exec, ArgList<3, 4>,
 
@@ -381,8 +381,8 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>> {
                 For<0, cuda_block_x_loop,
                   For<1, cuda_block_y_loop,
 
-                    For<3, cuda_thread_y_loop,
-                      For<4, cuda_thread_x_loop,
+                    For<3, cuda_thread_syncable_y_loop,
+                      For<4, cuda_thread_syncable_x_loop,
                         Hyperplane<
                           2, seq_exec, ArgList<3, 4>,
 
@@ -408,8 +408,8 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_DGZ>> {
               For<0, hip_block_x_loop,
                 For<1, hip_block_y_loop,
 
-                  For<3, hip_thread_y_loop,
-                    For<4, hip_thread_x_loop,
+                  For<3, hip_thread_syncable_y_loop,
+                    For<4, hip_thread_syncable_x_loop,
                       Hyperplane<
                         2, seq_exec, ArgList<3, 4>,
 
@@ -434,8 +434,8 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_DZG>> {
                 For<0, hip_block_x_loop,
                   For<1, hip_block_y_loop,
 
-                    For<3, hip_thread_y_loop,
-                      For<4, hip_thread_x_loop,
+                    For<3, hip_thread_syncable_y_loop,
+                      For<4, hip_thread_syncable_x_loop,
                         Hyperplane<
                           2, seq_exec, ArgList<3, 4>,
 
@@ -460,8 +460,8 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_GDZ>> {
                 For<0, hip_block_x_loop,
                   For<1, hip_block_y_loop,
 
-                    For<3, hip_thread_y_loop,
-                      For<4, hip_thread_x_loop,
+                    For<3, hip_thread_syncable_y_loop,
+                      For<4, hip_thread_syncable_x_loop,
                         Hyperplane<
                           2, seq_exec, ArgList<3, 4>,
 
@@ -486,8 +486,8 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_GZD>> {
                 For<0, hip_block_x_loop,
                   For<1, hip_block_y_loop,
 
-                    For<3, hip_thread_y_loop,
-                      For<4, hip_thread_x_loop,
+                    For<3, hip_thread_syncable_y_loop,
+                      For<4, hip_thread_syncable_x_loop,
                         Hyperplane<
                           2, seq_exec, ArgList<3, 4>,
 
@@ -512,8 +512,8 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_ZDG>> {
                 For<0, hip_block_x_loop,
                   For<1, hip_block_y_loop,
 
-                    For<3, hip_thread_y_loop,
-                      For<4, hip_thread_x_loop,
+                    For<3, hip_thread_syncable_y_loop,
+                      For<4, hip_thread_syncable_x_loop,
                         Hyperplane<
                           2, seq_exec, ArgList<3, 4>,
 
@@ -538,8 +538,8 @@ struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>> {
                 For<0, hip_block_x_loop,
                   For<1, hip_block_y_loop,
 
-                    For<3, hip_thread_y_loop,
-                      For<4, hip_thread_x_loop,
+                    For<3, hip_thread_syncable_y_loop,
+                      For<4, hip_thread_syncable_x_loop,
                         Hyperplane<
                           2, seq_exec, ArgList<3, 4>,
 

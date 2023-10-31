@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2014-22, Lawrence Livermore National Security, LLC
-// and Kripke project contributors. See the COPYRIGHT file for details.
+// Copyright (c) 2014-23, Lawrence Livermore National Security, LLC
+// and Kripke project contributors. See the Kripke/COPYRIGHT file for details.
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
 //
@@ -216,17 +216,16 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>>{
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        Tile<2, tile_fixed<32>, cuda_block_x_loop, // blocks of 32 zones
-          For<0, cuda_thread_z_loop, // direction
-            For<1, cuda_thread_y_loop, // group
-              For<2, cuda_thread_x_direct, // zone
-                Lambda<0>
-              >
+        For<0, cuda_thread_z_loop, // direction
+          For<1, cuda_thread_y_loop, // group
+            For<2, cuda_threadblock_x_direct, // zone, in blocks of 32 zones
+              Lambda<0>
             >
           >
         >
       >
     >;
+
 };
 
 template<>
@@ -236,12 +235,10 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>>{
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        Tile<2, tile_fixed<32>, cuda_block_x_loop, // blocks of 32 zones
-          For<0, cuda_thread_z_loop, // direction
-            For<2, cuda_thread_y_direct, // zone
-              For<1, cuda_thread_x_loop, // group
-                Lambda<0>
-              >
+        For<0, cuda_thread_z_loop, // direction
+          For<2, cuda_threadblock_y_direct, // zone, in blocks of 32 zones
+            For<1, cuda_thread_x_loop, // group
+              Lambda<0>
             >
           >
         >
@@ -257,12 +254,10 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>>{
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        Tile<2, tile_fixed<32>, cuda_block_x_loop, // blocks of 32 zones
-          For<1, cuda_thread_z_loop, // group
-            For<0, cuda_thread_y_loop, // direction
-              For<2, cuda_thread_x_direct, // zone
-                Lambda<0>
-              >
+        For<1, cuda_thread_z_loop, // group
+          For<0, cuda_thread_y_loop, // direction
+            For<2, cuda_threadblock_x_direct, // zone, in blocks of 32 zones
+              Lambda<0>
             >
           >
         >
@@ -279,12 +274,10 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>>{
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        Tile<2, tile_fixed<32>, cuda_block_x_loop, // blocks of 32 zones
-          For<1, cuda_thread_z_loop, // group
-            For<2, cuda_thread_y_direct, // zone
-              For<0, cuda_thread_x_loop, // direction
-                Lambda<0>
-              >
+        For<1, cuda_thread_z_loop, // group
+          For<2, cuda_threadblock_y_direct, // zone, in blocks of 32 zones
+            For<0, cuda_thread_x_loop, // direction
+              Lambda<0>
             >
           >
         >
@@ -300,12 +293,10 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>>{
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        Tile<2, tile_fixed<32>, cuda_block_x_loop, // blocks of 32 zones
-          For<2, cuda_thread_z_direct, // zone
-            For<0, cuda_thread_y_loop, // direction
-              For<1, cuda_thread_x_loop, // group
-                Lambda<0>
-              >
+        For<2, cuda_threadblock_z_direct, // zone, in blocks of 32 zones
+          For<0, cuda_thread_y_loop, // direction
+            For<1, cuda_thread_x_loop, // group
+              Lambda<0>
             >
           >
         >
@@ -320,12 +311,10 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>>{
   using ExecPolicy =
     KernelPolicy<
       CudaKernel<
-        Tile<2, tile_fixed<32>, cuda_block_x_loop, // blocks of 32 zones
-          For<2, cuda_thread_z_direct, // zone
-            For<1, cuda_thread_y_loop, // group
-              For<0, cuda_thread_x_loop, // direction
-                Lambda<0>
-              >
+        For<2, cuda_threadblock_z_direct, // zone, in blocks of 32 zones
+          For<1, cuda_thread_y_loop, // group
+            For<0, cuda_thread_x_loop, // direction
+              Lambda<0>
             >
           >
         >
@@ -344,12 +333,10 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_DGZ>>{
   using ExecPolicy =
     KernelPolicy<
       HipKernel<
-        Tile<2, tile_fixed<32>, hip_block_x_loop, // blocks of 32 zones
-          For<0, hip_thread_z_loop, // direction
-            For<1, hip_thread_y_loop, // group
-              For<2, hip_thread_x_direct, // zone
-                Lambda<0>
-              >
+        For<0, hip_thread_z_loop, // direction
+          For<1, hip_thread_y_loop, // group
+            For<2, hip_threadblock_x_direct, // zone, in blocks of 32 zones
+              Lambda<0>
             >
           >
         >
@@ -364,15 +351,13 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_DZG>>{
   using ExecPolicy =
     KernelPolicy<
       HipKernel<
-        Tile<2, tile_fixed<32>, hip_block_x_loop, // blocks of 32 zones
-          For<0, hip_thread_z_loop, // direction
-            For<2, hip_thread_y_direct, // zone
-              For<1, hip_thread_x_loop, // group
-                Lambda<0>
+            For<0, hip_thread_z_loop, // direction
+              For<2, hip_threadblock_y_direct, // zone, in blocks of 32 zones
+                For<1, hip_thread_x_loop, // group
+                  Lambda<0>
+                >
               >
             >
-          >
-        >
       >
     >;
 
@@ -385,12 +370,10 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_GDZ>>{
   using ExecPolicy =
     KernelPolicy<
       HipKernel<
-        Tile<2, tile_fixed<32>, hip_block_x_loop, // blocks of 32 zones
-          For<1, hip_thread_z_loop, // group
-            For<0, hip_thread_y_loop, // direction
-              For<2, hip_thread_x_direct, // zone
-                Lambda<0>
-              >
+        For<1, hip_thread_z_loop, // group
+          For<0, hip_thread_y_loop, // direction
+            For<2, hip_threadblock_x_direct, // zone, in blocks of 32 zones
+              Lambda<0>
             >
           >
         >
@@ -407,12 +390,10 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_GZD>>{
   using ExecPolicy =
     KernelPolicy<
       HipKernel<
-        Tile<2, tile_fixed<32>, hip_block_x_loop, // blocks of 32 zones
-          For<1, hip_thread_z_loop, // group
-            For<2, hip_thread_y_direct, // zone
-              For<0, hip_thread_x_loop, // direction
-                Lambda<0>
-              >
+        For<1, hip_thread_z_loop, // group
+          For<2, hip_threadblock_y_direct, // zone, in blocks of 32 zones
+            For<0, hip_thread_x_loop, // direction
+              Lambda<0>
             >
           >
         >
@@ -428,12 +409,10 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_ZDG>>{
   using ExecPolicy =
     KernelPolicy<
       HipKernel<
-        Tile<2, tile_fixed<32>, hip_block_x_loop, // blocks of 32 zones
-          For<2, hip_thread_z_direct, // zone
-            For<0, hip_thread_y_loop, // direction
-              For<1, hip_thread_x_loop, // group
-                Lambda<0>
-              >
+        For<2, hip_threadblock_z_direct, // zone, in blocks of 32 zones
+          For<0, hip_thread_y_loop, // direction
+            For<1, hip_thread_x_loop, // group
+              Lambda<0>
             >
           >
         >
@@ -448,12 +427,10 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>>{
   using ExecPolicy =
     KernelPolicy<
       HipKernel<
-        Tile<2, tile_fixed<32>, hip_block_x_loop, // blocks of 32 zones
-          For<2, hip_thread_z_direct, // zone
-            For<1, hip_thread_y_loop, // group
-              For<0, hip_thread_x_loop, // direction
-                Lambda<0>
-              >
+        For<2, hip_threadblock_z_direct, // zone, in blocks of 32 zones
+          For<1, hip_thread_y_loop, // group
+            For<0, hip_thread_x_loop, // direction
+              Lambda<0>
             >
           >
         >

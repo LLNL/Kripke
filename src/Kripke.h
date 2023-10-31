@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2014-22, Lawrence Livermore National Security, LLC
-// and Kripke project contributors. See the COPYRIGHT file for details.
+// Copyright (c) 2014-23, Lawrence Livermore National Security, LLC
+// and Kripke project contributors. See the Kripke/COPYRIGHT file for details.
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
 //
@@ -119,12 +119,15 @@ namespace Arch {
   using RAJA::cuda_block_x_loop;
   using RAJA::cuda_block_y_loop;
   using RAJA::cuda_block_z_loop;
-  using RAJA::cuda_thread_x_direct;
-  using RAJA::cuda_thread_y_direct;
-  using RAJA::cuda_thread_z_direct;
+  using cuda_threadblock_x_direct = RAJA::cuda_global_size_x_direct<32>;  // blocks of 32 threads
+  using cuda_threadblock_y_direct = RAJA::cuda_global_size_y_direct<32>;  // blocks of 32 threads
+  using cuda_threadblock_z_direct = RAJA::cuda_global_size_z_direct<32>;  // blocks of 32 threads
   using RAJA::cuda_thread_x_loop;
   using RAJA::cuda_thread_y_loop;
   using RAJA::cuda_thread_z_loop;
+  using cuda_thread_syncable_x_loop = RAJA::cuda_thread_syncable_loop<RAJA::named_dim::x>;
+  using cuda_thread_syncable_y_loop = RAJA::cuda_thread_syncable_loop<RAJA::named_dim::y>;
+  using cuda_thread_syncable_z_loop = RAJA::cuda_thread_syncable_loop<RAJA::named_dim::z>;
   using RAJA::cuda_reduce;
   using RAJA::cuda_atomic;
   using RAJA::statement::CudaKernel;
@@ -137,12 +140,15 @@ namespace Arch {
   using RAJA::hip_block_x_loop;
   using RAJA::hip_block_y_loop;
   using RAJA::hip_block_z_loop;
-  using RAJA::hip_thread_x_direct;
-  using RAJA::hip_thread_y_direct;
-  using RAJA::hip_thread_z_direct;
+  using hip_threadblock_x_direct = RAJA::hip_global_size_x_direct<32>;  // blocks of 32 threads
+  using hip_threadblock_y_direct = RAJA::hip_global_size_y_direct<32>;  // blocks of 32 threads
+  using hip_threadblock_z_direct = RAJA::hip_global_size_z_direct<32>;  // blocks of 32 threads
   using RAJA::hip_thread_x_loop;
   using RAJA::hip_thread_y_loop;
   using RAJA::hip_thread_z_loop;
+  using hip_thread_syncable_x_loop = RAJA::hip_thread_syncable_loop<RAJA::named_dim::x>;
+  using hip_thread_syncable_y_loop = RAJA::hip_thread_syncable_loop<RAJA::named_dim::y>;
+  using hip_thread_syncable_z_loop = RAJA::hip_thread_syncable_loop<RAJA::named_dim::z>;
   using RAJA::hip_reduce;
   using RAJA::hip_atomic;
   using RAJA::statement::HipKernel;

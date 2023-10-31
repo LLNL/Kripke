@@ -1,11 +1,11 @@
 #
-# Copyright (c) 2014-22, Lawrence Livermore National Security, LLC
-# and Kripke project contributors. See the COPYRIGHT file for details.
+# Copyright (c) 2014-23, Lawrence Livermore National Security, LLC
+# and Kripke project contributors. See the Kripke/COPYRIGHT file for details.
 # 
 # SPDX-License-Identifier: (BSD-3-Clause)
 #
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 
 cmake_policy(SET CMP0057 NEW)
 
