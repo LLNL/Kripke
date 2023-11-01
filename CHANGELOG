@@ -1,3 +1,5 @@
+10/31/2023 v1.2.7: Update RAJA (v2023.06.1), CHAI, Umpire (v2023.06.0), and BLT (v0.5.3). Updated use of RAJA GPU threading API. Added host-configs for new platforms/compilers, and scripts to aid release process.
+
 05/26/2022 v1.2.6: HIP fixes.
 
 04/26/2022 v1.2.5: Update RAJA, CHAI (v2022.03.0), Umpire (v2022.03.1), and BLT (v0.5.1). Added HIP support.
