@@ -25,6 +25,7 @@
 #endif
 
 #ifdef KRIPKE_USE_CALIPER
+#include <adiak.hpp>
 #include <caliper/cali.h>
 #endif
 
@@ -459,20 +460,33 @@ int main(int argc, char **argv) {
    */
 
 #ifdef KRIPKE_USE_CALIPER
-  cali_set_global_int_byname("kripke.nx", vars.nx);
-  cali_set_global_int_byname("kripke.ny", vars.ny);
-  cali_set_global_int_byname("kripke.nz", vars.nz);
-  
-  cali_set_global_int_byname("kripke.groups",         vars.num_groups);
-  cali_set_global_int_byname("kripke.legendre_order", vars.legendre_order);
+  void* adiak_mpi_comm_ptr = nullptr;
+#ifdef KRIPKE_USE_MPI
+  MPI_Comm adiak_mpi_comm = MPI_COMM_WORLD;
+  adiak_mpi_comm_ptr = &adiak_mpi_comm;
+#endif
+
+  adiak::init(adiak_mpi_comm_ptr);
+
+  adiak::collect_all();
+
+  adiak::value("compiler", KRIPKE_CXX_COMPILER);
+  adiak::value("compiler_flags", KRIPKE_CXX_FLAGS);
+
+  adiak::value("zones", std::array<int,3> { vars.nx, vars.ny, vars.nz });
+  adiak::value("procs", std::array<int,3> { vars.npx, vars.npy, vars.npz });
+
+  adiak::value("iterations", vars.niter);
+  adiak::value("groups", vars.num_groups);
+  adiak::value("legendre_order", vars.legendre_order);
 
   if (vars.parallel_method == PMETHOD_SWEEP)
-      cali_set_global_string_byname("kripke.parallel_method", "sweep");
+      adiak::value("parallel_method", "sweep");
   else if (vars.parallel_method == PMETHOD_BJ)
-      cali_set_global_string_byname("kripke.parallel_method", "block jacobi");
+      adiak::value("parallel_method", "block jacobi");
 
-  cali_set_global_string_byname("kripke.architecture", archToString(vars.al_v.arch_v).c_str());
-  cali_set_global_string_byname("kripke.layout", layoutToString(vars.al_v.layout_v).c_str());
+  adiak::value("architecture", archToString(vars.al_v.arch_v));
+  adiak::value("layout", layoutToString(vars.al_v.layout_v));
 #endif
 
   // Allocate problem
@@ -515,6 +529,14 @@ int main(int argc, char **argv) {
     printf("  Number of unknowns: %lu\n", (unsigned long) num_unknowns);
   }
   
+#ifdef KRIPKE_USE_CALIPER
+  adiak::value("throughput", throughput);
+  adiak::value("grind_time", grind_time);
+  adiak::value("sweep_eff", sweep_eff);
+  adiak::value("num_unknowns", num_unknowns);
+
+  adiak::fini();
+#endif
   // Cleanup and exit
   Kripke::Core::Comm::finalize();
 
