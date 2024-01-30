@@ -266,20 +266,15 @@ if (ENABLE_CALIPER)
 		include_directories(tpl/caliper/include)
 	else()
     find_package(caliper REQUIRED)
-	
+    find_package(adiak REQUIRED)
  	endif()
 
-    blt_register_library(NAME caliper
-      INCLUDES ${caliper_INCLUDE_DIR}
-      LIBRARIES caliper)
+#    blt_register_library(NAME caliper
+#      INCLUDES ${caliper_INCLUDE_DIR}
+#      LIBRARIES caliper)
 
 	set(KRIPKE_USE_CALIPER TRUE)
-  
-  list(APPEND KRIPKE_DEPENDS caliper)
-  
-  if (ENABLE_MPI)
-    list(APPEND KRIPKE_DEPENDS caliper-mpi)
-  endif()
+  list(APPEND KRIPKE_DEPENDS caliper adiak::adiak)
 endif()
 
 message(STATUS "Caliper support is ${KRIPKE_USE_CALIPER}")
