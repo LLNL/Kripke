@@ -4,7 +4,7 @@ Subdirectories in ./tpl/ contain third party libraries that Kripke depends on.
 
 tpl/caliper            Performance analysis toolbox/library
 
-tpl/chia               Copy HIding Api - provides smart arrays that 
+tpl/chai               Copy HIding Api - provides smart arrays that 
                        automate data motion on GPU architectures
 											 (REQUIRED for CUDA)
 
