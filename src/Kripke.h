@@ -90,7 +90,6 @@ enum ParallelMethod {
 namespace Kripke {
 namespace Arch {
 
-  using RAJA::loop_exec;
   using RAJA::seq_exec;
   using RAJA::simd_exec;
   using RAJA::seq_reduce;

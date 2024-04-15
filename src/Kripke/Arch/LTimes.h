@@ -21,10 +21,10 @@ template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_DGZ>> {
   using ExecPolicy = 
     KernelPolicy<
-      For<0, loop_exec, // moment
-        For<1, loop_exec, // direction
-          For<2, loop_exec, // group
-            For<3, loop_exec, // zone
+      For<0, seq_exec, // moment
+        For<1, seq_exec, // direction
+          For<2, seq_exec, // group
+            For<3, seq_exec, // zone
               Lambda<0>
             >
           >
@@ -37,10 +37,10 @@ template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>> {
   using ExecPolicy = 
     KernelPolicy<
-      For<0, loop_exec, // moment
-        For<1, loop_exec, // direction
-          For<3, loop_exec, // zone
-            For<2, loop_exec, // group
+      For<0, seq_exec, // moment
+        For<1, seq_exec, // direction
+          For<3, seq_exec, // zone
+            For<2, seq_exec, // group
               Lambda<0>
             >
           >
@@ -53,10 +53,10 @@ template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_GDZ>> {
   using ExecPolicy = 
     KernelPolicy<
-      For<2, loop_exec, // group
-        For<0, loop_exec, // moment
-          For<1, loop_exec, // direction
-            For<3, loop_exec, // zone
+      For<2, seq_exec, // group
+        For<0, seq_exec, // moment
+          For<1, seq_exec, // direction
+            For<3, seq_exec, // zone
               Lambda<0>
             >
           >
@@ -69,10 +69,10 @@ template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_GZD>> {
   using ExecPolicy = 
     KernelPolicy<
-      For<2, loop_exec, // group
-        For<3, loop_exec, // zone
-          For<0, loop_exec, // moment
-            For<1, loop_exec, // direction
+      For<2, seq_exec, // group
+        For<3, seq_exec, // zone
+          For<0, seq_exec, // moment
+            For<1, seq_exec, // direction
               Lambda<0>
             >
           >
@@ -85,10 +85,10 @@ template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_ZDG>> {
   using ExecPolicy = 
     KernelPolicy<
-      For<3, loop_exec, // zone
-        For<0, loop_exec, // moment
-          For<1, loop_exec, // direction
-            For<2, loop_exec, // group
+      For<3, seq_exec, // zone
+        For<0, seq_exec, // moment
+          For<1, seq_exec, // direction
+            For<2, seq_exec, // group
               Lambda<0>
             >
           >
@@ -101,10 +101,10 @@ template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_Sequential, LayoutT_ZGD>> {
   using ExecPolicy =
     KernelPolicy<
-      For<3, loop_exec, // zone
-        For<2, loop_exec, // group
-          For<0, loop_exec, // moment
-            For<1, loop_exec, // direction
+      For<3, seq_exec, // zone
+        For<2, seq_exec, // group
+          For<0, seq_exec, // moment
+            For<1, seq_exec, // direction
               Lambda<0>
             >
           >
@@ -122,8 +122,8 @@ struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, LayoutT_DGZ>> {
   using ExecPolicy =
     KernelPolicy<
       Collapse<omp_parallel_collapse_exec, ArgList<0,2>, // Moment Group
-        For<1, loop_exec, // Direction
-          For<3, loop_exec, // Zone
+        For<1, seq_exec, // Direction
+          For<3, seq_exec, // Zone
             Lambda<0>
           >
         >
@@ -136,8 +136,8 @@ struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, LayoutT_DZG>> {
   using ExecPolicy =
     KernelPolicy<
       Collapse<omp_parallel_collapse_exec, ArgList<0,3>, // Moment Zone
-        For<1, loop_exec, // Direction
-          For<2, loop_exec, // Group
+        For<1, seq_exec, // Direction
+          For<2, seq_exec, // Group
             Lambda<0>
           >
         >
@@ -150,8 +150,8 @@ struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, LayoutT_GDZ>> {
   using ExecPolicy =
     KernelPolicy<
       Collapse<omp_parallel_collapse_exec, ArgList<2,0>, // Group Moment
-        For<1, loop_exec, // Direction
-          For<3, loop_exec, // Zone
+        For<1, seq_exec, // Direction
+          For<3, seq_exec, // Zone
             Lambda<0>
           >
         >
@@ -164,7 +164,7 @@ struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, LayoutT_GZD>> {
   using ExecPolicy =
     KernelPolicy<
       Collapse<omp_parallel_collapse_exec, ArgList<2,3,0>, // Group Zone Moment
-        For<1, loop_exec, // Direection
+        For<1, seq_exec, // Direection
           Lambda<0>
         >
       >
@@ -176,8 +176,8 @@ struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, LayoutT_ZDG>> {
   using ExecPolicy =
     KernelPolicy<
       Collapse<omp_parallel_collapse_exec, ArgList<3,0>, // Zone Moment
-        For<1, loop_exec, // Direction
-          For<2, loop_exec, // Group
+        For<1, seq_exec, // Direction
+          For<2, seq_exec, // Group
             Lambda<0>
           >
         >
@@ -190,8 +190,8 @@ struct Policy_LTimes<ArchLayoutT<ArchT_OpenMP, LayoutT_ZGD>> {
   using ExecPolicy =
     KernelPolicy<
       Collapse<omp_parallel_collapse_exec, ArgList<3,2>, // Zone Group
-        For<0, loop_exec, // Moment
-          For<1, loop_exec, // Direction
+        For<0, seq_exec, // Moment
+          For<1, seq_exec, // Direction
             Lambda<0>
           >
         >

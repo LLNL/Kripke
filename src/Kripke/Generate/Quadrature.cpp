@@ -360,7 +360,7 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
   for(SdomId sdom_id : field_moment_to_legendre.getWorkList()){
     auto moment_to_legendre = field_moment_to_legendre.getView(sdom_id);
 
-    RAJA::forall<RAJA::loop_exec>(
+    RAJA::forall<RAJA::seq_exec>(
       RAJA::TypedRangeSegment<Moment>(0, moment_set->size(sdom_id)),
       [=](Moment nm){
         moment_to_legendre(nm) = moment_list[(*nm) + moment_set->lower(sdom_id)];

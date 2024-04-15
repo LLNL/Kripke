@@ -37,7 +37,7 @@ template<>
 struct Policy_Source<ArchLayoutT<ArchT_Sequential, LayoutT_DGZ>> {
   using ExecPolicy = 
     KernelPolicy<
-      Collapse<loop_exec, ArgList<0,1>, // Group, MixElem
+      Collapse<seq_exec, ArgList<0,1>, // Group, MixElem
         Lambda<0>
       >
     >;
@@ -47,7 +47,7 @@ template<>
 struct Policy_Source<ArchLayoutT<ArchT_Sequential, LayoutT_DZG>> {
   using ExecPolicy = 
     KernelPolicy<
-      Collapse<loop_exec, ArgList<0,1>, // MixElem, Group
+      Collapse<seq_exec, ArgList<0,1>, // MixElem, Group
         Lambda<0>
       >
     >;
