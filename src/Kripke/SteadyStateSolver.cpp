@@ -16,6 +16,10 @@
 #include <vector>
 #include <stdio.h>
 
+#ifdef KRIPKE_USE_CALIPER
+#include <caliper/cali.h>
+#endif
+
 using namespace Kripke::Core;
 
 /**
@@ -38,11 +42,15 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
   // Intialize unknowns
   Kripke::Kernel::kConst(data_store.getVariable<Kripke::Field_Flux>("psi"), 0.0);
 
-
   // Loop over iterations
   double part_last = 0.0;
+#ifdef KRIPKE_USE_CALIPER
+  CALI_CXX_MARK_LOOP_BEGIN(mainloop_annotation, "solve");
+#endif
   for(size_t iter = 0;iter < max_iter;++ iter){
-
+#ifdef KRIPKE_USE_CALIPER
+    CALI_CXX_MARK_LOOP_ITERATION(mainloop_annotation, static_cast<int>(iter));
+#endif
 
     /*
      * Compute the RHS:  rhs = LPlus*S*L*psi + Q
@@ -106,6 +114,9 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
 
 
   }
+#ifdef KRIPKE_USE_CALIPER
+  CALI_CXX_MARK_LOOP_END(mainloop_annotation);
+#endif
 
   if(comm.rank() == 0){
     printf("  Solver terminated\n");
