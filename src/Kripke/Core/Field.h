@@ -139,7 +139,7 @@ namespace Core {
         return  m_chunk_to_data[chunk_id];
 #else
         // use pointer conversion to get host pointer
-        ElementType *ptr = m_chunk_to_data[chunk_id];
+        ElementType *ptr = m_chunk_to_data[chunk_id].data();
 
         // return host pointer
         return(ptr);
@@ -245,7 +245,7 @@ namespace Core {
         LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
 
 #if (defined(KRIPKE_USE_HIP) || defined(KRIPKE_USE_CUDA)) && defined(KRIPKE_USE_CHAI)
-        return ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].getPointer(chai::GPU), layout);
+        return ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id], layout);
 #else
         return ViewType<Order, ElementType, ElementPtr, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id], layout);
 #endif
