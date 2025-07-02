@@ -5,21 +5,25 @@
 # SPDX-License-Identifier: (BSD-3-Clause)
 #
 
-# module load rocmcc/6.0.3-cce-17.0.1-magic
+# module load rocmcc/6.4.0-cce-19.0.0d-magic
 
 set(RAJA_COMPILER "RAJA_COMPILER_CLANG" CACHE STRING "")
 
-set(CMAKE_C_COMPILER   "/usr/tce/packages/cray-mpich/cray-mpich-8.1.29-rocmcc-6.0.3-cce-17.0.1-magic/bin/mpiamdclang" CACHE PATH "")
-set(CMAKE_CXX_COMPILER "/usr/tce/packages/cray-mpich/cray-mpich-8.1.29-rocmcc-6.0.3-cce-17.0.1-magic/bin/mpiamdclang++" CACHE PATH "")
+set(BLT_MPI_INCLUDES "/opt/cray/pe/mpich/8.1.32/ofi/cray/18.0/include" CACHE STRING "")
+
+set(CMAKE_C_COMPILER   "/usr/tce/packages/cray-mpich/cray-mpich-8.1.32-rocmcc-6.4.0-cce-19.0.0d-magic/bin/mpiamdclang" CACHE PATH "")
+set(CMAKE_CXX_COMPILER "/usr/tce/packages/cray-mpich/cray-mpich-8.1.32-rocmcc-6.4.0-cce-19.0.0d-magic/bin/mpiamdclang++" CACHE PATH "")
 
 set(CMAKE_CXX_FLAGS "" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_RELEASE "-std=c++14 -O3 -ffast-math" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-std=c++14 -O3 -g -ffast-math" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_DEBUG "-std=c++14 -O0 -g" CACHE STRING "")
 
-set(ROCM_ROOT_DIR "/opt/rocm-6.0.3" CACHE PATH "")
-set(HIP_ROOT_DIR "/opt/rocm-6.0.3/hip" CACHE PATH "")
-set(HIP_PATH "/opt/rocm-6.0.3/llvm/bin" CACHE PATH "")
+set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath,/opt/cray/pe/cce/19.0.0/cce/x86_64/lib -L/opt/cray/pe/cce/19.0.0/cce/x86_64/lib" CACHE STRING "")
+
+set(ROCM_ROOT_DIR "/opt/rocm-6.4.0" CACHE PATH "")
+set(HIP_ROOT_DIR "/opt/rocm-6.4.0/hip" CACHE PATH "")
+set(HIP_PATH "/opt/rocm-6.4.0/llvm/bin" CACHE PATH "")
 set(CMAKE_HIP_ARCHITECTURES "gfx942" CACHE STRING "")
 set(GPU_TARGETS "gfx942" CACHE STRING "")
 set(AMD_GPU_TARGETS "gfx942" CACHE STRING "")

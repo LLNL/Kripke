@@ -161,7 +161,7 @@ if(ENABLE_CHAI)
     find_package(umpire REQUIRED)
     
     if (ENABLE_MPI)
-      set(UMPIRE_DEPENDS "${UMPIRE_DEPENDS} mpi")
+      set(UMPIRE_DEPENDS "${UMPIRE_DEPENDS} blt::mpi")
     endif()
 
     blt_register_library(
@@ -205,7 +205,7 @@ if(ENABLE_OPENMP)
   
   set(KRIPKE_USE_OPENMP 1)  
   
-  list(APPEND KRIPKE_DEPENDS openmp)
+  list(APPEND KRIPKE_DEPENDS blt::openmp)
 
   set(KRIPKE_ARCH "OpenMP")
   
@@ -221,7 +221,7 @@ if(ENABLE_CUDA)
 
   set(KRIPKE_USE_CUDA 1)
     
-  list(APPEND KRIPKE_DEPENDS cuda)
+  list(APPEND KRIPKE_DEPENDS blt::cuda)
   
   set(KRIPKE_ARCH "CUDA")
 
@@ -247,7 +247,7 @@ if(ENABLE_HIP)
 
   set(KRIPKE_USE_HIP 1)
     
-  list(APPEND KRIPKE_DEPENDS hip)
+  list(APPEND KRIPKE_DEPENDS blt::hip)
   
   set(KRIPKE_ARCH "HIP")
 
@@ -300,7 +300,7 @@ message(STATUS "Caliper support is ${KRIPKE_USE_CALIPER}")
 
 if(ENABLE_MPI)
 	set(KRIPKE_USE_MPI 1)	
-	list(APPEND KRIPKE_DEPENDS mpi)
+	list(APPEND KRIPKE_DEPENDS blt::mpi)
 endif()
 
 if(ENABLE_MPI_WRAPPER)
