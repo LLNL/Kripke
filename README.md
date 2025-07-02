@@ -88,13 +88,13 @@ Basic requirements:
 
 Submodule dependencies:
 
-*  [BLT](https://github.com/LLNL/blt) v0.5.3: a CMake based build system (required)
+*  [BLT](https://github.com/LLNL/blt) v0.7.0: a CMake based build system (required)
 
-*  [RAJA](https://github.com/LLNL/RAJA) v2023.06.1: a loop abstraction library (required)
+*  [RAJA](https://github.com/LLNL/RAJA) v2025.03.2: a loop abstraction library (required)
 
-*  [CHAI](https://github.com/LLNL/CHAI) v2023.06.0: a copy hiding abstraction for moving data between memory spaces (optional)
+*  [CHAI](https://github.com/LLNL/CHAI) v2025.03.1: a copy hiding abstraction for moving data between memory spaces (optional)
 
-*  [Umpire](https://github.com/LLNL/Umpire) v2023.06.0: a memory management abstraction (required if using CHAI)
+*  [Umpire](https://github.com/LLNL/Umpire) v2025.03.0: a memory management abstraction (required if using CHAI)
 
 *  [Cub](https://github.com/NVlabs/cub.git): algorithm primitives library for CUDA (required by RAJA if using CUDA)
 
@@ -151,15 +151,11 @@ The easiest way to get Kripke running, is to directly invoke CMake and take what
 
 There are a number of cache init files for LLNL machines and operating systems.  
 These might not meet your needs, but can be a very good starting point for developing your own.
-The current list of cache init files (located in the ./host-configs/ directory) are:
+A useful subset of the cache init files (located in the ./host-configs/ directory) are:
 
-*  llnl-bgqos-clang.cmake
-
-*  llnl-toss3-clang4.cmake
+*  llnl-toss3-clang8.cmake
 
 *  llnl-toss3-intel18.cmake
-
-*  llnl-toss3-gcc7.1.cmake
 
 *  llnl-toss3-gcc8.1.cmake
 
@@ -167,9 +163,11 @@ The current list of cache init files (located in the ./host-configs/ directory) 
 
 *  llnl-blueos-V100-nvcc-clang.cmake
 
-*  llnl-toss4-MI250X-rocm5-vernal.cmake
+*  llnl-toss4-MI250X-rocm6-vernal.cmake
 
-*  llnl-toss4-intel22.cmake
+*  llnl-toss4-MI300A-rocm6-adams.cmake
+
+*  llnl-toss4-intel24.cmake
 
 Running Kripke
 ==============
