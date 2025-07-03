@@ -45,18 +45,18 @@ for i in `cat files2change`
 do
     echo $i
     cp $i $i.sed.bak
-    sed "s/Copyright (c) 2014-22/Copyright (c) 2014-23/" $i.sed.bak > $i
+    sed "s/Copyright (c) 2014-23/Copyright (c) 2014-25/" $i.sed.bak > $i
 done
 
 echo LICENSE
 cp LICENSE LICENSE.sed.bak
-sed "s/Copyright (c) 2014-2022/Copyright (c) 2014-2023/" LICENSE.sed.bak > LICENSE
+sed "s/Copyright (c) 2014-2023/Copyright (c) 2014-2025/" LICENSE.sed.bak > LICENSE
 
 for i in README.md RELEASE 
 do 
     echo $i
     cp $i $i.sed.bak
-    sed "s/2014-22/2014-23/" $i.sed.bak > $i
+    sed "s/2014-23/2014-25/" $i.sed.bak > $i
 done
 
 #=============================================================================
