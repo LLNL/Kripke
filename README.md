@@ -289,7 +289,7 @@ Links
 Release
 =======
 
-Copyright (c) 2014-23, Lawrence Livermore National Security, LLC.
+Copyright (c) 2014-25, Lawrence Livermore National Security, LLC.
 
 Produced at the Lawrence Livermore National Laboratory.
 
