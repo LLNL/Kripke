@@ -332,7 +332,7 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_DGZ>>{
 
   using ExecPolicy =
     KernelPolicy<
-      HipKernel<
+      HipKernelAsync<
         For<0, hip_thread_z_loop, // direction
           For<1, hip_thread_y_loop, // group
             For<2, hip_threadblock_x_direct, // zone, in blocks of 32 zones
@@ -350,7 +350,7 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_DZG>>{
 
   using ExecPolicy =
     KernelPolicy<
-      HipKernel<
+      HipKernelAsync<
             For<0, hip_thread_z_loop, // direction
               For<2, hip_threadblock_y_direct, // zone, in blocks of 32 zones
                 For<1, hip_thread_x_loop, // group
@@ -369,7 +369,7 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_GDZ>>{
 
   using ExecPolicy =
     KernelPolicy<
-      HipKernel<
+      HipKernelAsync<
         For<1, hip_thread_z_loop, // group
           For<0, hip_thread_y_loop, // direction
             For<2, hip_threadblock_x_direct, // zone, in blocks of 32 zones
@@ -389,7 +389,7 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_GZD>>{
 
   using ExecPolicy =
     KernelPolicy<
-      HipKernel<
+      HipKernelAsync<
         For<1, hip_thread_z_loop, // group
           For<2, hip_threadblock_y_direct, // zone, in blocks of 32 zones
             For<0, hip_thread_x_loop, // direction
@@ -408,7 +408,7 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_ZDG>>{
 
   using ExecPolicy =
     KernelPolicy<
-      HipKernel<
+      HipKernelAsync<
         For<2, hip_threadblock_z_direct, // zone, in blocks of 32 zones
           For<0, hip_thread_y_loop, // direction
             For<1, hip_thread_x_loop, // group
@@ -426,7 +426,7 @@ struct Policy_Population<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>>{
 
   using ExecPolicy =
     KernelPolicy<
-      HipKernel<
+      HipKernelAsync<
         For<2, hip_threadblock_z_direct, // zone, in blocks of 32 zones
           For<1, hip_thread_y_loop, // group
             For<0, hip_thread_x_loop, // direction
