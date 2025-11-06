@@ -64,7 +64,8 @@ struct LTimesSdom {
 
         }
     );
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
+    hipDeviceSynchronize();
     cali_end_region("ltimes_kernel");
 
 
