@@ -244,8 +244,8 @@ struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>> {
     using ExecPolicy =
       KernelPolicy<
         RAJA::statement::CudaKernelFixedAsync<256,
-          For<2, RAJA::cuda_global_size_z_direct<8>, // group
-            For<0, RAJA::cuda_global_size_y_direct<8>, // moment
+          For<2, RAJA::cuda_global_size_z_direct<2>, // group
+            For<0, RAJA::cuda_global_size_y_direct<4>, // moment
               For<1, RAJA::cuda_global_size_x_direct<32>, // direction
                 For<3, seq_exec, // zone
                   Lambda<0>
