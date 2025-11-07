@@ -350,22 +350,41 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_DZG>> {
       >;
 };
 
+// template<>
+// struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_GDZ>> {
+//     using ExecPolicy =
+//       KernelPolicy<
+//         HipKernel<
+//           For<2, hip_block_x_loop, // group
+//             For<0, hip_block_y_loop, // moment
+//               For<1, hip_thread_x_loop, // direction
+//                 For<3, seq_exec, // zone
+//                   Lambda<0>
+//                 >
+//               >
+//             >
+//           >
+//         >
+//       >;
+// };
+
+
 template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_GDZ>> {
     using ExecPolicy =
-      KernelPolicy<
-        HipKernel<
-          For<2, hip_block_x_loop, // group
-            For<0, hip_block_y_loop, // moment
-              For<1, hip_thread_x_loop, // direction
-                For<3, seq_exec, // zone
-                  Lambda<0>
+        RAJA::KernelPolicy<
+          RAJA::statement::HipKernelFixedAsync<256,
+            RAJA::statement::For<2, RAJA::hip_global_size_z_direct<2>,     //g
+              RAJA::statement::For<0, RAJA::hip_global_size_y_direct<4>,   //m
+                RAJA::statement::For<1, RAJA::hip_global_size_x_direct<32>, //d
+                  RAJA::statement::For<3, RAJA::seq_exec,          //z
+                    RAJA::statement::Lambda<0>
+                  >
                 >
               >
             >
           >
-        >
-      >;
+        >;
 };
 
 template<>
