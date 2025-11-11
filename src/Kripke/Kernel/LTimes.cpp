@@ -64,11 +64,12 @@ struct LTimesSdom {
 
         }
     );
-    //cudaDeviceSynchronize();
-    hipDeviceSynchronize();
+    #ifdef KRIPKE_USE_HIP
+      hipDeviceSynchronize();
+    #elif defined(KRIPKE_USE_CUDA)
+      cudaDeviceSynchronize();
+    #endif
     cali_end_region("ltimes_kernel");
-
-
   }
 
 };
