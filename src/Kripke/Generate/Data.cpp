@@ -63,9 +63,12 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
   Set const &zonei_set = data_store.getVariable<Set>("Set/ZoneI");
   Set const &zonej_set = data_store.getVariable<Set>("Set/ZoneJ");
   Set const &zonek_set = data_store.getVariable<Set>("Set/ZoneK");
-  Set const &iplane_set = data_store.newVariable<ProductSet<4>>("Set/IPlane", pspace, SPACE_PQR, dir_set, group_set, zonej_set, zonek_set);
-  Set const &jplane_set = data_store.newVariable<ProductSet<4>>("Set/JPlane", pspace, SPACE_PQR, dir_set, group_set, zonei_set, zonek_set);
-  Set const &kplane_set = data_store.newVariable<ProductSet<4>>("Set/KPlane", pspace, SPACE_PQR, dir_set, group_set, zonei_set, zonej_set);
+  // Set const &iplane_set = data_store.newVariable<ProductSet<4>>("Set/IPlane", pspace, SPACE_PQR, dir_set, group_set, zonej_set, zonek_set);
+  // Set const &jplane_set = data_store.newVariable<ProductSet<4>>("Set/JPlane", pspace, SPACE_PQR, dir_set, group_set, zonei_set, zonek_set);
+  // Set const &kplane_set = data_store.newVariable<ProductSet<4>>("Set/KPlane", pspace, SPACE_PQR, dir_set, group_set, zonei_set, zonej_set);
+  Set const &iplane_set = data_store.newVariable<ProductSet<4>>("Set/IPlane", pspace, SPACE_PQR, zonej_set, zonek_set, group_set, dir_set);
+  Set const &jplane_set = data_store.newVariable<ProductSet<4>>("Set/JPlane", pspace, SPACE_PQR,  zonei_set, zonek_set, group_set, dir_set);
+  Set const &kplane_set = data_store.newVariable<ProductSet<4>>("Set/KPlane", pspace, SPACE_PQR, zonei_set, zonej_set, group_set, dir_set);
   createField<Field_IPlane>(data_store, "i_plane", al_v, iplane_set);
   createField<Field_JPlane>(data_store, "j_plane", al_v, jplane_set);
   createField<Field_KPlane>(data_store, "k_plane", al_v, kplane_set);
