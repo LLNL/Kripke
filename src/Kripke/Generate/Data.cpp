@@ -30,8 +30,10 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
   Set const &dir_set   = data_store.getVariable<Set>("Set/Direction");
   Set const &group_set = data_store.getVariable<Set>("Set/Group");
   Set const &zone_set  = data_store.getVariable<Set>("Set/Zone");
+  // ProductSet<3> *flux_set = new ProductSet<3>(pspace, SPACE_PQR,
+  //     dir_set, group_set, zone_set);
   ProductSet<3> *flux_set = new ProductSet<3>(pspace, SPACE_PQR,
-      dir_set, group_set, zone_set);
+    zone_set, group_set, dir_set);
 
   data_store.addVariable("Set/Flux", flux_set);
 
@@ -44,8 +46,10 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
 
   // Create a set to span moments of the angular flux
   Set const &moment_set   = data_store.getVariable<Set>("Set/Moment");
+  // ProductSet<3> *fluxmoment_set = new ProductSet<3>(pspace, SPACE_PR,
+  //       moment_set, group_set, zone_set);
   ProductSet<3> *fluxmoment_set = new ProductSet<3>(pspace, SPACE_PR,
-        moment_set, group_set, zone_set);
+      zone_set, group_set, moment_set);
 
   data_store.addVariable("Set/FluxMoment", fluxmoment_set);
 

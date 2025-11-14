@@ -293,14 +293,32 @@ struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>> {
       >;
 };
 
+// template<>
+// struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>> {
+//     using ExecPolicy =
+//       KernelPolicy<
+//         CudaKernel<
+//           For<3, cuda_block_x_loop, // zone
+//             For<2, cuda_block_y_loop, // group
+//               For<0, cuda_thread_x_loop, // moment
+//                 For<1, seq_exec, // direction
+//                   Lambda<0>
+//                 >
+//               >
+//             >
+//           >
+//         >
+//       >;
+// };
+
 template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>> {
     using ExecPolicy =
       KernelPolicy<
-        CudaKernel<
-          For<3, cuda_block_x_loop, // zone
-            For<2, cuda_block_y_loop, // group
-              For<0, cuda_thread_x_loop, // moment
+        RAJA::statement::CudaKernelFixedAsync<256,
+          For<3, RAJA::cuda_global_size_z_direct<2>, // zone
+            For<2, RAJA::cuda_global_size_y_direct<4>, // group
+              For<0, RAJA::cuda_global_size_x_direct<32>, // moment
                 For<1, seq_exec, // direction
                   Lambda<0>
                 >
@@ -310,6 +328,7 @@ struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>> {
         >
       >;
 };
+
 #endif // KRIPKE_USE_CUDA
 
 
@@ -423,14 +442,33 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_ZDG>> {
       >;
 };
 
+// template<>
+// struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>> {
+//     using ExecPolicy =
+//       KernelPolicy<
+//         HipKernel<
+//           For<3, hip_block_x_loop, // zone
+//             For<2, hip_block_y_loop, // group
+//               For<0, hip_thread_x_loop, // moment
+//                 For<1, seq_exec, // direction
+//                   Lambda<0>
+//                 >
+//               >
+//             >
+//           >
+//         >
+//       >;
+// };
+
+
 template<>
 struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>> {
     using ExecPolicy =
       KernelPolicy<
-        HipKernel<
-          For<3, hip_block_x_loop, // zone
-            For<2, hip_block_y_loop, // group
-              For<0, hip_thread_x_loop, // moment
+        RAJA::statement::HipKernelFixedAsync<256,
+          For<3, RAJA::hip_global_size_z_direct<2>, // zone
+            For<2, RAJA::hip_global_size_y_direct<4>, // group
+              For<0, RAJA::hip_global_size_x_direct<32>, // moment
                 For<1, seq_exec, // direction
                   Lambda<0>
                 >
@@ -440,6 +478,7 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>> {
         >
       >;
 };
+
 #endif // KRIPKE_USE_HIP
 }
 }
