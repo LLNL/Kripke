@@ -69,6 +69,7 @@ struct LTimesSdom {
     #elif defined(KRIPKE_USE_CUDA)
       cudaDeviceSynchronize();
     #endif
+    MPI_Barrier(MPI_COMM_WORLD);
     cali_end_region("ltimes_kernel");
   }
 
