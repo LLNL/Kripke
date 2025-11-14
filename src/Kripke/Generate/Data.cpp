@@ -30,10 +30,8 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
   Set const &dir_set   = data_store.getVariable<Set>("Set/Direction");
   Set const &group_set = data_store.getVariable<Set>("Set/Group");
   Set const &zone_set  = data_store.getVariable<Set>("Set/Zone");
-  // ProductSet<3> *flux_set = new ProductSet<3>(pspace, SPACE_PQR,
-  //     dir_set, group_set, zone_set);
   ProductSet<3> *flux_set = new ProductSet<3>(pspace, SPACE_PQR,
-    zone_set, group_set, dir_set);
+      dir_set, group_set, zone_set);
 
   data_store.addVariable("Set/Flux", flux_set);
 
@@ -46,10 +44,8 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
 
   // Create a set to span moments of the angular flux
   Set const &moment_set   = data_store.getVariable<Set>("Set/Moment");
-  // ProductSet<3> *fluxmoment_set = new ProductSet<3>(pspace, SPACE_PR,
-  //       moment_set, group_set, zone_set);
   ProductSet<3> *fluxmoment_set = new ProductSet<3>(pspace, SPACE_PR,
-      zone_set, group_set, moment_set);
+        moment_set, group_set, zone_set);
 
   data_store.addVariable("Set/FluxMoment", fluxmoment_set);
 
@@ -63,12 +59,9 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
   Set const &zonei_set = data_store.getVariable<Set>("Set/ZoneI");
   Set const &zonej_set = data_store.getVariable<Set>("Set/ZoneJ");
   Set const &zonek_set = data_store.getVariable<Set>("Set/ZoneK");
-  // Set const &iplane_set = data_store.newVariable<ProductSet<4>>("Set/IPlane", pspace, SPACE_PQR, dir_set, group_set, zonej_set, zonek_set);
-  // Set const &jplane_set = data_store.newVariable<ProductSet<4>>("Set/JPlane", pspace, SPACE_PQR, dir_set, group_set, zonei_set, zonek_set);
-  // Set const &kplane_set = data_store.newVariable<ProductSet<4>>("Set/KPlane", pspace, SPACE_PQR, dir_set, group_set, zonei_set, zonej_set);
-  Set const &iplane_set = data_store.newVariable<ProductSet<4>>("Set/IPlane", pspace, SPACE_PQR, zonej_set, zonek_set, group_set, dir_set);
-  Set const &jplane_set = data_store.newVariable<ProductSet<4>>("Set/JPlane", pspace, SPACE_PQR,  zonei_set, zonek_set, group_set, dir_set);
-  Set const &kplane_set = data_store.newVariable<ProductSet<4>>("Set/KPlane", pspace, SPACE_PQR, zonei_set, zonej_set, group_set, dir_set);
+  Set const &iplane_set = data_store.newVariable<ProductSet<4>>("Set/IPlane", pspace, SPACE_PQR, dir_set, group_set, zonej_set, zonek_set);
+  Set const &jplane_set = data_store.newVariable<ProductSet<4>>("Set/JPlane", pspace, SPACE_PQR, dir_set, group_set, zonei_set, zonek_set);
+  Set const &kplane_set = data_store.newVariable<ProductSet<4>>("Set/KPlane", pspace, SPACE_PQR, dir_set, group_set, zonei_set, zonej_set);
   createField<Field_IPlane>(data_store, "i_plane", al_v, iplane_set);
   createField<Field_JPlane>(data_store, "j_plane", al_v, jplane_set);
   createField<Field_KPlane>(data_store, "k_plane", al_v, kplane_set);
@@ -110,7 +103,3 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
 
 
 }
-
-
-
-
