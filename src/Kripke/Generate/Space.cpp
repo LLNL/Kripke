@@ -187,7 +187,7 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
 
   // number of subsamples per spatial dimension
   int num_subsamples = input_vars.num_material_subsamples;
-  std::cout << "test121212 " << num_subsamples << std::endl;
+  //std::cout << "test121212 " << num_subsamples << std::endl;
   double sample_vol_frac = 1.0 / (double)(num_subsamples*num_subsamples*num_subsamples);
 
   auto sdom_list = set_zone.getWorkList();

@@ -51,7 +51,6 @@ struct LTimesSdom {
     auto ell = sdom_al.getView(field_ell);
 
     // Compute:  phi =  ell * psi
-    cali_begin_region("ltimes_kernel");
     RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Moment>(0, num_moments),
@@ -64,13 +63,7 @@ struct LTimesSdom {
 
         }
     );
-    #ifdef KRIPKE_USE_HIP
-      hipDeviceSynchronize();
-    #elif defined(KRIPKE_USE_CUDA)
-      cudaDeviceSynchronize();
-    #endif
-    MPI_Barrier(MPI_COMM_WORLD);
-    cali_end_region("ltimes_kernel");
+
   }
 
 };
@@ -98,15 +91,25 @@ void Kripke::Kernel::LTimes(Kripke::Core::DataStore &data_store)
   auto &field_ell =       data_store.getVariable<Field_Ell>("ell");
 
   // Loop over Subdomains
+  int i = 0;
   for (Kripke::SdomId sdom_id : field_psi.getWorkList()){
-
+    std::string region_name = "ltimes_kernel_" + std::to_string(i);
+    cali_begin_region(region_name.c_str());
 
     Kripke::dispatch(al_v, LTimesSdom{}, sdom_id,
                      set_dir, set_group, set_zone, set_moment,
                      field_psi, field_phi, field_ell);
 
-
+    #ifdef KRIPKE_USE_HIP
+      hipDeviceSynchronize();
+    #elif defined(KRIPKE_USE_CUDA)
+      cudaDeviceSynchronize();
+    #endif
+    MPI_Barrier(MPI_COMM_WORLD);
+    cali_end_region(region_name.c_str());
+    i = i + 1;
   }
+
 
 }
 
