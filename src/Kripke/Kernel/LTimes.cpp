@@ -45,11 +45,16 @@ struct LTimesSdom {
     int num_moments =    set_moment.size(sdom_id);
     int num_zones =      set_zone.size(sdom_id);
 
+    std::cout << "d=" << num_directions << " g=" << num_groups << " m=" << num_moments << " z=" << num_zones << std::endl;
+
     // Get pointers
     auto psi = sdom_al.getView(field_psi);
     auto phi = sdom_al.getView(field_phi);
     auto ell = sdom_al.getView(field_ell);
 
+    std::cout << "psi=" << psi.size() << " phi=" << phi.size() << " ell=" << ell.size() << std::endl;
+
+    cali_begin_region("ltimessdom_kernel");
     // Compute:  phi =  ell * psi
     RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
@@ -63,6 +68,13 @@ struct LTimesSdom {
 
         }
     );
+    #ifdef KRIPKE_USE_HIP
+      hipDeviceSynchronize();
+    #elif defined(KRIPKE_USE_CUDA)
+      cudaDeviceSynchronize();
+    #endif
+    MPI_Barrier(MPI_COMM_WORLD);
+    cali_end_region("ltimessdom_kernel");
 
   }
 
