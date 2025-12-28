@@ -21,11 +21,11 @@ DataStore::DataStore(int dev_pool_size){
 #ifdef KRIPKE_USE_CHAI
   auto &rm = umpire::ResourceManager::getInstance();
   const char * allocator_name = "KRIPKE_DEVICE_POOL";
-  size_t umpire_dev_pool_size = ((size_t) vars.dev_pool_size) * 1024 * 1024 * 1024;
+  size_t umpire_dev_pool_size = ((size_t) dev_pool_size) * 1024 * 1024 * 1024;
   size_t umpire_dev_block_size = 512;
   auto dev_pool_allocator = rm.makeAllocator<umpire::strategy::QuickPool>(allocator_name, rm.getAllocator("DEVICE"), umpire_dev_pool_size, umpire_dev_block_size);
   auto chai_resource_manager = chai::ArrayManager::getInstance();
-  chai_resource_manager.setAllocator(chai::GPU, dev_pool_allocator);
+  chai_resource_manager->setAllocator(chai::GPU, dev_pool_allocator);
 #endif // KRIPKE_USE_CHAI
 }
 
