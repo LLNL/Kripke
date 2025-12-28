@@ -45,7 +45,7 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
   // Loop over iterations
   double part_last = 0.0;
 
-  CALI_MARK_BEGIN("solve-0")
+  CALI_MARK_BEGIN("solve-0");
   {
     // Discrete to Moments transformation (phi = L*psi)
     Kripke::Kernel::kConst(data_store.getVariable<Field_Moments>("phi"), 0.0);
@@ -82,7 +82,7 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
     }
     part_last = part;
   }
-  CALI_MARK_END("solve-0")
+  CALI_MARK_END("solve-0");
 
 #ifdef KRIPKE_USE_CALIPER
   CALI_CXX_MARK_LOOP_BEGIN(mainloop_annotation, "solve");
