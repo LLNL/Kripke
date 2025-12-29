@@ -10,6 +10,8 @@
 
 #ifdef KRIPKE_USE_CHAI
 #define DEBUG
+#include <umpire/Umpire.hpp>
+#include <umpire/strategy/QuickPool.hpp>
 #include <chai/ManagedArray.hpp>
 #undef DEBUG
 #endif
