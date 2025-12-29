@@ -390,7 +390,7 @@ int main(int argc, char **argv) {
       vars.al_v.layout_v = Kripke::stringToLayout(cmd.pop());     
     }
     else if(opt == "--dev_pool_size"){
-      vars.dev_pool_size = std::atoi(cmd.pop());     
+      vars.dev_pool_size = std::atoi(cmd.pop().c_str());     
     }
     else{
       printf("Unknwon options %s\n", opt.c_str());
