@@ -14,10 +14,6 @@
 
 #include<utility>
 
-#ifdef KRIPKE_USE_CALIPER
-#include <caliper/cali.h>
-#endif
-
 using namespace Kripke;
 using namespace Kripke::Core;
 
@@ -49,15 +45,12 @@ struct LTimesSdom {
     int num_moments =    set_moment.size(sdom_id);
     int num_zones =      set_zone.size(sdom_id);
 
-    CALI_MARK_BEGIN("LTimes-fieldView");
     // Get pointers
     auto psi = sdom_al.getView(field_psi);
     auto phi = sdom_al.getView(field_phi);
     auto ell = sdom_al.getView(field_ell);
-    CALI_MARK_END("LTimes-fieldView");
 
     // Compute:  phi =  ell * psi
-    CALI_MARK_BEGIN("LTimes-kernel");
     RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Moment>(0, num_moments),
@@ -70,7 +63,6 @@ struct LTimesSdom {
 
         }
     );
-    CALI_MARK_END("LTimes-kernel");
 
 
   }
@@ -95,11 +87,9 @@ void Kripke::Kernel::LTimes(Kripke::Core::DataStore &data_store)
   Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
   Set const &set_moment = data_store.getVariable<Set>("Set/Moment");
 
-  CALI_MARK_BEGIN("LTimes-getFields");
   auto &field_psi =       data_store.getVariable<Field_Flux>("psi");
   auto &field_phi =       data_store.getVariable<Field_Moments>("phi");
   auto &field_ell =       data_store.getVariable<Field_Ell>("ell");
-  CALI_MARK_END("LTimes-getFields");
 
   // Loop over Subdomains
   for (Kripke::SdomId sdom_id : field_psi.getWorkList()){

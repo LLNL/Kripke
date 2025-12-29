@@ -13,10 +13,6 @@
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
-#ifdef KRIPKE_USE_CALIPER
-#include <caliper/cali.h>
-#endif
-
 using namespace Kripke;
 using namespace Kripke::Core;
 
@@ -46,15 +42,12 @@ struct PopulationSdom {
     int num_groups =     set_group.size(sdom_id);
     int num_zones =      set_zone.size(sdom_id);
 
-    CALI_MARK_BEGIN("Population-fieldView");
     auto psi    = sdom_al.getView(field_psi);
     auto w      = sdom_al.getView(field_w);
     auto volume = sdom_al.getView(field_volume);
-    CALI_MARK_END("Population-fieldView");
     
     RAJA::ReduceSum<ReducePolicy, double> part_red(0.0);
 
-    CALI_MARK_BEGIN("Population-kernel");
     RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Direction>(0, num_directions),
@@ -68,7 +61,6 @@ struct PopulationSdom {
     );
 
     *part_ptr += (double)part_red;
-    CALI_MARK_END("Population-kernel");
   }
 
 };
@@ -89,11 +81,9 @@ double Kripke::Kernel::population(Kripke::Core::DataStore &data_store)
   Set const &set_group  = data_store.getVariable<Set>("Set/Group");
   Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
 
-  CALI_MARK_BEGIN("Population-getFields");
   auto &field_psi =       data_store.getVariable<Field_Flux>("psi");
   auto &field_w =         data_store.getVariable<Field_Direction2Double>("quadrature/w");
   auto &field_volume =    data_store.getVariable<Field_Zone2Double>("volume");
-  CALI_MARK_END("Population-getFields");
 
   // sum up particles for psi and rhs
   double part = 0.0;

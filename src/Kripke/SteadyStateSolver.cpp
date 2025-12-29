@@ -44,50 +44,10 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
 
   // Loop over iterations
   double part_last = 0.0;
-
-  CALI_MARK_BEGIN("solve-0");
-  {
-    // Discrete to Moments transformation (phi = L*psi)
-    Kripke::Kernel::kConst(data_store.getVariable<Field_Moments>("phi"), 0.0);
-    Kripke::Kernel::LTimes(data_store);
-    // Compute Scattering Source Term (phi_out = S*phi)
-    Kripke::Kernel::kConst(data_store.getVariable<Kripke::Field_Moments>("phi_out"), 0.0);
-    Kripke::Kernel::scattering(data_store);
-    // Compute External Source Term (phi_out = phi_out + Q)
-    Kripke::Kernel::source(data_store);
-    // Moments to Discrete transformation (rhs = LPlus*phi_out)
-    Kripke::Kernel::kConst(data_store.getVariable<Kripke::Field_Flux>("rhs"), 0.0);
-    Kripke::Kernel::LPlusTimes(data_store);
-    /*
-     * Sweep (psi = Hinv*rhs)
-     */
-    {
-      // Create a list of all groups
-      int num_subdomains = pspace.getNumSubdomains(SPACE_PQR);
-      std::vector<SdomId> sdom_list(num_subdomains);
-      for(SdomId i{0};i < num_subdomains;++ i){
-        sdom_list[*i] = i;
-      }
-
-      // Sweep everything
-      Kripke::SweepSolver(data_store, sdom_list, block_jacobi);
-    }
-    /*
-     * Population edit and convergence test
-     */
-    double part = Kripke::Kernel::population(data_store);
-    if(comm.rank() == 0){
-      printf("  iter %d: particle count=%e, change=%e\n", 0, part, (part-part_last)/part);
-      fflush(stdout);
-    }
-    part_last = part;
-  }
-  CALI_MARK_END("solve-0");
-
 #ifdef KRIPKE_USE_CALIPER
   CALI_CXX_MARK_LOOP_BEGIN(mainloop_annotation, "solve");
 #endif
-  for(size_t iter = 1;iter < max_iter;++ iter){
+  for(size_t iter = 0;iter < max_iter;++ iter){
 #ifdef KRIPKE_USE_CALIPER
     CALI_CXX_MARK_LOOP_ITERATION(mainloop_annotation, static_cast<int>(iter));
 #endif

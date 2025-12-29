@@ -12,10 +12,6 @@
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
-#ifdef KRIPKE_USE_CALIPER
-#include <caliper/cali.h>
-#endif
-
 using namespace Kripke;
 using namespace Kripke::Core;
 
@@ -51,18 +47,15 @@ struct SourceSdom {
 
     auto phi_out = sdom_al.getView(field_phi_out);
 
-    CALI_MARK_BEGIN("Source-fieldView");
     auto mixelem_to_zone     = sdom_al.getView(field_mixed_to_zone);
     auto mixelem_to_material = sdom_al.getView(field_mixed_to_material);
     auto mixelem_to_fraction = sdom_al.getView(field_mixed_to_fraction);
-    CALI_MARK_END("Source-fieldView");
 
     int num_mixed  = set_mixelem.size(sdom_id);
     int num_groups = set_group.size(sdom_id);
 
 
     // Compute:  phi_out = phi_out + source * fraction
-    CALI_MARK_BEGIN("Source-kernel");
     RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Group>(0, num_groups),
@@ -80,7 +73,6 @@ struct SourceSdom {
 
         }
     );
-    CALI_MARK_END("Source-kernel");
 
   }
 };
@@ -97,13 +89,11 @@ void Kripke::Kernel::source(DataStore &data_store)
   auto &set_group   = data_store.getVariable<Set>("Set/Group");
   auto &set_mixelem = data_store.getVariable<Set>("Set/MixElem");
 
-  CALI_MARK_BEGIN("Source-getFields");
   auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
 
   auto &field_mixed_to_zone     = data_store.getVariable<Field_MixElem2Zone>("mixelem_to_zone");
   auto &field_mixed_to_material = data_store.getVariable<Field_MixElem2Material>("mixelem_to_material");
   auto &field_mixed_to_fraction = data_store.getVariable<Field_MixElem2Double>("mixelem_to_fraction");
-  CALI_MARK_END("Source-getFields");
 
   double source_strength = 1.0;
 
