@@ -12,6 +12,10 @@
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
+#ifdef KRIPKE_USE_CALIPER
+#include <caliper/cali.h>
+#endif
+
 using namespace Kripke;
 using namespace Kripke::Core;
 
@@ -37,6 +41,7 @@ struct SweepSdom {
     int local_jmax = data_store.getVariable<Set>("Set/ZoneJ").size(sdom_id);
     int local_kmax = data_store.getVariable<Set>("Set/ZoneK").size(sdom_id);
 
+    CALI_MARK_BEGIN("SweepSubdomain-getFields");
     auto xcos = sdom_al.getView(data_store.getVariable<Field_Direction2Double>("quadrature/xcos"));
     auto ycos = sdom_al.getView(data_store.getVariable<Field_Direction2Double>("quadrature/ycos"));
     auto zcos = sdom_al.getView(data_store.getVariable<Field_Direction2Double>("quadrature/zcos"));
@@ -55,6 +60,7 @@ struct SweepSdom {
     auto psi_lf = sdom_al.getView(data_store.getVariable<Field_IPlane>("i_plane"));
     auto psi_fr = sdom_al.getView(data_store.getVariable<Field_JPlane>("j_plane"));
     auto psi_bo = sdom_al.getView(data_store.getVariable<Field_KPlane>("k_plane"));
+    CALI_MARK_END("SweepSubdomain-getFields");
 
     // Assumption: all directions in this sdom have same mesh traversal
 
@@ -73,6 +79,7 @@ struct SweepSdom {
 
     auto zone_layout = data_store.getVariable<ProductSet<3>>("Set/Zone").getLayout(sdom_id);
 
+    CALI_MARK_BEGIN("SweepSubdomain-kernel");
     RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Direction>(0, num_directions),
@@ -107,6 +114,7 @@ struct SweepSdom {
 
         }
     );
+    CALI_MARK_END("SweepSubdomain-kernel");
   }
 };
 

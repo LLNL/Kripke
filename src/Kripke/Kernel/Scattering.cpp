@@ -13,6 +13,10 @@
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
+#ifdef KRIPKE_USE_CALIPER
+#include <caliper/cali.h>
+#endif
+
 using namespace Kripke;
 using namespace Kripke::Core;
 
@@ -55,6 +59,7 @@ struct ScatteringSdom {
     // get material mix information
     auto moment_to_legendre = sdom_al.getView(field_moment_to_legendre);
 
+    CALI_MARK_BEGIN("Scattering-fieldView");
     auto phi     = sdom_al.getView(field_phi);
     auto phi_out = sdom_al.getView(field_phi_out, sdom_dst);
     auto sigs    = sdom_al.getView(field_sigs);
@@ -63,6 +68,7 @@ struct ScatteringSdom {
     auto zone_to_num_mixelem = sdom_al.getView(field_zone_to_num_mixelem);
     auto mixelem_to_material = sdom_al.getView(field_mixelem_to_material);
     auto mixelem_to_fraction = sdom_al.getView(field_mixelem_to_fraction);
+    CALI_MARK_END("Scattering-fieldView");
     
     // grab dimensions
     int num_zones =      set_zone.size(sdom_src);
@@ -70,6 +76,7 @@ struct ScatteringSdom {
     int num_groups_dst = set_group.size(sdom_dst);
     int num_moments =    set_moment.size(sdom_dst);
 
+    CALI_MARK_BEGIN("Scattering-kernel");
     RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Moment>(0, num_moments),
@@ -97,6 +104,7 @@ struct ScatteringSdom {
             phi_out(nm, g, z) += sigs_z * phi(nm, gp, z);
         }
     );
+    CALI_MARK_END("Scattering-kernel");
   }
 
 };
@@ -121,6 +129,7 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
   auto &set_moment = data_store.getVariable<Kripke::Core::Set>("Set/Moment");
   auto &set_zone   = data_store.getVariable<Kripke::Core::Set>("Set/Zone");
 
+  CALI_MARK_BEGIN("Scattering-getFields");
   auto &field_phi     = data_store.getVariable<Kripke::Field_Moments>("phi");
   auto &field_phi_out = data_store.getVariable<Kripke::Field_Moments>("phi_out");
   auto &field_sigs    = data_store.getVariable<Field_SigmaS>("data/sigs");
@@ -131,6 +140,7 @@ void Kripke::Kernel::scattering(Kripke::Core::DataStore &data_store)
   auto &field_mixed_to_fraction = data_store.getVariable<Field_MixElem2Double>("mixelem_to_fraction");
 
   auto &field_moment_to_legendre = data_store.getVariable<Field_Moment2Legendre>("moment_to_legendre");
+  CALI_MARK_END("Scattering-getFields");
 
 
   // Loop over subdomains and compute scattering source

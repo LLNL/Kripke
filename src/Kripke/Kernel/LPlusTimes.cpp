@@ -11,6 +11,10 @@
 #include <Kripke/Timing.h>
 #include <Kripke/VarTypes.h>
 
+#ifdef KRIPKE_USE_CALIPER
+#include <caliper/cali.h>
+#endif
+
 using namespace Kripke;
 using namespace Kripke::Core;
 
@@ -41,11 +45,14 @@ struct LPlusTimesSdom {
     int num_zones =      set_zone.size(sdom_id);
 
     // Get views
+    CALI_MARK_BEGIN("LPlusTimes-fieldView");
     auto phi_out  = sdom_al.getView(field_phi_out);
     auto rhs      = sdom_al.getView(field_rhs);
     auto ell_plus = sdom_al.getView(field_ell_plus); 
+    CALI_MARK_END("LPlusTimes-fieldView");
 
     // Compute:  rhs =  ell_plus * phi_out
+    CALI_MARK_BEGIN("LPlusTimes-kernel");
     RAJA::kernel<ExecPolicy>(
         camp::make_tuple(
             RAJA::TypedRangeSegment<Direction>(0, num_directions),
@@ -58,6 +65,7 @@ struct LPlusTimesSdom {
 
         }
     );
+    CALI_MARK_END("LPlusTimes-kernel");
   }
 
 };
@@ -74,9 +82,11 @@ void Kripke::Kernel::LPlusTimes(Kripke::Core::DataStore &data_store)
   Set const &set_zone   = data_store.getVariable<Set>("Set/Zone");
   Set const &set_moment = data_store.getVariable<Set>("Set/Moment");
 
+  CALI_MARK_BEGIN("LPlusTimes-getFields");
   auto &field_phi_out =   data_store.getVariable<Field_Moments>("phi_out");
   auto &field_rhs =       data_store.getVariable<Field_Flux>("rhs");
   auto &field_ell_plus =  data_store.getVariable<Field_EllPlus>("ell_plus");
+  CALI_MARK_END("LPlusTimes-getFields");
 
   ArchLayoutV al_v = data_store.getVariable<ArchLayout>("al").al_v;
 
