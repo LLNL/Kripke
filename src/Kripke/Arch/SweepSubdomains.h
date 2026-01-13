@@ -404,7 +404,7 @@ template<>
 struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_DGZ>> {
   using ExecPolicy =
           KernelPolicy<
-            HipKernel<
+            HipKernelAsync<
               For<0, hip_block_x_loop,
                 For<1, hip_block_y_loop,
 
@@ -430,7 +430,7 @@ template<>
 struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_DZG>> {
     using ExecPolicy =
             KernelPolicy<
-              HipKernel<
+              HipKernelAsync<
                 For<0, hip_block_x_loop,
                   For<1, hip_block_y_loop,
 
@@ -456,7 +456,7 @@ template<>
 struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_GDZ>> {
     using ExecPolicy =
             KernelPolicy<
-              HipKernel<
+              HipKernelAsync<
                 For<0, hip_block_x_loop,
                   For<1, hip_block_y_loop,
 
@@ -482,7 +482,7 @@ template<>
 struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_GZD>> {
     using ExecPolicy =
             KernelPolicy<
-              HipKernel<
+              HipKernelAsync<
                 For<0, hip_block_x_loop,
                   For<1, hip_block_y_loop,
 
@@ -508,7 +508,7 @@ template<>
 struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_ZDG>> {
     using ExecPolicy =
             KernelPolicy<
-              HipKernel<
+              HipKernelAsync<
                 For<0, hip_block_x_loop,
                   For<1, hip_block_y_loop,
 
@@ -534,7 +534,7 @@ template<>
 struct Policy_SweepSubdomains<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>> {
     using ExecPolicy =
             KernelPolicy<
-              HipKernel<
+              HipKernelAsync<
                 For<0, hip_block_x_loop,
                   For<1, hip_block_y_loop,
 
