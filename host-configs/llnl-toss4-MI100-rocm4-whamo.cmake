@@ -13,9 +13,9 @@ set(CMAKE_C_COMPILER   "/opt/rocm-4.5.2/llvm/bin/clang" CACHE PATH "")
 set(CMAKE_CXX_COMPILER "/opt/rocm-4.5.2/llvm/bin/clang++" CACHE PATH "")
 
 set(CMAKE_CXX_FLAGS "" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_RELEASE "-std=c++14 -O3 -ffast-math" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-std=c++14 -O3 -g -ffast-math" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_DEBUG "-std=c++14 -O0 -g" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -ffast-math" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g" CACHE STRING "")
 
 set(CMAKE_HIP_ARCHITECTURES "--offload-arch=gfx906,gfx908" CACHE STRING "")
 

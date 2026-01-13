@@ -16,9 +16,9 @@ set(CMAKE_CXX_COMPILER "/usr/tce/packages/cray-mpich/cray-mpich-8.1.29-rocmcc-6.
 #set(CMAKE_CXX_COMPILER "/usr/tce/packages/cray-mpich/cray-mpich-8.1.26-rocmcc-5.6.0-cce-16.0.0a-magic/bin/mpicxx" CACHE PATH "")
 
 set(CMAKE_CXX_FLAGS "" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_RELEASE "-std=c++14 -O3 -ffast-math" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-std=c++14 -O3 -g -ffast-math" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_DEBUG "-std=c++14 -O0 -g" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -ffast-math" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g" CACHE STRING "")
 
 set(ROCM_ROOT_DIR "/opt/rocm-6.0.3" CACHE PATH "")
 set(HIP_ROOT_DIR "/opt/rocm-6.0.3/hip" CACHE PATH "")
