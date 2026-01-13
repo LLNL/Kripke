@@ -33,8 +33,8 @@ if (ENABLE_CHAI)
   set(CHAI_ENABLE_RAJA_PLUGIN On CACHE BOOL "")
 endif ()
 
-# Use C++14 standard
-set(BLT_CXX_STD "c++14" CACHE STRING "")
+# Use C++17 standard
+set(BLT_CXX_STD "c++17" CACHE STRING "")
 
 if (NOT BLT_LOADED)
   if (DEFINED BLT_SOURCE_DIR)
@@ -50,7 +50,7 @@ if (NOT BLT_LOADED)
     endif ()
  endif ()
 
-  set(BLT_CXX_STD "c++14" CACHE STRING "BLT requires C++14")
+  set(BLT_CXX_STD "c++17" CACHE STRING "BLT requires C++17")
   set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
   set(ENABLE_ASTYLE OFF CACHE BOOL "")
   set(ENABLE_CLANGFORMAT OFF CACHE BOOL "")
