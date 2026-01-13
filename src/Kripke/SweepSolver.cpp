@@ -54,9 +54,9 @@ void Kripke::SweepSolver (Kripke::Core::DataStore &data_store, std::vector<SdomI
     std::vector<SdomId> sdom_ready = comm->readySubdomains();
 
     // Run the ready list
-    for (auto i=0; i<sdom_ready.size(); ++i) {
+    for (auto ii = 0; ii < sdom_ready.size(); ++ii) {
     
-      SdomId sdom_id = sdom_ready[0];
+      SdomId sdom_id = sdom_ready[ii];
 
       auto upwind = field_upwind.getView(sdom_id);
 
@@ -80,11 +80,16 @@ void Kripke::SweepSolver (Kripke::Core::DataStore &data_store, std::vector<SdomI
   }
 
 // async execution needs synchronization
-#ifdef KRIPKE_USE_HIP
+#if defined(KRIPKE_USE_CUDA)
+  RAJA::synchronize<RAJA::cuda_synchronize>();
+#elif defined(KRIPKE_USE_HIP)
   RAJA::synchronize<RAJA::hip_synchronize>();
 #endif
 
   delete comm;
+
+//  printf("\nAfter sweep psi:\n");
+//  data_store.getVariable<Field_Flux>("psi").dump();
 
 }
 
