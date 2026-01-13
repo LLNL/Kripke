@@ -215,7 +215,7 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>>{
 
   using ExecPolicy =
     KernelPolicy<
-      CudaKernel<
+      CudaKernelAsync<
         For<0, cuda_thread_z_loop, // direction
           For<1, cuda_thread_y_loop, // group
             For<2, cuda_threadblock_x_direct, // zone, in blocks of 32 zones
@@ -234,7 +234,7 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>>{
 
   using ExecPolicy =
     KernelPolicy<
-      CudaKernel<
+      CudaKernelAsync<
         For<0, cuda_thread_z_loop, // direction
           For<2, cuda_threadblock_y_direct, // zone, in blocks of 32 zones
             For<1, cuda_thread_x_loop, // group
@@ -253,7 +253,7 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>>{
 
   using ExecPolicy =
     KernelPolicy<
-      CudaKernel<
+      CudaKernelAsync<
         For<1, cuda_thread_z_loop, // group
           For<0, cuda_thread_y_loop, // direction
             For<2, cuda_threadblock_x_direct, // zone, in blocks of 32 zones
@@ -273,7 +273,7 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>>{
 
   using ExecPolicy =
     KernelPolicy<
-      CudaKernel<
+      CudaKernelAsync<
         For<1, cuda_thread_z_loop, // group
           For<2, cuda_threadblock_y_direct, // zone, in blocks of 32 zones
             For<0, cuda_thread_x_loop, // direction
@@ -292,7 +292,7 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>>{
 
   using ExecPolicy =
     KernelPolicy<
-      CudaKernel<
+      CudaKernelAsync<
         For<2, cuda_threadblock_z_direct, // zone, in blocks of 32 zones
           For<0, cuda_thread_y_loop, // direction
             For<1, cuda_thread_x_loop, // group
@@ -310,7 +310,7 @@ struct Policy_Population<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>>{
 
   using ExecPolicy =
     KernelPolicy<
-      CudaKernel<
+      CudaKernelAsync<
         For<2, cuda_threadblock_z_direct, // zone, in blocks of 32 zones
           For<1, cuda_thread_y_loop, // group
             For<0, cuda_thread_x_loop, // direction
