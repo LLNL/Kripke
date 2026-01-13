@@ -15,9 +15,9 @@ set(CMAKE_C_COMPILER   "/usr/tce/packages/cray-mpich/cray-mpich-9.0.1-rocmcc-6.4
 set(CMAKE_CXX_COMPILER "/usr/tce/packages/cray-mpich/cray-mpich-9.0.1-rocmcc-6.4.3-cce-20.0.2-magic/bin/mpiamdclang++" CACHE PATH "")
 
 set(CMAKE_CXX_FLAGS "" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_RELEASE "-std=c++17 -O3 -ffast-math" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-std=c++17 -O3 -g -ffast-math" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_DEBUG "-std=c++17 -O0 -g" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -ffast-math" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g" CACHE STRING "")
 
 set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath,/opt/cray/pe/cce/20.0.2/cce/x86_64/lib -L/opt/cray/pe/cce/20.0.2/cce/x86_64/lib" CACHE STRING "")
 
