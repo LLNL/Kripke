@@ -22,7 +22,7 @@ namespace Core {
  */
 class DataStore {
   public:
-    DataStore();
+    DataStore(int dev_pool_size = 4);
     ~DataStore();
     DataStore(DataStore const &) = delete;
     DataStore &operator=(DataStore const &) = delete;

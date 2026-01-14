@@ -389,6 +389,9 @@ int main(int argc, char **argv) {
     else if(opt == "--layout"){
       vars.al_v.layout_v = Kripke::stringToLayout(cmd.pop());     
     }
+    else if(opt == "--dev_pool_size"){
+      vars.dev_pool_size = std::atoi(cmd.pop().c_str());     
+    }
     else{
       printf("Unknwon options %s\n", opt.c_str());
       usage();
@@ -497,7 +500,7 @@ int main(int argc, char **argv) {
 
   // Allocate problem
 
-  Kripke::Core::DataStore data_store;
+  Kripke::Core::DataStore data_store(vars.dev_pool_size);
   Kripke::generateProblem(data_store, vars);
 
   // Run the solver
