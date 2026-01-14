@@ -208,10 +208,10 @@ struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
   using ExecPolicy =
     KernelPolicy<
       CudaKernelAsync<
-        For<2, cuda_block_x_loop, // group
-          For<0, cuda_block_y_loop, // moment
-            For<3, cuda_thread_x_loop, // zone
-              For<1, seq_exec, // direction
+        For<0, cuda_block_x_loop, // moment
+          For<1, cuda_block_y_loop, // direction
+            For<2, cuda_thread_x_loop, // group
+              For<3, seq_exec, // zone
                 Lambda<0>
               >
             >
@@ -226,10 +226,10 @@ struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
     using ExecPolicy =
       KernelPolicy<
         CudaKernelAsync<
-          For<2, cuda_block_x_loop, // group
-            For<0, cuda_block_y_loop, // moment
+          For<0, cuda_block_x_loop, // moment
+            For<1, cuda_block_y_loop, // direction
               For<3, cuda_thread_x_loop, // zone
-                For<1, seq_exec, // direction
+                For<2, seq_exec, // group
                   Lambda<0>
                 >
               >
@@ -246,8 +246,8 @@ struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>> {
         CudaKernelAsync<
           For<2, cuda_block_x_loop, // group
             For<0, cuda_block_y_loop, // moment
-              For<3, cuda_thread_x_loop, // zone
-                For<1, seq_exec, // direction
+              For<1, cuda_thread_x_loop, // direction
+                For<3, seq_exec, // zone
                   Lambda<0>
                 >
               >
@@ -263,8 +263,8 @@ struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>> {
       KernelPolicy<
         CudaKernelAsync<
           For<2, cuda_block_x_loop, // group
-            For<0, cuda_block_y_loop, // moment
-              For<3, cuda_thread_x_loop, // zone
+            For<3, cuda_block_y_loop, // zone
+              For<0, cuda_thread_x_loop, // moment
                 For<1, seq_exec, // direction
                   Lambda<0>
                 >
@@ -280,10 +280,10 @@ struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>> {
     using ExecPolicy =
       KernelPolicy<
         CudaKernelAsync<
-          For<2, cuda_block_x_loop, // group
+          For<3, cuda_block_x_loop, // zone
             For<0, cuda_block_y_loop, // moment
-              For<3, cuda_thread_x_loop, // zone
-                For<1, seq_exec, // direction
+              For<1, cuda_thread_x_loop, // direction
+                For<2, seq_exec, // group
                   Lambda<0>
                 >
               >
@@ -298,9 +298,9 @@ struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>> {
     using ExecPolicy =
       KernelPolicy<
         CudaKernelAsync<
-          For<2, cuda_block_x_loop, // group
-            For<0, cuda_block_y_loop, // moment
-              For<3, cuda_thread_x_loop, // zone
+          For<3, cuda_block_x_loop, // zone
+            For<2, cuda_block_y_loop, // group
+              For<0, cuda_thread_x_loop, // moment
                 For<1, seq_exec, // direction
                   Lambda<0>
                 >
@@ -319,10 +319,10 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_DGZ>> {
   using ExecPolicy =
     KernelPolicy<
       HipKernelAsync<
-        For<2, hip_block_x_loop, // group
-          For<0, hip_block_y_loop, // moment
-            For<3, hip_thread_x_loop, // zone
-              For<1, seq_exec, // direction
+        For<0, hip_block_x_loop, // moment
+          For<1, hip_block_y_loop, // direction
+            For<2, hip_thread_x_loop, // group
+              For<3, seq_exec, // zone
                 Lambda<0>
               >
             >
@@ -337,10 +337,10 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_DZG>> {
     using ExecPolicy =
       KernelPolicy<
         HipKernelAsync<
-          For<2, hip_block_x_loop, // group
-            For<0, hip_block_y_loop, // moment
+          For<0, hip_block_x_loop, // moment
+            For<1, hip_block_y_loop, // direction
               For<3, hip_thread_x_loop, // zone
-                For<1, seq_exec, // direction
+                For<2, seq_exec, // group
                   Lambda<0>
                 >
               >
@@ -357,8 +357,8 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_GDZ>> {
         HipKernelAsync<
           For<2, hip_block_x_loop, // group
             For<0, hip_block_y_loop, // moment
-              For<3, hip_thread_x_loop, // zone
-                For<1, seq_exec, // direction
+              For<1, hip_thread_x_loop, // direction
+                For<3, seq_exec, // zone
                   Lambda<0>
                 >
               >
@@ -374,8 +374,8 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_GZD>> {
       KernelPolicy<
         HipKernelAsync<
           For<2, hip_block_x_loop, // group
-            For<0, hip_block_y_loop, // moment
-              For<3, hip_thread_x_loop, // zone
+            For<3, hip_block_y_loop, // zone
+              For<0, hip_thread_x_loop, // moment
                 For<1, seq_exec, // direction
                   Lambda<0>
                 >
@@ -391,10 +391,10 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_ZDG>> {
     using ExecPolicy =
       KernelPolicy<
         HipKernelAsync<
-          For<2, hip_block_x_loop, // group
+          For<3, hip_block_x_loop, // zone
             For<0, hip_block_y_loop, // moment
-              For<3, hip_thread_x_loop, // zone
-                For<1, seq_exec, // direction
+              For<1, hip_thread_x_loop, // direction
+                For<2, seq_exec, // group
                   Lambda<0>
                 >
               >
@@ -409,9 +409,9 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>> {
     using ExecPolicy =
       KernelPolicy<
         HipKernelAsync<
-          For<2, hip_block_x_loop, // group
-            For<0, hip_block_y_loop, // moment
-              For<3, hip_thread_x_loop, // zone
+          For<3, hip_block_x_loop, // zone
+            For<2, hip_block_y_loop, // group
+              For<0, hip_thread_x_loop, // moment
                 For<1, seq_exec, // direction
                   Lambda<0>
                 >
