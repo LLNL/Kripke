@@ -68,7 +68,7 @@ namespace Core {
 #ifndef KRIPKE_USE_CHAI
           m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
 #else
-          m_chunk_to_data[chunk_id].allocate(sdom_size, chai::CPU,
+          m_chunk_to_data[chunk_id].allocate(sdom_size, chai::GPU,
               [=](const chai::PointerRecord* record, chai::Action action, chai::ExecutionSpace space){
                 /*printf("CHAI[%s, %d]: ", BaseVar::getName().c_str(), (int)chunk_id);
                 switch(action){
@@ -79,7 +79,7 @@ namespace Core {
                 }
 
                 switch(space){
-                case chai::CPU: printf("CPU "); break;
+                case chai::GPU: printf("CPU "); break;
 #ifdef KRIPKE_USE_CUDA
                 case chai::GPU: printf("GPU  "); break;
 #endif
@@ -139,7 +139,7 @@ namespace Core {
         return  m_chunk_to_data[chunk_id];
 #else
         // use pointer conversion to get host pointer
-        ElementType *ptr = m_chunk_to_data[chunk_id].data(chai::CPU);
+        ElementType *ptr = m_chunk_to_data[chunk_id].data(chai::GPU);
 
         // return host pointer
         return(ptr);
