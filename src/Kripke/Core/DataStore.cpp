@@ -28,7 +28,7 @@ DataStore::DataStore(int dev_pool_size){
   auto dev_pool_allocator = rm.makeAllocator<umpire::strategy::QuickPool>(allocator_name, rm.getAllocator("DEVICE"), umpire_dev_pool_size, umpire_dev_block_size);
   auto chai_resource_manager = chai::ArrayManager::getInstance();
   chai_resource_manager->setAllocator(chai::GPU, dev_pool_allocator);
-  chai_resource_manager->setAllocator(chai::CPU, dev_pool_allocator);
+  // chai_resource_manager->setAllocator(chai::CPU, dev_pool_allocator);
   // force allocation of GPU memory pool
   auto tmp = new chai::ManagedArray<int>(100, chai::GPU);
   tmp->free(chai::GPU);
