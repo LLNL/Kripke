@@ -434,6 +434,7 @@ int main(int argc, char **argv) {
     printf("\n");
     printf("  Solver Options:\n");
     printf("    Number iterations:     %d\n", vars.niter);
+    printf("    Memory pool size:      %d\n", vars.dev_pool_size);
 
     
     
