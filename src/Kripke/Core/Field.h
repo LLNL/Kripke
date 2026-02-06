@@ -68,7 +68,11 @@ namespace Core {
 #ifndef KRIPKE_USE_CHAI
           m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
 #else
+#ifdef KRIPKE_USE_CHAI_SINGLE_MEMORY
+          m_chunk_to_data[chunk_id].allocate(sdom_size, chai::GPU,
+#else
           m_chunk_to_data[chunk_id].allocate(sdom_size, chai::CPU,
+#endif
               [=](const chai::PointerRecord* record, chai::Action action, chai::ExecutionSpace space){
                 /*printf("CHAI[%s, %d]: ", BaseVar::getName().c_str(), (int)chunk_id);
                 switch(action){
