@@ -434,7 +434,6 @@ int main(int argc, char **argv) {
     printf("\n");
     printf("  Solver Options:\n");
     printf("    Number iterations:     %d\n", vars.niter);
-    printf("    Memory pool size:      %d\n", vars.dev_pool_size);
 
     
     
@@ -537,6 +536,21 @@ int main(int argc, char **argv) {
     printf("  Grind time :        %e [(seconds/iteration)/unknowns]\n", grind_time);
     printf("  Sweep efficiency :  %4.5lf [100.0 * SweepSubdomain time / SweepSolver time]\n", sweep_eff);
     printf("  Number of unknowns: %lu\n", (unsigned long) num_unknowns);
+
+#ifdef KRIPKE_USE_CHAI
+    double umpire_device_high_watermark = data_store.getUmpireDeviceHighWatermark();
+#ifdef KRIPKE_USE_CALIPER
+    adiak::value("umpire_device_pool_size", vars.dev_pool_size);
+    adiak::value("umpire_device_high_watermark", umpire_device_high_watermark);
+#endif
+    printf("\n");
+    printf("Memory Usage\n");
+    printf("================\n");
+    printf("\n");
+    printf("  Memory pool size:         %lf\n", vars.dev_pool_size);
+    printf("  Memory high water mark:   %lf\n", umpire_device_high_watermark);
+#endif
+
   }
   
 #ifdef KRIPKE_USE_CALIPER

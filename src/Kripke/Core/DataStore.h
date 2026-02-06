@@ -27,6 +27,8 @@ class DataStore {
     DataStore(DataStore const &) = delete;
     DataStore &operator=(DataStore const &) = delete;
 
+    double getUmpireDeviceHighWatermark();
+
     void addVariable(std::string const &name, Kripke::Core::BaseVar *);
 
     template<typename T, typename ... CTOR_ARGS>
