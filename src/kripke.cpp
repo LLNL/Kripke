@@ -545,10 +545,10 @@ int main(int argc, char **argv) {
 #endif
     printf("\n");
     printf("Memory Usage\n");
-    printf("================\n");
+    printf("============\n");
     printf("\n");
-    printf("  Memory pool size:         %lf\n", vars.dev_pool_size);
-    printf("  Memory high water mark:   %lf\n", umpire_device_high_watermark);
+    printf("  Umpire device pool size:         %4.2lf GB\n", (double) vars.dev_pool_size);
+    printf("  Umpire device high water mark:   %4.2lf GB\n", umpire_device_high_watermark);
 #endif
 
   }

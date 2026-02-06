@@ -45,11 +45,11 @@ DataStore::~DataStore(){
 
 }
 
-double getUmpireDeviceHighWatermark() {
+double DataStore::getUmpireDeviceHighWatermark() {
 #ifdef KRIPKE_USE_CHAI
   auto chai_resource_manager = chai::ArrayManager::getInstance();
   auto device_allocator = chai_resource_manager->getAllocator(chai::GPU);
-  return device_allocator.getHighWatermark() / (1024 * 1024 * 1024);
+  return ((double) device_allocator.getHighWatermark()) / (1024 * 1024 * 1024);
 #else
   return 0.0;
 #endif
