@@ -22,12 +22,10 @@ namespace Core {
  */
 class DataStore {
   public:
-    DataStore(int dev_pool_size = 4);
+    DataStore();
     ~DataStore();
     DataStore(DataStore const &) = delete;
     DataStore &operator=(DataStore const &) = delete;
-
-    double getUmpireDeviceHighWatermark();
 
     void addVariable(std::string const &name, Kripke::Core::BaseVar *);
 

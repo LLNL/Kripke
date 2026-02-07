@@ -360,6 +360,7 @@ configure_file(${PROJECT_SOURCE_DIR}/src/KripkeConfig.h.in
 blt_add_library(
   NAME        kripke
   SOURCES     "src/Kripke/Core/BaseVar.cpp"
+              "src/Kripke/Core/MemoryManager.cpp"
               "src/Kripke/Core/DataStore.cpp"
               "src/Kripke/Core/DomainVar.cpp"
               "src/Kripke/Generate.cpp"
