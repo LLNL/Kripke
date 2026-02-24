@@ -357,8 +357,8 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_GDZ>> {
         HipKernelAsync<
           For<2, hip_block_x_loop, // group
             For<0, hip_block_y_loop, // moment
-              For<1, hip_thread_x_loop, // direction
-                For<3, seq_exec, // zone
+              For<3, hip_thread_x_loop, // zone
+                For<1, seq_exec, // direction
                   Lambda<0>
                 >
               >
