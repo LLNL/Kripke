@@ -106,6 +106,7 @@ endif()
 # Configure CHAI/Umpire for memory management
 # 
 option(ENABLE_CHAI "Enable CHAI/Umpire memory management" Off)
+option(ENABLE_CHAI_SINGLE_MEMORY "Enable single memory configuration in CHAI" Off)
 if(ENABLE_CHAI)
   # Find camp
   if (NOT TARGET camp)
@@ -140,14 +141,18 @@ if(ENABLE_CHAI)
   endif ()
 
   if (ENABLE_HIP)
-    # Set CHAI-related HIP variables for single memory address space.
-    # Use the THIN_GPU_ALLOCATE mode of CHAI on MI250X.
-    # This is to mirror the expected behavior of El Capitan.
-    # Requires env variables HSA_XNACK set to 1 and MPICH_GPU_SUPPORT_ENABLED set to 1 to work on the MI250X.
-    set (CHAI_ENABLE_UM OFF CACHE BOOL "")
-    set (CHAI_ENABLE_PINNED ON CACHE BOOL "")
-    set(CHAI_DISABLE_RM ON CACHE BOOL "")
-    set(CHAI_THIN_GPU_ALLOCATE ON CACHE BOOL "")
+    if(ENABLE_CHAI_SINGLE_MEMORY)
+        # Set CHAI-related HIP variables for single memory address space.
+        # Use the THIN_GPU_ALLOCATE mode of CHAI on MI250X.
+        # This is to mirror the expected behavior of El Capitan.
+        # Requires env variables HSA_XNACK set to 1 and MPICH_GPU_SUPPORT_ENABLED set to 1 to work on the MI250X.
+        set (CHAI_ENABLE_UM OFF CACHE BOOL "")
+        set (CHAI_ENABLE_PINNED ON CACHE BOOL "")
+        set(CHAI_DISABLE_RM ON CACHE BOOL "")
+        set(CHAI_THIN_GPU_ALLOCATE ON CACHE BOOL "")
+
+        set(KRIPKE_USE_CHAI_SINGLE_MEMORY 1)
+    endif()
 
     message(STATUS "Kripke: Setting CAMP_HAVE_HIP")
     blt_add_target_definitions(TO camp
@@ -355,6 +360,7 @@ configure_file(${PROJECT_SOURCE_DIR}/src/KripkeConfig.h.in
 blt_add_library(
   NAME        kripke
   SOURCES     "src/Kripke/Core/BaseVar.cpp"
+              "src/Kripke/Core/MemoryManager.cpp"
               "src/Kripke/Core/DataStore.cpp"
               "src/Kripke/Core/DomainVar.cpp"
               "src/Kripke/Generate.cpp"

@@ -7,6 +7,7 @@
   
 #include <Kripke.h>
 #include <Kripke/Core/Comm.h>
+#include <Kripke/Core/MemoryManager.h>
 #include <Kripke/Core/DataStore.h>
 #include <Kripke/Core/Set.h>
 #include <Kripke/ArchLayout.h>
@@ -500,7 +501,8 @@ int main(int argc, char **argv) {
 
   // Allocate problem
 
-  Kripke::Core::DataStore data_store(vars.dev_pool_size);
+  Kripke::Core::MemoryManager memory_manager(vars.dev_pool_size);
+  Kripke::Core::DataStore data_store;
   Kripke::generateProblem(data_store, vars);
 
   // Run the solver
@@ -536,6 +538,22 @@ int main(int argc, char **argv) {
     printf("  Grind time :        %e [(seconds/iteration)/unknowns]\n", grind_time);
     printf("  Sweep efficiency :  %4.5lf [100.0 * SweepSubdomain time / SweepSolver time]\n", sweep_eff);
     printf("  Number of unknowns: %lu\n", (unsigned long) num_unknowns);
+
+#ifdef KRIPKE_USE_CHAI
+    double device_memory_pool_size = memory_manager.getDeviceMemoryPoolSize();
+    double device_memory_high_watermark = memory_manager.getDeviceMemoryHighWatermark();
+#ifdef KRIPKE_USE_CALIPER
+    adiak::value("umpire_device_pool_size", device_memory_pool_size);
+    adiak::value("umpire_device_high_watermark", device_memory_high_watermark);
+#endif
+    printf("\n");
+    printf("Memory Usage\n");
+    printf("============\n");
+    printf("\n");
+    printf("  Device pool size:         %4.2lf GB\n", device_memory_pool_size);
+    printf("  Device high water mark:   %4.2lf GB\n", device_memory_high_watermark);
+#endif
+
   }
   
 #ifdef KRIPKE_USE_CALIPER
