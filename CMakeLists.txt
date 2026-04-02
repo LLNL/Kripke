@@ -280,15 +280,31 @@ if (ENABLE_CALIPER)
 		include_directories(tpl/caliper/include)
 	else()
     find_package(caliper REQUIRED)
-    find_package(adiak REQUIRED)
+    #find_package(adiak REQUIRED)
  	endif()
+
+  if (DEFINED adiak_DIR)
+    # First, build Adiak with:
+    # cd tpl/adiak/ ; mkdir build
+    # cmake -DBUILD_SHARED_LIBS=Off -DENABLE_MPI=On -DMPI_C_COMPILER=mpiamdclang -DMPI_CXX_COMPILER=mpiamdclang++ -DCMAKE_C_COMPILER=mpiamdclang -DCMAKE_CXX_COMPILER=mpiamdclang++ -DCMAKE_INSTALL_PREFIX=./install ..
+    # make -j
+    # Then, set adiak_DIR=tpl/adiak/build/install/lib/cmake/adiak/ when building Kripke.
+    find_package(adiak REQUIRED)
+    list(APPEND KRIPKE_DEPENDS caliper adiak::adiak)
+  else ()
+    # This method requires a modified adiak, where the MPI target is not exported in adiak2/src/CMakeLists.txt.
+		set(BUILD_SHARED_LIBS False CACHE BOOL "")
+    add_subdirectory(tpl/adiak2)	
+		include_directories(tpl/adiak2/include)
+    list(APPEND KRIPKE_DEPENDS caliper adiak)
+  endif()
 
 #    blt_register_library(NAME caliper
 #      INCLUDES ${caliper_INCLUDE_DIR}
 #      LIBRARIES caliper)
 
 	set(KRIPKE_USE_CALIPER TRUE)
-  list(APPEND KRIPKE_DEPENDS caliper adiak::adiak)
+  #list(APPEND KRIPKE_DEPENDS caliper adiak::adiak)
 endif()
 
 message(STATUS "Caliper support is ${KRIPKE_USE_CALIPER}")
