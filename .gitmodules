@@ -15,6 +15,9 @@
 [submodule "tpl/googletest"]
 	path = tpl/googletest
 	url = https://github.com/google/googletest.git
+[submodule "tpl/adiak"]
+	path = tpl/adiak
+	url = https://github.com/LLNL/Adiak.git
 [submodule "tpl/caliper"]
 	path = tpl/caliper
 	url = https://github.com/LLNL/Caliper.git
