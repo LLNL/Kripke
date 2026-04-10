@@ -274,21 +274,149 @@ endif()
 option(ENABLE_CALIPER "Enable Caliper support" FALSE)
 
 if (ENABLE_CALIPER)
-	if(EXISTS "${PROJECT_SOURCE_DIR}/tpl/caliper/CMakeLists.txt")
+  find_package(adiak QUIET)
+  if (adiak_FOUND)
+    # First, build Adiak with:
+    # cd tpl/adiak/ ; mkdir build
+    # cmake -DBUILD_SHARED_LIBS=Off -DENABLE_MPI=On -DMPI_C_COMPILER=mpiamdclang -DMPI_CXX_COMPILER=mpiamdclang++ -DCMAKE_C_COMPILER=mpiamdclang -DCMAKE_CXX_COMPILER=mpiamdclang++ -DCMAKE_INSTALL_PREFIX=./install ..
+    # make -j
+    # Then, set adiak_DIR=tpl/adiak/build/install/lib/cmake/adiak/ when building Kripke.
+    list(APPEND KRIPKE_DEPENDS adiak::adiak)
+  else ()
+    # Stage a build-local Adiak copy and patch its MPI export handling without
+    # modifying the vendored source tree.
+    set(_kripke_adiak_staging_root "${PROJECT_BINARY_DIR}/tpl")
+    set(_kripke_adiak_staging_dir "${_kripke_adiak_staging_root}/adiak")
+    set(_kripke_adiak_build_dir "${PROJECT_BINARY_DIR}/tpl/adiak-build")
+    set(_kripke_adiak_src_cmake "${_kripke_adiak_staging_dir}/src/CMakeLists.txt")
+    set(_kripke_adiak_src_cmake_patched "${PROJECT_BINARY_DIR}/adiak-src-CMakeLists.txt")
+    set(_kripke_adiak_patch_file "${PROJECT_BINARY_DIR}/adiak-mpi-export.patch")
+
+    file(REMOVE_RECURSE "${_kripke_adiak_staging_dir}" "${_kripke_adiak_build_dir}")
+    file(MAKE_DIRECTORY "${_kripke_adiak_staging_root}")
+    file(COPY "${PROJECT_SOURCE_DIR}/tpl/adiak" DESTINATION "${_kripke_adiak_staging_root}")
+
+    file(READ "${_kripke_adiak_src_cmake}" _kripke_adiak_src_contents)
+    set(_kripke_adiak_src_original "${_kripke_adiak_src_contents}")
+
+    string(REPLACE
+      "set(adiak_public_headers"
+      "if (MPI_FOUND AND TARGET mpi)\n  get_target_property(_adiak_mpi_imported mpi IMPORTED)\n  if (_adiak_mpi_imported AND NOT TARGET adiak_mpi_export)\n    add_library(adiak_mpi_export INTERFACE)\n    target_link_libraries(adiak_mpi_export INTERFACE mpi)\n  endif ()\nendif ()\n\nset(adiak_public_headers"
+      _kripke_adiak_src_contents
+      "${_kripke_adiak_src_contents}")
+
+    string(REPLACE
+      "  list(APPEND adiak_dependencies\n    mpi)\n  list(APPEND adiak_export_targets\n    mpi)"
+      "  if (TARGET adiak_mpi_export)\n    list(APPEND adiak_dependencies\n      adiak_mpi_export)\n    list(APPEND adiak_export_targets\n      adiak_mpi_export)\n  else ()\n    list(APPEND adiak_dependencies\n      mpi)\n    list(APPEND adiak_export_targets\n      mpi)\n  endif()"
+      _kripke_adiak_src_contents
+      "${_kripke_adiak_src_contents}")
+
+    if (_kripke_adiak_src_contents STREQUAL _kripke_adiak_src_original)
+      message(FATAL_ERROR "Kripke: failed to prepare staged Adiak MPI export patch content")
+    endif ()
+
+    file(WRITE "${_kripke_adiak_src_cmake_patched}" "${_kripke_adiak_src_contents}")
+
+    execute_process(
+      COMMAND diff -u "src/CMakeLists.txt" "${_kripke_adiak_src_cmake_patched}"
+      WORKING_DIRECTORY "${_kripke_adiak_staging_dir}"
+      RESULT_VARIABLE _kripke_adiak_diff_result
+      OUTPUT_FILE "${_kripke_adiak_patch_file}"
+      ERROR_VARIABLE _kripke_adiak_diff_stderr
+    )
+
+    if (_kripke_adiak_diff_result LESS 0 OR _kripke_adiak_diff_result GREATER 1)
+      message(FATAL_ERROR
+        "Kripke: failed to generate staged Adiak MPI export patch\n"
+        "stderr:\n${_kripke_adiak_diff_stderr}")
+    endif ()
+
+    execute_process(
+      COMMAND patch -p0 -i "${_kripke_adiak_patch_file}"
+      WORKING_DIRECTORY "${_kripke_adiak_staging_dir}"
+      RESULT_VARIABLE _kripke_adiak_patch_result
+      OUTPUT_VARIABLE _kripke_adiak_patch_stdout
+      ERROR_VARIABLE _kripke_adiak_patch_stderr
+    )
+
+    if (NOT _kripke_adiak_patch_result EQUAL 0)
+      message(FATAL_ERROR
+        "Kripke: failed to patch staged Adiak MPI export handling\n"
+        "stdout:\n${_kripke_adiak_patch_stdout}\n"
+        "stderr:\n${_kripke_adiak_patch_stderr}")
+    endif ()
+
 		set(BUILD_SHARED_LIBS False CACHE BOOL "")
+    add_subdirectory("${_kripke_adiak_staging_dir}" "${_kripke_adiak_build_dir}")
+		include_directories("${_kripke_adiak_staging_dir}/include")
+    set_target_properties(adiak PROPERTIES
+      ARCHIVE_OUTPUT_DIRECTORY "${_kripke_adiak_build_dir}/lib"
+      LIBRARY_OUTPUT_DIRECTORY "${_kripke_adiak_build_dir}/lib")
+    set(_kripke_adiak_library
+      "${_kripke_adiak_build_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}adiak${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    set(_kripke_adiak_pkg_dir "${_kripke_adiak_build_dir}/lib/cmake/adiak")
+    file(MAKE_DIRECTORY "${_kripke_adiak_pkg_dir}")
+    set(_kripke_adiak_config_template [=[
+if (NOT TARGET adiak::adiak)
+  add_library(adiak::adiak STATIC IMPORTED GLOBAL)
+  set_target_properties(adiak::adiak PROPERTIES
+    IMPORTED_LOCATION "@_kripke_adiak_library@"
+    INTERFACE_INCLUDE_DIRECTORIES "@_kripke_adiak_staging_dir@/include")
+  if (TARGET adiak)
+    add_dependencies(adiak::adiak adiak)
+  endif()
+endif()
+set(adiak_FOUND TRUE)
+set(adiak_INCLUDE_DIR "@_kripke_adiak_staging_dir@/include")
+set(adiak_INCLUDE_DIRS "@_kripke_adiak_staging_dir@/include")
+set(adiak_LIBRARIES adiak::adiak)
+]=])
+    string(CONFIGURE "${_kripke_adiak_config_template}" _kripke_adiak_config @ONLY)
+    file(WRITE "${_kripke_adiak_pkg_dir}/adiak-config.cmake" "${_kripke_adiak_config}")
+    set(adiak_DIR "${_kripke_adiak_pkg_dir}" CACHE PATH
+      "Build-tree Adiak package config for Caliper" FORCE)
+    list(APPEND KRIPKE_DEPENDS adiak)
+
+    unset(_kripke_adiak_staging_root)
+    unset(_kripke_adiak_staging_dir)
+    unset(_kripke_adiak_build_dir)
+    unset(_kripke_adiak_config_template)
+    unset(_kripke_adiak_config)
+    unset(_kripke_adiak_library)
+    unset(_kripke_adiak_pkg_dir)
+    unset(_kripke_adiak_src_cmake)
+    unset(_kripke_adiak_src_cmake_patched)
+    unset(_kripke_adiak_src_contents)
+    unset(_kripke_adiak_src_original)
+    unset(_kripke_adiak_patch_file)
+    unset(_kripke_adiak_diff_result)
+    unset(_kripke_adiak_diff_stderr)
+    unset(_kripke_adiak_patch_result)
+    unset(_kripke_adiak_patch_stdout)
+    unset(_kripke_adiak_patch_stderr)
+  endif()
+
+  find_package(caliper QUIET)
+  if(NOT caliper_FOUND)
+		set(BUILD_SHARED_LIBS False CACHE BOOL "")
+		set(WITH_MPI TRUE CACHE BOOL "")
+		set(WITH_ADIAK TRUE CACHE BOOL "")
+    if(ENABLE_CUDA)
+		  set(WITH_NVTX TRUE CACHE BOOL "")
+		  set(WITH_CUPTI TRUE CACHE BOOL "")
+    elseif(ENABLE_HIP)
+		  set(WITH_ROCM TRUE CACHE BOOL "")
+	  endif()
     add_subdirectory(tpl/caliper)	
 		include_directories(tpl/caliper/include)
-	else()
-    find_package(caliper REQUIRED)
-    find_package(adiak REQUIRED)
  	endif()
+  list(APPEND KRIPKE_DEPENDS caliper)
 
 #    blt_register_library(NAME caliper
 #      INCLUDES ${caliper_INCLUDE_DIR}
 #      LIBRARIES caliper)
 
 	set(KRIPKE_USE_CALIPER TRUE)
-  list(APPEND KRIPKE_DEPENDS caliper adiak::adiak)
 endif()
 
 message(STATUS "Caliper support is ${KRIPKE_USE_CALIPER}")
@@ -397,4 +525,3 @@ blt_add_executable(
   SOURCES     "src/kripke.cpp"
   DEPENDS_ON  ${KRIPKE_DEPENDS} kripke 
 )
-
