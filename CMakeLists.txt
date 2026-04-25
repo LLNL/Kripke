@@ -93,15 +93,11 @@ if (NOT BLT_LOADED)
   set(ENABLE_UNCRUSTIFY OFF CACHE BOOL "")
   set(ENABLE_CPPCHECK OFF CACHE BOOL "")
   set(ENABLE_CLANGQUERY OFF CACHE BOOL "")
-  set(ENABLE_GTEST ON CACHE BOOL "")
-  set(ENABLE_TESTS ON CACHE BOOL "")
   set(ENABLE_FRUIT OFF CACHE BOOL "")
   set(ENABLE_FIND_MPI ON CACHE BOOL "")
   set(BLT_DOCS_TARGET_NAME "docsBLT" CACHE STRING "")
 
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR} CACHE PATH "")
-  set(TEST_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR} CACHE PATH "")
-
   include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 
 endif()
@@ -109,20 +105,37 @@ endif()
 if(ENABLE_CALIPER)
   if(adiak_DIR)
     # Use existing build if adiak_DIR is specified
+    find_package(adiak REQUIRED PATHS "${adiak_DIR}" NO_DEFAULT_PATH)
     message(STATUS "Using user-provided adiak_DIR: ${adiak_DIR}")
     set(KRIPKE_ADIAK_DIR "${adiak_DIR}")
   else()
-    # otherwise build the adiak submodule
-    message(STATUS "No adiak_DIR provided, building bundled adiak from ${ADIAK_SOURCE_DIR}")
-    ExternalProject_Add(adiak_ep
-      SOURCE_DIR  "${ADIAK_SOURCE_DIR}"
-      BINARY_DIR  "${CMAKE_BINARY_DIR}/adiak-build"
-      INSTALL_DIR "${ADIAK_INSTALL_PREFIX}"
-      CMAKE_ARGS
-        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    )
-    set(KRIPKE_ADIAK_DIR "${ADIAK_INSTALL_PREFIX}/lib/cmake/adiak")
+    # else check if another adiak installation is available
+    find_package(adiak QUIET)
+    if(NOT adiak_FOUND)
+      # otherwise build the adiak submodule
+      # and set adiak_DIR to point to that build
+      message(STATUS "No adiak_DIR provided, building bundled adiak from ${ADIAK_SOURCE_DIR}")
+      ExternalProject_Add(adiak_ep
+        SOURCE_DIR  "${ADIAK_SOURCE_DIR}"
+        BINARY_DIR  "${CMAKE_BINARY_DIR}/adiak-build"
+        INSTALL_DIR "${ADIAK_INSTALL_PREFIX}"
+        CMAKE_ARGS
+          -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+          -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+          -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+          -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+          -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+          -DCMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}
+          -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+          -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
+          -DCMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}
+          -DCMAKE_SHARED_LINKER_FLAGS=${CMAKE_SHARED_LINKER_FLAGS}
+          -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
+          -DENABLE_TESTS=OFF
+          -DENABLE_GTEST=OFF
+      )
+      set(KRIPKE_ADIAK_DIR "${ADIAK_INSTALL_PREFIX}/lib/cmake/adiak")
+    endif()
   endif()
 endif()
 
@@ -147,11 +160,11 @@ if(ENABLE_CALIPER)
   )
 endif()
 
-if(ENABLE_CALIPER AND NOT adiak_DIR)
+if(ENABLE_CALIPER AND NOT adiak_FOUND AND NOT adiak_DIR)
   ExternalProject_Add(kripke_ep
     SOURCE_DIR "${KRIPKE_SOURCE_DIR}"
     BINARY_DIR "${CMAKE_BINARY_DIR}/kripke-build"
-    INSTALL_DIR "${CMAKE_INSTALL_PREFIX}"
+    INSTALL_COMMAND ""
     DEPENDS adiak_ep
     CMAKE_ARGS ${KRIPKE_CMAKE_ARGS}
   )
@@ -159,7 +172,7 @@ else()
   ExternalProject_Add(kripke_ep
     SOURCE_DIR "${KRIPKE_SOURCE_DIR}"
     BINARY_DIR "${CMAKE_BINARY_DIR}/kripke-build"
-    INSTALL_DIR "${CMAKE_INSTALL_PREFIX}"
+    INSTALL_COMMAND ""
     CMAKE_ARGS ${KRIPKE_CMAKE_ARGS}
   )
 endif()
