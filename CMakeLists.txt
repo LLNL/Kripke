@@ -5,33 +5,69 @@
 # SPDX-License-Identifier: (BSD-3-Clause)
 #
 
-if (ENABLE_HIP)
-  cmake_minimum_required(VERSION 3.23)
-else()
-  cmake_minimum_required(VERSION 3.20)
-endif()
+cmake_minimum_required(VERSION 3.23)
 
-cmake_policy(SET CMP0057 NEW)
+project(KRIPKE_SUPERBUILD LANGUAGES CXX)
 
-project(KRIPKE LANGUAGES CXX)
+include(ExternalProject)
 
-set(KRIPKE_VERSION "1.2.5-dev")
+option(ENABLE_CALIPER "Enable Caliper support" FALSE)
 
+set(adiak_DIR "${adiak_DIR}" CACHE PATH "Path to an existing adiak CMake config directory")
 
-#
-# Initialize the BLT build system
-#
+set(KRIPKE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/cmake/kripke")
+set(ADIAK_SOURCE_DIR "${CMAKE_SOURCE_DIR}/tpl/adiak")
+set(ADIAK_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/adiak-install")
+
+function(collect_forwarded_cmake_cache_args out_var)
+  get_cmake_property(cache_vars CACHE_VARIABLES)
+  set(args)
+
+  set(skip_vars
+    CMAKE_HOME_DIRECTORY
+    CMAKE_CACHEFILE_DIR
+    CMAKE_COMMAND
+    CMAKE_CTEST_COMMAND
+    CMAKE_ROOT
+    CMAKE_PROJECT_NAME
+    PROJECT_NAME
+    CMAKE_SOURCE_DIR
+    CMAKE_BINARY_DIR
+    CMAKE_CURRENT_SOURCE_DIR
+    CMAKE_CURRENT_BINARY_DIR
+    KRIPKE_SOURCE_DIR
+    ADIAK_SOURCE_DIR
+    ADIAK_INSTALL_PREFIX
+  )
+
+  foreach(var IN LISTS cache_vars)
+    if(var IN_LIST skip_vars)
+      continue()
+    endif()
+
+    get_property(is_advanced CACHE "${var}" PROPERTY ADVANCED)
+    get_property(type CACHE "${var}" PROPERTY TYPE)
+
+    if(NOT type)
+      set(type STRING)
+    endif()
+
+    if(var STREQUAL "adiak_DIR")
+      continue()
+    endif()
+
+    set(value "${${var}}")
+    list(APPEND args "-D${var}:${type}=${value}")
+  endforeach()
+
+  set(${out_var} "${args}" PARENT_SCOPE)
+endfunction()
 
 set(ENABLE_GTEST Off CACHE BOOL "")
 set(ENABLE_TESTS Off CACHE BOOL "")
 set(ENABLE_TBB Off CACHE BOOL "")
 set(ENABLE_EXAMPLES Off CACHE BOOL "")
 set(ENABLE_DOCUMENTATION Off CACHE BOOL "")
-
-if (ENABLE_CHAI)
-  set(ENABLE_RAJA_PLUGIN On CACHE BOOL "")
-  set(CHAI_ENABLE_RAJA_PLUGIN On CACHE BOOL "")
-endif ()
 
 # Use C++17 standard
 set(BLT_CXX_STD "c++17" CACHE STRING "")
@@ -57,344 +93,87 @@ if (NOT BLT_LOADED)
   set(ENABLE_UNCRUSTIFY OFF CACHE BOOL "")
   set(ENABLE_CPPCHECK OFF CACHE BOOL "")
   set(ENABLE_CLANGQUERY OFF CACHE BOOL "")
-  set(ENABLE_GTEST ON CACHE BOOL "")
-  set(ENABLE_TESTS ON CACHE BOOL "")
   set(ENABLE_FRUIT OFF CACHE BOOL "")
   set(ENABLE_FIND_MPI ON CACHE BOOL "")
   set(BLT_DOCS_TARGET_NAME "docsBLT" CACHE STRING "")
 
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR} CACHE PATH "")
-  set(TEST_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR} CACHE PATH "")
-
   include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 
 endif()
 
-
-#
-# Default Arch and Layout selection
-# Sequential by default, but will be overriden if OpenMP or CUDA are enabled
-#
-set(KRIPKE_ARCH "Sequential")
-set(KRIPKE_LAYOUT DGZ)
-
-
-#
-# Add CMake CUDA language support
-#
-if(ENABLE_CUDA)
-  # Native CMake support  
-  #enable_language(CUDA)
-  
-  # Make sure we use nvcc with our selected host compiler to link executables
-  set(CMAKE_CUDA_LINK_EXECUTABLE "${CMAKE_CUDA_COMPILER} -ccbin <CMAKE_CXX_COMPILER> <CMAKE_CUDA_LINK_FLAGS>  <FLAGS>  <LINK_FLAGS>  <OBJECTS> -o <TARGET>  <LINK_LIBRARIES>")
-  # Use nvcc as the linker
-  set(CMAKE_LINKER "${CMAKE_CUDA_COMPILER}" CACHE STRING "")
-  
-  # Pass nvcc the -cubin to point at our C++ compiler  
-  set(CUDA_HOST_COMPILER ${CMAKE_CUDA_HOST_COMPILER})
-
-endif()
-
-#
-# Add googletest (needed by RAJA, etc)
-# 
-#add_subdirectory(tpl/googletest)
-
-
-#
-# Configure CHAI/Umpire for memory management
-# 
-option(ENABLE_CHAI "Enable CHAI/Umpire memory management" Off)
-option(ENABLE_CHAI_SINGLE_MEMORY "Enable single memory configuration in CHAI" Off)
-if(ENABLE_CHAI)
-  # Find camp
-  if (NOT TARGET camp)
-    find_package(camp QUIET NO_DEFAULT_PATH HINTS ${CAMP_DIR} ${camp_DIR})
-
-    if (camp_FOUND)
-      message(STATUS "Kripke: Using external CAMP")
-      set_target_properties(camp PROPERTIES IMPORTED_GLOBAL TRUE)
-      if (DEFINED RAJA_DIR)
-        find_package(RAJA REQUIRED)
-      endif()
-
-      list(APPEND KRIPKE_DEPENDS RAJA)
-    else ()
-      message(STATUS "Kripke: Using CAMP submodule")
-
-      if (NOT EXISTS ${PROJECT_SOURCE_DIR}/tpl/raja/tpl/camp/CMakeLists.txt)
-        message(FATAL_ERROR "Kripke: CAMP submodule not initialized. Run 'git submodule update --init' in the git repository or set camp_DIR or CAMP_DIR to use an external build of CAMP.")
-      else ()
-        message(STATUS "Kripke: Using CAMP in Kripke TPL")
-        add_subdirectory(${PROJECT_SOURCE_DIR}/tpl/raja/tpl/camp)
-      endif ()
+if(ENABLE_CALIPER)
+  if(adiak_DIR)
+    # Use existing build if adiak_DIR is specified
+    find_package(adiak REQUIRED PATHS "${adiak_DIR}" NO_DEFAULT_PATH)
+    message(STATUS "Using user-provided adiak_DIR: ${adiak_DIR}")
+    set(KRIPKE_ADIAK_DIR "${adiak_DIR}")
+  else()
+    # else check if another adiak installation is available
+    find_package(adiak QUIET)
+    if(NOT adiak_FOUND)
+      # otherwise build the adiak submodule
+      # and set adiak_DIR to point to that build
+      message(STATUS "No adiak_DIR provided, building bundled adiak from ${ADIAK_SOURCE_DIR}")
+      ExternalProject_Add(adiak_ep
+        SOURCE_DIR  "${ADIAK_SOURCE_DIR}"
+        BINARY_DIR  "${CMAKE_BINARY_DIR}/adiak-build"
+        INSTALL_DIR "${ADIAK_INSTALL_PREFIX}"
+        CMAKE_ARGS
+          -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+          -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+          -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+          -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+          -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+          -DCMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}
+          -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+          -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
+          -DCMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}
+          -DCMAKE_SHARED_LINKER_FLAGS=${CMAKE_SHARED_LINKER_FLAGS}
+          -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
+          -DENABLE_DOCS=OFF
+          -DENABLE_TESTS=OFF
+          -DENABLE_GTEST=OFF
+      )
+      set(KRIPKE_ADIAK_DIR "${ADIAK_INSTALL_PREFIX}/lib/cmake/adiak")
     endif()
   endif()
-
-  # Set camp backends
-  if (ENABLE_CUDA)
-    message(STATUS "Kripke: Setting CAMP_HAVE_CUDA")
-    blt_add_target_definitions(TO camp
-                               SCOPE INTERFACE
-                               TARGET_DEFINITIONS CAMP_HAVE_CUDA)
-  endif ()
-
-  if (ENABLE_HIP)
-    if(ENABLE_CHAI_SINGLE_MEMORY)
-        # Set CHAI-related HIP variables for single memory address space.
-        # Use the THIN_GPU_ALLOCATE mode of CHAI on MI250X.
-        # This is to mirror the expected behavior of El Capitan.
-        # Requires env variables HSA_XNACK set to 1 and MPICH_GPU_SUPPORT_ENABLED set to 1 to work on the MI250X.
-        set (CHAI_ENABLE_UM OFF CACHE BOOL "")
-        set (CHAI_ENABLE_PINNED ON CACHE BOOL "")
-        set(CHAI_DISABLE_RM ON CACHE BOOL "")
-        set(CHAI_THIN_GPU_ALLOCATE ON CACHE BOOL "")
-
-        set(KRIPKE_USE_CHAI_SINGLE_MEMORY 1)
-    endif()
-
-    message(STATUS "Kripke: Setting CAMP_HAVE_HIP")
-    blt_add_target_definitions(TO camp
-                               SCOPE INTERFACE
-                               TARGET_DEFINITIONS CAMP_HAVE_HIP)
-  endif ()
-
-  set(UMPIRE_DEPENDS camp)
-
-  if (DEFINED umpire_DIR)
-    find_package(umpire REQUIRED)
-    
-    if (ENABLE_MPI)
-      set(UMPIRE_DEPENDS "${UMPIRE_DEPENDS} blt::mpi")
-    endif()
-
-    blt_register_library(
-      NAME umpire
-      INCLUDES ${UMPIRE_INCLUDE_DIRS}
-      LIBRARIES umpire
-      DEPENDS_ON ${UMPIRE_DEPENDS})
-  else ()
-    add_subdirectory(tpl/umpire)
-  endif()
-
-  if (DEFINED chai_DIR)
-    find_package(chai REQUIRED)
-  else ()
-    add_subdirectory(tpl/chai)
-  endif ()
-
-  set(ENABLE_TESTS Off CACHE BOOL "")
-  set(KRIPKE_USE_CHAI 1)
-  list(APPEND KRIPKE_DEPENDS chai)
-else ()
-  #
-  # Configure RAJA (REQUIRED)
-  #
-  set(ENABLE_RAJA_PLUGIN Off CACHE BOOL "")
-  if (DEFINED RAJA_DIR)
-    find_package(RAJA REQUIRED)
-  else ()
-    set(ENABLE_EXAMPLES Off CACHE BOOL "")
-    set(ENABLE_EXERCISES Off CACHE BOOL "")
-    add_subdirectory(tpl/raja)
-  endif ()
-  list(APPEND KRIPKE_DEPENDS RAJA)
-endif ()
-
-#
-# Configure OpenMP (CPU threading, not target offload)
-#
-
-if(ENABLE_OPENMP)
-  
-  set(KRIPKE_USE_OPENMP 1)  
-  
-  list(APPEND KRIPKE_DEPENDS blt::openmp)
-
-  set(KRIPKE_ARCH "OpenMP")
-  
 endif()
 
+collect_forwarded_cmake_cache_args(FORWARDED_ARGS)
 
-
-#
-# Configure CUDA
-#
-
-if(ENABLE_CUDA)
-
-  set(KRIPKE_USE_CUDA 1)
-    
-  list(APPEND KRIPKE_DEPENDS blt::cuda)
-  
-  set(KRIPKE_ARCH "CUDA")
-
-  # Make sure that nvcc turns on the host compiler OpenMP flag	
-  if(ENABLE_OPENMP)
-    list(APPEND CUDA_NVCC_FLAGS -Xcompiler ${OpenMP_CXX_FLAGS})
-  endif()
-	
-	
-  # Pass on compiler info to KripkeConfig.h
-  string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
-  set(KRIPKE_NVCC_COMPILER "${CMAKE_CUDA_COMPILER}")
-  set(KRIPKE_NVCC_FLAGS    "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
-
-endif()
-
-
-#
-# Configure HIP
-#
-
-if(ENABLE_HIP)
-
-  set(KRIPKE_USE_HIP 1)
-    
-  list(APPEND KRIPKE_DEPENDS blt::hip)
-  
-  set(KRIPKE_ARCH "HIP")
-
-  # Make sure that nvcc turns on the host compiler OpenMP flag	
-  #if(ENABLE_OPENMP)
-  #  list(APPEND CUDA_NVCC_FLAGS -Xcompiler ${OpenMP_CXX_FLAGS})
-  #endif()
-  #  
-  #  
-  ## Pass on compiler info to KripkeConfig.h
-  string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
-  #set(KRIPKE_NVCC_COMPILER "${CMAKE_CUDA_COMPILER}")
-  #set(KRIPKE_NVCC_FLAGS    "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
-
-endif()
-
-
-
-option(ENABLE_CALIPER "Enable Caliper support" FALSE)
-
-if (ENABLE_CALIPER)
-	if(EXISTS "${PROJECT_SOURCE_DIR}/tpl/caliper/CMakeLists.txt")
-		set(BUILD_SHARED_LIBS False CACHE BOOL "")
-    add_subdirectory(tpl/caliper)	
-		include_directories(tpl/caliper/include)
-	else()
-    find_package(caliper REQUIRED)
-    find_package(adiak REQUIRED)
- 	endif()
-
-#    blt_register_library(NAME caliper
-#      INCLUDES ${caliper_INCLUDE_DIR}
-#      LIBRARIES caliper)
-
-	set(KRIPKE_USE_CALIPER TRUE)
-  list(APPEND KRIPKE_DEPENDS caliper adiak::adiak)
-endif()
-
-message(STATUS "Caliper support is ${KRIPKE_USE_CALIPER}")
-
-
-#
-# Configure MPI
-# 
-# Use ENABLE_MPI=On if you want CMake to automatically figure out MPI
-# using FindMPI
-#
-# Use ENABLE_MPI_WRAPPER if you want to use mpi compiler wrappers for CC/CXX 
-# 
-
-if(ENABLE_MPI)
-	set(KRIPKE_USE_MPI 1)	
-	list(APPEND KRIPKE_DEPENDS blt::mpi)
-endif()
-
-if(ENABLE_MPI_WRAPPER)
-	set(KRIPKE_USE_MPI 1)
-endif()
-
-
-#
-# Display/Configure our default ArchLayout
-#
-message(STATUS "Kripke selected default architecture: '${KRIPKE_ARCH}'")
-message(STATUS "Kripke selected default layout:       '${KRIPKE_LAYOUT}'")
-
-set(KRIPKE_ARCHV_DEFAULT ArchV_${KRIPKE_ARCH})
-set(KRIPKE_LAYOUTV_DEFAULT LayoutV_${KRIPKE_LAYOUT})
-
-
-
-
-#
-# Pass compiler options to our KripkeConfig.h file so we can print them at
-# runtime
-#
-
-
-set(KRIPKE_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
-set(KRIPKE_CXX_FLAGS    "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${KRIPKE_BUILD_TYPE}}")
-set(KRIPKE_LINK_FLAGS   "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_LINK_FLAGS_${CMAKE_BUILD_TYPE}}")
-
-
-
-
-
-#
-# Create KripkeConfig.h file
-#
-
-configure_file(${PROJECT_SOURCE_DIR}/src/KripkeConfig.h.in
-               ${PROJECT_BINARY_DIR}/include/KripkeConfig.h)
-
-
-
-
-
-
-#
-# Define build targets for Kripke
-#
- 
-
-
-blt_add_library(
-  NAME        kripke
-  SOURCES     "src/Kripke/Core/BaseVar.cpp"
-              "src/Kripke/Core/MemoryManager.cpp"
-              "src/Kripke/Core/DataStore.cpp"
-              "src/Kripke/Core/DomainVar.cpp"
-              "src/Kripke/Generate.cpp"
-              "src/Kripke/Generate/Data.cpp"
-              "src/Kripke/Generate/Decomp.cpp"
-              "src/Kripke/Generate/Energy.cpp"
-              "src/Kripke/Generate/Quadrature.cpp"
-              "src/Kripke/Generate/Space.cpp"
-              "src/Kripke/InputVariables.cpp"
-              "src/Kripke/Kernel/LPlusTimes.cpp"
-              "src/Kripke/Kernel/LTimes.cpp"
-              "src/Kripke/Kernel/Population.cpp"
-              "src/Kripke/Kernel/Scattering.cpp"
-              "src/Kripke/Kernel/Source.cpp"
-              "src/Kripke/Kernel/SweepSubdomain.cpp"
-              "src/Kripke/ParallelComm/BlockJacobiComm.cpp"
-              "src/Kripke/ParallelComm/SweepComm.cpp"
-              "src/Kripke/ParallelComm.cpp"
-              "src/Kripke/Core/PartitionSpace.cpp"
-              "src/Kripke/Core/Set.cpp"
-              "src/Kripke/SteadyStateSolver.cpp"
-              "src/Kripke/SweepSolver.cpp"
-              "src/Kripke/Timing.cpp"
-  DEPENDS_ON  ${KRIPKE_DEPENDS}
+set(KRIPKE_CMAKE_ARGS
+  ${FORWARDED_ARGS}
+  -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+  -DENABLE_CALIPER:BOOL=${ENABLE_CALIPER}
+  -DKRIPKE_SOURCE_ROOT:PATH=${CMAKE_SOURCE_DIR}
 )
 
+if(CMAKE_BUILD_TYPE)
+  list(APPEND KRIPKE_CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+  )
+endif()
 
-target_include_directories(kripke PUBLIC 
-	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-	$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
+if(ENABLE_CALIPER AND KRIPKE_ADIAK_DIR)
+  list(APPEND KRIPKE_CMAKE_ARGS
+    -Dadiak_DIR:PATH=${KRIPKE_ADIAK_DIR}
+  )
+endif()
 
-blt_add_executable( 
-  NAME        kripke.exe
-  SOURCES     "src/kripke.cpp"
-  DEPENDS_ON  ${KRIPKE_DEPENDS} kripke 
-)
-
+if(ENABLE_CALIPER AND NOT adiak_FOUND AND NOT adiak_DIR)
+  ExternalProject_Add(kripke_ep
+    SOURCE_DIR "${KRIPKE_SOURCE_DIR}"
+    BINARY_DIR "${CMAKE_BINARY_DIR}/kripke-build"
+    INSTALL_COMMAND ""
+    DEPENDS adiak_ep
+    CMAKE_ARGS ${KRIPKE_CMAKE_ARGS}
+  )
+else()
+  ExternalProject_Add(kripke_ep
+    SOURCE_DIR "${KRIPKE_SOURCE_DIR}"
+    BINARY_DIR "${CMAKE_BINARY_DIR}/kripke-build"
+    INSTALL_COMMAND ""
+    CMAKE_ARGS ${KRIPKE_CMAKE_ARGS}
+  )
+endif()
