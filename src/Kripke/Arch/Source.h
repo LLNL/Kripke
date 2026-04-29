@@ -84,7 +84,7 @@ template<>
 struct Policy_Source<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
   using ExecPolicy =
     KernelPolicy<
-      CudaKernelAsync<
+      CudaKernel<
         For<0, cuda_thread_y_loop,  // Group
           For<1, cuda_threadblock_x_direct, // MixElem, in blocks of 32 MixElem
             Lambda<0>
@@ -98,7 +98,7 @@ template<>
 struct Policy_Source<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
   using ExecPolicy =
     KernelPolicy<
-      CudaKernelAsync<
+      CudaKernel<
         For<1, cuda_threadblock_y_direct, // MixElem, in blocks of 32 MixElem
           For<0, cuda_thread_x_loop,  // Group
             Lambda<0>
@@ -115,7 +115,7 @@ template<>
 struct Policy_Source<ArchLayoutT<ArchT_HIP, LayoutT_DGZ>> {
   using ExecPolicy =
     KernelPolicy<
-      HipKernelAsync<
+      HipKernel<
         For<0, hip_thread_y_loop,  // Group
           For<1, hip_threadblock_x_direct, // MixElem, in blocks of 32 MixElem
             Lambda<0>
@@ -129,7 +129,7 @@ template<>
 struct Policy_Source<ArchLayoutT<ArchT_HIP, LayoutT_DZG>> {
   using ExecPolicy =
     KernelPolicy<
-      HipKernelAsync<
+      HipKernel<
         For<1, hip_threadblock_y_direct, // MixElem, in blocks of 32 MixElem
           For<0, hip_thread_x_loop,  // Group
             Lambda<0>
