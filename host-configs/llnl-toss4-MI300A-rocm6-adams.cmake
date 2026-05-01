@@ -22,6 +22,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g" CACHE STRING "")
 set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath,/opt/cray/pe/cce/20.0.2/cce/x86_64/lib -L/opt/cray/pe/cce/20.0.2/cce/x86_64/lib" CACHE STRING "")
 
 set(ROCM_ROOT_DIR "/opt/rocm-6.4.3" CACHE PATH "")
+set(ROCM_PATH "/opt/rocm-6.4.3" CACHE PATH "")
 set(HIP_ROOT_DIR "/opt/rocm-6.4.3/hip" CACHE PATH "")
 set(HIP_PATH "/opt/rocm-6.4.3/llvm/bin" CACHE PATH "")
 set(CMAKE_HIP_ARCHITECTURES "gfx942" CACHE STRING "")

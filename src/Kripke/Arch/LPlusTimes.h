@@ -213,7 +213,7 @@ template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
   using ExecPolicy =
     KernelPolicy<
-      CudaKernelAsync<
+      CudaKernel<
         For<0, cuda_block_x_loop, // Direction
           For<2, cuda_block_y_loop, // group
             For<3, cuda_thread_x_loop, // zone
@@ -231,7 +231,7 @@ template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
     using ExecPolicy =
       KernelPolicy<
-        CudaKernelAsync<
+        CudaKernel<
           For<0, cuda_block_x_loop, // Direction
             For<3, cuda_block_y_loop, // zone
               For<2, cuda_thread_x_loop, // group
@@ -249,7 +249,7 @@ template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_CUDA, LayoutT_GDZ>> {
     using ExecPolicy =
       KernelPolicy<
-        CudaKernelAsync<
+        CudaKernel<
           For<2, cuda_block_x_loop, // group
             For<0, cuda_block_y_loop, // direction
               For<3, cuda_thread_x_loop, // zone
@@ -268,7 +268,7 @@ template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_CUDA, LayoutT_GZD>> {
     using ExecPolicy =
       KernelPolicy<
-        CudaKernelAsync<
+        CudaKernel<
           For<2, cuda_block_x_loop, // group
             For<3, cuda_block_y_loop, // zone
               For<0, cuda_thread_x_loop, // direction
@@ -286,7 +286,7 @@ template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>> {
     using ExecPolicy =
       KernelPolicy<
-        CudaKernelAsync<
+        CudaKernel<
           For<3, cuda_block_x_loop, // zone
             For<0, cuda_block_y_loop, // direction
               For<2, cuda_thread_x_loop, // group
@@ -306,7 +306,7 @@ template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_CUDA, LayoutT_ZGD>> {
     using ExecPolicy =
       KernelPolicy<
-        CudaKernelAsync<
+        CudaKernel<
           For<3, cuda_block_x_loop, // zone
             For<2, cuda_block_y_loop, // group
               For<0, cuda_thread_x_loop, // direction
@@ -329,7 +329,7 @@ template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_HIP, LayoutT_DGZ>> {
   using ExecPolicy =
     KernelPolicy<
-      HipKernelAsync<
+      HipKernel<
         For<0, hip_block_x_loop, // Direction
           For<2, hip_block_y_loop, // group
             For<3, hip_thread_x_loop, // zone
@@ -347,7 +347,7 @@ template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_HIP, LayoutT_DZG>> {
     using ExecPolicy =
       KernelPolicy<
-        HipKernelAsync<
+        HipKernel<
           For<0, hip_block_x_loop, // Direction
             For<3, hip_block_y_loop, // zone
               For<2, hip_thread_x_loop, // group
@@ -365,7 +365,7 @@ template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_HIP, LayoutT_GDZ>> {
     using ExecPolicy =
       KernelPolicy<
-        HipKernelAsync<
+        HipKernel<
           For<2, hip_block_x_loop, // group
             For<0, hip_block_y_loop, // direction
               For<3, hip_thread_x_loop, // zone
@@ -384,7 +384,7 @@ template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_HIP, LayoutT_GZD>> {
     using ExecPolicy =
       KernelPolicy<
-        HipKernelAsync<
+        HipKernel<
           For<2, hip_block_x_loop, // group
             For<3, hip_block_y_loop, // zone
               For<0, hip_thread_x_loop, // direction
@@ -402,7 +402,7 @@ template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_HIP, LayoutT_ZDG>> {
     using ExecPolicy =
       KernelPolicy<
-        HipKernelAsync<
+        HipKernel<
           For<3, hip_block_x_loop, // zone
             For<0, hip_block_y_loop, // direction
               For<2, hip_thread_x_loop, // group
@@ -422,7 +422,7 @@ template<>
 struct Policy_LPlusTimes<ArchLayoutT<ArchT_HIP, LayoutT_ZGD>> {
     using ExecPolicy =
       KernelPolicy<
-        HipKernelAsync<
+        HipKernel<
           For<3, hip_block_x_loop, // zone
             For<2, hip_block_y_loop, // group
               For<0, hip_thread_x_loop, // direction
