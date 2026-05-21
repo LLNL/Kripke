@@ -135,6 +135,24 @@ namespace Kripke {
     return SdomAL<AL>{sdom_id};
   }
 
+#ifdef KRIPKE_USE_CHAI
+  RAJA_INLINE
+  chai::ExecutionSpace fieldAllocationSpace(ArchV arch_v)
+  {
+#if defined(KRIPKE_USE_CUDA)
+    if(arch_v == ArchV_CUDA){
+      return chai::GPU;
+    }
+#endif
+#if defined(KRIPKE_USE_HIP)
+    if(arch_v == ArchV_HIP){
+      return chai::GPU;
+    }
+#endif
+    return chai::CPU;
+  }
+#endif
+
 
   template<typename FieldType, typename SetType>
   RAJA_INLINE
@@ -143,8 +161,12 @@ namespace Kripke {
     FieldType *field = nullptr;
     dispatchLayout(al_v.layout_v, [&](auto layout_t){
       using order_t = typename DefaultOrder<decltype(layout_t)>::type; 
-     
+
+#ifdef KRIPKE_USE_CHAI
+      field = new FieldType(set, fieldAllocationSpace(al_v.arch_v), order_t{});
+#else
       field = new FieldType(set, order_t{});
+#endif
       data_store.addVariable(name, field);
     });
 

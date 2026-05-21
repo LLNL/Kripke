@@ -44,7 +44,8 @@ class ParallelComm {
     int findSubdomain(SdomId sdom_id);
     void dequeueSubdomain(SdomId sdom_id);
     void postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id);
-    void postSends(Kripke::Core::DataStore &data_store, SdomId sdom_id_upwind, double *buffers[3]);
+    void postSends(Kripke::Core::DataStore &data_store, SdomId sdom_id_upwind,
+                   Kripke::Core::FieldStorage<double> *src_plane_data[3]);
     void testRecieves(void);
     void waitAllSends(void);
     std::vector<SdomId> getReadyList(void);

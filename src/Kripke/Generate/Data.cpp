@@ -86,24 +86,45 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
   // Assign basic diagonal data to matrix
   for(auto sdom_id : field_sigs.getWorkList()){
 
-    // Assign diagonal to the user input for each material
-    // Assume each group has same behavior
-    auto sigs = field_sigs.getView(sdom_id);
     int global_num_groups = global_group_set.size(sdom_id);
-    Legendre n{0};
-    for(Material mat{0};mat < 3;++ mat){
-      RAJA::forall<RAJA::seq_exec>(
+
+#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+    if(field_sigs.getAllocationSpace() == chai::GPU){
+      auto sigs = field_sigs.getDeviceView(sdom_id);
+      double sigs0 = input_vars.sigs[0];
+      double sigs1 = input_vars.sigs[1];
+      double sigs2 = input_vars.sigs[2];
+      Legendre n{0};
+
+#if defined(KRIPKE_USE_CUDA)
+      RAJA::forall<RAJA::cuda_exec<256>>(
+#else
+      RAJA::forall<RAJA::hip_exec<256>>(
+#endif
         RAJA::TypedRangeSegment<GlobalGroup>(0, global_num_groups),
-        [=](GlobalGroup g){
-          sigs(mat, n, g, g) = input_vars.sigs[*mat];
+        KRIPKE_LAMBDA (GlobalGroup g){
+          sigs(Material{0}, n, g, g) = sigs0;
+          sigs(Material{1}, n, g, g) = sigs1;
+          sigs(Material{2}, n, g, g) = sigs2;
       });
+    }
+    else
+#endif
+    {
+      // Assign diagonal to the user input for each material.
+      // Assume each group has same behavior.
+      auto sigs = field_sigs.getView(sdom_id);
+      Legendre n{0};
+      for(Material mat{0};mat < 3;++ mat){
+        RAJA::forall<RAJA::seq_exec>(
+          RAJA::TypedRangeSegment<GlobalGroup>(0, global_num_groups),
+          [=](GlobalGroup g){
+            sigs(mat, n, g, g) = input_vars.sigs[*mat];
+        });
+      }
     }
   }
 
 
 
 }
-
-
-
-
