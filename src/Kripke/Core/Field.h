@@ -44,7 +44,11 @@ namespace Core {
 
       explicit FieldStorage(Kripke::Core::Set const &spanned_set
 #ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_CHAI_SINGLE_MEMORY
+          , chai::ExecutionSpace allocation_space = chai::GPU
+#else
           , chai::ExecutionSpace allocation_space = chai::CPU
+#endif
 #endif
           ) :
         m_set(&spanned_set)

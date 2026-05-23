@@ -139,6 +139,10 @@ namespace Kripke {
   RAJA_INLINE
   chai::ExecutionSpace fieldAllocationSpace(ArchV arch_v)
   {
+#ifdef KRIPKE_USE_CHAI_SINGLE_MEMORY
+    (void)arch_v;
+    return chai::GPU;
+#else
 #if defined(KRIPKE_USE_CUDA)
     if(arch_v == ArchV_CUDA){
       return chai::GPU;
@@ -150,6 +154,7 @@ namespace Kripke {
     }
 #endif
     return chai::CPU;
+#endif
   }
 #endif
 
