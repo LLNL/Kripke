@@ -13,12 +13,11 @@
 
 using namespace Kripke;
 
-namespace {
-
-void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
-               Kripke::SdomId dst_sdom_id,
-               Kripke::Core::FieldStorage<double> &src_plane,
-               Kripke::SdomId src_sdom_id)
+// Helper for copying plane data between CPU and GPU, only used in ParallelComm
+static void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
+                      Kripke::SdomId dst_sdom_id,
+                      Kripke::Core::FieldStorage<double> &src_plane,
+                      Kripke::SdomId src_sdom_id)
 {
   int num_elem = src_plane.size(src_sdom_id);
   KRIPKE_ASSERT(dst_plane.size(dst_sdom_id) == (size_t)num_elem,
@@ -57,8 +56,6 @@ void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
   for(int i = 0;i < num_elem;++ i){
     dst[i] = src[i];
   }
-}
-
 }
 
 ParallelComm::ParallelComm(Kripke::Core::DataStore &data_store) :
@@ -168,7 +165,7 @@ void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id
 }
 
 void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId sdom_id,
-	                             Kripke::Core::FieldStorage<double> *src_plane_data[3])
+                             Kripke::Core::FieldStorage<double> *src_plane_data[3])
 {
   // post sends for downwind dependencies
   Kripke::Core::Comm comm;
