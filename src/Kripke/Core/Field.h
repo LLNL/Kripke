@@ -128,93 +128,92 @@ namespace Core {
 
 
       RAJA_INLINE
-	      View1dType getView1d(Kripke::SdomId sdom_id) const {
+      View1dType getView1d(Kripke::SdomId sdom_id) const {
 
-	        size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
+        size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
 #ifdef KRIPKE_USE_CHAI
-	        m_chunk_to_data[chunk_id].data(chai::CPU);
+        m_chunk_to_data[chunk_id].data(chai::CPU);
 #endif
-	        ElementPtr ptr = m_chunk_to_data[chunk_id];
-	        size_t sdom_size = m_chunk_to_size[chunk_id];
+        ElementPtr ptr = m_chunk_to_data[chunk_id];
+        size_t sdom_size = m_chunk_to_size[chunk_id];
 
-	        return View1dType(ptr, Layout1dType(sdom_size));
-	      }
+        return View1dType(ptr, Layout1dType(sdom_size));
+      }
 
-	      RAJA_INLINE
-	      ElementType *getHostData(Kripke::SdomId sdom_id) const {
-	        KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
-	            "sdom_id(%d) >= num_subdomains(%d)",
-	            (int)*sdom_id,
+      RAJA_INLINE
+      ElementType *getHostData(Kripke::SdomId sdom_id) const {
+        KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
+            "sdom_id(%d) >= num_subdomains(%d)",
+            (int)*sdom_id,
             (int)(int)m_subdomain_to_chunk.size());
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
 #ifndef KRIPKE_USE_CHAI
-	        return  m_chunk_to_data[chunk_id];
+        return  m_chunk_to_data[chunk_id];
 #else
-	        return m_chunk_to_data[chunk_id].data(chai::CPU);
-
+        return m_chunk_to_data[chunk_id].data(chai::CPU);
 #endif
-	      }
+      }
 
-	      RAJA_INLINE
-	      ElementType const *getHostDataConst(Kripke::SdomId sdom_id) const {
-	        KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
-	            "sdom_id(%d) >= num_subdomains(%d)",
-	            (int)*sdom_id,
-	            (int)(int)m_subdomain_to_chunk.size());
-	        size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
+      RAJA_INLINE
+      ElementType const *getHostDataConst(Kripke::SdomId sdom_id) const {
+        KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
+            "sdom_id(%d) >= num_subdomains(%d)",
+            (int)*sdom_id,
+            (int)(int)m_subdomain_to_chunk.size());
+        size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
 #ifndef KRIPKE_USE_CHAI
-	        return  m_chunk_to_data[chunk_id];
+        return  m_chunk_to_data[chunk_id];
 #else
-	        return m_chunk_to_data[chunk_id].cdata();
+        return m_chunk_to_data[chunk_id].cdata();
 #endif
-	      }
+      }
 
-	      RAJA_INLINE
-	      ElementType *getDeviceData(Kripke::SdomId sdom_id) const {
-	        KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
-	            "sdom_id(%d) >= num_subdomains(%d)",
-	            (int)*sdom_id,
-	            (int)(int)m_subdomain_to_chunk.size());
-	        size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
+      RAJA_INLINE
+      ElementType *getDeviceData(Kripke::SdomId sdom_id) const {
+        KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
+            "sdom_id(%d) >= num_subdomains(%d)",
+            (int)*sdom_id,
+            (int)(int)m_subdomain_to_chunk.size());
+        size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
 #ifndef KRIPKE_USE_CHAI
-	        return  m_chunk_to_data[chunk_id];
+        return  m_chunk_to_data[chunk_id];
 #else
 #if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
-	        return m_chunk_to_data[chunk_id].data(chai::GPU);
+        return m_chunk_to_data[chunk_id].data(chai::GPU);
 #else
-	        return m_chunk_to_data[chunk_id].data(chai::CPU);
+        return m_chunk_to_data[chunk_id].data(chai::CPU);
 #endif
 #endif
-	      }
+      }
 
-	      RAJA_INLINE
-	      ElementType *getData(Kripke::SdomId sdom_id) const {
-	        return getHostData(sdom_id);
-	      }
+      RAJA_INLINE
+      ElementType *getData(Kripke::SdomId sdom_id) const {
+        return getHostData(sdom_id);
+      }
 
 #ifdef KRIPKE_USE_CHAI
-	      RAJA_INLINE
-	      chai::ExecutionSpace getAllocationSpace() const {
-	        return m_allocation_space;
-	      }
+      RAJA_INLINE
+      chai::ExecutionSpace getAllocationSpace() const {
+        return m_allocation_space;
+      }
 #endif
 
 
-	      RAJA_INLINE
-	      Kripke::Core::Set const &getSet() const {
+      RAJA_INLINE
+      Kripke::Core::Set const &getSet() const {
         return *m_set;
       }
 
     protected:
-	      Kripke::Core::Set const *m_set;
-	      std::vector<size_t> m_chunk_to_size;
-	      std::vector<ElementPtr> m_chunk_to_data;
+      Kripke::Core::Set const *m_set;
+      std::vector<size_t> m_chunk_to_size;
+      std::vector<ElementPtr> m_chunk_to_data;
 #ifdef KRIPKE_USE_CHAI
-	      chai::ExecutionSpace m_allocation_space;
+      chai::ExecutionSpace m_allocation_space;
 #endif
 	  };
 
@@ -243,28 +242,28 @@ namespace Core {
       using DeviceViewType = RAJA::internal::ViewBase<ElementType, ElementType *, DefaultLayoutType>;
 
       template<typename Order>
-	      Field(Kripke::Core::Set const &spanned_set, Order) :
-	        Parent(spanned_set)
-	      {
-	        setupLayouts<Order>(spanned_set);
-	      }
+      Field(Kripke::Core::Set const &spanned_set, Order) :
+        Parent(spanned_set)
+      {
+        setupLayouts<Order>(spanned_set);
+      }
 
 #ifdef KRIPKE_USE_CHAI
-	      template<typename Order>
-	      Field(Kripke::Core::Set const &spanned_set,
-	            chai::ExecutionSpace allocation_space,
-	            Order) :
-	        Parent(spanned_set, allocation_space)
-	      {
-	        setupLayouts<Order>(spanned_set);
-	      }
+      template<typename Order>
+      Field(Kripke::Core::Set const &spanned_set,
+            chai::ExecutionSpace allocation_space,
+            Order) :
+        Parent(spanned_set, allocation_space)
+      {
+        setupLayouts<Order>(spanned_set);
+      }
 #endif
 
-	      template<typename Order>
-	      void setupLayouts(Kripke::Core::Set const &spanned_set) {
-	        KRIPKE_ASSERT(NumDims == spanned_set.getNumDimensions(),
-	            "Number of dimensions must match between Field<%d> and Set<%d>\n",
-	            (int)NumDims, (int)spanned_set.getNumDimensions());
+      template<typename Order>
+      void setupLayouts(Kripke::Core::Set const &spanned_set) {
+        KRIPKE_ASSERT(NumDims == spanned_set.getNumDimensions(),
+            "Number of dimensions must match between Field<%d> and Set<%d>\n",
+            (int)NumDims, (int)spanned_set.getNumDimensions());
 
         auto perm = LayoutInfo<Order, IDX_TYPES...>::getPermutation();
 
@@ -283,9 +282,9 @@ namespace Core {
 
           RAJA::Layout<NumDims, RAJA::Index_type> &layout =
               m_chunk_to_layout[chunk_id];
-	          layout = RAJA::make_permuted_layout<NumDims,RAJA::Index_type>(sizes, perm);
-	        }
-	      }
+          layout = RAJA::make_permuted_layout<NumDims,RAJA::Index_type>(sizes, perm);
+        }
+      }
 
       virtual ~Field(){
 
@@ -294,15 +293,15 @@ namespace Core {
 
 
       RAJA_INLINE
-	      DefaultViewType getView(Kripke::SdomId sdom_id) const {
+      DefaultViewType getView(Kripke::SdomId sdom_id) const {
 
-	        size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
+        size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
 
 #ifdef KRIPKE_USE_CHAI
-	        Parent::m_chunk_to_data[chunk_id].data(chai::CPU);
+        Parent::m_chunk_to_data[chunk_id].data(chai::CPU);
 #endif
-	        auto ptr = Parent::m_chunk_to_data[chunk_id];
-	        auto layout = m_chunk_to_layout[chunk_id];
+        auto ptr = Parent::m_chunk_to_data[chunk_id];
+        auto layout = m_chunk_to_layout[chunk_id];
 
         return DefaultViewType(ptr, layout);
       }
@@ -371,7 +370,7 @@ namespace Core {
 
           SdomId sdom_id(DomainVar::m_chunk_to_subdomain[chunk_id]);
 
-	          ElementType *ptr = Parent::getHostData(sdom_id);
+          ElementType *ptr = Parent::getHostData(sdom_id);
 
           printf("Chunk %d Data: ", (int)chunk_id);
           for(size_t i = 0;i < Parent::m_chunk_to_size[chunk_id];++ i){
