@@ -216,7 +216,7 @@ void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId
     double const *src_buffer = src_plane_data[*dim]->getHostDataConst(sdom_id);
 
     // Post the send
-    MPI_Isend(src_buffer, plane_data_size, MPI_DOUBLE, downwind_rank,
+    MPI_Isend(const_cast<double *>(src_buffer), plane_data_size, MPI_DOUBLE, downwind_rank,
       *downwind_sdom, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
 
 #else
