@@ -209,9 +209,9 @@ struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_DGZ>> {
     KernelPolicy<
       CudaKernel<
         For<0, cuda_block_x_loop, // moment
-          For<1, cuda_block_y_loop, // direction
-            For<2, cuda_thread_x_loop, // group
-              For<3, seq_exec, // zone
+          For<2, cuda_block_y_loop, // group
+            For<3, cuda_thread_x_loop, // zone
+              For<1, seq_exec, // direction
                 Lambda<0>
               >
             >
@@ -227,9 +227,9 @@ struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_DZG>> {
       KernelPolicy<
         CudaKernel<
           For<0, cuda_block_x_loop, // moment
-            For<1, cuda_block_y_loop, // direction
-              For<3, cuda_thread_x_loop, // zone
-                For<2, seq_exec, // group
+            For<3, cuda_block_y_loop, // zone
+              For<2, cuda_thread_x_loop, // group
+                For<1, seq_exec, // direction
                   Lambda<0>
                 >
               >
@@ -283,8 +283,8 @@ struct Policy_LTimes<ArchLayoutT<ArchT_CUDA, LayoutT_ZDG>> {
         CudaKernel<
           For<3, cuda_block_x_loop, // zone
             For<0, cuda_block_y_loop, // moment
-              For<1, cuda_thread_x_loop, // direction
-                For<2, seq_exec, // group
+              For<2, cuda_thread_x_loop, // group
+                For<1, seq_exec, // direction
                   Lambda<0>
                 >
               >
@@ -321,9 +321,9 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_DGZ>> {
     KernelPolicy<
       HipKernel<
         For<0, hip_block_x_loop, // moment
-          For<1, hip_block_y_loop, // direction
-            For<2, hip_thread_x_loop, // group
-              For<3, seq_exec, // zone
+          For<2, hip_block_y_loop, // group
+            For<3, hip_thread_x_loop, // zone
+              For<1, seq_exec, // direction
                 Lambda<0>
               >
             >
@@ -339,9 +339,9 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_DZG>> {
       KernelPolicy<
         HipKernel<
           For<0, hip_block_x_loop, // moment
-            For<1, hip_block_y_loop, // direction
-              For<3, hip_thread_x_loop, // zone
-                For<2, seq_exec, // group
+            For<3, hip_block_y_loop, // zone
+              For<2, hip_thread_x_loop, // group
+                For<1, seq_exec, // direction
                   Lambda<0>
                 >
               >
@@ -395,8 +395,8 @@ struct Policy_LTimes<ArchLayoutT<ArchT_HIP, LayoutT_ZDG>> {
         HipKernel<
           For<3, hip_block_x_loop, // zone
             For<0, hip_block_y_loop, // moment
-              For<1, hip_thread_x_loop, // direction
-                For<2, seq_exec, // group
+              For<2, hip_thread_x_loop, // group
+                For<1, seq_exec, // direction
                   Lambda<0>
                 >
               >

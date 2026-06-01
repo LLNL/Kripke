@@ -340,30 +340,71 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
 
   for(SdomId sdom_id : field_sigt.getWorkList()){
 
-    auto mixelem_to_zone     = field_mixed_to_zone.getView(sdom_id);
-    auto mixelem_to_material = field_mixed_to_material.getView(sdom_id);
-    auto mixelem_to_fraction = field_mixed_to_fraction.getView(sdom_id);
-    auto sigt = field_sigt.getView(sdom_id);
-
     int num_groups  = set_group.size(sdom_id);
+    int num_zones = set_zone_linear.size(sdom_id);
     int num_mixelem = set_mixelem.size(sdom_id);
 
-    for(Group g{0};g < num_groups;++ g){
+#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+    if(field_sigt.getAllocationSpace() == chai::GPU){
+      auto mixelem_to_material = field_mixed_to_material.getDeviceView(sdom_id);
+      auto mixelem_to_fraction = field_mixed_to_fraction.getDeviceView(sdom_id);
+      auto zone_to_num_mixelem = field_zone_to_num_mixelem.getDeviceView(sdom_id);
+      auto zone_to_mixelem = field_zone_to_mixelem.getDeviceView(sdom_id);
+      auto sigt = field_sigt.getDeviceView(sdom_id);
 
-      RAJA::forall<RAJA::seq_exec>(
-        RAJA::TypedRangeSegment<MixElem>(0, num_mixelem),
-        [=](MixElem mixelem){
-          Zone z       = mixelem_to_zone(mixelem);
-          Material mat = mixelem_to_material(mixelem);
+      double sigt0 = input_vars.sigt[0];
+      double sigt1 = input_vars.sigt[1];
+      double sigt2 = input_vars.sigt[2];
+      int total = num_groups * num_zones;
 
-          sigt(g, z) += mixelem_to_fraction(mixelem) * input_vars.sigt[*mat];
+#if defined(KRIPKE_USE_CUDA)
+      RAJA::forall<RAJA::cuda_exec<256>>(
+#else
+      RAJA::forall<RAJA::hip_exec<256>>(
+#endif
+        // Unrolled GPU version
+        RAJA::RangeSegment(0, total),
+        KRIPKE_LAMBDA (RAJA::Index_type idx){
+          Group g(idx / num_zones);
+          Zone z(idx % num_zones);
+
+          MixElem first_mixelem = zone_to_mixelem(z);
+          int zone_num_mixelem = zone_to_num_mixelem(z);
+          double value = 0.0;
+
+          for(int mix = 0; mix < zone_num_mixelem; ++mix){
+            MixElem mixelem(*first_mixelem + mix);
+            Material mat = mixelem_to_material(mixelem);
+            // mat 0 is sigt0, mat 1 is sigt1, mat 2 is sigt2
+            double material_sigt = (*mat == 0) ? sigt0 : ((*mat == 1) ? sigt1 : sigt2);
+            value += mixelem_to_fraction(mixelem) * material_sigt;
+          }
+
+          sigt(g, z) = value;
       });
+    }
+    else
+#endif
+    // CPU version
+    {
+      auto mixelem_to_zone     = field_mixed_to_zone.getView(sdom_id);
+      auto mixelem_to_material = field_mixed_to_material.getView(sdom_id);
+      auto mixelem_to_fraction = field_mixed_to_fraction.getView(sdom_id);
+      auto sigt = field_sigt.getView(sdom_id);
+
+      for(Group g{0}; g < num_groups; ++g){
+
+        RAJA::forall<RAJA::seq_exec>(
+          RAJA::TypedRangeSegment<MixElem>(0, num_mixelem),
+          [=](MixElem mixelem){
+            Zone z       = mixelem_to_zone(mixelem);
+            Material mat = mixelem_to_material(mixelem);
+
+            sigt(g, z) += mixelem_to_fraction(mixelem) * input_vars.sigt[*mat];
+        });
+      }
     }
 
   }
 
 }
-
-
-
-

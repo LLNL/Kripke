@@ -77,13 +77,13 @@ bool BlockJacobiComm::workRemaining(void){
       SdomId sdom_id(queue_sdom_ids[i]);
 
       // Send new downwind info for sweep
-      double *buf[3] = {
-          old_i_plane.getData(sdom_id),
-          old_j_plane.getData(sdom_id),
-          old_k_plane.getData(sdom_id)
+      Kripke::Core::FieldStorage<double> *planes[3] = {
+          &old_i_plane,
+          &old_j_plane,
+          &old_k_plane
       };
 
-      postSends(*m_data_store, sdom_id, buf);
+      postSends(*m_data_store, sdom_id, planes);
     }
     posted_sends = true;
   }
@@ -113,5 +113,3 @@ void BlockJacobiComm::markComplete(SdomId sdom_id){
   // remove subdomain from work queue
   dequeueSubdomain(sdom_id);
 }
-
-

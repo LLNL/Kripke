@@ -181,10 +181,10 @@ void PartitionSpace::createSubdomainData(Kripke::Core::DataStore &data_store) co
 
     // Perform collective to gather global addresses of all subdomains
 
-    m_comm_all.allReduceSumLong(field_global_to_rank.getData(sdom_id),
+    m_comm_all.allReduceSumLong(field_global_to_rank.getHostData(sdom_id),
                                 field_global_to_rank.size(sdom_id));
 
-    m_comm_all.allReduceSumInt((int*)field_global_to_local.getData(sdom_id),
+    m_comm_all.allReduceSumInt((int*)field_global_to_local.getHostData(sdom_id),
                                field_global_to_local.size(sdom_id));
   }
 }

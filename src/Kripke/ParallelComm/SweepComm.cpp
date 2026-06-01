@@ -75,11 +75,10 @@ void SweepComm::markComplete(SdomId sdom_id){
   auto &k_plane = m_data_store->getVariable<Field_KPlane>("k_plane");
 
   // Send new downwind info for sweep
-  double *buf[3] = {
-    i_plane.getData(sdom_id),
-    j_plane.getData(sdom_id),
-    k_plane.getData(sdom_id)
+  Kripke::Core::FieldStorage<double> *planes[3] = {
+    &i_plane,
+    &j_plane,
+    &k_plane
   };
-  postSends(*m_data_store, sdom_id, buf);
+  postSends(*m_data_store, sdom_id, planes);
 }
-

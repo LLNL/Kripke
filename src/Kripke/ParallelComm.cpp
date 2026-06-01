@@ -13,6 +13,43 @@
 
 using namespace Kripke;
 
+// Helper for copying plane data between two GPU allocations, only used in ParallelComm
+static void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
+                      Kripke::SdomId dst_sdom_id,
+                      Kripke::Core::FieldStorage<double> &src_plane,
+                      Kripke::SdomId src_sdom_id)
+{
+  int num_elem = src_plane.size(src_sdom_id);
+  KRIPKE_ASSERT(dst_plane.size(dst_sdom_id) == (size_t)num_elem,
+      "Cannot copy plane data with different subdomain sizes");
+
+#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+  if(dst_plane.getAllocationSpace() == chai::GPU &&
+     src_plane.getAllocationSpace() == chai::GPU){
+    double *dst = dst_plane.getDeviceData(dst_sdom_id);
+    double *src = src_plane.getDeviceData(src_sdom_id);
+#if defined(KRIPKE_USE_CUDA)
+    RAJA::forall<RAJA::cuda_exec<256>>(
+#elif defined(KRIPKE_USE_HIP)
+    RAJA::forall<RAJA::hip_exec<256>>(
+#else
+    RAJA::forall<RAJA::seq_exec>( // should never reach this
+#endif
+      RAJA::RangeSegment(0, num_elem),
+      KRIPKE_LAMBDA (RAJA::Index_type i){
+        dst[i] = src[i];
+    });
+    return;
+  }
+#endif  // #if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+
+  double *dst = dst_plane.getHostData(dst_sdom_id);
+  double const *src = src_plane.getHostDataConst(src_sdom_id);
+  for(int i = 0;i < num_elem;++ i){
+    dst[i] = src[i];
+  }
+}
+
 ParallelComm::ParallelComm(Kripke::Core::DataStore &data_store) :
   m_data_store(&data_store)
 {
@@ -97,7 +134,7 @@ void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id
     recv_subdomains.push_back(*sdom_id);
 
     auto &plane_data = *m_plane_data[*dim];
-    double *plane_data_ptr = plane_data.getData(sdom_id);
+    double *plane_data_ptr = plane_data.getHostData(sdom_id);
     size_t plane_data_size = plane_data.size(sdom_id);
 
     GlobalSdomId global_sdom_id = local_to_global(sdom_id);
@@ -120,7 +157,7 @@ void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id
 }
 
 void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId sdom_id,
-                             double *src_buffers[3])
+                             Kripke::Core::FieldStorage<double> *src_plane_data[3])
 {
   // post sends for downwind dependencies
   Kripke::Core::Comm comm;
@@ -153,12 +190,9 @@ void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId
         }
       }
 
-      // copy the boundary condition data into the downwinds plane data
-      auto dst_plane = m_plane_data[*dim]->getView1d(sdom_id_downwind);
-      int num_elem = m_plane_data[*dim]->size(sdom_id_downwind);
-      for(int i = 0;i < num_elem;++ i){
-        dst_plane(i) = src_buffers[*dim][i];
-      }
+      // copy the boundary condition data into the downwind plane data
+      copyPlane(*m_plane_data[*dim], sdom_id_downwind,
+                *src_plane_data[*dim], sdom_id);
       continue;
     }
 
@@ -171,9 +205,10 @@ void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId
     // Get size of outgoing boudnary data
     auto &plane_data = *m_plane_data[*dim];
     size_t plane_data_size = plane_data.size(sdom_id);
+    double const *src_buffer = src_plane_data[*dim]->getHostDataConst(sdom_id);
 
     // Post the send
-    MPI_Isend(src_buffers[*dim], plane_data_size, MPI_DOUBLE, downwind_rank,
+    MPI_Isend(const_cast<double *>(src_buffer), plane_data_size, MPI_DOUBLE, downwind_rank,
       *downwind_sdom, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
 
 #else
