@@ -23,26 +23,18 @@ static void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
   KRIPKE_ASSERT(dst_plane.size(dst_sdom_id) == (size_t)num_elem,
       "Cannot copy plane data with different subdomain sizes");
 
-#if defined(KRIPKE_USE_CHAI) && defined(KRIPKE_USE_CUDA)
+#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
   if(dst_plane.getAllocationSpace() == chai::GPU &&
      src_plane.getAllocationSpace() == chai::GPU){
     double *dst = dst_plane.getDeviceData(dst_sdom_id);
     double *src = src_plane.getDeviceData(src_sdom_id);
+#if defined(KRIPKE_USE_CUDA)
     RAJA::forall<RAJA::cuda_exec<256>>(
-      RAJA::RangeSegment(0, num_elem),
-      KRIPKE_LAMBDA (RAJA::Index_type i){
-        dst[i] = src[i];
-    });
-    return;
-  }
-#endif
-
-#if defined(KRIPKE_USE_CHAI) && defined(KRIPKE_USE_HIP)
-  if(dst_plane.getAllocationSpace() == chai::GPU &&
-     src_plane.getAllocationSpace() == chai::GPU){
-    double *dst = dst_plane.getDeviceData(dst_sdom_id);
-    double *src = src_plane.getDeviceData(src_sdom_id);
+#elif defined(KRIPKE_USE_HIP)
     RAJA::forall<RAJA::hip_exec<256>>(
+#else
+    RAJA::forall<RAJA::seq_exec>(
+#endif
       RAJA::RangeSegment(0, num_elem),
       KRIPKE_LAMBDA (RAJA::Index_type i){
         dst[i] = src[i];
