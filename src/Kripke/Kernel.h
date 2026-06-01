@@ -40,14 +40,14 @@ namespace Kripke {
         auto ptr = field.getDeviceData(sdom_id);
         int num_elem = field.size(sdom_id);
 
+#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
 #if defined(KRIPKE_USE_CUDA)
         RAJA::forall<RAJA::cuda_exec<256>>(
-          RAJA::RangeSegment(0, num_elem),
-          KRIPKE_LAMBDA (RAJA::Index_type i){
-            ptr[i] = value;
-        });
 #elif defined(KRIPKE_USE_HIP)
         RAJA::forall<RAJA::hip_exec<256>>(
+#else
+        RAJA::forall<RAJA::seq_exec>( // should never reach this
+#endif
           RAJA::RangeSegment(0, num_elem),
           KRIPKE_LAMBDA (RAJA::Index_type i){
             ptr[i] = value;
@@ -55,7 +55,7 @@ namespace Kripke {
 #else
         (void)ptr;
         (void)num_elem;
-#endif
+#endif  // #if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
       }
 
       template<typename FieldType>
@@ -79,14 +79,14 @@ namespace Kripke {
         auto dst = field_dst.getDeviceData(sdom_id_dst);
         int num_elem = field_src.size(sdom_id_src);
 
+#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
 #if defined(KRIPKE_USE_CUDA)
         RAJA::forall<RAJA::cuda_exec<256>>(
-          RAJA::RangeSegment(0, num_elem),
-          KRIPKE_LAMBDA (RAJA::Index_type i){
-            dst[i] = src[i];
-        });
 #elif defined(KRIPKE_USE_HIP)
         RAJA::forall<RAJA::hip_exec<256>>(
+#else
+        RAJA::forall<RAJA::seq_exec>( // should never reach this
+#endif
           RAJA::RangeSegment(0, num_elem),
           KRIPKE_LAMBDA (RAJA::Index_type i){
             dst[i] = src[i];
@@ -95,7 +95,7 @@ namespace Kripke {
         (void)src;
         (void)dst;
         (void)num_elem;
-#endif
+#endif  // #if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
       }
 
       template<typename FieldType>
