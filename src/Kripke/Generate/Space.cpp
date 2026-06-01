@@ -362,6 +362,7 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
 #else
       RAJA::forall<RAJA::hip_exec<256>>(
 #endif
+        // Unrolled GPU version
         RAJA::RangeSegment(0, total),
         KRIPKE_LAMBDA (RAJA::Index_type idx){
           Group g(idx / num_zones);
@@ -371,9 +372,10 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
           int zone_num_mixelem = zone_to_num_mixelem(z);
           double value = 0.0;
 
-          for(int mix = 0;mix < zone_num_mixelem;++ mix){
+          for(int mix = 0; mix < zone_num_mixelem; ++mix){
             MixElem mixelem(*first_mixelem + mix);
             Material mat = mixelem_to_material(mixelem);
+            // mat 0 is sigt0, mat 1 is sigt1, mat 2 is sigt2
             double material_sigt = (*mat == 0) ? sigt0 : ((*mat == 1) ? sigt1 : sigt2);
             value += mixelem_to_fraction(mixelem) * material_sigt;
           }
@@ -383,13 +385,14 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
     }
     else
 #endif
+    // CPU version
     {
       auto mixelem_to_zone     = field_mixed_to_zone.getView(sdom_id);
       auto mixelem_to_material = field_mixed_to_material.getView(sdom_id);
       auto mixelem_to_fraction = field_mixed_to_fraction.getView(sdom_id);
       auto sigt = field_sigt.getView(sdom_id);
 
-      for(Group g{0};g < num_groups;++ g){
+      for(Group g{0}; g < num_groups; ++g){
 
         RAJA::forall<RAJA::seq_exec>(
           RAJA::TypedRangeSegment<MixElem>(0, num_mixelem),

@@ -13,7 +13,7 @@
 
 using namespace Kripke;
 
-// Helper for copying plane data between CPU and GPU, only used in ParallelComm
+// Helper for copying plane data between two GPU allocations, only used in ParallelComm
 static void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
                       Kripke::SdomId dst_sdom_id,
                       Kripke::Core::FieldStorage<double> &src_plane,

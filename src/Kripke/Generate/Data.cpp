@@ -103,6 +103,7 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
 #endif
         RAJA::TypedRangeSegment<GlobalGroup>(0, global_num_groups),
         KRIPKE_LAMBDA (GlobalGroup g){
+          // Unrolled version of CPU initialization, on the GPU
           sigs(Material{0}, n, g, g) = sigs0;
           sigs(Material{1}, n, g, g) = sigs1;
           sigs(Material{2}, n, g, g) = sigs2;
@@ -110,12 +111,13 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
     }
     else
 #endif
+    // CPU initialization
     {
       // Assign diagonal to the user input for each material.
       // Assume each group has same behavior.
       auto sigs = field_sigs.getView(sdom_id);
       Legendre n{0};
-      for(Material mat{0};mat < 3;++ mat){
+      for(Material mat{0}; mat < 3; ++mat){
         RAJA::forall<RAJA::seq_exec>(
           RAJA::TypedRangeSegment<GlobalGroup>(0, global_num_groups),
           [=](GlobalGroup g){
