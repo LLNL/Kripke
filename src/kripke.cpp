@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
+#include <cstdlib>
 #include <string>
 #include <sstream>
 
@@ -188,6 +189,17 @@ int main(int argc, char **argv) {
 
   int myid = comm.rank();
   int num_tasks = comm.size();
+
+#if defined(KRIPKE_USE_MPI) && defined(KRIPKE_USE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI)
+  char const *gpu_mpi = std::getenv("MPICH_GPU_SUPPORT_ENABLED");
+  if(gpu_mpi == nullptr || strcmp(gpu_mpi, "1") != 0){
+    if(myid == 0){
+      printf("KRIPKE_USE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI requires "
+             "MPICH_GPU_SUPPORT_ENABLED=1\n");
+    }
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+#endif
 
   if (myid == 0) {
     /* Print out a banner message along with a version number. */
