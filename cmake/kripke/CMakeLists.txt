@@ -107,6 +107,14 @@ endif()
 # 
 option(ENABLE_CHAI "Enable CHAI/Umpire memory management" Off)
 option(ENABLE_CHAI_SINGLE_MEMORY "Enable single memory configuration in CHAI" Off)
+option(ENABLE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI
+       "Allocate all CHAI single-memory fields in GPU space and pass GPU pointers to MPI" Off)
+if(ENABLE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI AND NOT ENABLE_CHAI_SINGLE_MEMORY)
+  message(FATAL_ERROR "ENABLE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI requires ENABLE_CHAI_SINGLE_MEMORY")
+endif()
+if(ENABLE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI AND NOT ENABLE_CHAI)
+  message(FATAL_ERROR "ENABLE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI requires ENABLE_CHAI")
+endif()
 if(ENABLE_CHAI)
   # Find camp
   if (NOT TARGET camp)
@@ -143,16 +151,20 @@ if(ENABLE_CHAI)
 
   if (ENABLE_HIP)
     if(ENABLE_CHAI_SINGLE_MEMORY)
-        # Set CHAI-related HIP variables for single memory address space.
-        # Use the THIN_GPU_ALLOCATE mode of CHAI on MI250X.
-        # This is to mirror the expected behavior of El Capitan.
-        # Requires env variables HSA_XNACK set to 1 and MPICH_GPU_SUPPORT_ENABLED set to 1 to work on the MI250X.
+        # Set CHAI-related HIP variables for a thin single-memory address space.
+        # By default Kripke keeps CPU-only metadata on the host, GPU compute
+        # fields on the device, and stages remote MPI plane traffic through CPU
+        # buffers. ENABLE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI keeps all fields on
+        # the GPU and requires GPU-aware MPI from the runtime.
         set (CHAI_ENABLE_UM OFF CACHE BOOL "")
         set (CHAI_ENABLE_PINNED ON CACHE BOOL "")
         set(CHAI_DISABLE_RM ON CACHE BOOL "")
         set(CHAI_THIN_GPU_ALLOCATE ON CACHE BOOL "")
 
         set(KRIPKE_USE_CHAI_SINGLE_MEMORY 1)
+        if(ENABLE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI)
+          set(KRIPKE_USE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI 1)
+        endif()
     endif()
 
     message(STATUS "Kripke: Setting CAMP_HAVE_HIP")
@@ -409,4 +421,3 @@ blt_add_executable(
   SOURCES     "${KRIPKE_SOURCE_DIR}/src/kripke.cpp"
   DEPENDS_ON  ${KRIPKE_DEPENDS} kripke 
 )
-

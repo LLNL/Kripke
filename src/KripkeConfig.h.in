@@ -12,6 +12,7 @@
 #cmakedefine KRIPKE_USE_CUDA
 #cmakedefine KRIPKE_USE_CHAI
 #cmakedefine KRIPKE_USE_CHAI_SINGLE_MEMORY
+#cmakedefine KRIPKE_USE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI
 #cmakedefine KRIPKE_USE_HIP
 
 #cmakedefine KRIPKE_USE_CALIPER
