@@ -44,7 +44,7 @@ namespace Core {
 
       explicit FieldStorage(Kripke::Core::Set const &spanned_set
 #ifdef KRIPKE_USE_CHAI
-#ifdef KRIPKE_USE_CHAI_SINGLE_MEMORY
+#ifdef KRIPKE_USE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI
           , chai::ExecutionSpace allocation_space = chai::GPU
 #else
           , chai::ExecutionSpace allocation_space = chai::CPU
@@ -342,7 +342,12 @@ namespace Core {
         LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
 
 #if (defined(KRIPKE_USE_HIP) || defined(KRIPKE_USE_CUDA)) && defined(KRIPKE_USE_CHAI)
-        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(chai::GPU), layout);
+        if(Parent::m_allocation_space == chai::GPU){
+          return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(
+              Parent::m_chunk_to_data[chunk_id].data(chai::GPU), layout);
+        }
+        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(
+            Parent::m_chunk_to_data[chunk_id].data(chai::CPU), layout);
 #else
         return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id], layout);
 #endif
