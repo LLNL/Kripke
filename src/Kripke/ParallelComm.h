@@ -9,6 +9,7 @@
 #define KRIPKE_PARALLELCOMM_H__
 
 #include <Kripke.h>
+#include <memory>
 #include <vector>
 
 struct Grid_Data;
@@ -57,6 +58,8 @@ class ParallelComm {
     // These vectors contian the recieve requests
 #ifdef KRIPKE_USE_MPI
     std::vector<MPI_Request> recv_requests;
+    std::vector<std::unique_ptr<double[]>> recv_buffers;
+    std::vector<int> recv_dimensions;
 #endif
     std::vector<int> recv_subdomains;
 
@@ -67,6 +70,7 @@ class ParallelComm {
     // These vectors have the remaining send requests that are incomplete
 #ifdef KRIPKE_USE_MPI
     std::vector<MPI_Request> send_requests;
+    std::vector<std::unique_ptr<double[]>> send_buffers;
 #endif
 };
 

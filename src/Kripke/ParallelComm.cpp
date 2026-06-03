@@ -11,7 +11,119 @@
 #include <Kripke/Core/Field.h>
 #include <Kripke/VarTypes.h>
 
+#include <algorithm>
+
+#if defined(KRIPKE_USE_CUDA)
+#include <cuda_runtime.h>
+#elif defined(KRIPKE_USE_HIP)
+#include <hip/hip_runtime.h>
+#endif
+
 using namespace Kripke;
+
+static void synchronizeDevice()
+{
+#if defined(KRIPKE_USE_CUDA)
+  RAJA::synchronize<RAJA::cuda_synchronize>();
+#elif defined(KRIPKE_USE_HIP)
+  RAJA::synchronize<RAJA::hip_synchronize>();
+#endif
+}
+
+static bool mpiNeedsHostStaging(Kripke::Core::FieldStorage<double> const &field)
+{
+#if defined(KRIPKE_USE_CHAI_SINGLE_MEMORY) && defined(KRIPKE_USE_CHAI) && \
+    (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+  if(Kripke::singleMemoryGpuAwareMpiMode()){
+    return false;
+  }
+  return field.getAllocationSpace() == chai::GPU;
+#else
+  (void)field;
+  return false;
+#endif
+}
+
+static double *getMpiRecvBuffer(Kripke::Core::FieldStorage<double> &field,
+                                Kripke::SdomId sdom_id)
+{
+#if defined(KRIPKE_USE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI) && defined(KRIPKE_USE_CHAI) && \
+    (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+  if(field.getAllocationSpace() == chai::GPU){
+    return field.getDeviceData(sdom_id);
+  }
+#endif
+
+  return field.getHostData(sdom_id);
+}
+
+static double *getMpiSendBuffer(Kripke::Core::FieldStorage<double> const &field,
+                                Kripke::SdomId sdom_id)
+{
+#if defined(KRIPKE_USE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI) && defined(KRIPKE_USE_CHAI) && \
+    (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+  if(field.getAllocationSpace() == chai::GPU){
+    synchronizeDevice();
+    return field.getDeviceData(sdom_id);
+  }
+#endif
+
+  return const_cast<double *>(field.getHostDataConst(sdom_id));
+}
+
+static void copyPlaneToHost(double *dst,
+                            Kripke::Core::FieldStorage<double> const &src_plane,
+                            Kripke::SdomId src_sdom_id)
+{
+  size_t const num_elem = src_plane.size(src_sdom_id);
+  size_t const num_bytes = num_elem * sizeof(double);
+
+#if defined(KRIPKE_USE_CHAI_SINGLE_MEMORY) && defined(KRIPKE_USE_CHAI) && defined(KRIPKE_USE_CUDA)
+  if(src_plane.getAllocationSpace() == chai::GPU){
+    cudaError_t err = cudaMemcpy(dst, src_plane.getDeviceData(src_sdom_id), num_bytes, cudaMemcpyDeviceToHost);
+    KRIPKE_ASSERT(err == cudaSuccess,
+        "cudaMemcpy device-to-host failed: %s\n", cudaGetErrorString(err));
+    return;
+  }
+#elif defined(KRIPKE_USE_CHAI_SINGLE_MEMORY) && defined(KRIPKE_USE_CHAI) && defined(KRIPKE_USE_HIP)
+  if(src_plane.getAllocationSpace() == chai::GPU){
+    hipError_t err = hipMemcpy(dst, src_plane.getDeviceData(src_sdom_id), num_bytes, hipMemcpyDeviceToHost);
+    KRIPKE_ASSERT(err == hipSuccess,
+        "hipMemcpy device-to-host failed: %s\n", hipGetErrorString(err));
+    return;
+  }
+#endif
+
+  double const *src = src_plane.getHostDataConst(src_sdom_id);
+  std::copy(src, src + num_elem, dst);
+}
+
+static void copyHostToPlane(Kripke::Core::FieldStorage<double> &dst_plane,
+                            Kripke::SdomId dst_sdom_id,
+                            double const *src)
+{
+  size_t const num_elem = dst_plane.size(dst_sdom_id);
+  size_t const num_bytes = num_elem * sizeof(double);
+
+#if defined(KRIPKE_USE_CHAI_SINGLE_MEMORY) && defined(KRIPKE_USE_CHAI) && defined(KRIPKE_USE_CUDA)
+  if(dst_plane.getAllocationSpace() == chai::GPU){
+    cudaError_t err = cudaMemcpy(dst_plane.getDeviceData(dst_sdom_id), src, num_bytes, cudaMemcpyHostToDevice);
+    KRIPKE_ASSERT(err == cudaSuccess,
+        "cudaMemcpy host-to-device failed: %s\n", cudaGetErrorString(err));
+    return;
+  }
+#elif defined(KRIPKE_USE_CHAI_SINGLE_MEMORY) && defined(KRIPKE_USE_CHAI) && defined(KRIPKE_USE_HIP)
+  if(dst_plane.getAllocationSpace() == chai::GPU){
+    hipError_t err = hipMemcpy(dst_plane.getDeviceData(dst_sdom_id), src, num_bytes, hipMemcpyHostToDevice);
+    KRIPKE_ASSERT(err == hipSuccess,
+        "hipMemcpy host-to-device failed: %s\n", hipGetErrorString(err));
+    return;
+  }
+#endif
+
+  double *dst = dst_plane.getHostData(dst_sdom_id);
+  std::copy(src, src + num_elem, dst);
+}
 
 // Helper for copying plane data between two GPU allocations, only used in ParallelComm
 static void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
@@ -132,10 +244,20 @@ void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id
     // Add request to pending list
     recv_requests.push_back(MPI_Request());
     recv_subdomains.push_back(*sdom_id);
+    recv_dimensions.push_back(*dim);
 
     auto &plane_data = *m_plane_data[*dim];
-    double *plane_data_ptr = plane_data.getHostData(sdom_id);
     size_t plane_data_size = plane_data.size(sdom_id);
+    double *plane_data_ptr = nullptr;
+
+    if(mpiNeedsHostStaging(plane_data)){
+      recv_buffers.push_back(std::make_unique<double[]>(plane_data_size));
+      plane_data_ptr = recv_buffers.back().get();
+    }
+    else{
+      recv_buffers.push_back(nullptr);
+      plane_data_ptr = getMpiRecvBuffer(plane_data, sdom_id);
+    }
 
     GlobalSdomId global_sdom_id = local_to_global(sdom_id);
 
@@ -205,10 +327,19 @@ void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId
     // Get size of outgoing boudnary data
     auto &plane_data = *m_plane_data[*dim];
     size_t plane_data_size = plane_data.size(sdom_id);
-    double const *src_buffer = src_plane_data[*dim]->getHostDataConst(sdom_id);
+    double *src_buffer = nullptr;
+
+    if(mpiNeedsHostStaging(*src_plane_data[*dim])){
+      send_buffers.push_back(std::make_unique<double[]>(plane_data_size));
+      src_buffer = send_buffers.back().get();
+      copyPlaneToHost(src_buffer, *src_plane_data[*dim], sdom_id);
+    }
+    else{
+      src_buffer = getMpiSendBuffer(*src_plane_data[*dim], sdom_id);
+    }
 
     // Post the send
-    MPI_Isend(const_cast<double *>(src_buffer), plane_data_size, MPI_DOUBLE, downwind_rank,
+    MPI_Isend(src_buffer, plane_data_size, MPI_DOUBLE, downwind_rank,
       *downwind_sdom, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
 
 #else
@@ -239,6 +370,7 @@ void ParallelComm::waitAllSends(void){
     std::vector<MPI_Status> status(num_sends);
     MPI_Waitall(num_sends, &send_requests[0], &status[0]);
     send_requests.clear();
+    send_buffers.clear();
   }
 #endif
 }
@@ -264,10 +396,17 @@ void ParallelComm::testRecieves(void){
 
       // get subdomain that this completed for
       int sdom_id = recv_subdomains[index];
+      int dim = recv_dimensions[index];
+
+      if(recv_buffers[index]){
+        copyHostToPlane(*m_plane_data[dim], SdomId{sdom_id}, recv_buffers[index].get());
+      }
 
       // remove the request from the list
       recv_requests.erase(recv_requests.begin()+index);
       recv_subdomains.erase(recv_subdomains.begin()+index);
+      recv_dimensions.erase(recv_dimensions.begin()+index);
+      recv_buffers.erase(recv_buffers.begin()+index);
       num_requests --;
 
       // decrement the dependency count for that subdomain
