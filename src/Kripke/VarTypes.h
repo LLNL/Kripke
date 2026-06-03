@@ -137,10 +137,45 @@ namespace Kripke {
 
 #ifdef KRIPKE_USE_CHAI
   RAJA_INLINE
-  chai::ExecutionSpace fieldAllocationSpace(ArchV arch_v)
+  bool singleMemoryGpuAwareMpiMode()
+  {
+#ifdef KRIPKE_USE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI
+    return true;
+#else
+    return false;
+#endif
+  }
+
+  RAJA_INLINE
+  bool hostResidentSingleMemoryField(std::string const &name)
+  {
+#ifdef KRIPKE_USE_CHAI_SINGLE_MEMORY
+    return name == "quadrature/id" ||
+           name == "quadrature/jd" ||
+           name == "quadrature/kd" ||
+           name == "quadrature/octant" ||
+           name == "upwind" ||
+           name == "downwind" ||
+           name == "SdomId2GlobalSdomId" ||
+           name == "GlobalSdomId2SdomId" ||
+           name == "GlobalSdomId2Rank";
+#else
+    (void)name;
+    return false;
+#endif
+  }
+
+  RAJA_INLINE
+  chai::ExecutionSpace fieldAllocationSpace(std::string const &name, ArchV arch_v)
   {
 #ifdef KRIPKE_USE_CHAI_SINGLE_MEMORY
     (void)arch_v;
+    if(singleMemoryGpuAwareMpiMode()){
+      return chai::GPU;
+    }
+    if(hostResidentSingleMemoryField(name)){
+      return chai::CPU;
+    }
     return chai::GPU;
 #else
 #if defined(KRIPKE_USE_CUDA)
@@ -168,7 +203,7 @@ namespace Kripke {
       using order_t = typename DefaultOrder<decltype(layout_t)>::type; 
 
 #ifdef KRIPKE_USE_CHAI
-      field = new FieldType(set, fieldAllocationSpace(al_v.arch_v), order_t{});
+      field = new FieldType(set, fieldAllocationSpace(name, al_v.arch_v), order_t{});
 #else
       field = new FieldType(set, order_t{});
 #endif
