@@ -40,9 +40,9 @@ struct SweepSdom {
     auto xcos = sdom_al.getView(data_store.getVariable<Field_Direction2Double>("quadrature/xcos"));
     auto ycos = sdom_al.getView(data_store.getVariable<Field_Direction2Double>("quadrature/ycos"));
     auto zcos = sdom_al.getView(data_store.getVariable<Field_Direction2Double>("quadrature/zcos"));
-    auto view_id = data_store.getVariable<Field_Direction2Int>("quadrature/id").getView(sdom_id);
-    auto view_jd = data_store.getVariable<Field_Direction2Int>("quadrature/jd").getView(sdom_id);
-    auto view_kd = data_store.getVariable<Field_Direction2Int>("quadrature/kd").getView(sdom_id);
+    auto view_id = data_store.getVariable<Field_QuadratureDirectionSign>("quadrature/id").getView(sdom_id);
+    auto view_jd = data_store.getVariable<Field_QuadratureDirectionSign>("quadrature/jd").getView(sdom_id);
+    auto view_kd = data_store.getVariable<Field_QuadratureDirectionSign>("quadrature/kd").getView(sdom_id);
 
     auto dx = sdom_al.getView(data_store.getVariable<Field_ZoneI2Double>("dx"));
     auto dy = sdom_al.getView(data_store.getVariable<Field_ZoneJ2Double>("dy"));

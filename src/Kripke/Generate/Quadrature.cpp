@@ -376,10 +376,10 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
   auto &field_ycos = createField<Field_Direction2Double>(data_store, "quadrature/ycos", al_v, *dir_set);
   auto &field_zcos = createField<Field_Direction2Double>(data_store, "quadrature/zcos", al_v, *dir_set);
   auto &field_w = createField<Field_Direction2Double>(data_store, "quadrature/w", al_v, *dir_set);
-  auto &field_id = createField<Field_Direction2Int>(data_store, "quadrature/id", al_v, *dir_set);
-  auto &field_jd = createField<Field_Direction2Int>(data_store, "quadrature/jd", al_v, *dir_set);
-  auto &field_kd = createField<Field_Direction2Int>(data_store, "quadrature/kd", al_v, *dir_set);
-  auto &field_octant = createField<Field_Direction2Int>(data_store, "quadrature/octant", al_v, *dir_set);
+  auto &field_id = createField<Field_QuadratureDirectionSign>(data_store, "quadrature/id", al_v, *dir_set);
+  auto &field_jd = createField<Field_QuadratureDirectionSign>(data_store, "quadrature/jd", al_v, *dir_set);
+  auto &field_kd = createField<Field_QuadratureDirectionSign>(data_store, "quadrature/kd", al_v, *dir_set);
+  auto &field_octant = createField<Field_QuadratureOctant>(data_store, "quadrature/octant", al_v, *dir_set);
 
   for(SdomId sdom_id : field_xcos.getWorkList()){
     int num_directions = dir_set->size(sdom_id);
@@ -473,7 +473,7 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
     // Offset local coordinate to global coordinates
     auto global_coord = pspace.coordToGlobalCoord(local_coord);
 
-    std::array<Field_Direction2Int::DefaultViewType, 3> sweep_dir =
+    std::array<Field_QuadratureDirectionSign::DefaultViewType, 3> sweep_dir =
         {{
           field_id.getView(sdom_id),
           field_jd.getView(sdom_id),
@@ -517,5 +517,4 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
 
   }
 }
-
 
