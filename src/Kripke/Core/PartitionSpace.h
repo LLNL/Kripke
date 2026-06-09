@@ -92,11 +92,27 @@ class PartitionSpace : public Kripke::Core::BaseVar {
 template<typename ELEMENT, typename ... IDX_TYPES>
 class Field;
 
+template<typename TAG, bool HOST_RESIDENT_SINGLE_MEMORY>
+struct FieldPolicy;
+
 } // namespace Core
 
-using Field_SdomId2GlobalSdomId = Kripke::Core::Field<GlobalSdomId, SdomId>;
-using Field_GlobalSdomId2Rank = Kripke::Core::Field<long, GlobalSdomId>;
-using Field_GlobalSdomId2SdomId = Kripke::Core::Field<SdomId, GlobalSdomId>;
+struct FieldTag_SdomId2GlobalSdomId {};
+struct FieldTag_GlobalSdomId2Rank {};
+struct FieldTag_GlobalSdomId2SdomId {};
+
+using Field_SdomId2GlobalSdomId =
+    Kripke::Core::Field<GlobalSdomId,
+                        Kripke::Core::FieldPolicy<FieldTag_SdomId2GlobalSdomId, true>,
+                        SdomId>;
+using Field_GlobalSdomId2Rank =
+    Kripke::Core::Field<long,
+                        Kripke::Core::FieldPolicy<FieldTag_GlobalSdomId2Rank, true>,
+                        GlobalSdomId>;
+using Field_GlobalSdomId2SdomId =
+    Kripke::Core::Field<SdomId,
+                        Kripke::Core::FieldPolicy<FieldTag_GlobalSdomId2SdomId, true>,
+                        GlobalSdomId>;
 
 
 } // namespace

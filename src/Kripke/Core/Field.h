@@ -215,16 +215,28 @@ namespace Core {
 #ifdef KRIPKE_USE_CHAI
       chai::ExecutionSpace m_allocation_space;
 #endif
-	  };
+  };
+
+  struct DefaultFieldTag {};
+
+  template<typename TAG, bool HOST_RESIDENT_SINGLE_MEMORY = false>
+  struct FieldPolicy {
+    using Tag = TAG;
+    static constexpr bool host_resident_single_memory =
+        HOST_RESIDENT_SINGLE_MEMORY;
+  };
+
+  using DefaultFieldPolicy = FieldPolicy<DefaultFieldTag, false>;
 
   /**
-   * Defines a multi-dimensional data field defined over a Set
+   * Defines a multi-dimensional data field defined over a Set.
    */
-  template<typename ELEMENT, typename ... IDX_TYPES>
-  class Field : public Kripke::Core::FieldStorage<ELEMENT> {
+  template<typename ELEMENT, typename FIELD_POLICY, typename ... IDX_TYPES>
+  class FieldImpl : public Kripke::Core::FieldStorage<ELEMENT> {
     public:
 
       using Parent = Kripke::Core::FieldStorage<ELEMENT>;
+      using Policy = FIELD_POLICY;
 
       using ElementType = ELEMENT;
 #ifndef KRIPKE_USE_CHAI
@@ -234,6 +246,8 @@ namespace Core {
 #endif
 
       static constexpr size_t NumDims = sizeof...(IDX_TYPES);
+      static constexpr bool host_resident_single_memory =
+          Policy::host_resident_single_memory;
 
       using DefaultLayoutType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<IDX_TYPES...>>;
 
@@ -242,7 +256,7 @@ namespace Core {
       using DeviceViewType = RAJA::internal::ViewBase<ElementType, ElementType *, DefaultLayoutType>;
 
       template<typename Order>
-      Field(Kripke::Core::Set const &spanned_set, Order) :
+      FieldImpl(Kripke::Core::Set const &spanned_set, Order) :
         Parent(spanned_set)
       {
         setupLayouts<Order>(spanned_set);
@@ -250,7 +264,7 @@ namespace Core {
 
 #ifdef KRIPKE_USE_CHAI
       template<typename Order>
-      Field(Kripke::Core::Set const &spanned_set,
+      FieldImpl(Kripke::Core::Set const &spanned_set,
             chai::ExecutionSpace allocation_space,
             Order) :
         Parent(spanned_set, allocation_space)
@@ -286,7 +300,7 @@ namespace Core {
         }
       }
 
-      virtual ~Field(){
+      virtual ~FieldImpl(){
 
       }
 
@@ -389,6 +403,27 @@ namespace Core {
 
     protected:
       std::vector<DefaultLayoutType> m_chunk_to_layout;
+  };
+
+  template<typename ELEMENT, typename ... IDX_TYPES>
+  class Field : public FieldImpl<ELEMENT, DefaultFieldPolicy, IDX_TYPES...> {
+    public:
+      using Parent = FieldImpl<ELEMENT, DefaultFieldPolicy, IDX_TYPES...>;
+      using Parent::Parent;
+  };
+
+  template<typename ELEMENT, typename FIELD_TAG, bool HOST_RESIDENT_SINGLE_MEMORY,
+           typename ... IDX_TYPES>
+  class Field<ELEMENT,
+              FieldPolicy<FIELD_TAG, HOST_RESIDENT_SINGLE_MEMORY>,
+              IDX_TYPES...> :
+      public FieldImpl<ELEMENT,
+                       FieldPolicy<FIELD_TAG, HOST_RESIDENT_SINGLE_MEMORY>,
+                       IDX_TYPES...> {
+    public:
+      using Policy = FieldPolicy<FIELD_TAG, HOST_RESIDENT_SINGLE_MEMORY>;
+      using Parent = FieldImpl<ELEMENT, Policy, IDX_TYPES...>;
+      using Parent::Parent;
   };
 
 } } // namespace

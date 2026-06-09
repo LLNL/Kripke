@@ -44,9 +44,24 @@ namespace Kripke {
   using Field_SigmaS = Kripke::Core::Field<double, Material, Legendre, GlobalGroup, GlobalGroup>;
 
   using Field_Direction2Double = Kripke::Core::Field<double, Direction>;
-  using Field_Direction2Int    = Kripke::Core::Field<int, Direction>;
 
-  using Field_Adjacency        = Kripke::Core::Field<GlobalSdomId, Dimension>;
+  struct FieldTag_QuadratureDirectionSign {};
+  struct FieldTag_QuadratureOctant {};
+  struct FieldTag_Adjacency {};
+
+  using Field_QuadratureDirectionSign =
+      Kripke::Core::Field<int,
+                          Kripke::Core::FieldPolicy<FieldTag_QuadratureDirectionSign, true>,
+                          Direction>;
+  using Field_QuadratureOctant =
+      Kripke::Core::Field<int,
+                          Kripke::Core::FieldPolicy<FieldTag_QuadratureOctant, true>,
+                          Direction>;
+
+  using Field_Adjacency =
+      Kripke::Core::Field<GlobalSdomId,
+                          Kripke::Core::FieldPolicy<FieldTag_Adjacency, true>,
+                          Dimension>;
 
   using Field_Moment2Legendre  = Kripke::Core::Field<Legendre, Moment>;
 
@@ -146,34 +161,16 @@ namespace Kripke {
 #endif
   }
 
+  template<typename FieldType>
   RAJA_INLINE
-  bool hostResidentSingleMemoryField(std::string const &name)
-  {
-#ifdef KRIPKE_USE_CHAI_SINGLE_MEMORY
-    return name == "quadrature/id" ||
-           name == "quadrature/jd" ||
-           name == "quadrature/kd" ||
-           name == "quadrature/octant" ||
-           name == "upwind" ||
-           name == "downwind" ||
-           name == "SdomId2GlobalSdomId" ||
-           name == "GlobalSdomId2SdomId" ||
-           name == "GlobalSdomId2Rank";
-#else
-    (void)name;
-    return false;
-#endif
-  }
-
-  RAJA_INLINE
-  chai::ExecutionSpace fieldAllocationSpace(std::string const &name, ArchV arch_v)
+  chai::ExecutionSpace fieldAllocationSpace(ArchV arch_v)
   {
 #ifdef KRIPKE_USE_CHAI_SINGLE_MEMORY
     (void)arch_v;
     if(singleMemoryGpuAwareMpiMode()){
       return chai::GPU;
     }
-    if(hostResidentSingleMemoryField(name)){
+    if(FieldType::host_resident_single_memory){
       return chai::CPU;
     }
     return chai::GPU;
@@ -203,7 +200,7 @@ namespace Kripke {
       using order_t = typename DefaultOrder<decltype(layout_t)>::type; 
 
 #ifdef KRIPKE_USE_CHAI
-      field = new FieldType(set, fieldAllocationSpace(name, al_v.arch_v), order_t{});
+      field = new FieldType(set, fieldAllocationSpace<FieldType>(al_v.arch_v), order_t{});
 #else
       field = new FieldType(set, order_t{});
 #endif
