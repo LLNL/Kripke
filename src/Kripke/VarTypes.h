@@ -167,9 +167,6 @@ namespace Kripke {
   {
 #ifdef KRIPKE_USE_CHAI_SINGLE_MEMORY
     (void)arch_v;
-    if(singleMemoryGpuAwareMpiMode()){
-      return chai::GPU;
-    }
     if(FieldType::host_resident_single_memory){
       return chai::CPU;
     }
