@@ -271,7 +271,7 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
 
 
   // Populate mixture fields with our dynamic data
-  RAJA::ReduceSum<RAJA::seq_reduce, double> total_volume_red[3];
+  double total_volume_red[3] = {0.0, 0.0, 0.0};
   for(size_t i = 0;i < sdom_list.size();++ i){
     SdomId sdom_id = sdom_list[i];
 
@@ -280,40 +280,47 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
 
     auto const &sdom_mix = mix[i];
 
-    auto mixed_to_zone       = field_mixed_to_zone.getView(sdom_id);
-    auto mixed_to_material   = field_mixed_to_material.getView(sdom_id);
-    auto mixed_to_fraction   = field_mixed_to_fraction.getView(sdom_id);
-    auto zone_to_num_mixelem = field_zone_to_num_mixelem.getView(sdom_id);
-    auto zone_to_mixelem     = field_zone_to_mixelem.getView(sdom_id);
+    std::vector<Zone> mixed_to_zone(num_mixelems);
+    std::vector<Material> mixed_to_material(num_mixelems);
+    std::vector<double> mixed_to_fraction(num_mixelems);
+    std::vector<int> zone_to_num_mixelem(num_zones);
+    std::vector<MixElem> zone_to_mixelem(num_zones);
 
-    RAJA::ReduceSum<RAJA::seq_reduce, MixElem> mixelem(MixElem{0});
-    RAJA::forall<RAJA::seq_exec>(
-      RAJA::TypedRangeSegment<Zone>(0, num_zones),
-      [=](Zone z){
-        ZoneMixture const &zone_mix = sdom_mix[*z];
-        int num_zone_mix = 0;
+    int mixelem = 0;
+    for(Zone z{0}; z < num_zones; ++z){
+      ZoneMixture const &zone_mix = sdom_mix[*z];
+      int num_zone_mix = 0;
 
-        zone_to_mixelem(z) = mixelem;
+      zone_to_mixelem[*z] = MixElem{mixelem};
 
-        double zone_frac = 0.0;
-        for(Material m{0};m < 3;++ m){
-          if(zone_mix.fraction[*m] > 0.0){
-            MixElem me = mixelem;
-
-            mixed_to_zone(me) = z;
-            mixed_to_material(me) = m;
-            mixed_to_fraction(me) = zone_mix.fraction[*m];
-            zone_frac += zone_mix.fraction[*m];
-            total_volume_red[*m] += zone_mix.fraction[*m] * zone_volume;
-            num_zone_mix ++;
-            mixelem += MixElem{1};
-          }
+      double zone_frac = 0.0;
+      for(Material m{0};m < 3;++ m){
+        if(zone_mix.fraction[*m] > 0.0){
+          mixed_to_zone[mixelem] = z;
+          mixed_to_material[mixelem] = m;
+          mixed_to_fraction[mixelem] = zone_mix.fraction[*m];
+          zone_frac += zone_mix.fraction[*m];
+          total_volume_red[*m] += zone_mix.fraction[*m] * zone_volume;
+          num_zone_mix ++;
+          mixelem ++;
         }
-        KRIPKE_ASSERT(zone_frac == 1.0, "Zone fraction wrong: %e", zone_frac);
-        zone_to_num_mixelem(z) = num_zone_mix;
-    });
+      }
+      KRIPKE_ASSERT(zone_frac == 1.0, "Zone fraction wrong: %e", zone_frac);
+      zone_to_num_mixelem[*z] = num_zone_mix;
+    }
 
-    KRIPKE_ASSERT((*((MixElem)mixelem)) == num_mixelems, "Mismatch in mixture info");
+    KRIPKE_ASSERT(mixelem == num_mixelems, "Mismatch in mixture info");
+
+    Kripke::Kernel::kCopyHostToField(field_mixed_to_zone, sdom_id,
+        mixed_to_zone.data());
+    Kripke::Kernel::kCopyHostToField(field_mixed_to_material, sdom_id,
+        mixed_to_material.data());
+    Kripke::Kernel::kCopyHostToField(field_mixed_to_fraction, sdom_id,
+        mixed_to_fraction.data());
+    Kripke::Kernel::kCopyHostToField(field_zone_to_num_mixelem, sdom_id,
+        zone_to_num_mixelem.data());
+    Kripke::Kernel::kCopyHostToField(field_zone_to_mixelem, sdom_id,
+        zone_to_mixelem.data());
   }
 
   // Display the total volume

@@ -38,6 +38,49 @@ namespace {
     int octant;
   };
 
+#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+  template<typename T>
+  T *copyVectorToDevice(std::vector<T> const &src)
+  {
+    if(src.empty()){
+      return nullptr;
+    }
+
+    T *dst = nullptr;
+#if defined(KRIPKE_USE_CUDA)
+    cudaError_t err = cudaMalloc((void **)&dst, src.size() * sizeof(T));
+    KRIPKE_ASSERT(err == cudaSuccess,
+        "cudaMalloc failed: %s\n", cudaGetErrorString(err));
+    err = cudaMemcpy(dst, src.data(), src.size() * sizeof(T),
+        cudaMemcpyHostToDevice);
+    KRIPKE_ASSERT(err == cudaSuccess,
+        "cudaMemcpy host-to-device failed: %s\n", cudaGetErrorString(err));
+#else
+    hipError_t err = hipMalloc((void **)&dst, src.size() * sizeof(T));
+    KRIPKE_ASSERT(err == hipSuccess,
+        "hipMalloc failed: %s\n", hipGetErrorString(err));
+    err = hipMemcpy(dst, src.data(), src.size() * sizeof(T),
+        hipMemcpyHostToDevice);
+    KRIPKE_ASSERT(err == hipSuccess,
+        "hipMemcpy host-to-device failed: %s\n", hipGetErrorString(err));
+#endif
+    return dst;
+  }
+
+  template<typename T>
+  void freeDevice(T *ptr)
+  {
+    if(ptr == nullptr){
+      return;
+    }
+#if defined(KRIPKE_USE_CUDA)
+    cudaFree(ptr);
+#else
+    hipFree(ptr);
+#endif
+  }
+#endif
+
 
   /*
     GaussLegendre returns the n point Gauss-Legendre quadrature rule for
@@ -80,7 +123,7 @@ namespace {
     return b.octant < a.octant;
   }
 
-  double FactFcn(int n)
+  RAJA_HOST_DEVICE inline double FactFcn(int n)
   {
     double fact = 1.0;
     for(int i = n;i > 0 ;--i){
@@ -89,7 +132,7 @@ namespace {
     return(fact);
   }
 
-  inline double PnmFcn(int n, int m, double x)
+  RAJA_HOST_DEVICE inline double PnmFcn(int n, int m, double x)
   {
     /*-----------------------------------------------------------------
      * It is assumed that 0 <= m <= n and that abs(x) <= 1.0.
@@ -99,13 +142,15 @@ namespace {
 
     int i, nn;
 
-    if(std::abs(x) > 1.0){
+#if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
+    if(fabs(x) > 1.0){
       KRIPKE_ABORT("Bad input to PnmFcn: abs(x) > 1.0, x = %e\n", x);
     }
-    else if((x > 1.0) && (x <= 1.0)){
+#endif
+    if(x > 1.0){
       x = 1.0;
     }
-    else if((-1.0 <= x ) && (x < -1.0)){
+    else if(x < -1.0){
       x = -1.0;
     }
 
@@ -137,7 +182,7 @@ namespace {
     }
   }
 
-  inline double YnmFcn(int n, int m, double mu, double eta, double xi)
+  RAJA_HOST_DEVICE inline double YnmFcn(int n, int m, double mu, double eta, double xi)
   {
     double fac1, fac2, anm, ynm, pnm, dm0, taum, tmp, phi, phi_tmp;
     double floor=1.e-20;
@@ -160,11 +205,12 @@ namespace {
     }
 
     /* Begin evaluation of Ynm(omega) */
-    nn = n - std::abs(m);
+    int abs_m = (m < 0) ? -m : m;
+    nn = n - abs_m;
     fac1 = (double) FactFcn(nn);
-    nn = n + std::abs(m);
+    nn = n + abs_m;
     fac2 = (double) FactFcn(nn);
-    mm = std::abs(m);
+    mm = abs_m;
     pnm = PnmFcn(n, mm, xi);
     tmp = ((double) m)*phi;
     if(m >= 0){
@@ -358,13 +404,8 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
 
   // fill in the global
   for(SdomId sdom_id : field_moment_to_legendre.getWorkList()){
-    auto moment_to_legendre = field_moment_to_legendre.getView(sdom_id);
-
-    RAJA::forall<RAJA::seq_exec>(
-      RAJA::TypedRangeSegment<Moment>(0, moment_set->size(sdom_id)),
-      [=](Moment nm){
-        moment_to_legendre(nm) = moment_list[(*nm) + moment_set->lower(sdom_id)];
-    });
+    Kripke::Kernel::kCopyHostToField(field_moment_to_legendre, sdom_id,
+        moment_list.data() + moment_set->lower(sdom_id));
   }
 
 
@@ -385,28 +426,35 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
     int num_directions = dir_set->size(sdom_id);
     int direction_lower = dir_set->lower(sdom_id);
 
-    auto xcos = field_xcos.getView(sdom_id);
-    auto ycos = field_ycos.getView(sdom_id);
-    auto zcos = field_zcos.getView(sdom_id);
-    auto w = field_w.getView(sdom_id);
-    auto id = field_id.getView(sdom_id);
-    auto jd = field_jd.getView(sdom_id);
-    auto kd = field_kd.getView(sdom_id);
-    auto octant = field_octant.getView(sdom_id);
+    std::vector<double> xcos(num_directions);
+    std::vector<double> ycos(num_directions);
+    std::vector<double> zcos(num_directions);
+    std::vector<double> w(num_directions);
+    std::vector<int> id(num_directions);
+    std::vector<int> jd(num_directions);
+    std::vector<int> kd(num_directions);
+    std::vector<int> octant(num_directions);
 
-    RAJA::forall<RAJA::seq_exec>(
-      RAJA::TypedRangeSegment<Direction>(0, num_directions),
-      [=](Direction d){
-      QuadraturePoint const &point_d = quadrature_points[(*d)+direction_lower];
-      xcos(d) = point_d.xcos;
-      ycos(d) = point_d.ycos;
-      zcos(d) = point_d.zcos;
-      w(d) = point_d.w;
-      id(d) = point_d.id;
-      jd(d) = point_d.jd;
-      kd(d) = point_d.kd;
-      octant(d) = point_d.octant;
-    });
+    for(int d = 0; d < num_directions; ++d){
+      QuadraturePoint const &point_d = quadrature_points[d + direction_lower];
+      xcos[d] = point_d.xcos;
+      ycos[d] = point_d.ycos;
+      zcos[d] = point_d.zcos;
+      w[d] = point_d.w;
+      id[d] = point_d.id;
+      jd[d] = point_d.jd;
+      kd[d] = point_d.kd;
+      octant[d] = point_d.octant;
+    }
+
+    Kripke::Kernel::kCopyHostToField(field_xcos, sdom_id, xcos.data());
+    Kripke::Kernel::kCopyHostToField(field_ycos, sdom_id, ycos.data());
+    Kripke::Kernel::kCopyHostToField(field_zcos, sdom_id, zcos.data());
+    Kripke::Kernel::kCopyHostToField(field_w, sdom_id, w.data());
+    Kripke::Kernel::kCopyHostToField(field_id, sdom_id, id.data());
+    Kripke::Kernel::kCopyHostToField(field_jd, sdom_id, jd.data());
+    Kripke::Kernel::kCopyHostToField(field_kd, sdom_id, kd.data());
+    Kripke::Kernel::kCopyHostToField(field_octant, sdom_id, octant.data());
   }
 
 
@@ -421,38 +469,111 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
   auto &field_ell = createField<Field_Ell>(data_store, "ell", al_v, set_ell);
   auto &field_ell_plus = createField<Field_EllPlus>(data_store, "ell_plus", al_v, set_ell_plus);
 
+#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+  QuadraturePoint *quadrature_points_device = nullptr;
+  if(field_ell.getAllocationSpace() == chai::GPU){
+    quadrature_points_device = copyVectorToDevice(quadrature_points);
+  }
+#endif
+
   for(SdomId sdom_id : field_xcos.getWorkList()){
-    auto ell = field_ell.getView(sdom_id);
-    auto ell_plus = field_ell_plus.getView(sdom_id);
+#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+    if(field_ell.getAllocationSpace() == chai::GPU){
+      KRIPKE_ASSERT(field_ell_plus.getAllocationSpace() == chai::GPU,
+          "ell and ell_plus must use the same allocation space");
 
-    int num_directions = dir_set->size(sdom_id);
-    int direction_lower = dir_set->lower(sdom_id);
+      auto ell = field_ell.getDeviceView(sdom_id);
+      auto ell_plus = field_ell_plus.getDeviceView(sdom_id);
 
-    double SQRT4PI = std::sqrt(4*M_PI);
-    Moment nm{0};
-    for(int n=0; n < (int)legendre_order+1; n++){
-      for(int m=-n; m<=n; m++){
-        RAJA::forall<RAJA::seq_exec>(
-          RAJA::TypedRangeSegment<Direction>(0, num_directions),
-          [=](Direction d){
+      int num_directions = dir_set->size(sdom_id);
+      int direction_lower = dir_set->lower(sdom_id);
+      int num_moments_sdom = moment_set->size(sdom_id);
+      int legendre_order_i = legendre_order;
+      double SQRT4PI = sqrt(4*M_PI);
+      QuadraturePoint const *points = quadrature_points_device;
 
-            QuadraturePoint const &point_d = quadrature_points[(*d)+direction_lower];
-            // Get quadrature point info
-            double xcos = (point_d.id)*(point_d.xcos);
-            double ycos = (point_d.jd)*(point_d.ycos);
-            double zcos = (point_d.kd)*(point_d.zcos);
-            double w =  point_d.w;
+#if defined(KRIPKE_USE_CUDA)
+      RAJA::forall<RAJA::cuda_exec<256>>(
+#else
+      RAJA::forall<RAJA::hip_exec<256>>(
+#endif
+        RAJA::RangeSegment(0, num_moments_sdom * num_directions),
+        KRIPKE_LAMBDA (RAJA::Index_type idx){
+          int nm_i = idx / num_directions;
+          int d_i = idx % num_directions;
 
-            double ynm = YnmFcn(n, m, xcos, ycos, zcos);
+          int n = 0;
+          int m = 0;
+          int first_moment = 0;
+          for(int nn = 0; nn <= legendre_order_i; ++nn){
+            int moment_count = 2*nn + 1;
+            if(nm_i < first_moment + moment_count){
+              n = nn;
+              m = nm_i - first_moment - nn;
+              break;
+            }
+            first_moment += moment_count;
+          }
 
-            // Compute element of L and L+
-            ell(nm, d) = w*ynm/SQRT4PI;
-            ell_plus(d,nm) = ynm*SQRT4PI;
-        });
-        nm ++;
+          QuadraturePoint const point_d = points[d_i + direction_lower];
+          double xcos = point_d.id * point_d.xcos;
+          double ycos = point_d.jd * point_d.ycos;
+          double zcos = point_d.kd * point_d.zcos;
+
+          double ynm = YnmFcn(n, m, xcos, ycos, zcos);
+
+          Moment nm{nm_i};
+          Direction d{d_i};
+          ell(nm, d) = point_d.w * ynm / SQRT4PI;
+          ell_plus(d, nm) = ynm * SQRT4PI;
+      });
+    }
+    else
+#endif
+    {
+      auto ell = field_ell.getView(sdom_id);
+      auto ell_plus = field_ell_plus.getView(sdom_id);
+
+      int num_directions = dir_set->size(sdom_id);
+      int direction_lower = dir_set->lower(sdom_id);
+
+      double SQRT4PI = std::sqrt(4*M_PI);
+      Moment nm{0};
+      for(int n=0; n < (int)legendre_order+1; n++){
+        for(int m=-n; m<=n; m++){
+          RAJA::forall<RAJA::seq_exec>(
+            RAJA::TypedRangeSegment<Direction>(0, num_directions),
+            [=](Direction d){
+
+              QuadraturePoint const &point_d = quadrature_points[(*d)+direction_lower];
+              // Get quadrature point info
+              double xcos = (point_d.id)*(point_d.xcos);
+              double ycos = (point_d.jd)*(point_d.ycos);
+              double zcos = (point_d.kd)*(point_d.zcos);
+              double w =  point_d.w;
+
+              double ynm = YnmFcn(n, m, xcos, ycos, zcos);
+
+              // Compute element of L and L+
+              ell(nm, d) = w*ynm/SQRT4PI;
+              ell_plus(d,nm) = ynm*SQRT4PI;
+          });
+          nm ++;
+        }
       }
     }
   }
+
+#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+  if(quadrature_points_device != nullptr){
+#if defined(KRIPKE_USE_CUDA)
+    RAJA::synchronize<RAJA::cuda_synchronize>();
+#else
+    RAJA::synchronize<RAJA::hip_synchronize>();
+#endif
+    freeDevice(quadrature_points_device);
+  }
+#endif
 
 
   // Create fields to store subdomain adjacency information for boundary comm
@@ -517,4 +638,3 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
 
   }
 }
-
