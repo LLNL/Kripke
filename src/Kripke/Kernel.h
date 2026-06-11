@@ -11,10 +11,16 @@
 #include <Kripke.h>
 #include <Kripke/ArchLayout.h>
 #include <Kripke/Core/DataStore.h>
+#include <algorithm>
 #include <utility>
 
 #ifdef KRIPKE_USE_CHAI
 #include <chai/ExecutionSpaces.hpp>
+#endif
+#if defined(KRIPKE_USE_CUDA)
+#include <cuda_runtime.h>
+#elif defined(KRIPKE_USE_HIP)
+#include <hip/hip_runtime.h>
 #endif
 
 namespace Kripke {
@@ -131,6 +137,43 @@ namespace Kripke {
 
 
     void sweepSubdomain(Kripke::Core::DataStore &data_store, Kripke::SdomId sdom_id);
+
+
+    template<typename FieldType>
+    RAJA_INLINE
+    void kCopyHostToField(FieldType &field,
+                          Kripke::SdomId sdom_id,
+                          typename FieldType::ElementType const *src){
+      using ElementType = typename FieldType::ElementType;
+
+      size_t const num_elem = field.size(sdom_id);
+      if(num_elem == 0){
+        return;
+      }
+
+#if defined(KRIPKE_USE_CHAI) && defined(KRIPKE_USE_CUDA)
+      if(detail::fieldUsesDevice(field)){
+        cudaError_t err = cudaMemcpy(field.getDeviceData(sdom_id), src,
+            num_elem * sizeof(ElementType), cudaMemcpyHostToDevice);
+        KRIPKE_ASSERT(err == cudaSuccess,
+            "cudaMemcpy host-to-device field copy failed: %s\n",
+            cudaGetErrorString(err));
+        return;
+      }
+#elif defined(KRIPKE_USE_CHAI) && defined(KRIPKE_USE_HIP)
+      if(detail::fieldUsesDevice(field)){
+        hipError_t err = hipMemcpy(field.getDeviceData(sdom_id), src,
+            num_elem * sizeof(ElementType), hipMemcpyHostToDevice);
+        KRIPKE_ASSERT(err == hipSuccess,
+            "hipMemcpy host-to-device field copy failed: %s\n",
+            hipGetErrorString(err));
+        return;
+      }
+#endif
+
+      ElementType *dst = field.getHostData(sdom_id);
+      std::copy(src, src + num_elem, dst);
+    }
 
 
     template<typename FieldType>
