@@ -106,7 +106,7 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
      */
     double part = Kripke::Kernel::population(data_store);
     if(comm.rank() == 0){
-      printf("  iter %d: particle count=%.10e, change=%.10e\n", (int)iter, part, (part-part_last)/part);
+      printf("  iter %d: particle count=%.6e, change=%.6e\n", (int)iter, part, (part-part_last)/part);
       fflush(stdout);
     }
     part_last = part;
