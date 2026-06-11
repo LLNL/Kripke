@@ -143,6 +143,18 @@ if(ENABLE_CHAI)
 
   # Set camp backends
   if (ENABLE_CUDA)
+    if(ENABLE_CHAI_SINGLE_MEMORY)
+        set (CHAI_ENABLE_UM OFF CACHE BOOL "")
+        set (CHAI_ENABLE_PINNED ON CACHE BOOL "")
+        set(CHAI_DISABLE_RM ON CACHE BOOL "")
+        set(CHAI_THIN_GPU_ALLOCATE ON CACHE BOOL "")
+
+        set(KRIPKE_USE_CHAI_SINGLE_MEMORY 1)
+        if(ENABLE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI)
+          set(KRIPKE_USE_CHAI_SINGLE_MEMORY_GPU_AWARE_MPI 1)
+        endif()
+    endif()
+
     message(STATUS "Kripke: Setting CAMP_HAVE_CUDA")
     blt_add_target_definitions(TO camp
                                SCOPE INTERFACE
