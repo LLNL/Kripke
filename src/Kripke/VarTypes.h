@@ -44,9 +44,9 @@ namespace Kripke {
   using Field_SigmaS = Kripke::Core::Field<double, Material, Legendre, GlobalGroup, GlobalGroup>;
 
   using Field_Direction2Double = Kripke::Core::Field<double, Direction>;
-  using Field_Direction2Int    = Kripke::Core::Field<int, Direction>;
+  using Field_Direction2Int    = Kripke::Core::FieldWithPolicy<int, true, Direction>;
 
-  using Field_Adjacency        = Kripke::Core::Field<GlobalSdomId, Dimension>;
+  using Field_Adjacency        = Kripke::Core::FieldWithPolicy<GlobalSdomId, true, Dimension>;
 
   using Field_Moment2Legendre  = Kripke::Core::Field<Legendre, Moment>;
 
@@ -137,24 +137,29 @@ namespace Kripke {
 
 #ifdef KRIPKE_USE_CHAI
   RAJA_INLINE
-  chai::ExecutionSpace fieldAllocationSpace(ArchV arch_v)
+  bool archUsesDevice(ArchV arch_v)
   {
-#ifdef KRIPKE_USE_CHAI_SINGLE_MEMORY
-    (void)arch_v;
-    return chai::GPU;
-#else
 #if defined(KRIPKE_USE_CUDA)
     if(arch_v == ArchV_CUDA){
-      return chai::GPU;
+      return true;
     }
 #endif
 #if defined(KRIPKE_USE_HIP)
     if(arch_v == ArchV_HIP){
-      return chai::GPU;
+      return true;
     }
 #endif
+    return false;
+  }
+
+  template<typename FieldType>
+  RAJA_INLINE
+  chai::ExecutionSpace fieldAllocationSpace(ArchV arch_v)
+  {
+    if(archUsesDevice(arch_v) && !FieldType::host_resident_normal_chai_gpu){
+      return chai::GPU;
+    }
     return chai::CPU;
-#endif
   }
 #endif
 
@@ -168,7 +173,7 @@ namespace Kripke {
       using order_t = typename DefaultOrder<decltype(layout_t)>::type; 
 
 #ifdef KRIPKE_USE_CHAI
-      field = new FieldType(set, fieldAllocationSpace(al_v.arch_v), order_t{});
+      field = new FieldType(set, fieldAllocationSpace<FieldType>(al_v.arch_v), order_t{});
 #else
       field = new FieldType(set, order_t{});
 #endif

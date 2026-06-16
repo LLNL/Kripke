@@ -358,13 +358,34 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
 
   // fill in the global
   for(SdomId sdom_id : field_moment_to_legendre.getWorkList()){
-    auto moment_to_legendre = field_moment_to_legendre.getView(sdom_id);
+    int num_moments_local = moment_set->size(sdom_id);
 
-    RAJA::forall<RAJA::seq_exec>(
-      RAJA::TypedRangeSegment<Moment>(0, moment_set->size(sdom_id)),
-      [=](Moment nm){
-        moment_to_legendre(nm) = moment_list[(*nm) + moment_set->lower(sdom_id)];
-    });
+#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+    if(field_moment_to_legendre.getAllocationSpace() == chai::GPU){
+      std::vector<Legendre> moment_to_legendre_host(field_moment_to_legendre.size(sdom_id));
+      auto moment_to_legendre =
+          field_moment_to_legendre.getDataView(sdom_id, moment_to_legendre_host.data());
+
+      RAJA::forall<RAJA::seq_exec>(
+        RAJA::TypedRangeSegment<Moment>(0, num_moments_local),
+        [=](Moment nm){
+          moment_to_legendre(nm) = moment_list[(*nm) + moment_set->lower(sdom_id)];
+      });
+      field_moment_to_legendre.copyFromHost(sdom_id,
+          moment_to_legendre_host.data(),
+          moment_to_legendre_host.size());
+    }
+    else
+#endif
+    {
+      auto moment_to_legendre = field_moment_to_legendre.getView(sdom_id);
+
+      RAJA::forall<RAJA::seq_exec>(
+        RAJA::TypedRangeSegment<Moment>(0, num_moments_local),
+        [=](Moment nm){
+          moment_to_legendre(nm) = moment_list[(*nm) + moment_set->lower(sdom_id)];
+      });
+    }
   }
 
 
@@ -385,28 +406,67 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
     int num_directions = dir_set->size(sdom_id);
     int direction_lower = dir_set->lower(sdom_id);
 
-    auto xcos = field_xcos.getView(sdom_id);
-    auto ycos = field_ycos.getView(sdom_id);
-    auto zcos = field_zcos.getView(sdom_id);
-    auto w = field_w.getView(sdom_id);
-    auto id = field_id.getView(sdom_id);
-    auto jd = field_jd.getView(sdom_id);
-    auto kd = field_kd.getView(sdom_id);
-    auto octant = field_octant.getView(sdom_id);
+#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+    if(field_xcos.getAllocationSpace() == chai::GPU){
+      std::vector<double> xcos_host(field_xcos.size(sdom_id));
+      std::vector<double> ycos_host(field_ycos.size(sdom_id));
+      std::vector<double> zcos_host(field_zcos.size(sdom_id));
+      std::vector<double> w_host(field_w.size(sdom_id));
 
-    RAJA::forall<RAJA::seq_exec>(
-      RAJA::TypedRangeSegment<Direction>(0, num_directions),
-      [=](Direction d){
-      QuadraturePoint const &point_d = quadrature_points[(*d)+direction_lower];
-      xcos(d) = point_d.xcos;
-      ycos(d) = point_d.ycos;
-      zcos(d) = point_d.zcos;
-      w(d) = point_d.w;
-      id(d) = point_d.id;
-      jd(d) = point_d.jd;
-      kd(d) = point_d.kd;
-      octant(d) = point_d.octant;
-    });
+      auto xcos = field_xcos.getDataView(sdom_id, xcos_host.data());
+      auto ycos = field_ycos.getDataView(sdom_id, ycos_host.data());
+      auto zcos = field_zcos.getDataView(sdom_id, zcos_host.data());
+      auto w = field_w.getDataView(sdom_id, w_host.data());
+      auto id = field_id.getView(sdom_id);
+      auto jd = field_jd.getView(sdom_id);
+      auto kd = field_kd.getView(sdom_id);
+      auto octant = field_octant.getView(sdom_id);
+
+      RAJA::forall<RAJA::seq_exec>(
+        RAJA::TypedRangeSegment<Direction>(0, num_directions),
+        [=](Direction d){
+        QuadraturePoint const &point_d = quadrature_points[(*d)+direction_lower];
+        xcos(d) = point_d.xcos;
+        ycos(d) = point_d.ycos;
+        zcos(d) = point_d.zcos;
+        w(d) = point_d.w;
+        id(d) = point_d.id;
+        jd(d) = point_d.jd;
+        kd(d) = point_d.kd;
+        octant(d) = point_d.octant;
+      });
+
+      field_xcos.copyFromHost(sdom_id, xcos_host.data(), xcos_host.size());
+      field_ycos.copyFromHost(sdom_id, ycos_host.data(), ycos_host.size());
+      field_zcos.copyFromHost(sdom_id, zcos_host.data(), zcos_host.size());
+      field_w.copyFromHost(sdom_id, w_host.data(), w_host.size());
+    }
+    else
+#endif
+    {
+      auto xcos = field_xcos.getView(sdom_id);
+      auto ycos = field_ycos.getView(sdom_id);
+      auto zcos = field_zcos.getView(sdom_id);
+      auto w = field_w.getView(sdom_id);
+      auto id = field_id.getView(sdom_id);
+      auto jd = field_jd.getView(sdom_id);
+      auto kd = field_kd.getView(sdom_id);
+      auto octant = field_octant.getView(sdom_id);
+
+      RAJA::forall<RAJA::seq_exec>(
+        RAJA::TypedRangeSegment<Direction>(0, num_directions),
+        [=](Direction d){
+        QuadraturePoint const &point_d = quadrature_points[(*d)+direction_lower];
+        xcos(d) = point_d.xcos;
+        ycos(d) = point_d.ycos;
+        zcos(d) = point_d.zcos;
+        w(d) = point_d.w;
+        id(d) = point_d.id;
+        jd(d) = point_d.jd;
+        kd(d) = point_d.kd;
+        octant(d) = point_d.octant;
+      });
+    }
   }
 
 
@@ -422,34 +482,73 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
   auto &field_ell_plus = createField<Field_EllPlus>(data_store, "ell_plus", al_v, set_ell_plus);
 
   for(SdomId sdom_id : field_xcos.getWorkList()){
-    auto ell = field_ell.getView(sdom_id);
-    auto ell_plus = field_ell_plus.getView(sdom_id);
-
     int num_directions = dir_set->size(sdom_id);
     int direction_lower = dir_set->lower(sdom_id);
 
     double SQRT4PI = std::sqrt(4*M_PI);
-    Moment nm{0};
-    for(int n=0; n < (int)legendre_order+1; n++){
-      for(int m=-n; m<=n; m++){
-        RAJA::forall<RAJA::seq_exec>(
-          RAJA::TypedRangeSegment<Direction>(0, num_directions),
-          [=](Direction d){
 
-            QuadraturePoint const &point_d = quadrature_points[(*d)+direction_lower];
-            // Get quadrature point info
-            double xcos = (point_d.id)*(point_d.xcos);
-            double ycos = (point_d.jd)*(point_d.ycos);
-            double zcos = (point_d.kd)*(point_d.zcos);
-            double w =  point_d.w;
+#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+    if(field_ell.getAllocationSpace() == chai::GPU){
+      std::vector<double> ell_host(field_ell.size(sdom_id));
+      std::vector<double> ell_plus_host(field_ell_plus.size(sdom_id));
+      auto ell = field_ell.getDataView(sdom_id, ell_host.data());
+      auto ell_plus = field_ell_plus.getDataView(sdom_id, ell_plus_host.data());
 
-            double ynm = YnmFcn(n, m, xcos, ycos, zcos);
+      Moment nm{0};
+      for(int n=0; n < (int)legendre_order+1; n++){
+        for(int m=-n; m<=n; m++){
+          RAJA::forall<RAJA::seq_exec>(
+            RAJA::TypedRangeSegment<Direction>(0, num_directions),
+            [=](Direction d){
 
-            // Compute element of L and L+
-            ell(nm, d) = w*ynm/SQRT4PI;
-            ell_plus(d,nm) = ynm*SQRT4PI;
-        });
-        nm ++;
+              QuadraturePoint const &point_d = quadrature_points[(*d)+direction_lower];
+              // Get quadrature point info
+              double xcos = (point_d.id)*(point_d.xcos);
+              double ycos = (point_d.jd)*(point_d.ycos);
+              double zcos = (point_d.kd)*(point_d.zcos);
+              double w =  point_d.w;
+
+              double ynm = YnmFcn(n, m, xcos, ycos, zcos);
+
+              // Compute element of L and L+
+              ell(nm, d) = w*ynm/SQRT4PI;
+              ell_plus(d,nm) = ynm*SQRT4PI;
+          });
+          nm ++;
+        }
+      }
+
+      field_ell.copyFromHost(sdom_id, ell_host.data(), ell_host.size());
+      field_ell_plus.copyFromHost(sdom_id, ell_plus_host.data(), ell_plus_host.size());
+    }
+    else
+#endif
+    {
+      auto ell = field_ell.getView(sdom_id);
+      auto ell_plus = field_ell_plus.getView(sdom_id);
+
+      Moment nm{0};
+      for(int n=0; n < (int)legendre_order+1; n++){
+        for(int m=-n; m<=n; m++){
+          RAJA::forall<RAJA::seq_exec>(
+            RAJA::TypedRangeSegment<Direction>(0, num_directions),
+            [=](Direction d){
+
+              QuadraturePoint const &point_d = quadrature_points[(*d)+direction_lower];
+              // Get quadrature point info
+              double xcos = (point_d.id)*(point_d.xcos);
+              double ycos = (point_d.jd)*(point_d.ycos);
+              double zcos = (point_d.kd)*(point_d.zcos);
+              double w =  point_d.w;
+
+              double ynm = YnmFcn(n, m, xcos, ycos, zcos);
+
+              // Compute element of L and L+
+              ell(nm, d) = w*ynm/SQRT4PI;
+              ell_plus(d,nm) = ynm*SQRT4PI;
+          });
+          nm ++;
+        }
       }
     }
   }
@@ -513,9 +612,8 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
       else{
         downwind(dim) = pspace.coordToGlobalSdomId(global_downwind);
       }
+
     }
-
   }
+
 }
-
-
