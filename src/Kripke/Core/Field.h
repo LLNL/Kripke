@@ -13,14 +13,7 @@
 #include <Kripke/Core/DataStore.h>
 #include <Kripke/Core/DomainVar.h>
 #include <Kripke/Core/Set.h>
-#include <cstring>
 #include <vector>
-
-#if defined(KRIPKE_USE_CUDA)
-#include <cuda_runtime_api.h>
-#elif defined(KRIPKE_USE_HIP)
-#include <hip/hip_runtime.h>
-#endif
 
 #ifdef KRIPKE_USE_CHAI
 #include <chai/ManagedArray.hpp>
@@ -199,77 +192,6 @@ namespace Core {
         return getHostData(sdom_id);
       }
 
-      RAJA_INLINE
-      void copyFromHost(Kripke::SdomId sdom_id,
-                        ElementType const *src,
-                        size_t count) {
-        KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
-            "sdom_id(%d) >= num_subdomains(%d)",
-            (int)*sdom_id,
-            (int)(int)m_subdomain_to_chunk.size());
-        size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
-        KRIPKE_ASSERT(count <= m_chunk_to_size[chunk_id],
-            "copyFromHost count(%lu) > field size(%lu)",
-            (unsigned long)count,
-            (unsigned long)m_chunk_to_size[chunk_id]);
-
-        if(count == 0){
-          return;
-        }
-
-#ifndef KRIPKE_USE_CHAI
-        std::memcpy(m_chunk_to_data[chunk_id], src, count*sizeof(ElementType));
-#else
-#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
-        if(m_allocation_space == chai::GPU){
-          size_t bytes = count*sizeof(ElementType);
-          ElementType *dst = m_chunk_to_data[chunk_id].data(chai::GPU, false);
-          copyHostToDevice(dst, src, bytes);
-          m_chunk_to_data[chunk_id].registerTouch(chai::GPU);
-          return;
-        }
-#endif
-        ElementType *dst = m_chunk_to_data[chunk_id].data(chai::CPU);
-        std::memcpy(dst, src, count*sizeof(ElementType));
-        m_chunk_to_data[chunk_id].registerTouch(chai::CPU);
-#endif
-      }
-
-      RAJA_INLINE
-      void copyToHost(Kripke::SdomId sdom_id,
-                      ElementType *dst,
-                      size_t count) const {
-        KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
-            "sdom_id(%d) >= num_subdomains(%d)",
-            (int)*sdom_id,
-            (int)(int)m_subdomain_to_chunk.size());
-        size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
-        KRIPKE_ASSERT(count <= m_chunk_to_size[chunk_id],
-            "copyToHost count(%lu) > field size(%lu)",
-            (unsigned long)count,
-            (unsigned long)m_chunk_to_size[chunk_id]);
-
-        if(count == 0){
-          return;
-        }
-
-#ifndef KRIPKE_USE_CHAI
-        std::memcpy(dst, m_chunk_to_data[chunk_id], count*sizeof(ElementType));
-#else
-#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
-        if(m_allocation_space == chai::GPU){
-          size_t bytes = count*sizeof(ElementType);
-          synchronizeDevice();
-          ElementType *src = m_chunk_to_data[chunk_id].data(chai::GPU);
-          copyDeviceToHost(dst, src, bytes);
-          return;
-        }
-#endif
-        ElementType *src = m_chunk_to_data[chunk_id].data(chai::CPU);
-        std::memcpy(dst, src, count*sizeof(ElementType));
-#endif
-      }
-
 #ifdef KRIPKE_USE_CHAI
       RAJA_INLINE
       chai::ExecutionSpace getAllocationSpace() const {
@@ -300,53 +222,6 @@ namespace Core {
       }
 
     protected:
-      RAJA_INLINE
-      static void copyHostToDevice(ElementType *dst,
-                                   ElementType const *src,
-                                   size_t bytes) {
-#if defined(KRIPKE_USE_CUDA)
-        cudaError_t err = cudaMemcpy(dst, src, bytes, cudaMemcpyHostToDevice);
-        KRIPKE_ASSERT(err == cudaSuccess,
-            "cudaMemcpy host-to-device failed: %s\n",
-            cudaGetErrorString(err));
-#elif defined(KRIPKE_USE_HIP)
-        hipError_t err = hipMemcpy(dst, src, bytes, hipMemcpyHostToDevice);
-        KRIPKE_ASSERT(err == hipSuccess,
-            "hipMemcpy host-to-device failed: %s\n",
-            hipGetErrorString(err));
-#else
-        std::memcpy(dst, src, bytes);
-#endif
-      }
-
-      RAJA_INLINE
-      static void copyDeviceToHost(ElementType *dst,
-                                   ElementType const *src,
-                                   size_t bytes) {
-#if defined(KRIPKE_USE_CUDA)
-        cudaError_t err = cudaMemcpy(dst, src, bytes, cudaMemcpyDeviceToHost);
-        KRIPKE_ASSERT(err == cudaSuccess,
-            "cudaMemcpy device-to-host failed: %s\n",
-            cudaGetErrorString(err));
-#elif defined(KRIPKE_USE_HIP)
-        hipError_t err = hipMemcpy(dst, src, bytes, hipMemcpyDeviceToHost);
-        KRIPKE_ASSERT(err == hipSuccess,
-            "hipMemcpy device-to-host failed: %s\n",
-            hipGetErrorString(err));
-#else
-        std::memcpy(dst, src, bytes);
-#endif
-      }
-
-      RAJA_INLINE
-      void synchronizeDevice() const {
-#if defined(KRIPKE_USE_CUDA)
-        RAJA::synchronize<RAJA::cuda_synchronize>();
-#elif defined(KRIPKE_USE_HIP)
-        RAJA::synchronize<RAJA::hip_synchronize>();
-#endif
-      }
-
       Kripke::Core::Set const *m_set;
       std::vector<size_t> m_chunk_to_size;
       std::vector<ElementPtr> m_chunk_to_data;
@@ -462,15 +337,6 @@ namespace Core {
         auto ptr = Parent::m_chunk_to_data[chunk_id];
 #endif
 
-        return DeviceViewType(ptr, layout);
-      }
-
-
-      RAJA_INLINE
-      DeviceViewType getDataView(Kripke::SdomId sdom_id,
-                                 ElementType *ptr) const {
-        size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
-        auto layout = m_chunk_to_layout[chunk_id];
         return DeviceViewType(ptr, layout);
       }
 

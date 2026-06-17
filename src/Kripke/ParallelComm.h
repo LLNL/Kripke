@@ -9,10 +9,6 @@
 #define KRIPKE_PARALLELCOMM_H__
 
 #include <Kripke.h>
-#ifdef KRIPKE_USE_CHAI
-#include <chai/ManagedArray.hpp>
-#endif
-#include <memory>
 #include <vector>
 
 struct Grid_Data;
@@ -45,19 +41,6 @@ class ParallelComm {
     virtual void markComplete(SdomId sdom_id) = 0;
 
   protected:
-    class MPIStagingBuffer {
-      public:
-        void allocate(size_t size);
-        double *data();
-
-      private:
-#ifdef KRIPKE_USE_CHAI
-        chai::ManagedArray<double> m_host_data;
-#else
-        std::vector<double> m_host_data;
-#endif
-    };
-
     int findSubdomain(SdomId sdom_id);
     void dequeueSubdomain(SdomId sdom_id);
     void postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id);
@@ -75,7 +58,6 @@ class ParallelComm {
 #ifdef KRIPKE_USE_MPI
     std::vector<MPI_Request> recv_requests;
     std::vector<int> recv_dimensions;
-    std::vector<std::shared_ptr<MPIStagingBuffer>> recv_buffers;
 #endif
     std::vector<int> recv_subdomains;
 
@@ -86,7 +68,6 @@ class ParallelComm {
     // These vectors have the remaining send requests that are incomplete
 #ifdef KRIPKE_USE_MPI
     std::vector<MPI_Request> send_requests;
-    std::vector<std::shared_ptr<MPIStagingBuffer>> send_buffers;
 #endif
 };
 
