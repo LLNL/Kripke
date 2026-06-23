@@ -40,6 +40,7 @@ void Kripke::SweepSolver (Kripke::Core::DataStore &data_store, std::vector<SdomI
 
   // Add all subdomains in our list
   for(size_t i = 0;i < subdomain_list.size();++ i){
+    KRIPKE_TIMER(data_store, SweepSolverAddSubdomain);
 //    Kripke::Core::Comm default_comm;
 //    printf("SweepSolver: rank=%d, sdom=%d\n", (int)default_comm.rank(), (int)*subdomain_list[i]);
     SdomId sdom_id = subdomain_list[i];
@@ -51,11 +52,13 @@ void Kripke::SweepSolver (Kripke::Core::DataStore &data_store, std::vector<SdomI
   /* Loop until we have finished all of our work */
   while(comm->workRemaining()) {
 
+    KRIPKE_TIMER(data_store, SweepSolverReadySubdomains);
     std::vector<SdomId> sdom_ready = comm->readySubdomains();
 
     // Run the ready list
     for (auto ii = 0; ii < sdom_ready.size(); ++ii) {
     
+      KRIPKE_TIMER(data_store, SweepSolverBeforeSubdomain);
       SdomId sdom_id = sdom_ready[ii];
 
       auto upwind = field_upwind.getView(sdom_id);
@@ -74,6 +77,7 @@ void Kripke::SweepSolver (Kripke::Core::DataStore &data_store, std::vector<SdomI
       // Perform subdomain sweep
       Kripke::Kernel::sweepSubdomain(data_store, Kripke::SdomId{sdom_id});
 
+      KRIPKE_TIMER(data_store, SweepSolverMarkComplete);
       // Mark as complete (and do any communication)
       comm->markComplete(sdom_id);
     }

@@ -11,6 +11,8 @@
 #include <Kripke/Core/Field.h>
 #include <Kripke/VarTypes.h>
 
+#include <Kripke/Timing.h>
+
 using namespace Kripke;
 
 namespace {
@@ -62,6 +64,9 @@ static void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
      src_plane.getAllocationSpace() == chai::GPU){
     double *dst = dst_plane.getDeviceData(dst_sdom_id);
     double *src = src_plane.getDeviceData(src_sdom_id);
+  //for(int i = 0;i < num_elem;++ i){
+  //  dst[i] = src[i];
+  //}
 #if defined(KRIPKE_USE_CUDA)
     RAJA::forall<RAJA::cuda_exec<256>>(
 #elif defined(KRIPKE_USE_HIP)
@@ -130,6 +135,7 @@ void ParallelComm::dequeueSubdomain(SdomId sdom_id){
   Receives use either direct GPU plane buffers or direct host plane buffers.
 */
 void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id){
+  KRIPKE_TIMER(data_store, PostRecvs);
   using namespace Kripke::Core;
   Comm comm;
   int mpi_rank = comm.rank();
@@ -201,6 +207,7 @@ void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id
 void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId sdom_id,
                              Kripke::Core::FieldStorage<double> *src_plane_data[3])
 {
+  KRIPKE_TIMER(data_store, PostSends);
   // post sends for downwind dependencies
   Kripke::Core::Comm comm;
   int mpi_rank = comm.rank();
@@ -297,6 +304,7 @@ void ParallelComm::waitAllSends(void){
   Checks for incomming messages, and does relevant bookkeeping.
 */
 void ParallelComm::testRecieves(void){
+  KRIPKE_TIMER((*m_data_store), testRecieves);
 #ifdef KRIPKE_USE_MPI
   // Check for any recv requests that have completed
   int num_requests = recv_requests.size();
