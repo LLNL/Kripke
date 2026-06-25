@@ -20,7 +20,7 @@ namespace {
 bool fieldIsGpuBacked(Kripke::Core::FieldStorage<double> &field)
 {
 #if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
-  return field.getAllocationSpace() == chai::GPU;
+  return field.getAllocationSpace() == Kripke::GPU;
 #else
   (void)field;
   return false;
@@ -60,8 +60,8 @@ static void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
       "Cannot copy plane data with different subdomain sizes");
 
 #if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
-  if(dst_plane.getAllocationSpace() == chai::GPU &&
-     src_plane.getAllocationSpace() == chai::GPU){
+  if(dst_plane.getAllocationSpace() == Kripke::GPU &&
+     src_plane.getAllocationSpace() == Kripke::GPU){
     double *dst = dst_plane.getDeviceData(dst_sdom_id);
     double *src = src_plane.getDeviceData(src_sdom_id);
   //for(int i = 0;i < num_elem;++ i){
@@ -324,11 +324,9 @@ void ParallelComm::testRecieves(void){
       int sdom_id = recv_subdomains[index];
 
 #ifdef KRIPKE_USE_CHAI
-      // Performance experiment: skip CHAI device-touch bookkeeping after
-      // GPU-aware MPI writes directly into plane data.
-      // if(useGpuAwareMPI(*m_plane_data[recv_dimensions[index]])){
-      //   m_plane_data[recv_dimensions[index]]->registerDeviceTouch(SdomId{sdom_id});
-      // }
+      if(useGpuAwareMPI(*m_plane_data[recv_dimensions[index]])){
+        m_plane_data[recv_dimensions[index]]->registerDeviceTouch(SdomId{sdom_id});
+      }
 #endif
 
       // remove the request from the list

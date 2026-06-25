@@ -154,12 +154,12 @@ namespace Kripke {
 
   template<typename FieldType>
   RAJA_INLINE
-  chai::ExecutionSpace fieldAllocationSpace(ArchV arch_v)
+  Kripke::ExecutionSpace fieldAllocationSpace(ArchV arch_v)
   {
     if(archUsesDevice(arch_v) && !FieldType::host_resident_normal_chai_gpu){
-      return chai::GPU;
+      return Kripke::GPU;
     }
-    return chai::CPU;
+    return Kripke::CPU;
   }
 #endif
 

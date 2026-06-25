@@ -12,11 +12,15 @@
 #include <Kripke/Core/VarLayout.h>
 #include <Kripke/Core/DataStore.h>
 #include <Kripke/Core/DomainVar.h>
+#include <Kripke/Core/MemoryManager.h>
 #include <Kripke/Core/Set.h>
+#include <cstring>
 #include <vector>
 
 #ifdef KRIPKE_USE_CHAI
-#include <chai/ManagedArray.hpp>
+#define DEBUG
+#include <umpire/Umpire.hpp>
+#undef DEBUG
 #endif
 
 namespace Kripke {
@@ -31,12 +35,7 @@ namespace Core {
   class FieldStorage : public Kripke::Core::DomainVar {
     public:
       using ElementType = ELEMENT;
-
-#ifndef KRIPKE_USE_CHAI
       using ElementPtr = ELEMENT*;
-#else
-      using ElementPtr = chai::ManagedArray<ELEMENT>;
-#endif
 
       using Layout1dType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<RAJA::Index_type>>;
       //FIXME: Remove the internal namespace when new RAJA release is out
@@ -45,7 +44,7 @@ namespace Core {
 
       explicit FieldStorage(Kripke::Core::Set const &spanned_set
 #ifdef KRIPKE_USE_CHAI
-          , chai::ExecutionSpace allocation_space = chai::CPU
+          , Kripke::ExecutionSpace allocation_space = Kripke::CPU
 #endif
           ) :
         m_set(&spanned_set)
@@ -71,34 +70,21 @@ namespace Core {
           // Get the size of the subdomain from the set
           SdomId sdom_id(m_chunk_to_subdomain[chunk_id]);
           size_t sdom_size = spanned_set.size(sdom_id);
+          size_t bytes = sdom_size*sizeof(ElementType);
 
           m_chunk_to_size[chunk_id] = sdom_size;
 #ifndef KRIPKE_USE_CHAI
           m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
 #else
-          m_chunk_to_data[chunk_id].allocate(sdom_size, m_allocation_space,
-              [=](const chai::PointerRecord* record, chai::Action action, chai::ExecutionSpace space){
-                /*printf("CHAI[%s, %d]: ", BaseVar::getName().c_str(), (int)chunk_id);
-                switch(action){
-                case chai::ACTION_ALLOC: printf("ALLOC "); break;
-                case chai::ACTION_FREE: printf("FREE  "); break;
-                case chai::ACTION_MOVE: printf("MOVE  "); break;
-                default: printf("UNKNOWN ");
-                }
-
-                switch(space){
-                case chai::CPU: printf("CPU "); break;
-#ifdef KRIPKE_USE_CUDA
-                case chai::GPU: printf("GPU  "); break;
-#endif
-                default: printf("UNK ");
-                }
-
-                printf("%lu bytes\n", (unsigned long) bytes);
-*/
-              }
-
-          );
+          auto &chunk = m_chunk_to_data[chunk_id];
+          if(m_allocation_space == Kripke::GPU){
+            chunk.device_ptr = allocateDeviceBuffer(bytes);
+            chunk.last_space = Kripke::GPU;
+          }
+          else{
+            chunk.host_ptr = allocateHostBuffer(bytes);
+            chunk.last_space = Kripke::CPU;
+          }
 #endif
         }
       }
@@ -107,6 +93,16 @@ namespace Core {
 #ifndef KRIPKE_USE_CHAI
         for(auto i : m_chunk_to_data){
           delete[] i;
+        }
+#else
+        auto host_allocator = MemoryManager::getHostAllocator();
+        for(auto &chunk : m_chunk_to_data){
+          if(chunk.device_ptr != nullptr){
+            MemoryManager::getDeviceAllocator().deallocate(chunk.device_ptr);
+          }
+          if(chunk.host_ptr != nullptr){
+            host_allocator.deallocate(chunk.host_ptr);
+          }
         }
 #endif
       }
@@ -126,13 +122,8 @@ namespace Core {
 
       RAJA_INLINE
       View1dType getView1d(Kripke::SdomId sdom_id) const {
-
+        ElementPtr ptr = getHostData(sdom_id);
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
-
-#ifdef KRIPKE_USE_CHAI
-        m_chunk_to_data[chunk_id].data(chai::CPU);
-#endif
-        ElementPtr ptr = m_chunk_to_data[chunk_id];
         size_t sdom_size = m_chunk_to_size[chunk_id];
 
         return View1dType(ptr, Layout1dType(sdom_size));
@@ -149,7 +140,9 @@ namespace Core {
 #ifndef KRIPKE_USE_CHAI
         return  m_chunk_to_data[chunk_id];
 #else
-        return m_chunk_to_data[chunk_id].data(chai::CPU);
+        ensureHostCurrent(chunk_id);
+        m_chunk_to_data[chunk_id].last_space = Kripke::CPU;
+        return m_chunk_to_data[chunk_id].host_ptr;
 #endif
       }
 
@@ -164,7 +157,8 @@ namespace Core {
 #ifndef KRIPKE_USE_CHAI
         return  m_chunk_to_data[chunk_id];
 #else
-        return m_chunk_to_data[chunk_id].data(chai::CPU);
+        ensureHostCurrent(chunk_id);
+        return m_chunk_to_data[chunk_id].host_ptr;
 #endif
       }
 
@@ -180,9 +174,17 @@ namespace Core {
         return  m_chunk_to_data[chunk_id];
 #else
 #if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
-        return m_chunk_to_data[chunk_id].data(chai::GPU);
+        if(m_allocation_space == Kripke::GPU){
+          ensureDeviceCurrent(chunk_id);
+          m_chunk_to_data[chunk_id].last_space = Kripke::GPU;
+          return m_chunk_to_data[chunk_id].device_ptr;
+        }
+        m_chunk_to_data[chunk_id].last_space = Kripke::CPU;
+        return m_chunk_to_data[chunk_id].host_ptr;
 #else
-        return m_chunk_to_data[chunk_id].data(chai::CPU);
+        ensureHostCurrent(chunk_id);
+        m_chunk_to_data[chunk_id].last_space = Kripke::CPU;
+        return m_chunk_to_data[chunk_id].host_ptr;
 #endif
 #endif
       }
@@ -194,20 +196,20 @@ namespace Core {
 
 #ifdef KRIPKE_USE_CHAI
       RAJA_INLINE
-      chai::ExecutionSpace getAllocationSpace() const {
+      Kripke::ExecutionSpace getAllocationSpace() const {
         return m_allocation_space;
       }
 
       RAJA_INLINE
       void registerDeviceTouch(Kripke::SdomId sdom_id) {
 #if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
-        if(m_allocation_space == chai::GPU){
+        if(m_allocation_space == Kripke::GPU){
           KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
               "sdom_id(%d) >= num_subdomains(%d)",
               (int)*sdom_id,
               (int)(int)m_subdomain_to_chunk.size());
           size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
-          m_chunk_to_data[chunk_id].registerTouch(chai::GPU);
+          m_chunk_to_data[chunk_id].last_space = Kripke::GPU;
         }
 #else
         (void)sdom_id;
@@ -222,11 +224,82 @@ namespace Core {
       }
 
     protected:
+#ifdef KRIPKE_USE_CHAI
+      struct ChunkData {
+        ElementType *host_ptr = nullptr;
+        ElementType *device_ptr = nullptr;
+        mutable Kripke::ExecutionSpace last_space = Kripke::CPU;
+      };
+
+      RAJA_INLINE
+      static ElementType *allocateHostBuffer(size_t bytes) {
+        if(bytes == 0){
+          return nullptr;
+        }
+        return static_cast<ElementType*>(MemoryManager::getHostAllocator().allocate(bytes));
+      }
+
+      RAJA_INLINE
+      static ElementType *allocateDeviceBuffer(size_t bytes) {
+        if(bytes == 0){
+          return nullptr;
+        }
+        return static_cast<ElementType*>(MemoryManager::getDeviceAllocator().allocate(bytes));
+      }
+
+      RAJA_INLINE
+      void ensureHostCurrent(size_t chunk_id) const {
+        if(m_allocation_space != Kripke::GPU ||
+           m_chunk_to_data[chunk_id].device_ptr == nullptr ||
+           m_chunk_to_data[chunk_id].last_space == Kripke::CPU){
+          return;
+        }
+
+        if(m_chunk_to_data[chunk_id].host_ptr == nullptr){
+          m_chunk_to_data[chunk_id].host_ptr = allocateHostBuffer(
+              m_chunk_to_size[chunk_id]*sizeof(ElementType));
+        }
+        synchronizeDevice();
+        MemoryManager::copy(m_chunk_to_data[chunk_id].host_ptr,
+                            m_chunk_to_data[chunk_id].device_ptr,
+                            m_chunk_to_size[chunk_id]*sizeof(ElementType));
+        m_chunk_to_data[chunk_id].last_space = Kripke::CPU;
+      }
+
+      RAJA_INLINE
+      void ensureDeviceCurrent(size_t chunk_id) const {
+        if(m_allocation_space != Kripke::GPU ||
+           m_chunk_to_data[chunk_id].last_space == Kripke::GPU){
+          return;
+        }
+
+        if(m_chunk_to_data[chunk_id].device_ptr == nullptr){
+          m_chunk_to_data[chunk_id].device_ptr = allocateDeviceBuffer(
+              m_chunk_to_size[chunk_id]*sizeof(ElementType));
+        }
+        MemoryManager::copy(m_chunk_to_data[chunk_id].device_ptr,
+                            m_chunk_to_data[chunk_id].host_ptr,
+                            m_chunk_to_size[chunk_id]*sizeof(ElementType));
+        m_chunk_to_data[chunk_id].last_space = Kripke::GPU;
+      }
+
+      RAJA_INLINE
+      void synchronizeDevice() const {
+#if defined(KRIPKE_USE_CUDA)
+        RAJA::synchronize<RAJA::cuda_synchronize>();
+#elif defined(KRIPKE_USE_HIP)
+        RAJA::synchronize<RAJA::hip_synchronize>();
+#endif
+      }
+#endif
+
       Kripke::Core::Set const *m_set;
       std::vector<size_t> m_chunk_to_size;
+#ifndef KRIPKE_USE_CHAI
       std::vector<ElementPtr> m_chunk_to_data;
-#ifdef KRIPKE_USE_CHAI
-      chai::ExecutionSpace m_allocation_space;
+#else
+      mutable std::vector<ChunkData> m_chunk_to_data;
+      Kripke::ExecutionSpace m_allocation_space;
 #endif
 	  };
 
@@ -241,11 +314,7 @@ namespace Core {
 
       using ElementType = ELEMENT;
       static constexpr bool host_resident_normal_chai_gpu = false;
-#ifndef KRIPKE_USE_CHAI
       using ElementPtr = ELEMENT*;
-#else
-      using ElementPtr = chai::ManagedArray<ELEMENT>;
-#endif
 
       static constexpr size_t NumDims = sizeof...(IDX_TYPES);
 
@@ -265,7 +334,7 @@ namespace Core {
 #ifdef KRIPKE_USE_CHAI
       template<typename Order>
       Field(Kripke::Core::Set const &spanned_set,
-            chai::ExecutionSpace allocation_space,
+            Kripke::ExecutionSpace allocation_space,
             Order) :
         Parent(spanned_set, allocation_space)
       {
@@ -308,13 +377,8 @@ namespace Core {
 
       RAJA_INLINE
       DefaultViewType getView(Kripke::SdomId sdom_id) const {
-
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
-
-#ifdef KRIPKE_USE_CHAI
-        Parent::m_chunk_to_data[chunk_id].data(chai::CPU);
-#endif
-        auto ptr = Parent::m_chunk_to_data[chunk_id];
+        auto ptr = Parent::getHostData(sdom_id);
         auto layout = m_chunk_to_layout[chunk_id];
 
         return DefaultViewType(ptr, layout);
@@ -328,11 +392,11 @@ namespace Core {
         auto layout = m_chunk_to_layout[chunk_id];
 
 #if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
-        KRIPKE_ASSERT(Parent::m_allocation_space == chai::GPU,
+        KRIPKE_ASSERT(Parent::m_allocation_space == Kripke::GPU,
             "getDeviceView requires a GPU-backed field");
-        auto ptr = Parent::m_chunk_to_data[chunk_id].data(chai::GPU);
+        auto ptr = Parent::getDeviceData(sdom_id);
 #elif defined(KRIPKE_USE_CHAI)
-        auto ptr = Parent::m_chunk_to_data[chunk_id].data(chai::CPU);
+        auto ptr = Parent::getHostData(sdom_id);
 #else
         auto ptr = Parent::m_chunk_to_data[chunk_id];
 #endif
@@ -354,12 +418,12 @@ namespace Core {
         LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
 
 #if (defined(KRIPKE_USE_HIP) || defined(KRIPKE_USE_CUDA)) && defined(KRIPKE_USE_CHAI)
-        if(Parent::m_allocation_space == chai::GPU){
-          return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(chai::GPU), layout);
+        if(Parent::m_allocation_space == Kripke::GPU){
+          return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::getDeviceData(sdom_id), layout);
         }
-        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(chai::CPU), layout);
+        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::getHostData(sdom_id), layout);
 #elif defined(KRIPKE_USE_CHAI)
-        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(chai::CPU), layout);
+        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::getHostData(sdom_id), layout);
 #else
         return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id], layout);
 #endif
@@ -380,6 +444,13 @@ namespace Core {
 #ifndef KRIPKE_USE_CHAI
         printf("  m_chunk_to_data: ");
         for(auto x : Parent::m_chunk_to_data){printf("%p ", x);}
+        printf("\n");
+#else
+        printf("  m_chunk_to_data(host): ");
+        for(auto const &x : Parent::m_chunk_to_data){printf("%p ", (void*)x.host_ptr);}
+        printf("\n");
+        printf("  m_chunk_to_data(device): ");
+        for(auto const &x : Parent::m_chunk_to_data){printf("%p ", (void*)x.device_ptr);}
         printf("\n");
 #endif
 

@@ -13,10 +13,6 @@
 #include <Kripke/Core/DataStore.h>
 #include <utility>
 
-#ifdef KRIPKE_USE_CHAI
-#include <chai/ExecutionSpaces.hpp>
-#endif
-
 namespace Kripke {
 
   namespace Kernel {
@@ -27,7 +23,7 @@ namespace Kripke {
       RAJA_INLINE
       bool fieldUsesDevice(FieldType const &field){
 #if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
-        return field.getAllocationSpace() == chai::GPU;
+        return field.getAllocationSpace() == Kripke::GPU;
 #else
         (void)field;
         return false;

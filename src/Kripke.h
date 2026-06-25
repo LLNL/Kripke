@@ -68,6 +68,13 @@ namespace Kripke {
    */
   RAJA_INDEX_VALUE(GlobalSdomId, "GlobalSdomId");
 
+#ifdef KRIPKE_USE_CHAI
+  enum ExecutionSpace {
+    CPU,
+    GPU
+  };
+#endif
+
 
 }
 
@@ -160,4 +167,3 @@ namespace Arch {
 
 
 #endif
-

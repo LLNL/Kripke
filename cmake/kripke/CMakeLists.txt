@@ -30,7 +30,6 @@ set(ENABLE_DOCUMENTATION Off CACHE BOOL "")
 
 if (ENABLE_CHAI)
   set(ENABLE_RAJA_PLUGIN On CACHE BOOL "")
-  set(CHAI_ENABLE_RAJA_PLUGIN On CACHE BOOL "")
 endif ()
 
 # Use C++17 standard
@@ -167,16 +166,9 @@ if(ENABLE_CHAI)
                      ${PROJECT_BINARY_DIR}/umpire)
   endif()
 
-  if (DEFINED chai_DIR)
-    find_package(chai REQUIRED)
-  else ()
-    add_subdirectory(${KRIPKE_SOURCE_DIR}/tpl/chai
-                     ${PROJECT_BINARY_DIR}/chai)
-  endif ()
-
   set(ENABLE_TESTS Off CACHE BOOL "")
   set(KRIPKE_USE_CHAI 1)
-  list(APPEND KRIPKE_DEPENDS chai)
+  list(APPEND KRIPKE_DEPENDS umpire)
 else ()
   #
   # Configure RAJA (REQUIRED)
