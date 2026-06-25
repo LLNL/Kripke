@@ -66,6 +66,6 @@ void MemoryManager::copy(void *dst, void const *src, size_t bytes) {
   }
 
   auto &rm = umpire::ResourceManager::getInstance();
-  rm.copy(dst, src, bytes);
+  rm.copy(dst, const_cast<void *>(src), bytes);
 }
 #endif

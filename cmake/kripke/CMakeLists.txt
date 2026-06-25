@@ -153,7 +153,7 @@ if(ENABLE_CHAI)
     find_package(umpire REQUIRED)
     
     if (ENABLE_MPI)
-      set(UMPIRE_DEPENDS "${UMPIRE_DEPENDS} blt::mpi")
+      list(APPEND UMPIRE_DEPENDS blt::mpi)
     endif()
 
     blt_register_library(
