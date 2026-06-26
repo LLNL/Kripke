@@ -88,7 +88,7 @@ void Kripke::Generate::generateData(Kripke::Core::DataStore &data_store,
 
     int global_num_groups = global_group_set.size(sdom_id);
 
-#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+#if defined(KRIPKE_USE_UMPIRE) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
     if(field_sigs.getAllocationSpace() == Kripke::GPU){
       auto sigs = field_sigs.getDeviceView(sdom_id);
       double sigs0 = input_vars.sigs[0];

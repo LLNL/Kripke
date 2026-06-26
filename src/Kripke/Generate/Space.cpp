@@ -344,7 +344,7 @@ void Kripke::Generate::generateSpace(Kripke::Core::DataStore &data_store,
     int num_zones = set_zone_linear.size(sdom_id);
     int num_mixelem = set_mixelem.size(sdom_id);
 
-#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+#if defined(KRIPKE_USE_UMPIRE) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
     if(field_sigt.getAllocationSpace() == Kripke::GPU){
       auto mixelem_to_material = field_mixed_to_material.getDeviceView(sdom_id);
       auto mixelem_to_fraction = field_mixed_to_fraction.getDeviceView(sdom_id);

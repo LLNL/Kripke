@@ -18,9 +18,7 @@
 #include <vector>
 
 #ifdef KRIPKE_USE_CHAI
-#define DEBUG
-#include <umpire/Umpire.hpp>
-#undef DEBUG
+#include <chai/ManagedArray.hpp>
 #endif
 
 namespace Kripke {
@@ -35,7 +33,12 @@ namespace Core {
   class FieldStorage : public Kripke::Core::DomainVar {
     public:
       using ElementType = ELEMENT;
+
+#ifndef KRIPKE_USE_CHAI
       using ElementPtr = ELEMENT*;
+#else
+      using ElementPtr = chai::ManagedArray<ELEMENT>;
+#endif
 
       using Layout1dType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<RAJA::Index_type>>;
       //FIXME: Remove the internal namespace when new RAJA release is out
@@ -43,12 +46,12 @@ namespace Core {
 
 
       explicit FieldStorage(Kripke::Core::Set const &spanned_set
-#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_UMPIRE
           , Kripke::ExecutionSpace allocation_space = Kripke::CPU
 #endif
           ) :
         m_set(&spanned_set)
-#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_UMPIRE
         , m_allocation_space(allocation_space)
 #endif
       {
@@ -70,40 +73,67 @@ namespace Core {
           // Get the size of the subdomain from the set
           SdomId sdom_id(m_chunk_to_subdomain[chunk_id]);
           size_t sdom_size = spanned_set.size(sdom_id);
-          size_t bytes = sdom_size*sizeof(ElementType);
 
           m_chunk_to_size[chunk_id] = sdom_size;
 #ifndef KRIPKE_USE_CHAI
+#ifndef KRIPKE_USE_UMPIRE // No memory manager
           m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
-#else
+#else // Umpire
           auto &chunk = m_chunk_to_data[chunk_id];
           if(m_allocation_space == Kripke::GPU){
-            chunk.device_ptr = allocateDeviceBuffer(bytes);
+            chunk.device_ptr = allocateDeviceBuffer(sdom_size*sizeof(ElementType));
             chunk.last_space = Kripke::GPU;
           }
           else{
-            chunk.host_ptr = allocateHostBuffer(bytes);
+            chunk.host_ptr = allocateHostBuffer(sdom_size*sizeof(ElementType));
             chunk.last_space = Kripke::CPU;
           }
+#endif
+#else // CHAI
+          m_chunk_to_data[chunk_id].allocate(sdom_size, m_allocation_space,
+              [=](const chai::PointerRecord* record, chai::Action action, Kripke::ExecutionSpace space){
+                /*printf("CHAI[%s, %d]: ", BaseVar::getName().c_str(), (int)chunk_id);
+                switch(action){
+                case chai::ACTION_ALLOC: printf("ALLOC "); break;
+                case chai::ACTION_FREE: printf("FREE  "); break;
+                case chai::ACTION_MOVE: printf("MOVE  "); break;
+                default: printf("UNKNOWN ");
+                }
+
+                switch(space){
+                case chai::CPU: printf("CPU "); break;
+#ifdef KRIPKE_USE_CUDA
+                case chai::GPU: printf("GPU  "); break;
+#endif
+                default: printf("UNK ");
+                }
+
+                printf("%lu bytes\n", (unsigned long) bytes);
+*/
+              }
+
+          );
 #endif
         }
       }
 
       virtual ~FieldStorage(){
 #ifndef KRIPKE_USE_CHAI
+#ifndef KRIPKE_USE_UMPIRE // No memory manager
         for(auto i : m_chunk_to_data){
           delete[] i;
         }
-#else
-        auto host_allocator = MemoryManager::getHostAllocator();
+#else // Umpire
         for(auto &chunk : m_chunk_to_data){
           if(chunk.device_ptr != nullptr){
             MemoryManager::getDeviceAllocator().deallocate(chunk.device_ptr);
           }
           if(chunk.host_ptr != nullptr){
-            host_allocator.deallocate(chunk.host_ptr);
+            MemoryManager::getHostAllocator().deallocate(chunk.host_ptr);
           }
         }
+#endif
+// CHAI uses RAII semantics, hence no need to deallocate
 #endif
       }
 
@@ -122,8 +152,19 @@ namespace Core {
 
       RAJA_INLINE
       View1dType getView1d(Kripke::SdomId sdom_id) const {
-        ElementPtr ptr = getHostData(sdom_id);
+
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
+
+#ifdef KRIPKE_USE_UMPIRE
+#ifdef KRIPKE_USE_CHAI // CHAI
+        m_chunk_to_data[chunk_id].data(Kripke::CPU);
+        ElementPtr ptr = m_chunk_to_data[chunk_id];
+#else // Umpire
+        ElementPtr ptr = getHostData(sdom_id);
+#endif
+#else // No memory manager
+        ElementPtr ptr = m_chunk_to_data[chunk_id];
+#endif
         size_t sdom_size = m_chunk_to_size[chunk_id];
 
         return View1dType(ptr, Layout1dType(sdom_size));
@@ -138,11 +179,16 @@ namespace Core {
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
 #ifndef KRIPKE_USE_CHAI
-        return  m_chunk_to_data[chunk_id];
-#else
+#ifndef KRIPKE_USE_UMPIRE // No memory manager
+        return m_chunk_to_data[chunk_id];
+#else // Umpire
         ensureHostCurrent(chunk_id);
         m_chunk_to_data[chunk_id].last_space = Kripke::CPU;
         return m_chunk_to_data[chunk_id].host_ptr;
+#endif
+#else // CHAI
+        return m_chunk_to_data[chunk_id].data(chai::CPU);
+#endif
 #endif
       }
 
@@ -155,10 +201,14 @@ namespace Core {
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
 #ifndef KRIPKE_USE_CHAI
+#ifndef KRIPKE_USE_UMPIRE // No memory manager
         return  m_chunk_to_data[chunk_id];
-#else
+#else // Umpire
         ensureHostCurrent(chunk_id);
         return m_chunk_to_data[chunk_id].host_ptr;
+#endif
+#else // CHAI
+        return m_chunk_to_data[chunk_id].data(chai::CPU);
 #endif
       }
 
@@ -171,9 +221,9 @@ namespace Core {
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
 #ifndef KRIPKE_USE_CHAI
+#ifndef KRIPKE_USE_UMPIRE // No memory manager
         return  m_chunk_to_data[chunk_id];
-#else
-#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
+#else // Umpire
         if(m_allocation_space == Kripke::GPU){
           ensureDeviceCurrent(chunk_id);
           m_chunk_to_data[chunk_id].last_space = Kripke::GPU;
@@ -181,10 +231,12 @@ namespace Core {
         }
         m_chunk_to_data[chunk_id].last_space = Kripke::CPU;
         return m_chunk_to_data[chunk_id].host_ptr;
+#endif
+#else // CHAI
+#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
+        return m_chunk_to_data[chunk_id].data(chai::GPU);
 #else
-        ensureHostCurrent(chunk_id);
-        m_chunk_to_data[chunk_id].last_space = Kripke::CPU;
-        return m_chunk_to_data[chunk_id].host_ptr;
+        return m_chunk_to_data[chunk_id].data(chai::CPU);
 #endif
 #endif
       }
@@ -194,7 +246,7 @@ namespace Core {
         return getHostData(sdom_id);
       }
 
-#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_UMPIRE
       RAJA_INLINE
       Kripke::ExecutionSpace getAllocationSpace() const {
         return m_allocation_space;
@@ -209,7 +261,11 @@ namespace Core {
               (int)*sdom_id,
               (int)(int)m_subdomain_to_chunk.size());
           size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
+#ifdef KRIPKE_USE_CHAI
+          m_chunk_to_data[chunk_id].registerTouch(Kripke::GPU);
+#else
           m_chunk_to_data[chunk_id].last_space = Kripke::GPU;
+#endif
         }
 #else
         (void)sdom_id;
@@ -224,7 +280,8 @@ namespace Core {
       }
 
     protected:
-#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_UMPIRE
+#ifndef KRIPKE_USE_CHAI
       struct ChunkData {
         ElementType *host_ptr = nullptr;
         ElementType *device_ptr = nullptr;
@@ -292,14 +349,19 @@ namespace Core {
 #endif
       }
 #endif
+#endif
 
       Kripke::Core::Set const *m_set;
       std::vector<size_t> m_chunk_to_size;
-#ifndef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_UMPIRE
+#ifdef KRIPKE_USE_CHAI
       std::vector<ElementPtr> m_chunk_to_data;
 #else
       mutable std::vector<ChunkData> m_chunk_to_data;
+#endif
       Kripke::ExecutionSpace m_allocation_space;
+#else
+      std::vector<ElementPtr> m_chunk_to_data;
 #endif
 	  };
 
@@ -314,7 +376,11 @@ namespace Core {
 
       using ElementType = ELEMENT;
       static constexpr bool host_resident_normal_chai_gpu = false;
+#ifndef KRIPKE_USE_CHAI
       using ElementPtr = ELEMENT*;
+#else
+      using ElementPtr = chai::ManagedArray<ELEMENT>;
+#endif
 
       static constexpr size_t NumDims = sizeof...(IDX_TYPES);
 
@@ -331,7 +397,7 @@ namespace Core {
         setupLayouts<Order>(spanned_set);
       }
 
-#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_UMPIRE
       template<typename Order>
       Field(Kripke::Core::Set const &spanned_set,
             Kripke::ExecutionSpace allocation_space,
@@ -377,6 +443,7 @@ namespace Core {
 
       RAJA_INLINE
       DefaultViewType getView(Kripke::SdomId sdom_id) const {
+
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
         auto ptr = Parent::getHostData(sdom_id);
         auto layout = m_chunk_to_layout[chunk_id];
@@ -391,11 +458,11 @@ namespace Core {
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
         auto layout = m_chunk_to_layout[chunk_id];
 
-#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+#if defined(KRIPKE_USE_UMPIRE) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
         KRIPKE_ASSERT(Parent::m_allocation_space == Kripke::GPU,
             "getDeviceView requires a GPU-backed field");
         auto ptr = Parent::getDeviceData(sdom_id);
-#elif defined(KRIPKE_USE_CHAI)
+#elif defined(KRIPKE_USE_UMPIRE)
         auto ptr = Parent::getHostData(sdom_id);
 #else
         auto ptr = Parent::m_chunk_to_data[chunk_id];
@@ -417,12 +484,12 @@ namespace Core {
 
         LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
 
-#if (defined(KRIPKE_USE_HIP) || defined(KRIPKE_USE_CUDA)) && defined(KRIPKE_USE_CHAI)
+#if (defined(KRIPKE_USE_HIP) || defined(KRIPKE_USE_CUDA)) && defined(KRIPKE_USE_UMPIRE)
         if(Parent::m_allocation_space == Kripke::GPU){
           return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::getDeviceData(sdom_id), layout);
         }
         return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::getHostData(sdom_id), layout);
-#elif defined(KRIPKE_USE_CHAI)
+#elif defined(KRIPKE_USE_UMPIRE)
         return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::getHostData(sdom_id), layout);
 #else
         return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id], layout);

@@ -22,7 +22,7 @@ namespace Kripke {
       template<typename FieldType>
       RAJA_INLINE
       bool fieldUsesDevice(FieldType const &field){
-#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
+#if defined(KRIPKE_USE_UMPIRE) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
         return field.getAllocationSpace() == Kripke::GPU;
 #else
         (void)field;

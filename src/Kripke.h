@@ -31,6 +31,16 @@
 #include <mpi.h>
 #endif
 
+#ifdef KRIPKE_USE_UMPIRE
+#define DEBUG
+#include <umpire/Umpire.hpp>
+#include <umpire/strategy/QuickPool.hpp>
+#ifdef KRIPKE_USE_CHAI
+#include <chai/ManagedArray.hpp>
+#endif
+#undef DEBUG
+#endif
+
 // Forward Decl
 struct Grid_Data;
 
@@ -68,11 +78,17 @@ namespace Kripke {
    */
   RAJA_INDEX_VALUE(GlobalSdomId, "GlobalSdomId");
 
+#ifdef KRIPKE_USE_UMPIRE
 #ifdef KRIPKE_USE_CHAI
+  using ExecutionSpace = chai::ExecutionSpace;
+  using chai::CPU;
+  using chai::GPU;
+#else
   enum ExecutionSpace {
     CPU,
     GPU
   };
+#endif
 #endif
 
 

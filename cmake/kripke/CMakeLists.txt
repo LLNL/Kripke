@@ -30,6 +30,7 @@ set(ENABLE_DOCUMENTATION Off CACHE BOOL "")
 
 if (ENABLE_CHAI)
   set(ENABLE_RAJA_PLUGIN On CACHE BOOL "")
+  set(CHAI_ENABLE_RAJA_PLUGIN On CACHE BOOL "")
 endif ()
 
 # Use C++17 standard
@@ -153,7 +154,7 @@ if(ENABLE_CHAI)
     find_package(umpire REQUIRED)
     
     if (ENABLE_MPI)
-      list(APPEND UMPIRE_DEPENDS blt::mpi)
+      set(UMPIRE_DEPENDS "${UMPIRE_DEPENDS} blt::mpi")
     endif()
 
     blt_register_library(
@@ -166,23 +167,97 @@ if(ENABLE_CHAI)
                      ${PROJECT_BINARY_DIR}/umpire)
   endif()
 
+  if (DEFINED chai_DIR)
+    find_package(chai REQUIRED)
+  else ()
+    add_subdirectory(${KRIPKE_SOURCE_DIR}/tpl/chai
+                     ${PROJECT_BINARY_DIR}/chai)
+  endif ()
+
   set(ENABLE_TESTS Off CACHE BOOL "")
   set(KRIPKE_USE_CHAI 1)
-  list(APPEND KRIPKE_DEPENDS umpire)
+  set(KRIPKE_USE_UMPIRE 1)
+  list(APPEND KRIPKE_DEPENDS chai)
 else ()
-  #
-  # Configure RAJA (REQUIRED)
-  #
-  set(ENABLE_RAJA_PLUGIN Off CACHE BOOL "")
-  if (DEFINED RAJA_DIR)
-    find_package(RAJA REQUIRED)
+  if (ENABLE_CUDA OR ENABLE_HIP) 
+    set(ENABLE_RAJA_PLUGIN Off CACHE BOOL "")
+    # Find camp
+    if (NOT TARGET camp)
+      find_package(camp QUIET NO_DEFAULT_PATH HINTS ${CAMP_DIR} ${camp_DIR})
+
+      if (camp_FOUND)
+        message(STATUS "Kripke: Using external CAMP")
+        set_target_properties(camp PROPERTIES IMPORTED_GLOBAL TRUE)
+        if (DEFINED RAJA_DIR)
+          find_package(RAJA REQUIRED)
+        endif()
+
+        list(APPEND KRIPKE_DEPENDS RAJA)
+      else ()
+        message(STATUS "Kripke: Using CAMP submodule")
+
+        if (NOT EXISTS ${KRIPKE_SOURCE_DIR}/tpl/raja/tpl/camp/CMakeLists.txt)
+          message(FATAL_ERROR "Kripke: CAMP submodule not initialized. Run 'git submodule update --init' in the git repository or set camp_DIR or CAMP_DIR to use an external build of CAMP.")
+        else ()
+          message(STATUS "Kripke: Using CAMP in Kripke TPL")
+          add_subdirectory(${KRIPKE_SOURCE_DIR}/tpl/raja/tpl/camp
+                           ${PROJECT_BINARY_DIR}/camp)
+        endif ()
+      endif()
+    endif()
+
+    # Set camp backends
+    if (ENABLE_CUDA)
+      message(STATUS "Kripke: Setting CAMP_HAVE_CUDA")
+      blt_add_target_definitions(TO camp
+                                 SCOPE INTERFACE
+                                 TARGET_DEFINITIONS CAMP_HAVE_CUDA)
+    endif ()
+
+    if (ENABLE_HIP)
+      message(STATUS "Kripke: Setting CAMP_HAVE_HIP")
+      blt_add_target_definitions(TO camp
+                                 SCOPE INTERFACE
+                                 TARGET_DEFINITIONS CAMP_HAVE_HIP)
+    endif ()
+
+    set(UMPIRE_DEPENDS camp)
+
+    if (DEFINED umpire_DIR)
+      find_package(umpire REQUIRED)
+      
+      if (ENABLE_MPI)
+        list(APPEND UMPIRE_DEPENDS blt::mpi)
+      endif()
+
+      blt_register_library(
+        NAME umpire
+        INCLUDES ${UMPIRE_INCLUDE_DIRS}
+        LIBRARIES umpire
+        DEPENDS_ON ${UMPIRE_DEPENDS})
+    else ()
+      add_subdirectory(${KRIPKE_SOURCE_DIR}/tpl/umpire
+                       ${PROJECT_BINARY_DIR}/umpire)
+    endif()
+
+    set(ENABLE_TESTS Off CACHE BOOL "")
+    set(KRIPKE_USE_UMPIRE 1)
+    list(APPEND KRIPKE_DEPENDS umpire)
   else ()
-    set(ENABLE_EXAMPLES Off CACHE BOOL "")
-    set(ENABLE_EXERCISES Off CACHE BOOL "")
-    add_subdirectory(${KRIPKE_SOURCE_DIR}/tpl/raja
-                     ${PROJECT_BINARY_DIR}/raja)
+    #
+    # Configure RAJA (REQUIRED)
+    #
+    set(ENABLE_RAJA_PLUGIN Off CACHE BOOL "")
+    if (DEFINED RAJA_DIR)
+      find_package(RAJA REQUIRED)
+    else ()
+      set(ENABLE_EXAMPLES Off CACHE BOOL "")
+      set(ENABLE_EXERCISES Off CACHE BOOL "")
+      add_subdirectory(${KRIPKE_SOURCE_DIR}/tpl/raja
+                       ${PROJECT_BINARY_DIR}/raja)
+    endif ()
+    list(APPEND KRIPKE_DEPENDS RAJA)
   endif ()
-  list(APPEND KRIPKE_DEPENDS RAJA)
 endif ()
 
 #

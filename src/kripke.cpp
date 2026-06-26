@@ -224,8 +224,14 @@ int main(int argc, char **argv) {
 
 #ifdef KRIPKE_USE_CHAI
     printf("  CHAI Enabled:           Yes\n");
+    printf("  Umpire Enabled:         Yes\n");
 #else
     printf("  CHAI Enabled:           No\n");
+#ifdef KRIPKE_USE_UMPIRE
+    printf("  Umpire Enabled:         Yes\n");
+#else
+    printf("  Umpire Enabled:         No\n");
+#endif
 #endif
 
 #ifdef KRIPKE_USE_CUDA
@@ -539,7 +545,7 @@ int main(int argc, char **argv) {
     printf("  Sweep efficiency :  %4.5lf [100.0 * SweepSubdomain time / SweepSolver time]\n", sweep_eff);
     printf("  Number of unknowns: %lu\n", (unsigned long) num_unknowns);
 
-#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_UMPIRE
     double device_memory_pool_size = memory_manager.getDeviceMemoryPoolSize();
     double device_memory_high_watermark = memory_manager.getDeviceMemoryHighWatermark();
 #ifdef KRIPKE_USE_CALIPER
