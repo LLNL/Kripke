@@ -31,11 +31,11 @@
 #include <mpi.h>
 #endif
 
-#ifdef KRIPKE_USE_UMPIRE
+#if defined(KRIPKE_USE_UMPIRE)
 #define DEBUG
 #include <umpire/Umpire.hpp>
 #include <umpire/strategy/QuickPool.hpp>
-#ifdef KRIPKE_USE_CHAI
+#if defined(KRIPKE_USE_CHAI)
 #include <chai/ManagedArray.hpp>
 #endif
 #undef DEBUG
@@ -78,8 +78,8 @@ namespace Kripke {
    */
   RAJA_INDEX_VALUE(GlobalSdomId, "GlobalSdomId");
 
-#ifdef KRIPKE_USE_UMPIRE
-#ifdef KRIPKE_USE_CHAI
+#if defined(KRIPKE_USE_UMPIRE)
+#if defined(KRIPKE_USE_CHAI)
   using ExecutionSpace = chai::ExecutionSpace;
   using chai::CPU;
   using chai::GPU;

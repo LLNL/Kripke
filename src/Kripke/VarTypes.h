@@ -135,7 +135,7 @@ namespace Kripke {
     return SdomAL<AL>{sdom_id};
   }
 
-#ifdef KRIPKE_USE_UMPIRE
+#if defined(KRIPKE_USE_UMPIRE)
   RAJA_INLINE
   bool archUsesDevice(ArchV arch_v)
   {
@@ -156,7 +156,7 @@ namespace Kripke {
   RAJA_INLINE
   Kripke::ExecutionSpace fieldAllocationSpace(ArchV arch_v)
   {
-    if(archUsesDevice(arch_v) && !FieldType::host_resident_normal_chai_gpu){
+    if(archUsesDevice(arch_v) && !FieldType::host_resident_normal_gpu){
       return Kripke::GPU;
     }
     return Kripke::CPU;
@@ -172,7 +172,7 @@ namespace Kripke {
     dispatchLayout(al_v.layout_v, [&](auto layout_t){
       using order_t = typename DefaultOrder<decltype(layout_t)>::type; 
 
-#ifdef KRIPKE_USE_UMPIRE
+#if defined(KRIPKE_USE_UMPIRE)
       field = new FieldType(set, fieldAllocationSpace<FieldType>(al_v.arch_v), order_t{});
 #else
       field = new FieldType(set, order_t{});

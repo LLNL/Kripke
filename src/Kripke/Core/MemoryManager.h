@@ -10,10 +10,6 @@
 
 #include <Kripke.h>
 
-#ifdef KRIPKE_USE_UMPIRE
-#include <umpire/Umpire.hpp>
-#endif
-
 namespace Kripke {
 namespace Core {
 
@@ -26,7 +22,7 @@ class MemoryManager {
     double getDeviceMemoryPoolSize();
     double getDeviceMemoryHighWatermark();
 
-#ifdef KRIPKE_USE_UMPIRE
+#if defined(KRIPKE_USE_UMPIRE)
     static umpire::Allocator getHostAllocator();
     static umpire::Allocator getDeviceAllocator();
     static void copy(void *dst, void const *src, size_t bytes);

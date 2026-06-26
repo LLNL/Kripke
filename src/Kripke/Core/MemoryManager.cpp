@@ -12,7 +12,7 @@ using namespace Kripke;
 using namespace Kripke::Core;
 
 MemoryManager::MemoryManager(int device_pool_size) : device_pool_size(device_pool_size) {
-#ifdef KRIPKE_USE_UMPIRE
+#if defined(KRIPKE_USE_UMPIRE)
   auto &rm = umpire::ResourceManager::getInstance();
   const char * allocator_name = "KRIPKE_DEVICE_POOL";
   size_t umpire_device_pool_size = ((size_t) device_pool_size) * 1024 * 1024 * 1024;
@@ -21,16 +21,16 @@ MemoryManager::MemoryManager(int device_pool_size) : device_pool_size(device_poo
   // Force allocation of GPU memory pool
   void *tmp = device_pool_allocator.allocate(100*sizeof(int));
   device_pool_allocator.deallocate(tmp);
-#ifdef KRIPKE_USE_CHAI
+#if defined(KRIPKE_USE_CHAI)
   // Set CHAI device memory pool allocator
   auto chai_resource_manager = chai::ArrayManager::getInstance();
-  chai_resource_manager->setAllocator(chai::GPU, device_pool_allocator);
+  chai_resource_manager->setAllocator(Kripke::GPU, device_pool_allocator);
 #endif // KRIPKE_USE_CHAI
 #endif // KRIPKE_USE_UMPIRE
 }
 
 double MemoryManager::getDeviceMemoryPoolSize() {
-#ifdef KRIPKE_USE_UMPIRE
+#if defined(KRIPKE_USE_UMPIRE)
   return (double) device_pool_size;
 #else
       return 0.0;
@@ -38,7 +38,7 @@ double MemoryManager::getDeviceMemoryPoolSize() {
 }
 
 double MemoryManager::getDeviceMemoryHighWatermark() {
-#ifdef KRIPKE_USE_UMPIRE
+#if defined(KRIPKE_USE_UMPIRE)
   auto device_allocator = getDeviceAllocator();
   return ((double) device_allocator.getHighWatermark()) / (1024 * 1024 * 1024);
 #else
@@ -46,7 +46,7 @@ double MemoryManager::getDeviceMemoryHighWatermark() {
 #endif
 }
 
-#ifdef KRIPKE_USE_UMPIRE
+#if defined(KRIPKE_USE_UMPIRE)
 umpire::Allocator MemoryManager::getHostAllocator() {
   auto &rm = umpire::ResourceManager::getInstance();
   return rm.getAllocator("HOST");

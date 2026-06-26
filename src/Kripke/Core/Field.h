@@ -17,13 +17,9 @@
 #include <cstring>
 #include <vector>
 
-#ifdef KRIPKE_USE_CHAI
-#include <chai/ManagedArray.hpp>
-#endif
-
 namespace Kripke {
 namespace Core {
-  template<typename ELEMENT, bool HOST_RESIDENT_NORMAL_CHAI_GPU, typename ... IDX_TYPES>
+  template<typename ELEMENT, bool HOST_RESIDENT_NORMAL_GPU, typename ... IDX_TYPES>
   class FieldWithPolicy;
 
   /**
@@ -34,10 +30,10 @@ namespace Core {
     public:
       using ElementType = ELEMENT;
 
-#ifndef KRIPKE_USE_CHAI
-      using ElementPtr = ELEMENT*;
-#else
+#if defined(KRIPKE_USE_CHAI)
       using ElementPtr = chai::ManagedArray<ELEMENT>;
+#else
+      using ElementPtr = ELEMENT*;
 #endif
 
       using Layout1dType = RAJA::TypedLayout<RAJA::Index_type, camp::tuple<RAJA::Index_type>>;
@@ -46,12 +42,12 @@ namespace Core {
 
 
       explicit FieldStorage(Kripke::Core::Set const &spanned_set
-#ifdef KRIPKE_USE_UMPIRE
+#if defined(KRIPKE_USE_UMPIRE)
           , Kripke::ExecutionSpace allocation_space = Kripke::CPU
 #endif
           ) :
         m_set(&spanned_set)
-#ifdef KRIPKE_USE_UMPIRE
+#if defined(KRIPKE_USE_UMPIRE)
         , m_allocation_space(allocation_space)
 #endif
       {
@@ -62,10 +58,10 @@ namespace Core {
         // allocate all of our chunks, and create layouts for each one
         size_t num_chunks = m_chunk_to_subdomain.size();
         m_chunk_to_size.resize(num_chunks, 0);
-#ifndef KRIPKE_USE_CHAI
-        m_chunk_to_data.resize(num_chunks, nullptr);
-#else
+#if defined(KRIPKE_USE_CHAI) || defined(KRIPKE_USE_UMPIRE)
         m_chunk_to_data.resize(num_chunks);
+#else
+        m_chunk_to_data.resize(num_chunks, nullptr);
 #endif
 
         for(size_t chunk_id = 0;chunk_id < num_chunks;++ chunk_id){
@@ -75,21 +71,7 @@ namespace Core {
           size_t sdom_size = spanned_set.size(sdom_id);
 
           m_chunk_to_size[chunk_id] = sdom_size;
-#ifndef KRIPKE_USE_CHAI
-#ifndef KRIPKE_USE_UMPIRE // No memory manager
-          m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
-#else // Umpire
-          auto &chunk = m_chunk_to_data[chunk_id];
-          if(m_allocation_space == Kripke::GPU){
-            chunk.device_ptr = allocateDeviceBuffer(sdom_size*sizeof(ElementType));
-            chunk.last_space = Kripke::GPU;
-          }
-          else{
-            chunk.host_ptr = allocateHostBuffer(sdom_size*sizeof(ElementType));
-            chunk.last_space = Kripke::CPU;
-          }
-#endif
-#else // CHAI
+#if defined(KRIPKE_USE_CHAI)
           m_chunk_to_data[chunk_id].allocate(sdom_size, m_allocation_space,
               [=](const chai::PointerRecord* record, chai::Action action, Kripke::ExecutionSpace space){
                 /*printf("CHAI[%s, %d]: ", BaseVar::getName().c_str(), (int)chunk_id);
@@ -113,17 +95,26 @@ namespace Core {
               }
 
           );
+#elif defined(KRIPKE_USE_UMPIRE)
+          auto &chunk = m_chunk_to_data[chunk_id];
+          if(m_allocation_space == Kripke::GPU){
+            chunk.device_ptr = allocateDeviceBuffer(sdom_size*sizeof(ElementType));
+            chunk.last_space = Kripke::GPU;
+          }
+          else{
+            chunk.host_ptr = allocateHostBuffer(sdom_size*sizeof(ElementType));
+            chunk.last_space = Kripke::CPU;
+          }
+#else
+          m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
 #endif
         }
       }
 
       virtual ~FieldStorage(){
-#ifndef KRIPKE_USE_CHAI
-#ifndef KRIPKE_USE_UMPIRE // No memory manager
-        for(auto i : m_chunk_to_data){
-          delete[] i;
-        }
-#else // Umpire
+#if defined(KRIPKE_USE_CHAI)
+// CHAI uses RAII semantics, hence no need to deallocate
+#elif defined(KRIPKE_USE_UMPIRE)
         for(auto &chunk : m_chunk_to_data){
           if(chunk.device_ptr != nullptr){
             MemoryManager::getDeviceAllocator().deallocate(chunk.device_ptr);
@@ -132,8 +123,10 @@ namespace Core {
             MemoryManager::getHostAllocator().deallocate(chunk.host_ptr);
           }
         }
-#endif
-// CHAI uses RAII semantics, hence no need to deallocate
+#else
+        for(auto i : m_chunk_to_data){
+          delete[] i;
+        }
 #endif
       }
 
@@ -155,14 +148,12 @@ namespace Core {
 
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
-#ifdef KRIPKE_USE_UMPIRE
-#ifdef KRIPKE_USE_CHAI // CHAI
+#if defined(KRIPKE_USE_CHAI)
         m_chunk_to_data[chunk_id].data(Kripke::CPU);
         ElementPtr ptr = m_chunk_to_data[chunk_id];
-#else // Umpire
+#elif defined(KRIPKE_USE_UMPIRE)
         ElementPtr ptr = getHostData(sdom_id);
-#endif
-#else // No memory manager
+#else
         ElementPtr ptr = m_chunk_to_data[chunk_id];
 #endif
         size_t sdom_size = m_chunk_to_size[chunk_id];
@@ -178,17 +169,14 @@ namespace Core {
             (int)(int)m_subdomain_to_chunk.size());
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
-#ifndef KRIPKE_USE_CHAI
-#ifndef KRIPKE_USE_UMPIRE // No memory manager
-        return m_chunk_to_data[chunk_id];
-#else // Umpire
+#if defined(KRIPKE_USE_CHAI)
+        return m_chunk_to_data[chunk_id].data(Kripke::CPU);
+#elif defined(KRIPKE_USE_UMPIRE)
         ensureHostCurrent(chunk_id);
         m_chunk_to_data[chunk_id].last_space = Kripke::CPU;
         return m_chunk_to_data[chunk_id].host_ptr;
-#endif
-#else // CHAI
-        return m_chunk_to_data[chunk_id].data(chai::CPU);
-#endif
+#else
+        return m_chunk_to_data[chunk_id];
 #endif
       }
 
@@ -200,15 +188,13 @@ namespace Core {
             (int)(int)m_subdomain_to_chunk.size());
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
-#ifndef KRIPKE_USE_CHAI
-#ifndef KRIPKE_USE_UMPIRE // No memory manager
-        return  m_chunk_to_data[chunk_id];
-#else // Umpire
+#if defined(KRIPKE_USE_CHAI)
+        return m_chunk_to_data[chunk_id].data(Kripke::CPU);
+#elif defined(KRIPKE_USE_UMPIRE)
         ensureHostCurrent(chunk_id);
         return m_chunk_to_data[chunk_id].host_ptr;
-#endif
-#else // CHAI
-        return m_chunk_to_data[chunk_id].data(chai::CPU);
+#else
+        return m_chunk_to_data[chunk_id];
 #endif
       }
 
@@ -220,10 +206,13 @@ namespace Core {
             (int)(int)m_subdomain_to_chunk.size());
         size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
 
-#ifndef KRIPKE_USE_CHAI
-#ifndef KRIPKE_USE_UMPIRE // No memory manager
-        return  m_chunk_to_data[chunk_id];
-#else // Umpire
+#if defined(KRIPKE_USE_CHAI)
+#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
+        return m_chunk_to_data[chunk_id].data(Kripke::GPU);
+#else
+        return m_chunk_to_data[chunk_id].data(Kripke::CPU);
+#endif
+#elif defined(KRIPKE_USE_UMPIRE)
         if(m_allocation_space == Kripke::GPU){
           ensureDeviceCurrent(chunk_id);
           m_chunk_to_data[chunk_id].last_space = Kripke::GPU;
@@ -231,13 +220,8 @@ namespace Core {
         }
         m_chunk_to_data[chunk_id].last_space = Kripke::CPU;
         return m_chunk_to_data[chunk_id].host_ptr;
-#endif
-#else // CHAI
-#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
-        return m_chunk_to_data[chunk_id].data(chai::GPU);
 #else
-        return m_chunk_to_data[chunk_id].data(chai::CPU);
-#endif
+        return m_chunk_to_data[chunk_id];
 #endif
       }
 
@@ -246,7 +230,7 @@ namespace Core {
         return getHostData(sdom_id);
       }
 
-#ifdef KRIPKE_USE_UMPIRE
+#if defined(KRIPKE_USE_UMPIRE)
       RAJA_INLINE
       Kripke::ExecutionSpace getAllocationSpace() const {
         return m_allocation_space;
@@ -261,7 +245,7 @@ namespace Core {
               (int)*sdom_id,
               (int)(int)m_subdomain_to_chunk.size());
           size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
-#ifdef KRIPKE_USE_CHAI
+#if defined(KRIPKE_USE_CHAI)
           m_chunk_to_data[chunk_id].registerTouch(Kripke::GPU);
 #else
           m_chunk_to_data[chunk_id].last_space = Kripke::GPU;
@@ -280,8 +264,8 @@ namespace Core {
       }
 
     protected:
-#ifdef KRIPKE_USE_UMPIRE
-#ifndef KRIPKE_USE_CHAI
+#if defined(KRIPKE_USE_UMPIRE)
+#if !defined(KRIPKE_USE_CHAI)
       struct ChunkData {
         ElementType *host_ptr = nullptr;
         ElementType *device_ptr = nullptr;
@@ -353,12 +337,10 @@ namespace Core {
 
       Kripke::Core::Set const *m_set;
       std::vector<size_t> m_chunk_to_size;
-#ifdef KRIPKE_USE_UMPIRE
-#ifdef KRIPKE_USE_CHAI
+#if defined(KRIPKE_USE_CHAI)
       std::vector<ElementPtr> m_chunk_to_data;
-#else
+#elif defined(KRIPKE_USE_UMPIRE)
       mutable std::vector<ChunkData> m_chunk_to_data;
-#endif
       Kripke::ExecutionSpace m_allocation_space;
 #else
       std::vector<ElementPtr> m_chunk_to_data;
@@ -375,12 +357,8 @@ namespace Core {
       using Parent = Kripke::Core::FieldStorage<ELEMENT>;
 
       using ElementType = ELEMENT;
-      static constexpr bool host_resident_normal_chai_gpu = false;
-#ifndef KRIPKE_USE_CHAI
-      using ElementPtr = ELEMENT*;
-#else
-      using ElementPtr = chai::ManagedArray<ELEMENT>;
-#endif
+      static constexpr bool host_resident_normal_gpu = false;
+      using ElementPtr = typename Parent::ElementPtr;
 
       static constexpr size_t NumDims = sizeof...(IDX_TYPES);
 
@@ -397,7 +375,7 @@ namespace Core {
         setupLayouts<Order>(spanned_set);
       }
 
-#ifdef KRIPKE_USE_UMPIRE
+#if defined(KRIPKE_USE_UMPIRE)
       template<typename Order>
       Field(Kripke::Core::Set const &spanned_set,
             Kripke::ExecutionSpace allocation_space,
@@ -508,16 +486,16 @@ namespace Core {
         for(auto x : Parent::m_chunk_to_size){printf("%lu ", (unsigned long)x);}
         printf("\n");
 
-#ifndef KRIPKE_USE_CHAI
-        printf("  m_chunk_to_data: ");
-        for(auto x : Parent::m_chunk_to_data){printf("%p ", x);}
-        printf("\n");
-#else
+#if defined(KRIPKE_USE_UMPIRE) && !defined(KRIPKE_USE_CHAI)
         printf("  m_chunk_to_data(host): ");
         for(auto const &x : Parent::m_chunk_to_data){printf("%p ", (void*)x.host_ptr);}
         printf("\n");
         printf("  m_chunk_to_data(device): ");
         for(auto const &x : Parent::m_chunk_to_data){printf("%p ", (void*)x.device_ptr);}
+        printf("\n");
+#else
+        printf("  m_chunk_to_data: ");
+        for(auto x : Parent::m_chunk_to_data){printf("%p ", (void*)x);}
         printf("\n");
 #endif
 
@@ -541,13 +519,13 @@ namespace Core {
       std::vector<DefaultLayoutType> m_chunk_to_layout;
   };
 
-  template<typename ELEMENT, bool HOST_RESIDENT_NORMAL_CHAI_GPU, typename ... IDX_TYPES>
+  template<typename ELEMENT, bool HOST_RESIDENT_NORMAL_GPU, typename ... IDX_TYPES>
   class FieldWithPolicy : public Kripke::Core::Field<ELEMENT, IDX_TYPES...> {
     public:
       using Parent = Kripke::Core::Field<ELEMENT, IDX_TYPES...>;
       using Parent::Parent;
-      static constexpr bool host_resident_normal_chai_gpu =
-          HOST_RESIDENT_NORMAL_CHAI_GPU;
+      static constexpr bool host_resident_normal_gpu =
+          HOST_RESIDENT_NORMAL_GPU;
   };
 
 } } // namespace
