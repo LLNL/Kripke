@@ -523,7 +523,7 @@ namespace Core {
           return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].getDevicePtr(), layout);
         }
         Parent::ensureHostCurrent(chunk_id);
-        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::::m_chunk_to_data[chunk_id].getHostPtr(), layout);
+        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].getHostPtr(), layout);
 #else
         return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id], layout);
 #endif
