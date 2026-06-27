@@ -323,16 +323,12 @@ void ParallelComm::testRecieves(void){
       // get subdomain that this completed for
       int sdom_id = recv_subdomains[index];
 
-#if defined(KRIPKE_USE_CHAI)
+#if defined(KRIPKE_USE_UMPIRE)
       // Performance experiment: skip CHAI device-touch bookkeeping after
       // GPU-aware MPI writes directly into plane data.
       // if(useGpuAwareMPI(*m_plane_data[recv_dimensions[index]])){
       //   m_plane_data[recv_dimensions[index]]->registerDeviceTouch(SdomId{sdom_id});
       // }
-#elif defined(KRIPKE_USE_UMPIRE)
-      if(useGpuAwareMPI(*m_plane_data[recv_dimensions[index]])){
-        m_plane_data[recv_dimensions[index]]->registerDeviceTouch(SdomId{sdom_id});
-      }
 #endif
 
       // remove the request from the list
