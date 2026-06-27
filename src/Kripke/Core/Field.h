@@ -221,7 +221,7 @@ namespace Core {
       RAJA_INLINE
       void registerDeviceTouch(Kripke::SdomId sdom_id) {
 #if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
-        if(m_allocation_space == chai::GPU){
+        if(m_allocation_space == Kripke::GPU){
           KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
               "sdom_id(%d) >= num_subdomains(%d)",
               (int)*sdom_id,
@@ -459,7 +459,7 @@ namespace Core {
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
 
 #if defined(KRIPKE_USE_CHAI)
-        Parent::m_chunk_to_data[chunk_id].data(chai::CPU);
+        Parent::m_chunk_to_data[chunk_id].data(Kripke::CPU);
         auto ptr = Parent::m_chunk_to_data[chunk_id];
 #elif defined(KRIPKE_USE_UMPIRE)
         Parent::ensureHostCurrent(chunk_id);
@@ -511,12 +511,12 @@ namespace Core {
         LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
 
 #if (defined(KRIPKE_USE_HIP) || defined(KRIPKE_USE_CUDA)) && defined(KRIPKE_USE_CHAI)
-        if(Parent::m_allocation_space == chai::GPU){
-          return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(chai::GPU), layout);
+        if(Parent::m_allocation_space == Kripke::GPU){
+          return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(Kripke::GPU), layout);
         }
-        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(chai::CPU), layout);
+        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(Kripke::CPU), layout);
 #elif defined(KRIPKE_USE_CHAI)
-        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(chai::CPU), layout);
+        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(Kripke::CPU), layout);
 #elif (defined(KRIPKE_USE_HIP) || defined(KRIPKE_USE_CUDA)) && defined(KRIPKE_USE_UMPIRE)
         if(Parent::m_allocation_space == Kripke::GPU){
           Parent::ensureDeviceCurrent(chunk_id);
