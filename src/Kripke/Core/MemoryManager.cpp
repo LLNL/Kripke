@@ -12,7 +12,7 @@ using namespace Kripke;
 using namespace Kripke::Core;
 
 MemoryManager::MemoryManager(int device_pool_size) : device_pool_size(device_pool_size) {
-#if defined(KRIPKE_USE_UMPIRE)
+#if defined(KRIPKE_USE_UMPIRE) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
   auto &rm = umpire::ResourceManager::getInstance();
   const char * allocator_name = "KRIPKE_DEVICE_POOL";
   size_t umpire_device_pool_size = ((size_t) device_pool_size) * 1024 * 1024 * 1024;
@@ -30,7 +30,7 @@ MemoryManager::MemoryManager(int device_pool_size) : device_pool_size(device_poo
 }
 
 double MemoryManager::getDeviceMemoryPoolSize() {
-#if defined(KRIPKE_USE_UMPIRE)
+#if defined(KRIPKE_USE_UMPIRE) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
   return (double) device_pool_size;
 #else
       return 0.0;
@@ -38,7 +38,7 @@ double MemoryManager::getDeviceMemoryPoolSize() {
 }
 
 double MemoryManager::getDeviceMemoryHighWatermark() {
-#if defined(KRIPKE_USE_UMPIRE)
+#if defined(KRIPKE_USE_UMPIRE) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
   auto device_allocator = getDeviceAllocator();
   return ((double) device_allocator.getHighWatermark()) / (1024 * 1024 * 1024);
 #else
