@@ -49,11 +49,21 @@ void Kripke::SweepSolver (Kripke::Core::DataStore &data_store, std::vector<SdomI
 
   auto &field_upwind = data_store.getVariable<Field_Adjacency>("upwind");
 
+  static bool first_sweep = true;
+
   /* Loop until we have finished all of our work */
   while(comm->workRemaining()) {
-
-    KRIPKE_TIMER(data_store, SweepSolverReadySubdomains);
-    std::vector<SdomId> sdom_ready = comm->readySubdomains();
+    std::vector<SdomId> sdom_ready;
+    if ( first_sweep )
+    {
+      KRIPKE_TIMER(data_store, SweepSolverReadySubdomainsFirst);
+      sdom_ready = comm->readySubdomains();
+    }
+    else
+    {
+      KRIPKE_TIMER(data_store, SweepSolverReadySubdomains);
+      sdom_ready = comm->readySubdomains();
+    }
 
     // Run the ready list
     for (auto ii = 0; ii < sdom_ready.size(); ++ii) {
@@ -91,6 +101,8 @@ void Kripke::SweepSolver (Kripke::Core::DataStore &data_store, std::vector<SdomI
 #endif
 
   delete comm;
+
+  first_sweep = false;
 
 //  printf("\nAfter sweep psi:\n");
 //  data_store.getVariable<Field_Flux>("psi").dump();

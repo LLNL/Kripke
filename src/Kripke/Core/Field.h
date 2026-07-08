@@ -107,6 +107,7 @@ namespace detail {
 #else
           chai::ExecutionSpace chai_allocation_space = m_allocation_space;
 #if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+          // Used only for i/j/k_plane, for GPU-aware MPI performance on the MI300A
           if(m_direct_umpire_device_storage){
             auto &rm = umpire::ResourceManager::getInstance();
             auto host_allocator = rm.getAllocator("HOST");
@@ -114,9 +115,9 @@ namespace detail {
 
             m_chunk_to_data[chunk_id] = ElementPtr(
                 sdom_size,
-                {chai::CPU, chai::GPU},
-                {host_allocator, device_allocator},
-                chai::GPU);
+                {chai::CPU, chai::GPU}, // which CHAI execution spaces are being overridden
+                {host_allocator, device_allocator}, // matching Umpire allocators for the overridden spaces {HOST, NamedAllocationStrategy}
+                chai::GPU); // initial allocation space
             continue;
           }
 #endif

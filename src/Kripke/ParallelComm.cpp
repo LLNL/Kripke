@@ -64,9 +64,6 @@ static void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
      src_plane.getAllocationSpace() == chai::GPU){
     double *dst = dst_plane.getDeviceData(dst_sdom_id);
     double *src = src_plane.getDeviceData(src_sdom_id);
-  //for(int i = 0;i < num_elem;++ i){
-  //  dst[i] = src[i];
-  //}
 #if defined(KRIPKE_USE_CUDA)
     RAJA::forall<RAJA::cuda_exec<256>>(
 #elif defined(KRIPKE_USE_HIP)
@@ -310,6 +307,7 @@ void ParallelComm::testRecieves(void){
   int num_requests = recv_requests.size();
   bool done = false;
   while(!done && num_requests > 0){
+    KRIPKE_TIMER((*m_data_store), Testany);
     // Create array of status variables
     std::vector<MPI_Status> recv_status(num_requests);
 
@@ -324,11 +322,9 @@ void ParallelComm::testRecieves(void){
       int sdom_id = recv_subdomains[index];
 
 #ifdef KRIPKE_USE_CHAI
-      // Performance experiment: skip CHAI device-touch bookkeeping after
-      // GPU-aware MPI writes directly into plane data.
-      // if(useGpuAwareMPI(*m_plane_data[recv_dimensions[index]])){
-      //   m_plane_data[recv_dimensions[index]]->registerDeviceTouch(SdomId{sdom_id});
-      // }
+      if(useGpuAwareMPI(*m_plane_data[recv_dimensions[index]])){
+        m_plane_data[recv_dimensions[index]]->registerDeviceTouch(SdomId{sdom_id});
+      }
 #endif
 
       // remove the request from the list

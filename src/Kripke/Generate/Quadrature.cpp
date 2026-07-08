@@ -358,11 +358,10 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
 
   // fill in the global
   for(SdomId sdom_id : field_moment_to_legendre.getWorkList()){
-    int num_moments_local = moment_set->size(sdom_id);
     auto moment_to_legendre = field_moment_to_legendre.getView(sdom_id);
 
     RAJA::forall<RAJA::seq_exec>(
-      RAJA::TypedRangeSegment<Moment>(0, num_moments_local),
+      RAJA::TypedRangeSegment<Moment>(0, moment_set->size(sdom_id)),
       [=](Moment nm){
         moment_to_legendre(nm) = moment_list[(*nm) + moment_set->lower(sdom_id)];
     });
@@ -430,7 +429,6 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
     int direction_lower = dir_set->lower(sdom_id);
 
     double SQRT4PI = std::sqrt(4*M_PI);
-
     Moment nm{0};
     for(int n=0; n < (int)legendre_order+1; n++){
       for(int m=-n; m<=n; m++){

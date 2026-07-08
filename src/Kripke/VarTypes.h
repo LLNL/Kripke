@@ -50,9 +50,9 @@ namespace Kripke {
   using Field_SigmaS = Kripke::Core::Field<double, Material, Legendre, GlobalGroup, GlobalGroup>;
 
   using Field_Direction2Double = Kripke::Core::Field<double, Direction>;
-  using Field_Direction2Int    = Kripke::Core::FieldWithPolicy<int, true, Direction>;
+  using Field_Direction2Int    = Kripke::Core::FieldWithPolicy<int, true, Direction>; // allocated on the CPU, even in GPU mode
 
-  using Field_Adjacency        = Kripke::Core::FieldWithPolicy<GlobalSdomId, true, Dimension>;
+  using Field_Adjacency        = Kripke::Core::FieldWithPolicy<GlobalSdomId, true, Dimension>;  // allocated on the CPU, even in GPU mode
 
   using Field_Moment2Legendre  = Kripke::Core::Field<Legendre, Moment>;
 
