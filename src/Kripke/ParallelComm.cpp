@@ -132,7 +132,6 @@ void ParallelComm::dequeueSubdomain(SdomId sdom_id){
   Receives use either direct GPU plane buffers or direct host plane buffers.
 */
 void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id){
-  KRIPKE_TIMER(data_store, PostRecvs);
   using namespace Kripke::Core;
   Comm comm;
   int mpi_rank = comm.rank();
@@ -204,7 +203,6 @@ void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id
 void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId sdom_id,
                              Kripke::Core::FieldStorage<double> *src_plane_data[3])
 {
-  KRIPKE_TIMER(data_store, PostSends);
   // post sends for downwind dependencies
   Kripke::Core::Comm comm;
   int mpi_rank = comm.rank();
@@ -301,13 +299,11 @@ void ParallelComm::waitAllSends(void){
   Checks for incomming messages, and does relevant bookkeeping.
 */
 void ParallelComm::testRecieves(void){
-  KRIPKE_TIMER((*m_data_store), testRecieves);
 #ifdef KRIPKE_USE_MPI
   // Check for any recv requests that have completed
   int num_requests = recv_requests.size();
   bool done = false;
   while(!done && num_requests > 0){
-    KRIPKE_TIMER((*m_data_store), Testany);
     // Create array of status variables
     std::vector<MPI_Status> recv_status(num_requests);
 
