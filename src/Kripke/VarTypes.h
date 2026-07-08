@@ -32,9 +32,15 @@ namespace Kripke {
   using Field_Flux = Kripke::Core::Field<double, Direction, Group, Zone>;
   using Field_Moments = Kripke::Core::Field<double, Moment, Group, Zone>;
 
+#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+  using Field_IPlane = Kripke::Core::FieldWithDirectUmpireDeviceStorage<double, Direction, Group, ZoneJ, ZoneK>;
+  using Field_JPlane = Kripke::Core::FieldWithDirectUmpireDeviceStorage<double, Direction, Group, ZoneI, ZoneK>;
+  using Field_KPlane = Kripke::Core::FieldWithDirectUmpireDeviceStorage<double, Direction, Group, ZoneI, ZoneJ>;
+#else
   using Field_IPlane = Kripke::Core::Field<double, Direction, Group, ZoneJ, ZoneK>;
   using Field_JPlane = Kripke::Core::Field<double, Direction, Group, ZoneI, ZoneK>;
   using Field_KPlane = Kripke::Core::Field<double, Direction, Group, ZoneI, ZoneJ>;
+#endif
 
   using Field_Ell     = Kripke::Core::Field<double, Moment, Direction>;
   using Field_EllPlus = Kripke::Core::Field<double, Direction, Moment>;
@@ -173,7 +179,14 @@ namespace Kripke {
       using order_t = typename DefaultOrder<decltype(layout_t)>::type; 
 
 #ifdef KRIPKE_USE_CHAI
+#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+      field = new FieldType(set,
+          fieldAllocationSpace<FieldType>(al_v.arch_v),
+          archUsesDevice(al_v.arch_v) && FieldType::direct_umpire_device_storage,
+          order_t{});
+#else
       field = new FieldType(set, fieldAllocationSpace<FieldType>(al_v.arch_v), order_t{});
+#endif
 #else
       field = new FieldType(set, order_t{});
 #endif

@@ -18,11 +18,34 @@
 #ifdef KRIPKE_USE_CHAI
 #include <chai/ManagedArray.hpp>
 #endif
+#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+#include <umpire/ResourceManager.hpp>
+#include <umpire/strategy/NamedAllocationStrategy.hpp>
+#endif
 
 namespace Kripke {
 namespace Core {
   template<typename ELEMENT, bool HOST_RESIDENT_NORMAL_CHAI_GPU, typename ... IDX_TYPES>
   class FieldWithPolicy;
+  template<typename ELEMENT, typename ... IDX_TYPES>
+  class FieldWithDirectUmpireDeviceStorage;
+
+#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+namespace detail {
+  inline umpire::Allocator directUmpireDeviceAllocator()
+  {
+    auto &rm = umpire::ResourceManager::getInstance();
+    char const *allocator_name = "KRIPKE_DEVICE_DIRECT";
+
+    if(!rm.isAllocator(allocator_name)){
+      return rm.makeAllocator<umpire::strategy::NamedAllocationStrategy>(
+          allocator_name, rm.getAllocator("DEVICE"));
+    }
+
+    return rm.getAllocator(allocator_name);
+  }
+}
+#endif
 
   /**
    * Base class for Field which provides storage allocation
@@ -46,11 +69,17 @@ namespace Core {
       explicit FieldStorage(Kripke::Core::Set const &spanned_set
 #ifdef KRIPKE_USE_CHAI
           , chai::ExecutionSpace allocation_space = chai::CPU
+#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+          , bool direct_umpire_device_storage = false
+#endif
 #endif
           ) :
         m_set(&spanned_set)
 #ifdef KRIPKE_USE_CHAI
         , m_allocation_space(allocation_space)
+#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+        , m_direct_umpire_device_storage(direct_umpire_device_storage && allocation_space == chai::GPU)
+#endif
 #endif
       {
 
@@ -76,7 +105,22 @@ namespace Core {
 #ifndef KRIPKE_USE_CHAI
           m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
 #else
-          m_chunk_to_data[chunk_id].allocate(sdom_size, m_allocation_space,
+          chai::ExecutionSpace chai_allocation_space = m_allocation_space;
+#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+          if(m_direct_umpire_device_storage){
+            auto &rm = umpire::ResourceManager::getInstance();
+            auto host_allocator = rm.getAllocator("HOST");
+            auto device_allocator = detail::directUmpireDeviceAllocator();
+
+            m_chunk_to_data[chunk_id] = ElementPtr(
+                sdom_size,
+                {chai::CPU, chai::GPU},
+                {host_allocator, device_allocator},
+                chai::GPU);
+            continue;
+          }
+#endif
+          m_chunk_to_data[chunk_id].allocate(sdom_size, chai_allocation_space,
               [=](const chai::PointerRecord* record, chai::Action action, chai::ExecutionSpace space){
                 /*printf("CHAI[%s, %d]: ", BaseVar::getName().c_str(), (int)chunk_id);
                 switch(action){
@@ -180,6 +224,11 @@ namespace Core {
         return  m_chunk_to_data[chunk_id];
 #else
 #if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
+#if defined(KRIPKE_USE_HIP) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+        if(m_direct_umpire_device_storage){
+          return m_chunk_to_data[chunk_id].data(chai::GPU, false);
+        }
+#endif
         return m_chunk_to_data[chunk_id].data(chai::GPU);
 #else
         return m_chunk_to_data[chunk_id].data(chai::CPU);
@@ -198,9 +247,21 @@ namespace Core {
         return m_allocation_space;
       }
 
+#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+      RAJA_INLINE
+      bool usesDirectUmpireDeviceStorage() const {
+        return m_direct_umpire_device_storage;
+      }
+#endif
+
       RAJA_INLINE
       void registerDeviceTouch(Kripke::SdomId sdom_id) {
 #if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
+#if defined(KRIPKE_USE_HIP) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+        if(m_direct_umpire_device_storage){
+          return;
+        }
+#endif
         if(m_allocation_space == chai::GPU){
           KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
               "sdom_id(%d) >= num_subdomains(%d)",
@@ -227,8 +288,11 @@ namespace Core {
       std::vector<ElementPtr> m_chunk_to_data;
 #ifdef KRIPKE_USE_CHAI
       chai::ExecutionSpace m_allocation_space;
+#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+      bool m_direct_umpire_device_storage;
 #endif
-	  };
+#endif
+		  };
 
   /**
    * Defines a multi-dimensional data field defined over a Set
@@ -241,6 +305,7 @@ namespace Core {
 
       using ElementType = ELEMENT;
       static constexpr bool host_resident_normal_chai_gpu = false;
+      static constexpr bool direct_umpire_device_storage = false;
 #ifndef KRIPKE_USE_CHAI
       using ElementPtr = ELEMENT*;
 #else
@@ -271,6 +336,18 @@ namespace Core {
       {
         setupLayouts<Order>(spanned_set);
       }
+
+#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+      template<typename Order>
+      Field(Kripke::Core::Set const &spanned_set,
+            chai::ExecutionSpace allocation_space,
+            bool direct_umpire_device_storage_arg,
+            Order) :
+        Parent(spanned_set, allocation_space, direct_umpire_device_storage_arg)
+      {
+        setupLayouts<Order>(spanned_set);
+      }
+#endif
 #endif
 
       template<typename Order>
@@ -330,7 +407,7 @@ namespace Core {
 #if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
         KRIPKE_ASSERT(Parent::m_allocation_space == chai::GPU,
             "getDeviceView requires a GPU-backed field");
-        auto ptr = Parent::m_chunk_to_data[chunk_id].data(chai::GPU);
+        auto ptr = Parent::getDeviceData(sdom_id);
 #elif defined(KRIPKE_USE_CHAI)
         auto ptr = Parent::m_chunk_to_data[chunk_id].data(chai::CPU);
 #else
@@ -355,7 +432,7 @@ namespace Core {
 
 #if (defined(KRIPKE_USE_HIP) || defined(KRIPKE_USE_CUDA)) && defined(KRIPKE_USE_CHAI)
         if(Parent::m_allocation_space == chai::GPU){
-          return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(chai::GPU), layout);
+          return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::getDeviceData(sdom_id), layout);
         }
         return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(chai::CPU), layout);
 #elif defined(KRIPKE_USE_CHAI)
@@ -410,6 +487,16 @@ namespace Core {
       using Parent::Parent;
       static constexpr bool host_resident_normal_chai_gpu =
           HOST_RESIDENT_NORMAL_CHAI_GPU;
+      static constexpr bool direct_umpire_device_storage = false;
+  };
+
+  template<typename ELEMENT, typename ... IDX_TYPES>
+  class FieldWithDirectUmpireDeviceStorage : public Kripke::Core::Field<ELEMENT, IDX_TYPES...> {
+    public:
+      using Parent = Kripke::Core::Field<ELEMENT, IDX_TYPES...>;
+      using Parent::Parent;
+      static constexpr bool host_resident_normal_chai_gpu = false;
+      static constexpr bool direct_umpire_device_storage = true;
   };
 
 } } // namespace

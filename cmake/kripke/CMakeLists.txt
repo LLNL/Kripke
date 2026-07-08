@@ -107,6 +107,7 @@ endif()
 # 
 option(ENABLE_CHAI "Enable CHAI/Umpire memory management" Off)
 option(ENABLE_GPU_AWARE_MPI "Pass GPU pointers directly to MPI communication buffers" Off)
+option(ENABLE_DIRECT_UMPIRE_PLANE_STORAGE "Use direct Umpire DEVICE storage for I/J/K plane fields" Off)
 if(ENABLE_CHAI)
   # Find camp
   if (NOT TARGET camp)
@@ -313,6 +314,19 @@ endif()
 
 if(ENABLE_GPU_AWARE_MPI)
   set(KRIPKE_USE_GPU_AWARE_MPI 1)
+endif()
+
+if(ENABLE_DIRECT_UMPIRE_PLANE_STORAGE)
+  if(NOT ENABLE_CUDA AND NOT ENABLE_HIP)
+    message(FATAL_ERROR "ENABLE_DIRECT_UMPIRE_PLANE_STORAGE requires ENABLE_CUDA=On or ENABLE_HIP=On")
+  endif()
+  if(NOT ENABLE_CHAI)
+    message(FATAL_ERROR "ENABLE_DIRECT_UMPIRE_PLANE_STORAGE requires ENABLE_CHAI=On")
+  endif()
+  if(ENABLE_HIP AND NOT ENABLE_GPU_AWARE_MPI)
+    message(FATAL_ERROR "ENABLE_DIRECT_UMPIRE_PLANE_STORAGE requires ENABLE_GPU_AWARE_MPI=On for HIP")
+  endif()
+  set(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE 1)
 endif()
 
 
