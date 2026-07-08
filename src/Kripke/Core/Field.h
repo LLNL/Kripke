@@ -120,29 +120,7 @@ namespace detail {
             continue;
           }
 #endif
-          m_chunk_to_data[chunk_id].allocate(sdom_size, chai_allocation_space,
-              [=](const chai::PointerRecord* record, chai::Action action, chai::ExecutionSpace space){
-                /*printf("CHAI[%s, %d]: ", BaseVar::getName().c_str(), (int)chunk_id);
-                switch(action){
-                case chai::ACTION_ALLOC: printf("ALLOC "); break;
-                case chai::ACTION_FREE: printf("FREE  "); break;
-                case chai::ACTION_MOVE: printf("MOVE  "); break;
-                default: printf("UNKNOWN ");
-                }
-
-                switch(space){
-                case chai::CPU: printf("CPU "); break;
-#ifdef KRIPKE_USE_CUDA
-                case chai::GPU: printf("GPU  "); break;
-#endif
-                default: printf("UNK ");
-                }
-
-                printf("%lu bytes\n", (unsigned long) bytes);
-*/
-              }
-
-          );
+          m_chunk_to_data[chunk_id].allocate(sdom_size, chai_allocation_space);
 #endif
         }
       }
