@@ -13,7 +13,6 @@
 #cmakedefine KRIPKE_USE_CHAI
 #cmakedefine KRIPKE_USE_GPU_AWARE_MPI
 #cmakedefine KRIPKE_USE_HIP
-#cmakedefine KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
 
 #cmakedefine KRIPKE_USE_CALIPER
 

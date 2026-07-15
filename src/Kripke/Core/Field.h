@@ -18,7 +18,7 @@
 #ifdef KRIPKE_USE_CHAI
 #include <chai/ManagedArray.hpp>
 #endif
-#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
 #include <umpire/ResourceManager.hpp>
 #include <umpire/strategy/NamedAllocationStrategy.hpp>
 #endif
@@ -30,7 +30,7 @@ namespace Core {
   template<typename ELEMENT, typename ... IDX_TYPES>
   class FieldWithDirectUmpireDeviceStorage;
 
-#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
 namespace detail {
   inline umpire::Allocator directUmpireDeviceAllocator()
   {
@@ -69,7 +69,7 @@ namespace detail {
       explicit FieldStorage(Kripke::Core::Set const &spanned_set
 #ifdef KRIPKE_USE_CHAI
           , chai::ExecutionSpace allocation_space = chai::CPU
-#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
           , bool direct_umpire_device_storage = false
 #endif
 #endif
@@ -77,7 +77,7 @@ namespace detail {
         m_set(&spanned_set)
 #ifdef KRIPKE_USE_CHAI
         , m_allocation_space(allocation_space)
-#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
         , m_direct_umpire_device_storage(direct_umpire_device_storage && allocation_space == chai::GPU)
 #endif
 #endif
@@ -106,8 +106,8 @@ namespace detail {
           m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
 #else
           chai::ExecutionSpace chai_allocation_space = m_allocation_space;
-#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
-          // Used only for i/j/k_plane, for GPU-aware MPI performance on the MI300A
+#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
+          // Used only for i/j/k_plane to avoid QuickPool-backed GPU allocations.
           if(m_direct_umpire_device_storage){
             auto &rm = umpire::ResourceManager::getInstance();
             auto host_allocator = rm.getAllocator("HOST");
@@ -203,7 +203,7 @@ namespace detail {
         return  m_chunk_to_data[chunk_id];
 #else
 #if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
-#if defined(KRIPKE_USE_HIP) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+#if defined(KRIPKE_USE_HIP) && defined(KRIPKE_USE_GPU_AWARE_MPI)
         if(m_direct_umpire_device_storage){
           return m_chunk_to_data[chunk_id].data(chai::GPU, false);
         }
@@ -226,7 +226,7 @@ namespace detail {
         return m_allocation_space;
       }
 
-#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
       RAJA_INLINE
       bool usesDirectUmpireDeviceStorage() const {
         return m_direct_umpire_device_storage;
@@ -236,7 +236,7 @@ namespace detail {
       RAJA_INLINE
       void registerDeviceTouch(Kripke::SdomId sdom_id) {
 #if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
-#if defined(KRIPKE_USE_HIP) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+#if defined(KRIPKE_USE_HIP) && defined(KRIPKE_USE_GPU_AWARE_MPI)
         if(m_direct_umpire_device_storage){
           return;
         }
@@ -267,7 +267,7 @@ namespace detail {
       std::vector<ElementPtr> m_chunk_to_data;
 #ifdef KRIPKE_USE_CHAI
       chai::ExecutionSpace m_allocation_space;
-#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
       bool m_direct_umpire_device_storage;
 #endif
 #endif
@@ -316,7 +316,7 @@ namespace detail {
         setupLayouts<Order>(spanned_set);
       }
 
-#if (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)) && defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
+#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
       template<typename Order>
       Field(Kripke::Core::Set const &spanned_set,
             chai::ExecutionSpace allocation_space,
