@@ -11,8 +11,6 @@
 #include <Kripke/Core/Field.h>
 #include <Kripke/VarTypes.h>
 
-#include <Kripke/Timing.h>
-
 using namespace Kripke;
 
 namespace {
@@ -52,14 +50,13 @@ static void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
   if(dst_plane.getAllocationSpace() == chai::GPU &&
      src_plane.getAllocationSpace() == chai::GPU){
     double *dst = dst_plane.getDeviceData(dst_sdom_id);
-    double *src = src_plane.getDeviceData(src_sdom_id);
+    double const *src = src_plane.getDeviceData(src_sdom_id);
 #if defined(KRIPKE_USE_CUDA)
-    RAJA::forall<RAJA::cuda_exec<256>>(
-#elif defined(KRIPKE_USE_HIP)
-    RAJA::forall<RAJA::hip_exec<256>>(
+    using PlaneCopyExec = RAJA::cuda_exec<256>;
 #else
-    RAJA::forall<RAJA::seq_exec>( // should never reach this
+    using PlaneCopyExec = RAJA::hip_exec<256>;
 #endif
+    RAJA::forall<PlaneCopyExec>(
       RAJA::RangeSegment(0, num_elem),
       KRIPKE_LAMBDA (RAJA::Index_type i){
         dst[i] = src[i];
@@ -68,6 +65,7 @@ static void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
   }
 #endif  // #if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
 
+  // Fallback for non-CHAI and CHAI fields that are not both GPU-backed.
   double *dst = dst_plane.getHostData(dst_sdom_id);
   double const *src = src_plane.getHostDataConst(src_sdom_id);
   for(int i = 0;i < num_elem;++ i){

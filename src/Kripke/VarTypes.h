@@ -142,27 +142,19 @@ namespace Kripke {
   }
 
 #ifdef KRIPKE_USE_CHAI
-  RAJA_INLINE
-  bool archUsesDevice(ArchV arch_v)
-  {
-#if defined(KRIPKE_USE_CUDA)
-    if(arch_v == ArchV_CUDA){
-      return true;
-    }
-#endif
-#if defined(KRIPKE_USE_HIP)
-    if(arch_v == ArchV_HIP){
-      return true;
-    }
-#endif
-    return false;
-  }
-
   template<typename FieldType>
   RAJA_INLINE
   chai::ExecutionSpace fieldAllocationSpace(ArchV arch_v)
   {
-    if(archUsesDevice(arch_v) && !FieldType::host_resident_normal_chai_gpu){
+    bool use_device = false;
+#if defined(KRIPKE_USE_CUDA)
+    use_device = use_device || arch_v == ArchV_CUDA;
+#endif
+#if defined(KRIPKE_USE_HIP)
+    use_device = use_device || arch_v == ArchV_HIP;
+#endif
+
+    if(use_device && !FieldType::host_resident_normal_chai_gpu){
       return chai::GPU;
     }
     return chai::CPU;
@@ -178,7 +170,9 @@ namespace Kripke {
     dispatchLayout(al_v.layout_v, [&](auto layout_t){
       using order_t = typename DefaultOrder<decltype(layout_t)>::type; 
 
-#ifdef KRIPKE_USE_CHAI
+#ifndef KRIPKE_USE_CHAI
+      field = new FieldType(set, order_t{});
+#else
 #ifdef KRIPKE_USE_GPU_AWARE_MPI
       field = new FieldType(set,
           fieldAllocationSpace<FieldType>(al_v.arch_v),
@@ -187,8 +181,6 @@ namespace Kripke {
 #else
       field = new FieldType(set, fieldAllocationSpace<FieldType>(al_v.arch_v), order_t{});
 #endif
-#else
-      field = new FieldType(set, order_t{});
 #endif
       data_store.addVariable(name, field);
     });

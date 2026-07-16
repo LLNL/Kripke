@@ -205,12 +205,12 @@ namespace detail {
 #ifndef KRIPKE_USE_CHAI
         return  m_chunk_to_data[chunk_id];
 #else
-#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
 #ifdef KRIPKE_USE_GPU_AWARE_MPI
         if(m_direct_umpire_device_storage){
           return m_chunk_to_data[chunk_id].data(chai::GPU, false);
         }
 #endif
+#if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
         return m_chunk_to_data[chunk_id].data(chai::GPU);
 #else
         return m_chunk_to_data[chunk_id].data(chai::CPU);
@@ -229,9 +229,9 @@ namespace detail {
         return m_allocation_space;
       }
 
+#ifdef KRIPKE_USE_GPU_AWARE_MPI
       RAJA_INLINE
       void registerDeviceTouch(Kripke::SdomId sdom_id) {
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
         if(m_direct_umpire_device_storage){
           return;
         }
@@ -243,10 +243,8 @@ namespace detail {
           size_t chunk_id = m_subdomain_to_chunk[*sdom_id];
           m_chunk_to_data[chunk_id].registerTouch(chai::GPU);
         }
-#else
-        (void)sdom_id;
-#endif
       }
+#endif
 #endif
 
 
@@ -278,7 +276,11 @@ namespace detail {
 
       using ElementType = ELEMENT;
       static constexpr bool host_resident_normal_chai_gpu = false;
+
+#ifdef KRIPKE_USE_GPU_AWARE_MPI
       static constexpr bool direct_umpire_device_storage = false;
+#endif
+
 #ifndef KRIPKE_USE_CHAI
       using ElementPtr = ELEMENT*;
 #else
@@ -377,15 +379,7 @@ namespace detail {
         size_t chunk_id = Parent::m_subdomain_to_chunk[*sdom_id];
         auto layout = m_chunk_to_layout[chunk_id];
 
-#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
-        KRIPKE_ASSERT(Parent::m_allocation_space == chai::GPU,
-            "getDeviceView requires a GPU-backed field");
         auto ptr = Parent::getDeviceData(sdom_id);
-#elif defined(KRIPKE_USE_CHAI)
-        auto ptr = Parent::m_chunk_to_data[chunk_id].data(chai::CPU);
-#else
-        auto ptr = Parent::m_chunk_to_data[chunk_id];
-#endif
 
         return DeviceViewType(ptr, layout);
       }
@@ -400,18 +394,19 @@ namespace detail {
 
         using LInfo = LayoutInfo<Order, IDX_TYPES...>;
         using LType = typename LInfo::Layout;
+        using OrderedViewType = ViewType<Order, ElementType, ElementType *, IDX_TYPES...>;
 
         LType layout = RAJA::make_stride_one<LInfo::stride_one_dim>(m_chunk_to_layout[chunk_id]);
 
-#if (defined(KRIPKE_USE_HIP) || defined(KRIPKE_USE_CUDA)) && defined(KRIPKE_USE_CHAI)
-        if(Parent::m_allocation_space == chai::GPU){
-          return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::getDeviceData(sdom_id), layout);
-        }
-        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(chai::CPU), layout);
-#elif defined(KRIPKE_USE_CHAI)
-        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id].data(chai::CPU), layout);
+#ifndef KRIPKE_USE_CHAI
+        return OrderedViewType(Parent::m_chunk_to_data[chunk_id], layout);
 #else
-        return ViewType<Order, ElementType, ElementType *, IDX_TYPES...>(Parent::m_chunk_to_data[chunk_id], layout);
+#if defined(KRIPKE_USE_HIP) || defined(KRIPKE_USE_CUDA)
+        if(Parent::m_allocation_space == chai::GPU){
+          return OrderedViewType(Parent::getDeviceData(sdom_id), layout);
+        }
+#endif
+        return OrderedViewType(Parent::m_chunk_to_data[chunk_id].data(chai::CPU), layout);
 #endif
       }
 
@@ -460,7 +455,9 @@ namespace detail {
       using Parent::Parent;
       static constexpr bool host_resident_normal_chai_gpu =
           HOST_RESIDENT_NORMAL_CHAI_GPU;
+#ifdef KRIPKE_USE_GPU_AWARE_MPI
       static constexpr bool direct_umpire_device_storage = false;
+#endif
   };
 
 #ifdef KRIPKE_USE_GPU_AWARE_MPI
