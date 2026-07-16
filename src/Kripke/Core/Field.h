@@ -105,7 +105,6 @@ namespace detail {
 #ifndef KRIPKE_USE_CHAI
           m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
 #else
-          chai::ExecutionSpace chai_allocation_space = m_allocation_space;
 #if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
           // Used only for i/j/k_plane to avoid QuickPool-backed GPU allocations.
           if(m_direct_umpire_device_storage){
@@ -118,10 +117,12 @@ namespace detail {
                 {chai::CPU, chai::GPU}, // which CHAI execution spaces are being overridden
                 {host_allocator, device_allocator}, // matching Umpire allocators for the overridden spaces {HOST, NamedAllocationStrategy}
                 chai::GPU); // initial allocation space
-            continue;
           }
+          else
 #endif
-          m_chunk_to_data[chunk_id].allocate(sdom_size, chai_allocation_space);
+          {
+            m_chunk_to_data[chunk_id].allocate(sdom_size, m_allocation_space);
+          }
 #endif
         }
       }
@@ -203,7 +204,7 @@ namespace detail {
         return  m_chunk_to_data[chunk_id];
 #else
 #if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
-#if defined(KRIPKE_USE_HIP) && defined(KRIPKE_USE_GPU_AWARE_MPI)
+#ifdef KRIPKE_USE_GPU_AWARE_MPI
         if(m_direct_umpire_device_storage){
           return m_chunk_to_data[chunk_id].data(chai::GPU, false);
         }
@@ -236,7 +237,7 @@ namespace detail {
       RAJA_INLINE
       void registerDeviceTouch(Kripke::SdomId sdom_id) {
 #if defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP)
-#if defined(KRIPKE_USE_HIP) && defined(KRIPKE_USE_GPU_AWARE_MPI)
+#ifdef KRIPKE_USE_GPU_AWARE_MPI
         if(m_direct_umpire_device_storage){
           return;
         }

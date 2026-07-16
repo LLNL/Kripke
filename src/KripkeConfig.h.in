@@ -14,6 +14,16 @@
 #cmakedefine KRIPKE_USE_GPU_AWARE_MPI
 #cmakedefine KRIPKE_USE_HIP
 
+#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifndef KRIPKE_USE_CHAI
+#error "KRIPKE_USE_GPU_AWARE_MPI requires KRIPKE_USE_CHAI"
+#endif
+
+#if !defined(KRIPKE_USE_CUDA) && !defined(KRIPKE_USE_HIP)
+#error "KRIPKE_USE_GPU_AWARE_MPI requires KRIPKE_USE_CUDA or KRIPKE_USE_HIP"
+#endif
+#endif
+
 #cmakedefine KRIPKE_USE_CALIPER
 
 #cmakedefine KRIPKE_ARCH "@KRIPKE_ARCH@"

@@ -17,21 +17,10 @@ using namespace Kripke;
 
 namespace {
 
-bool fieldIsGpuBacked(Kripke::Core::FieldStorage<double> &field)
-{
-#if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
-  return field.getAllocationSpace() == chai::GPU;
-#else
-  (void)field;
-  return false;
-#endif
-}
-
 bool useGpuAwareMPI(Kripke::Core::FieldStorage<double> &field)
 {
-#if defined(KRIPKE_USE_GPU_AWARE_MPI) && defined(KRIPKE_USE_CHAI) && \
-    (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
-  return fieldIsGpuBacked(field);
+#ifdef KRIPKE_USE_GPU_AWARE_MPI
+  return field.getAllocationSpace() == chai::GPU;
 #else
   (void)field;
   return false;
@@ -317,7 +306,7 @@ void ParallelComm::testRecieves(void){
       // get subdomain that this completed for
       int sdom_id = recv_subdomains[index];
 
-#ifdef KRIPKE_USE_CHAI
+#ifdef KRIPKE_USE_GPU_AWARE_MPI
       if(useGpuAwareMPI(*m_plane_data[recv_dimensions[index]])){
         m_plane_data[recv_dimensions[index]]->registerDeviceTouch(SdomId{sdom_id});
       }
