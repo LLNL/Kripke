@@ -108,7 +108,7 @@ namespace detail {
           m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
 #else
 #ifdef KRIPKE_USE_GPU_AWARE_MPI
-          // Used only for GPU-aware MPI i/j/k_plane buffers.
+          // Used only for GPU-aware MPI i/j/k_plane buffers to avoid QuickPool non-base pointers.
           if(m_direct_umpire_device_storage){
             auto &rm = umpire::ResourceManager::getInstance();
             auto host_allocator = rm.getAllocator("HOST");
