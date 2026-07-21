@@ -32,9 +32,15 @@ namespace Kripke {
   using Field_Flux = Kripke::Core::Field<double, Direction, Group, Zone>;
   using Field_Moments = Kripke::Core::Field<double, Moment, Group, Zone>;
 
+#ifdef KRIPKE_USE_GPU_AWARE_MPI
+  using Field_IPlane = Kripke::Core::FieldWithDirectUmpireDeviceStorage<double, Direction, Group, ZoneJ, ZoneK>;
+  using Field_JPlane = Kripke::Core::FieldWithDirectUmpireDeviceStorage<double, Direction, Group, ZoneI, ZoneK>;
+  using Field_KPlane = Kripke::Core::FieldWithDirectUmpireDeviceStorage<double, Direction, Group, ZoneI, ZoneJ>;
+#else
   using Field_IPlane = Kripke::Core::Field<double, Direction, Group, ZoneJ, ZoneK>;
   using Field_JPlane = Kripke::Core::Field<double, Direction, Group, ZoneI, ZoneK>;
   using Field_KPlane = Kripke::Core::Field<double, Direction, Group, ZoneI, ZoneJ>;
+#endif
 
   using Field_Ell     = Kripke::Core::Field<double, Moment, Direction>;
   using Field_EllPlus = Kripke::Core::Field<double, Direction, Moment>;
@@ -44,9 +50,9 @@ namespace Kripke {
   using Field_SigmaS = Kripke::Core::Field<double, Material, Legendre, GlobalGroup, GlobalGroup>;
 
   using Field_Direction2Double = Kripke::Core::Field<double, Direction>;
-  using Field_Direction2Int    = Kripke::Core::Field<int, Direction>;
+  using Field_Direction2Int    = Kripke::Core::FieldWithPolicy<int, true, Direction>; // allocated on the CPU, even in GPU mode
 
-  using Field_Adjacency        = Kripke::Core::Field<GlobalSdomId, Dimension>;
+  using Field_Adjacency        = Kripke::Core::FieldWithPolicy<GlobalSdomId, true, Dimension>;  // allocated on the CPU, even in GPU mode
 
   using Field_Moment2Legendre  = Kripke::Core::Field<Legendre, Moment>;
 
@@ -136,25 +142,22 @@ namespace Kripke {
   }
 
 #ifdef KRIPKE_USE_CHAI
+  template<typename FieldType>
   RAJA_INLINE
   chai::ExecutionSpace fieldAllocationSpace(ArchV arch_v)
   {
-#ifdef KRIPKE_USE_CHAI_SINGLE_MEMORY
-    (void)arch_v;
-    return chai::GPU;
-#else
+    bool use_device = false;
 #if defined(KRIPKE_USE_CUDA)
-    if(arch_v == ArchV_CUDA){
-      return chai::GPU;
-    }
+    use_device = use_device || arch_v == ArchV_CUDA;
 #endif
 #if defined(KRIPKE_USE_HIP)
-    if(arch_v == ArchV_HIP){
+    use_device = use_device || arch_v == ArchV_HIP;
+#endif
+
+    if(use_device && !FieldType::host_resident_normal_chai_gpu){
       return chai::GPU;
     }
-#endif
     return chai::CPU;
-#endif
   }
 #endif
 
@@ -167,10 +170,17 @@ namespace Kripke {
     dispatchLayout(al_v.layout_v, [&](auto layout_t){
       using order_t = typename DefaultOrder<decltype(layout_t)>::type; 
 
-#ifdef KRIPKE_USE_CHAI
-      field = new FieldType(set, fieldAllocationSpace(al_v.arch_v), order_t{});
-#else
+#ifndef KRIPKE_USE_CHAI
       field = new FieldType(set, order_t{});
+#else
+#ifdef KRIPKE_USE_GPU_AWARE_MPI
+      field = new FieldType(set,
+          fieldAllocationSpace<FieldType>(al_v.arch_v),
+          FieldType::direct_umpire_device_storage,
+          order_t{});
+#else
+      field = new FieldType(set, fieldAllocationSpace<FieldType>(al_v.arch_v), order_t{});
+#endif
 #endif
       data_store.addVariable(name, field);
     });

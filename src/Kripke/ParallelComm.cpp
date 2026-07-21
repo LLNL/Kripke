@@ -13,6 +13,29 @@
 
 using namespace Kripke;
 
+namespace {
+
+bool useGpuAwareMPI(Kripke::Core::FieldStorage<double> &field)
+{
+#ifdef KRIPKE_USE_GPU_AWARE_MPI
+  return field.getAllocationSpace() == chai::GPU;
+#else
+  (void)field;
+  return false;
+#endif
+}
+
+void synchronizeDeviceForMPI(void)
+{
+#if defined(KRIPKE_USE_CUDA)
+  RAJA::synchronize<RAJA::cuda_synchronize>();
+#elif defined(KRIPKE_USE_HIP)
+  RAJA::synchronize<RAJA::hip_synchronize>();
+#endif
+}
+
+} // namespace
+
 // Helper for copying plane data between two GPU allocations, only used in ParallelComm
 static void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
                       Kripke::SdomId dst_sdom_id,
@@ -27,14 +50,13 @@ static void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
   if(dst_plane.getAllocationSpace() == chai::GPU &&
      src_plane.getAllocationSpace() == chai::GPU){
     double *dst = dst_plane.getDeviceData(dst_sdom_id);
-    double *src = src_plane.getDeviceData(src_sdom_id);
+    double const *src = src_plane.getDeviceData(src_sdom_id);
 #if defined(KRIPKE_USE_CUDA)
-    RAJA::forall<RAJA::cuda_exec<256>>(
-#elif defined(KRIPKE_USE_HIP)
-    RAJA::forall<RAJA::hip_exec<256>>(
+    using PlaneCopyExec = RAJA::cuda_exec<256>;
 #else
-    RAJA::forall<RAJA::seq_exec>( // should never reach this
+    using PlaneCopyExec = RAJA::hip_exec<256>;
 #endif
+    RAJA::forall<PlaneCopyExec>(
       RAJA::RangeSegment(0, num_elem),
       KRIPKE_LAMBDA (RAJA::Index_type i){
         dst[i] = src[i];
@@ -43,6 +65,7 @@ static void copyPlane(Kripke::Core::FieldStorage<double> &dst_plane,
   }
 #endif  // #if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
 
+  // Fallback for non-CHAI and CHAI fields that are not both GPU-backed.
   double *dst = dst_plane.getHostData(dst_sdom_id);
   double const *src = src_plane.getHostDataConst(src_sdom_id);
   for(int i = 0;i < num_elem;++ i){
@@ -93,7 +116,7 @@ void ParallelComm::dequeueSubdomain(SdomId sdom_id){
 /**
   Adds a subdomain to the work queue.
   Determines if upwind dependencies require communication, and posts appropriate Irecv's.
-  All receives use the plane_data[] arrays as receive buffers.
+  Receives use either direct GPU plane buffers or direct host plane buffers.
 */
 void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id){
   using namespace Kripke::Core;
@@ -132,10 +155,18 @@ void ParallelComm::postRecvs(Kripke::Core::DataStore &data_store, SdomId sdom_id
     // Add request to pending list
     recv_requests.push_back(MPI_Request());
     recv_subdomains.push_back(*sdom_id);
+    recv_dimensions.push_back(*dim);
 
     auto &plane_data = *m_plane_data[*dim];
-    double *plane_data_ptr = plane_data.getHostData(sdom_id);
     size_t plane_data_size = plane_data.size(sdom_id);
+    double *plane_data_ptr = nullptr;
+
+    if(useGpuAwareMPI(plane_data)){
+      plane_data_ptr = plane_data.getDeviceData(sdom_id);
+    }
+    else{
+      plane_data_ptr = plane_data.getHostData(sdom_id);
+    }
 
     GlobalSdomId global_sdom_id = local_to_global(sdom_id);
 
@@ -203,12 +234,20 @@ void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId
     send_requests.push_back(MPI_Request());
 
     // Get size of outgoing boudnary data
-    auto &plane_data = *m_plane_data[*dim];
-    size_t plane_data_size = plane_data.size(sdom_id);
-    double const *src_buffer = src_plane_data[*dim]->getHostDataConst(sdom_id);
+    auto &src_plane = *src_plane_data[*dim];
+    size_t plane_data_size = src_plane.size(sdom_id);
+    double *src_buffer = nullptr;
+
+    if(useGpuAwareMPI(src_plane)){
+      synchronizeDeviceForMPI();
+      src_buffer = src_plane.getDeviceData(sdom_id);
+    }
+    else{
+      src_buffer = const_cast<double *>(src_plane.getHostDataConst(sdom_id));
+    }
 
     // Post the send
-    MPI_Isend(const_cast<double *>(src_buffer), plane_data_size, MPI_DOUBLE, downwind_rank,
+    MPI_Isend(src_buffer, plane_data_size, MPI_DOUBLE, downwind_rank,
       *downwind_sdom, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
 
 #else
@@ -265,9 +304,16 @@ void ParallelComm::testRecieves(void){
       // get subdomain that this completed for
       int sdom_id = recv_subdomains[index];
 
+#ifdef KRIPKE_USE_GPU_AWARE_MPI
+      if(useGpuAwareMPI(*m_plane_data[recv_dimensions[index]])){
+        m_plane_data[recv_dimensions[index]]->registerDeviceTouch(SdomId{sdom_id});
+      }
+#endif
+
       // remove the request from the list
       recv_requests.erase(recv_requests.begin()+index);
       recv_subdomains.erase(recv_subdomains.begin()+index);
+      recv_dimensions.erase(recv_dimensions.begin()+index);
       num_requests --;
 
       // decrement the dependency count for that subdomain

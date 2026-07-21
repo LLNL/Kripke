@@ -57,6 +57,7 @@ class ParallelComm {
     // These vectors contian the recieve requests
 #ifdef KRIPKE_USE_MPI
     std::vector<MPI_Request> recv_requests;
+    std::vector<int> recv_dimensions;
 #endif
     std::vector<int> recv_subdomains;
 

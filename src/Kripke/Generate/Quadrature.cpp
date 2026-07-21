@@ -513,9 +513,8 @@ void Kripke::Generate::generateQuadrature(Kripke::Core::DataStore &data_store,
       else{
         downwind(dim) = pspace.coordToGlobalSdomId(global_downwind);
       }
+
     }
-
   }
+
 }
-
-

@@ -106,7 +106,7 @@ endif()
 # Configure CHAI/Umpire for memory management
 # 
 option(ENABLE_CHAI "Enable CHAI/Umpire memory management" Off)
-option(ENABLE_CHAI_SINGLE_MEMORY "Enable single memory configuration in CHAI" Off)
+option(ENABLE_GPU_AWARE_MPI "Pass GPU pointers directly to MPI communication buffers" Off)
 if(ENABLE_CHAI)
   # Find camp
   if (NOT TARGET camp)
@@ -142,19 +142,6 @@ if(ENABLE_CHAI)
   endif ()
 
   if (ENABLE_HIP)
-    if(ENABLE_CHAI_SINGLE_MEMORY)
-        # Set CHAI-related HIP variables for single memory address space.
-        # Use the THIN_GPU_ALLOCATE mode of CHAI on MI250X.
-        # This is to mirror the expected behavior of El Capitan.
-        # Requires env variables HSA_XNACK set to 1 and MPICH_GPU_SUPPORT_ENABLED set to 1 to work on the MI250X.
-        set (CHAI_ENABLE_UM OFF CACHE BOOL "")
-        set (CHAI_ENABLE_PINNED ON CACHE BOOL "")
-        set(CHAI_DISABLE_RM ON CACHE BOOL "")
-        set(CHAI_THIN_GPU_ALLOCATE ON CACHE BOOL "")
-
-        set(KRIPKE_USE_CHAI_SINGLE_MEMORY 1)
-    endif()
-
     message(STATUS "Kripke: Setting CAMP_HAVE_HIP")
     blt_add_target_definitions(TO camp
                                SCOPE INTERFACE
@@ -324,6 +311,19 @@ if(ENABLE_MPI_WRAPPER)
 	set(KRIPKE_USE_MPI 1)
 endif()
 
+if(ENABLE_GPU_AWARE_MPI)
+  if(NOT (ENABLE_MPI OR ENABLE_MPI_WRAPPER))
+    message(FATAL_ERROR "ENABLE_GPU_AWARE_MPI requires MPI. Enable either ENABLE_MPI=On or ENABLE_MPI_WRAPPER=On.")
+  endif()
+  if(NOT ENABLE_CHAI)
+    message(FATAL_ERROR "ENABLE_GPU_AWARE_MPI requires ENABLE_CHAI=On.")
+  endif()
+  if(NOT ENABLE_CUDA AND NOT ENABLE_HIP)
+    message(FATAL_ERROR "ENABLE_GPU_AWARE_MPI requires ENABLE_CUDA=On or ENABLE_HIP=On.")
+  endif()
+  set(KRIPKE_USE_GPU_AWARE_MPI 1)
+endif()
+
 
 #
 # Display/Configure our default ArchLayout
@@ -409,4 +409,3 @@ blt_add_executable(
   SOURCES     "${KRIPKE_SOURCE_DIR}/src/kripke.cpp"
   DEPENDS_ON  ${KRIPKE_DEPENDS} kripke 
 )
-

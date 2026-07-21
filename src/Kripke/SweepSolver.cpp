@@ -50,8 +50,8 @@ void Kripke::SweepSolver (Kripke::Core::DataStore &data_store, std::vector<SdomI
 
   /* Loop until we have finished all of our work */
   while(comm->workRemaining()) {
-
-    std::vector<SdomId> sdom_ready = comm->readySubdomains();
+    std::vector<SdomId> sdom_ready;
+    sdom_ready = comm->readySubdomains();
 
     // Run the ready list
     for (auto ii = 0; ii < sdom_ready.size(); ++ii) {
