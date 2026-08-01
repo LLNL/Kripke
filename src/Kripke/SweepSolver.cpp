@@ -29,6 +29,12 @@ void Kripke::SweepSolver (Kripke::Core::DataStore &data_store, std::vector<SdomI
   Kripke::Kernel::kConst(data_store.getVariable<Field_JPlane>("j_plane"), 0.0);
   Kripke::Kernel::kConst(data_store.getVariable<Field_KPlane>("k_plane"), 0.0);
 
+#if defined(KRIPKE_USE_CUDA)
+  RAJA::synchronize<RAJA::cuda_synchronize>();
+#elif defined(KRIPKE_USE_HIP)
+  RAJA::synchronize<RAJA::hip_synchronize>();
+#endif
+
   // Create a new sweep communicator object
   ParallelComm *comm = NULL;
   if(block_jacobi){

@@ -237,8 +237,9 @@ void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId
     auto &src_plane = *src_plane_data[*dim];
     size_t plane_data_size = src_plane.size(sdom_id);
     double *src_buffer = nullptr;
+    bool gpu_aware_send = useGpuAwareMPI(src_plane);
 
-    if(useGpuAwareMPI(src_plane)){
+    if(gpu_aware_send){
       synchronizeDeviceForMPI();
       src_buffer = src_plane.getDeviceData(sdom_id);
     }
@@ -249,6 +250,13 @@ void ParallelComm::postSends(Kripke::Core::DataStore &data_store, Kripke::SdomId
     // Post the send
     MPI_Isend(src_buffer, plane_data_size, MPI_DOUBLE, downwind_rank,
       *downwind_sdom, MPI_COMM_WORLD, &send_requests[send_requests.size()-1]);
+
+#ifdef KRIPKE_USE_GPU_AWARE_MPI
+    if(gpu_aware_send){
+      MPI_Wait(&send_requests.back(), MPI_STATUS_IGNORE);
+      send_requests.pop_back();
+    }
+#endif
 
 #else
     // We cannot SEND anything without MPI, so fail
@@ -306,6 +314,7 @@ void ParallelComm::testRecieves(void){
 
 #ifdef KRIPKE_USE_GPU_AWARE_MPI
       if(useGpuAwareMPI(*m_plane_data[recv_dimensions[index]])){
+        synchronizeDeviceForMPI();
         m_plane_data[recv_dimensions[index]]->registerDeviceTouch(SdomId{sdom_id});
       }
 #endif
