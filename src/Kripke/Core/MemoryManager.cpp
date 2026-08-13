@@ -19,12 +19,13 @@
 using namespace Kripke;
 using namespace Kripke::Core;
 
-MemoryManager::MemoryManager(int device_pool_size) : device_pool_size(device_pool_size) {
+MemoryManager::MemoryManager(size_t requested_device_pool_size) :
+  requested_device_pool_size(requested_device_pool_size)
+{
 #if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
   auto &rm = umpire::ResourceManager::getInstance();
   const char * allocator_name = "KRIPKE_DEVICE_POOL";
   constexpr size_t umpire_alignment = umpire::strategy::QuickPool::s_default_alignment;
-  size_t requested_device_pool_size = ((size_t) device_pool_size) * 1024 * 1024 * 1024;
   size_t umpire_device_pool_size =
     requested_device_pool_size > umpire_alignment
       ? requested_device_pool_size - umpire_alignment
@@ -42,7 +43,7 @@ MemoryManager::MemoryManager(int device_pool_size) : device_pool_size(device_poo
 
 double MemoryManager::getDeviceMemoryPoolSize() {
 #if defined(KRIPKE_USE_CHAI) && (defined(KRIPKE_USE_CUDA) || defined(KRIPKE_USE_HIP))
-  return (double) device_pool_size;
+  return ((double) requested_device_pool_size) / (1024.0 * 1024.0 * 1024.0);
 #else
       return 0.0;
 #endif

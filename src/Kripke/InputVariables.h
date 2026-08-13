@@ -44,7 +44,8 @@ struct InputVariables {
   double sigs[3];               // total scattering cross section for 3 materials
   int num_material_subsamples;  // number of subsamples in each dimension for mesh painting
   
-  int dev_pool_size;            // size (in GB) of the umpire device pool, only used if CHAI/Umpire is enabled
+  int dev_pool_size;            // manual size in GB of the umpire device pool
+  bool dev_pool_size_set;       // true when --dev_pool_size was provided; otherwise auto-size the pool
   
   // Output Options
   std::string run_name;         // Name to use when generating output files

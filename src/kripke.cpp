@@ -15,6 +15,7 @@
 #include <Kripke/InputVariables.h>
 #include <Kripke/SteadyStateSolver.h>
 #include <Kripke/Timing.h>
+#include <Kripke/VarTypes.h>
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
@@ -87,6 +88,7 @@ void usage(void){
     printf("  --layout <LAYOUT>      Data layout and loop nesting order\n");
     printf("                         Available: DGZ,DZG,GDZ,GZD,ZDG,ZGD\n");
     printf("                         Default:   --layout %s\n\n", layoutToString(def.al_v.layout_v).c_str());
+    printf("  --dev_pool_size <GB>   Override auto-calculated Umpire device pool size\n\n");
     
     printf("\n");
     printf("Parallel Decomposition Options:\n");
@@ -170,6 +172,191 @@ namespace {
     std::stringstream ss;
     ss << val;
     return ss.str();
+  }
+
+  constexpr size_t quickPoolAlignmentBytes = 16;
+  constexpr size_t bytesPerGiB = 1024ull * 1024ull * 1024ull;
+
+  size_t alignQuickPoolRequest(size_t bytes){
+    return ((bytes + quickPoolAlignmentBytes - 1) / quickPoolAlignmentBytes) * quickPoolAlignmentBytes;
+  }
+
+  size_t bytesFromGiB(int gib){
+    return static_cast<size_t>(gib) * bytesPerGiB;
+  }
+
+  struct QuickPoolAccount {
+    size_t allocatable_bytes = 0;
+
+    void add(size_t arrays, size_t elements, size_t element_size){
+      allocatable_bytes += arrays * alignQuickPoolRequest(elements * element_size);
+    }
+
+    size_t requestedPoolBytes() const {
+      // MemoryManager subtracts this before constructing QuickPool because
+      // Umpire's aligned allocation adds it back internally.
+      return allocatable_bytes + quickPoolAlignmentBytes;
+    }
+  };
+
+  bool quickPoolUsesDevice(InputVariables const &vars){
+    bool use_device = false;
+#if defined(KRIPKE_USE_CUDA)
+    use_device = use_device || vars.al_v.arch_v == Kripke::ArchV_CUDA;
+#endif
+#if defined(KRIPKE_USE_HIP)
+    use_device = use_device || vars.al_v.arch_v == Kripke::ArchV_HIP;
+#endif
+    return use_device;
+  }
+
+  Kripke::Material quickPoolSizingMaterial(double x, double y, double z){
+    x = std::abs(x);
+    y = std::abs(y);
+    z = std::abs(z);
+
+    if(x <= 10.0 && y <= 10.0 && z <= 10.0) return Kripke::Material{0};
+    if(x <= 10.0 && y <= 60.0 && z <= 10.0) return Kripke::Material{1};
+    if(x <= 40.0 && y >= 50.0 && y <= 60.0 && z <= 10.0) return Kripke::Material{1};
+    if(x >= 30.0 && x <= 40.0 && y >= 50.0 && y <= 60.0 && z <= 40.0) return Kripke::Material{1};
+    if(x >= 30.0 && x <= 40.0 && y >= 50.0 && z >= 30.0 && z <= 40.0) return Kripke::Material{1};
+    return Kripke::Material{2};
+  }
+
+  size_t countMixedElementsForSpatialChunk(InputVariables const &vars,
+      size_t first_i, size_t first_j, size_t first_k,
+      size_t chunk_nx, size_t chunk_ny, size_t chunk_nz)
+  {
+    double const x_min = -60.0, x_max = 60.0;
+    double const y_min = -100.0, y_max = 100.0;
+    double const z_min = -60.0, z_max = 60.0;
+    double const dx = (x_max - x_min) / vars.nx;
+    double const dy = (y_max - y_min) / vars.ny;
+    double const dz = (z_max - z_min) / vars.nz;
+
+    int const samples = vars.num_material_subsamples;
+    size_t mixed_elements = 0;
+
+    for(size_t k = 0; k < chunk_nz; ++k){
+      for(size_t j = 0; j < chunk_ny; ++j){
+        for(size_t i = 0; i < chunk_nx; ++i){
+          bool has_material[3] = {false, false, false};
+
+          for(int si = 0; si < samples; ++si){
+            for(int sj = 0; sj < samples; ++sj){
+              for(int sk = 0; sk < samples; ++sk){
+                double x = x_min + dx * (first_i + i) + dx * (si + 1) / (samples + 1);
+                double y = y_min + dy * (first_j + j) + dy * (sj + 1) / (samples + 1);
+                double z = z_min + dz * (first_k + k) + dz * (sk + 1) / (samples + 1);
+                has_material[*quickPoolSizingMaterial(x, y, z)] = true;
+              }
+            }
+          }
+
+          mixed_elements += (has_material[0] ? 1 : 0)
+                          + (has_material[1] ? 1 : 0)
+                          + (has_material[2] ? 1 : 0);
+        }
+      }
+    }
+
+    return mixed_elements;
+  }
+
+  size_t calculateAutoQuickPoolSizeBytes(InputVariables const &vars, int rank, int num_tasks){
+    if(!quickPoolUsesDevice(vars)){
+      return 0;
+    }
+
+    size_t const rank_count = vars.npx * vars.npy * vars.npz;
+    KRIPKE_ASSERT(rank_count == static_cast<size_t>(num_tasks),
+        "Number of MPI ranks must match decomposition, expected %lu ranks\n",
+        (unsigned long)rank_count);
+
+    size_t const P = vars.num_groupsets;
+    size_t const Q = vars.num_dirsets;
+    size_t const Sx = vars.num_zonesets_dim[0];
+    size_t const Sy = vars.num_zonesets_dim[1];
+    size_t const Sz = vars.num_zonesets_dim[2];
+    size_t const R = Sx * Sy * Sz;
+
+    KRIPKE_ASSERT(vars.nx % (vars.npx * Sx) == 0, "X zones must divide into rank and zone-set decomposition\n");
+    KRIPKE_ASSERT(vars.ny % (vars.npy * Sy) == 0, "Y zones must divide into rank and zone-set decomposition\n");
+    KRIPKE_ASSERT(vars.nz % (vars.npz * Sz) == 0, "Z zones must divide into rank and zone-set decomposition\n");
+
+    size_t const rank_nx = vars.nx / vars.npx;
+    size_t const rank_ny = vars.ny / vars.npy;
+    size_t const rank_nz = vars.nz / vars.npz;
+    size_t const chunk_nx = rank_nx / Sx;
+    size_t const chunk_ny = rank_ny / Sy;
+    size_t const chunk_nz = rank_nz / Sz;
+    size_t const zones_per_chunk = chunk_nx * chunk_ny * chunk_nz;
+    size_t const groups_per_chunk = vars.num_groups / P;
+    size_t const directions_per_chunk = vars.num_directions / Q;
+    size_t const legendre_count = vars.legendre_order + 1;
+    size_t const moments = legendre_count * legendre_count;
+
+    QuickPoolAccount account;
+
+    account.add(1, moments, sizeof(Kripke::Legendre));                         // moment_to_legendre
+    account.add(4 * Q, directions_per_chunk, sizeof(double));                   // quadrature/xcos,ycos,zcos,w
+    account.add(2 * Q, moments * directions_per_chunk, sizeof(double));         // ell, ell_plus
+
+    account.add(Sx, chunk_nx, sizeof(double));                                  // dx
+    account.add(Sy, chunk_ny, sizeof(double));                                  // dy
+    account.add(Sz, chunk_nz, sizeof(double));                                  // dz
+    account.add(R, zones_per_chunk, sizeof(double));                            // volume
+
+    RAJA::Layout<5> proc_layout(1, 1, vars.npx, vars.npy, vars.npz);
+    int proc_p, proc_q, proc_x, proc_y, proc_z;
+    proc_layout.toIndices(rank, proc_p, proc_q, proc_x, proc_y, proc_z);
+
+    for(size_t sz = 0; sz < Sz; ++sz){
+      for(size_t sy = 0; sy < Sy; ++sy){
+        for(size_t sx = 0; sx < Sx; ++sx){
+          size_t first_i = (proc_x * Sx + sx) * chunk_nx;
+          size_t first_j = (proc_y * Sy + sy) * chunk_ny;
+          size_t first_k = (proc_z * Sz + sz) * chunk_nz;
+          size_t mixed = countMixedElementsForSpatialChunk(vars, first_i, first_j, first_k,
+              chunk_nx, chunk_ny, chunk_nz);
+
+          account.add(1, mixed, sizeof(Kripke::Zone));                          // mixelem_to_zone
+          account.add(1, mixed, sizeof(Kripke::Material));                      // mixelem_to_material
+          account.add(1, mixed, sizeof(double));                                // mixelem_to_fraction
+        }
+      }
+    }
+
+    account.add(R, zones_per_chunk, sizeof(int));                               // zone_to_num_mixelem
+    account.add(R, zones_per_chunk, sizeof(Kripke::MixElem));                   // zone_to_mixelem
+    account.add(P * R, groups_per_chunk * zones_per_chunk, sizeof(double));     // sigt_zonal
+
+    account.add(2 * P * Q * R,
+        directions_per_chunk * groups_per_chunk * zones_per_chunk,
+        sizeof(double));                                                        // psi, rhs
+
+    account.add(2 * P * R,
+        moments * groups_per_chunk * zones_per_chunk,
+        sizeof(double));                                                        // phi, phi_out
+
+    account.add(1,
+        3 * legendre_count * vars.num_groups * vars.num_groups,
+        sizeof(double));                                                        // data/sigs
+
+#if !defined(KRIPKE_USE_GPU_AWARE_MPI)
+    size_t const plane_copies = (vars.parallel_method == PMETHOD_BJ) ? 2 : 1;
+    account.add(plane_copies * P * Q * R,
+        directions_per_chunk * groups_per_chunk * chunk_ny * chunk_nz,
+        sizeof(double));                                                        // i_plane, old_i_plane
+    account.add(plane_copies * P * Q * R,
+        directions_per_chunk * groups_per_chunk * chunk_nx * chunk_nz,
+        sizeof(double));                                                        // j_plane, old_j_plane
+    account.add(plane_copies * P * Q * R,
+        directions_per_chunk * groups_per_chunk * chunk_nx * chunk_ny,
+        sizeof(double));                                                        // k_plane, old_k_plane
+#endif
+
+    return account.requestedPoolBytes();
   }
 }
 
@@ -391,7 +578,8 @@ int main(int argc, char **argv) {
       vars.al_v.layout_v = Kripke::stringToLayout(cmd.pop());     
     }
     else if(opt == "--dev_pool_size"){
-      vars.dev_pool_size = std::atoi(cmd.pop().c_str());     
+      vars.dev_pool_size = std::atoi(cmd.pop().c_str());
+      vars.dev_pool_size_set = true;
     }
     else{
       printf("Unknwon options %s\n", opt.c_str());
@@ -501,9 +689,29 @@ int main(int argc, char **argv) {
 
   // Allocate problem
 
-  Kripke::Core::MemoryManager memory_manager(vars.dev_pool_size);
+  size_t const requested_device_pool_size = vars.dev_pool_size_set
+      ? bytesFromGiB(vars.dev_pool_size)
+      : calculateAutoQuickPoolSizeBytes(vars, myid, num_tasks);
+
+  Kripke::Core::MemoryManager memory_manager(requested_device_pool_size);
   Kripke::Core::DataStore data_store;
   Kripke::generateProblem(data_store, vars);
+
+#ifdef KRIPKE_USE_CHAI
+  if(myid == 0){
+    printf("\n");
+    printf("Umpire Memory Pool Before Run\n");
+    printf("=============================\n");
+    printf("\n");
+    printf("  QuickPool requested size:   %4.2lf GB", memory_manager.getDeviceMemoryPoolSize());
+    if(vars.dev_pool_size_set){
+      printf(" (manual --dev_pool_size)\n");
+    }
+    else{
+      printf(" (auto-calculated)\n");
+    }
+  }
+#endif
 
   // Run the solver
   Kripke::SteadyStateSolver(data_store, vars.niter, vars.parallel_method == PMETHOD_BJ);
@@ -547,11 +755,11 @@ int main(int argc, char **argv) {
     adiak::value("umpire_device_high_watermark", device_memory_high_watermark);
 #endif
     printf("\n");
-    printf("Memory Usage\n");
-    printf("============\n");
+    printf("Memory Usage After Run\n");
+    printf("======================\n");
     printf("\n");
-    printf("  Device pool size:         %4.2lf GB\n", device_memory_pool_size);
-    printf("  Device high water mark:   %4.2lf GB\n", device_memory_high_watermark);
+    printf("  QuickPool requested size:   %4.2lf GB\n", device_memory_pool_size);
+    printf("  Umpire high watermark:      %4.2lf GB\n", device_memory_high_watermark);
 #endif
 
   }
