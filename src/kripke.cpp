@@ -343,7 +343,7 @@ namespace {
         3 * legendre_count * vars.num_groups * vars.num_groups,
         sizeof(double));                                                        // data/sigs
 
-#if !defined(KRIPKE_USE_GPU_AWARE_MPI)
+#if !defined(KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE)
     size_t const plane_copies = (vars.parallel_method == PMETHOD_BJ) ? 2 : 1;
     account.add(plane_copies * P * Q * R,
         directions_per_chunk * groups_per_chunk * chunk_ny * chunk_nz,
