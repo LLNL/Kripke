@@ -32,6 +32,7 @@ InputVariables::InputVariables() :
   parallel_method(PMETHOD_SWEEP),
   num_material_subsamples(4),
   dev_pool_size(4),
+  dev_pool_size_set(false),
   run_name("kripke")
 {
   num_zonesets_dim[0] = 1; 
@@ -103,6 +104,12 @@ bool InputVariables::checkValues(void) const{
   if(niter < 1){
     if(!rank)
       printf("You must run at least one iteration (%d)\n", niter);
+    return true;
+  }
+
+  if(dev_pool_size_set && dev_pool_size <= 0){
+    if(!rank)
+      printf("Device pool size (%d) must be greater than 0 GB\n", dev_pool_size);
     return true;
   }
   

@@ -32,7 +32,7 @@ namespace Kripke {
   using Field_Flux = Kripke::Core::Field<double, Direction, Group, Zone>;
   using Field_Moments = Kripke::Core::Field<double, Moment, Group, Zone>;
 
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
   using Field_IPlane = Kripke::Core::FieldWithDirectUmpireDeviceStorage<double, Direction, Group, ZoneJ, ZoneK>;
   using Field_JPlane = Kripke::Core::FieldWithDirectUmpireDeviceStorage<double, Direction, Group, ZoneI, ZoneK>;
   using Field_KPlane = Kripke::Core::FieldWithDirectUmpireDeviceStorage<double, Direction, Group, ZoneI, ZoneJ>;
@@ -173,7 +173,7 @@ namespace Kripke {
 #ifndef KRIPKE_USE_CHAI
       field = new FieldType(set, order_t{});
 #else
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
       field = new FieldType(set,
           fieldAllocationSpace<FieldType>(al_v.arch_v),
           FieldType::direct_umpire_device_storage,

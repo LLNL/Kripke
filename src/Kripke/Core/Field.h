@@ -18,7 +18,7 @@
 #ifdef KRIPKE_USE_CHAI
 #include <chai/ManagedArray.hpp>
 #endif
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
 #include <umpire/ResourceManager.hpp>
 #include <umpire/strategy/NamedAllocationStrategy.hpp>
 #endif
@@ -27,12 +27,12 @@ namespace Kripke {
 namespace Core {
   template<typename ELEMENT, bool HOST_RESIDENT_NORMAL_CHAI_GPU, typename ... IDX_TYPES>
   class FieldWithPolicy;
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
   template<typename ELEMENT, typename ... IDX_TYPES>
   class FieldWithDirectUmpireDeviceStorage;
 #endif
 
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
 namespace detail {
   inline umpire::Allocator directUmpireDeviceAllocator()
   {
@@ -71,7 +71,7 @@ namespace detail {
       explicit FieldStorage(Kripke::Core::Set const &spanned_set
 #ifdef KRIPKE_USE_CHAI
           , chai::ExecutionSpace allocation_space = chai::CPU
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
           , bool direct_umpire_device_storage = false
 #endif
 #endif
@@ -79,7 +79,7 @@ namespace detail {
         m_set(&spanned_set)
 #ifdef KRIPKE_USE_CHAI
         , m_allocation_space(allocation_space)
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
         , m_direct_umpire_device_storage(direct_umpire_device_storage && allocation_space == chai::GPU)
 #endif
 #endif
@@ -107,7 +107,8 @@ namespace detail {
 #ifndef KRIPKE_USE_CHAI
           m_chunk_to_data[chunk_id] = new ElementType[sdom_size];
 #else
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
+          // Direct plane storage bypasses the CHAI GPU allocator (normally KRIPKE_DEVICE_POOL).
           // Used only for GPU-aware MPI i/j/k_plane buffers to avoid QuickPool non-base pointers.
           if(m_direct_umpire_device_storage){
             auto &rm = umpire::ResourceManager::getInstance();
@@ -125,7 +126,7 @@ namespace detail {
           {
             m_chunk_to_data[chunk_id].allocate(sdom_size, m_allocation_space);
           }
-#endif
+#endif  // KRIPKE_USE_CHAI
         }
       }
 
@@ -205,7 +206,7 @@ namespace detail {
 #ifndef KRIPKE_USE_CHAI
         return  m_chunk_to_data[chunk_id];
 #else
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
         if(m_direct_umpire_device_storage){
           return m_chunk_to_data[chunk_id].data(chai::GPU, false);
         }
@@ -215,7 +216,7 @@ namespace detail {
 #else
         return m_chunk_to_data[chunk_id].data(chai::CPU);
 #endif
-#endif
+#endif  // KRIPKE_USE_CHAI
       }
 
       RAJA_INLINE
@@ -232,9 +233,11 @@ namespace detail {
 #ifdef KRIPKE_USE_GPU_AWARE_MPI
       RAJA_INLINE
       void registerDeviceTouch(Kripke::SdomId sdom_id) {
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
         if(m_direct_umpire_device_storage){
           return;
         }
+#endif
         if(m_allocation_space == chai::GPU){
           KRIPKE_ASSERT(*sdom_id < (int)m_subdomain_to_chunk.size(),
               "sdom_id(%d) >= num_subdomains(%d)",
@@ -244,8 +247,8 @@ namespace detail {
           m_chunk_to_data[chunk_id].registerTouch(chai::GPU);
         }
       }
-#endif
-#endif
+#endif  // KRIPKE_USE_GPU_AWARE_MPI
+#endif  // KRIPKE_USE_CHAI
 
 
       RAJA_INLINE
@@ -259,7 +262,7 @@ namespace detail {
       std::vector<ElementPtr> m_chunk_to_data;
 #ifdef KRIPKE_USE_CHAI
       chai::ExecutionSpace m_allocation_space;
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
       bool m_direct_umpire_device_storage;
 #endif
 #endif
@@ -277,7 +280,7 @@ namespace detail {
       using ElementType = ELEMENT;
       static constexpr bool host_resident_normal_chai_gpu = false;
 
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
       static constexpr bool direct_umpire_device_storage = false;
 #endif
 
@@ -312,7 +315,7 @@ namespace detail {
         setupLayouts<Order>(spanned_set);
       }
 
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
       template<typename Order>
       Field(Kripke::Core::Set const &spanned_set,
             chai::ExecutionSpace allocation_space,
@@ -323,7 +326,7 @@ namespace detail {
         setupLayouts<Order>(spanned_set);
       }
 #endif
-#endif
+#endif  // KRIPKE_USE_CHAI
 
       template<typename Order>
       void setupLayouts(Kripke::Core::Set const &spanned_set) {
@@ -455,12 +458,12 @@ namespace detail {
       using Parent::Parent;
       static constexpr bool host_resident_normal_chai_gpu =
           HOST_RESIDENT_NORMAL_CHAI_GPU;
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
       static constexpr bool direct_umpire_device_storage = false;
 #endif
   };
 
-#ifdef KRIPKE_USE_GPU_AWARE_MPI
+#ifdef KRIPKE_USE_DIRECT_UMPIRE_PLANE_STORAGE
   template<typename ELEMENT, typename ... IDX_TYPES>
   class FieldWithDirectUmpireDeviceStorage : public Kripke::Core::Field<ELEMENT, IDX_TYPES...> {
     public:
